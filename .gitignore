@@ -1,3 +1,6 @@
 node_modules/
 dist/
 *.log
+
+# 세션 산출물(보고서·분석 문서)은 로컬에만 둔다
+docs/discussions/
