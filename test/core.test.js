@@ -8,7 +8,9 @@ const {
   startOfTomorrow,
   parseDue,
   dueInfo,
+  MAX_MEMO,
   clampText,
+  clampMemo,
   normalizeTasks,
   sanitizeLayout,
   DEFAULT_LAYOUT,
@@ -74,6 +76,30 @@ test('clampText trims and caps at the shared limit', () => {
   assert.equal(clampText('x'.repeat(MAX_TEXT + 50)).length, MAX_TEXT);
   assert.equal(clampText(null), '');
   assert.equal(clampText(undefined), '');
+});
+
+test('clampMemo trims, caps, and turns blank into null', () => {
+  assert.equal(clampMemo('  note  '), 'note');
+  assert.equal(clampMemo('line\nline'), 'line\nline');
+  assert.equal(clampMemo('x'.repeat(MAX_MEMO + 50)).length, MAX_MEMO);
+  assert.equal(clampMemo('   '), null);
+  assert.equal(clampMemo(''), null);
+  assert.equal(clampMemo(null), null);
+  assert.equal(clampMemo(undefined), null);
+});
+
+test('normalizeTasks defaults memo and rejects non-strings', () => {
+  const [plain, str, obj, blank] = normalizeTasks([
+    { id: 'a', text: 'a', quadrant: 'q1' },
+    { id: 'b', text: 'b', quadrant: 'q1', memo: '  hi  ' },
+    { id: 'c', text: 'c', quadrant: 'q1', memo: { oops: 1 } },
+    { id: 'd', text: 'd', quadrant: 'q1', memo: '   ' },
+  ]);
+  assert.equal(plain.memo, null);
+  assert.equal(str.memo, 'hi');
+  // A non-string would render as "[object Object]" in the panel.
+  assert.equal(obj.memo, null);
+  assert.equal(blank.memo, null);
 });
 
 test('parseDue accepts only real YYYY-MM-DD days', () => {

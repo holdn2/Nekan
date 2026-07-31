@@ -15,6 +15,14 @@ let mode = 'expanded';
 let store = null;
 let saveTimer = null;
 
+// The memo panel grows the window instead of squeezing the matrix, so the
+// quadrants keep the size the user gave them. `memoDelta` is how much the
+// window actually grew — less than the panel asked for when the screen had no
+// room left — and every saved bound has it subtracted back out.
+let memoOpen = false;
+let memoDelta = 0;
+const MEMO_MAX = 400;
+
 function storePath() {
   return path.join(app.getPath('userData'), 'data.json');
 }
@@ -48,6 +56,47 @@ function sanitizeBounds(bounds) {
   return { x, y, width, height };
 }
 
+/** Window bounds with the memo panel's extra height taken back out. */
+function boundsWithoutMemo() {
+  const b = win.getBounds();
+  return { ...b, height: b.height - memoDelta };
+}
+
+/**
+ * The memo panel is extra height, not a slice of the matrix: opening it grows
+ * the window by what the renderer asks for and closing it hands exactly that
+ * back, so the quadrant sizes never move. `memoDelta` is what the window
+ * *actually* gained — a display with no room left clamps the growth — which is
+ * why every saved bound subtracts it rather than a fixed constant.
+ */
+function setMemoPanel(open, height) {
+  if (!win || win.isDestroyed() || mode !== 'expanded') return memoOpen;
+  if (open === memoOpen) return memoOpen;
+
+  const before = win.getBounds();
+  if (open) {
+    const want = Math.min(MEMO_MAX, Math.max(0, Math.round(height) || 0));
+    win.setBounds(sanitizeBounds({ ...before, height: before.height + want }));
+    memoDelta = win.getBounds().height - before.height;
+    memoOpen = true;
+    win.setMinimumSize(EXPANDED.minWidth, EXPANDED.minHeight + memoDelta);
+  } else {
+    win.setMinimumSize(EXPANDED.minWidth, EXPANDED.minHeight);
+    win.setBounds({
+      ...before,
+      height: Math.max(EXPANDED.minHeight, before.height - memoDelta),
+    });
+    memoOpen = false;
+    memoDelta = 0;
+  }
+
+  // The resize above ran rememberBounds while memoDelta was mid-update, so the
+  // corrected value has to be written after the fact.
+  store.settings.bounds = boundsWithoutMemo();
+  persist();
+  return memoOpen;
+}
+
 function createWindow() {
   const saved = sanitizeBounds(store.settings.bounds);
 
@@ -73,6 +122,13 @@ function createWindow() {
 
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 
+  // A reload starts the renderer with nothing selected, so the panel height
+  // main is still holding would be stranded — the window would stay tall with
+  // no panel in it, and the saved bounds would drift by that much.
+  win.webContents.on('did-finish-load', () => {
+    if (memoOpen) setMemoPanel(false);
+  });
+
   win.once('ready-to-show', () => {
     win.show();
     if (store.settings.mode === 'collapsed') collapse();
@@ -80,7 +136,7 @@ function createWindow() {
 
   const rememberBounds = () => {
     if (!win || win.isDestroyed() || mode !== 'expanded') return;
-    store.settings.bounds = win.getBounds();
+    store.settings.bounds = boundsWithoutMemo();
     persist();
   };
   win.on('resize', rememberBounds);
@@ -93,10 +149,13 @@ function createWindow() {
 
 function collapse() {
   if (!win || mode === 'collapsed') return;
-  store.settings.bounds = win.getBounds();
+  store.settings.bounds = boundsWithoutMemo();
   const { x, y } = win.getBounds();
   mode = 'collapsed';
   store.settings.mode = mode;
+  // The bar has no memo panel; the renderer drops its selection to match.
+  memoOpen = false;
+  memoDelta = 0;
   win.setResizable(false);
   win.setMinimumSize(BAR.width, BAR.height);
   win.setBounds({ x, y, width: BAR.width, height: BAR.height });
@@ -205,6 +264,8 @@ ipcMain.handle('settings:layout', (_e, layout) => {
   persist();
   return next;
 });
+
+ipcMain.handle('win:memo', (_e, open, height) => setMemoPanel(!!open, height));
 
 ipcMain.handle('win:togglePin', () => {
   if (!win) return false;

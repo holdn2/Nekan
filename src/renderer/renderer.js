@@ -154,6 +154,7 @@ function addTask(quadrant, text, dueDate) {
     text: trimmed,
     quadrant,
     dueDate: dueDate || null,
+    memo: null,
     createdAt: Date.now(),
     completedAt: null,
     deletedAt: null,
@@ -257,7 +258,7 @@ function numEl(index) {
 
 function itemEl(task, index) {
   const li = document.createElement("li");
-  li.className = "item";
+  li.className = task.id === selectedId ? "item selected" : "item";
   li.dataset.id = task.id;
   li.draggable = true;
 
@@ -274,7 +275,7 @@ function itemEl(task, index) {
   const text = document.createElement("span");
   text.className = "text";
   text.textContent = task.text;
-  text.title = "더블클릭하여 수정";
+  text.title = "클릭하여 메모 · 더블클릭하여 수정";
   text.addEventListener("dblclick", () => startEdit(li, text, task));
 
   const due = dueChip(task.dueDate, (value) => setDue(task.id, value));
@@ -289,7 +290,26 @@ function itemEl(task, index) {
     setTimeout(() => deleteTask(task.id), 160);
   });
 
-  li.append(numEl(index), check, text, due, del);
+  li.append(numEl(index), check, text);
+  if (task.memo) li.append(memoMark(task.memo));
+  li.append(due, del);
+
+  // Click selects for the memo panel, double-click still edits the text — so a
+  // single click has to wait out the double-click window before it acts.
+  // Without the wait, a double-click would toggle the selection twice and the
+  // window would grow and shrink under the cursor.
+  li.addEventListener("click", (e) => {
+    if (e.detail > 1) return;
+    if (e.target.closest("button, .duebox")) return;
+    if (text.isContentEditable) return;
+    clearTimeout(clickTimer);
+    clickTimer = setTimeout(
+      () => setSelected(task.id === selectedId ? null : task.id),
+      CLICK_DELAY,
+    );
+  });
+  li.addEventListener("dblclick", () => clearTimeout(clickTimer));
+
   return li;
 }
 
@@ -411,6 +431,7 @@ function renderArchive({
     time.textContent = timeLabel(stamp(task));
 
     li.append(numEl(index), dot, text);
+    if (task.memo) li.append(memoMark(task.memo));
     const due = dueBadge(task.dueDate);
     if (due) li.append(due);
     li.append(time);
@@ -466,18 +487,214 @@ function renderTrash() {
   });
 }
 
+/* ------------------------------------------------------------------- memo */
+
+/**
+ * One memo per task, shown in a panel under the matrix. Opening it grows the
+ * window (main.js) rather than taking height from the quadrants, so the ratios
+ * the user dragged stay exactly where they were.
+ */
+let selectedId = null;
+/** Whether the textarea is up. A task with no memo yet always starts there. */
+let memoEditing = false;
+/** Long enough for the second click of a double-click to arrive first. */
+const CLICK_DELAY = 220;
+let clickTimer = null;
+
+function noteIcon() {
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", "0 0 16 16");
+  svg.setAttribute("width", "11");
+  svg.setAttribute("height", "11");
+  svg.setAttribute("aria-hidden", "true");
+  const page = document.createElementNS(ns, "path");
+  page.setAttribute("d", "M3.4 2.2h9.2v11.6H3.4z");
+  page.setAttribute("fill", "none");
+  page.setAttribute("stroke", "currentColor");
+  page.setAttribute("stroke-width", "1.3");
+  page.setAttribute("stroke-linejoin", "round");
+  const lines = document.createElementNS(ns, "path");
+  lines.setAttribute("d", "M5.6 5.4h4.8M5.6 8h4.8M5.6 10.6h3");
+  lines.setAttribute("stroke", "currentColor");
+  lines.setAttribute("stroke-width", "1.3");
+  lines.setAttribute("stroke-linecap", "round");
+  svg.append(page, lines);
+  return svg;
+}
+
+/** The "has a memo" marker; the memo itself rides along as the tooltip. */
+function memoMark(memo) {
+  const el = document.createElement("span");
+  el.className = "memo-mark";
+  el.title = `메모: ${memo}`;
+  el.setAttribute("aria-label", "메모 있음");
+  el.append(noteIcon());
+  return el;
+}
+
+/** Panel height comes from CSS so main.js and the stylesheet cannot drift. */
+const memoPanelHeight = () =>
+  Number.parseFloat(
+    getComputedStyle(document.documentElement).getPropertyValue("--memo-h"),
+  ) || 0;
+
+/** The selected task, or null once it has left the matrix. */
+function selectedTask() {
+  if (!selectedId) return null;
+  const task = tasks.find((t) => t.id === selectedId);
+  return task && !task.completedAt && !task.deletedAt ? task : null;
+}
+
+/** Only the open/closed transition resizes; swapping tasks keeps the height. */
+function setSelected(id) {
+  if (id === selectedId) return;
+  const wasOpen = selectedId !== null;
+  selectedId = id;
+  memoEditing = false;
+  if (wasOpen !== (id !== null)) {
+    window.api.setMemoPanel(id !== null, memoPanelHeight());
+  }
+  render();
+}
+
+/**
+ * Rule for the save button: a new memo needs text, an edit needs text *and* a
+ * change. `clampMemo` trims the same way the save path does, so what the button
+ * compares is what would be written.
+ */
+function memoSaveState() {
+  const task = selectedTask();
+  if (!task) return { value: null, original: null, canSave: false };
+  const value = clampMemo($("#memoInput").value);
+  const original = task.memo || null;
+  return { value, original, canSave: Boolean(value) && value !== original };
+}
+
+function syncMemoSave() {
+  $("#memoSave").disabled = !memoSaveState().canSave;
+}
+
+function renderMemo() {
+  const panel = $("#memoPanel");
+  const task = selectedTask();
+  if (!task) {
+    panel.classList.add("hidden");
+    panel.dataset.key = "";
+    return;
+  }
+  panel.classList.remove("hidden");
+
+  const memo = task.memo || "";
+  const editing = memoEditing || !memo;
+
+  $("#memoTitle").textContent = task.text;
+  $("#memoTitle").title = task.text;
+  $("#memoDot").className = `dot ${task.quadrant}`;
+  $("#memoText").textContent = memo;
+
+  // Only reseed the textarea when the panel actually changes what it is
+  // showing; an unrelated re-render must not wipe what is being typed.
+  const key = `${task.id}:${editing}`;
+  const input = $("#memoInput");
+  if (panel.dataset.key !== key) {
+    panel.dataset.key = key;
+    if (editing) {
+      input.value = memo;
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    }
+  }
+
+  input.classList.toggle("hidden", !editing);
+  $("#memoText").classList.toggle("hidden", editing);
+  $("#memoSave").classList.toggle("hidden", !editing);
+  $("#memoCancel").classList.toggle("hidden", !editing || !memo);
+  $("#memoDelete").classList.toggle("hidden", editing || !memo);
+  $("#memoHint").textContent = editing
+    ? "Ctrl+Enter 저장 · Esc 취소"
+    : "더블클릭하여 수정";
+  syncMemoSave();
+}
+
+function saveMemo() {
+  const task = selectedTask();
+  const { value, canSave } = memoSaveState();
+  if (!task || !canSave) return;
+  task.memo = value;
+  memoEditing = false;
+  save();
+  render();
+}
+
+function cancelMemoEdit() {
+  // Nothing to fall back to when the memo is new — close the panel instead.
+  if (!selectedTask()?.memo) {
+    setSelected(null);
+    return;
+  }
+  memoEditing = false;
+  renderMemo();
+}
+
+function deleteMemo() {
+  const task = selectedTask();
+  if (!task || !task.memo) return;
+  if (!window.confirm("이 메모를 삭제할까요? 되돌릴 수 없습니다.")) return;
+  task.memo = null;
+  memoEditing = false;
+  save();
+  render();
+}
+
+function wireMemo() {
+  const input = $("#memoInput");
+  input.addEventListener("input", syncMemoSave);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      cancelMemoEdit();
+    } else if (e.key === "Enter" && e.ctrlKey) {
+      e.preventDefault();
+      saveMemo();
+    }
+  });
+
+  $("#memoText").addEventListener("dblclick", () => {
+    memoEditing = true;
+    renderMemo();
+  });
+
+  $("#memoSave").addEventListener("click", saveMemo);
+  $("#memoCancel").addEventListener("click", cancelMemoEdit);
+  $("#memoDelete").addEventListener("click", deleteMemo);
+  $("#memoClose").addEventListener("click", () => setSelected(null));
+}
+
+/* -------------------------------------------------------------- rendering */
+
 function render() {
+  // Completing, trashing or purging the selected task takes the panel with it.
+  if (selectedId && !selectedTask()) {
+    selectedId = null;
+    memoEditing = false;
+    window.api.setMemoPanel(false, 0);
+  }
   renderCounts();
   if (mode === "collapsed") return;
   if (activeTab === "matrix") renderMatrix();
   else if (activeTab === "history") renderHistory();
   else if (activeTab === "trash") renderTrash();
   // the guide tab is static markup — nothing to render
+  renderMemo();
 }
 
 /* ------------------------------------------------------------------- tabs */
 
 function setTab(tab) {
+  // The panel belongs to the matrix; leaving the tab closes it (and gives the
+  // window its height back) rather than leaving it pointing at a hidden row.
+  if (tab !== "matrix") setSelected(null);
   activeTab = tab;
   $$(".tab").forEach((btn) =>
     btn.classList.toggle("active", btn.dataset.tab === tab),
@@ -754,6 +971,12 @@ let pushedMode = null;
 
 function applyMode(next) {
   mode = next;
+  // collapse() already dropped the panel's height on its way to the bar, so
+  // clear the selection here without asking for another resize.
+  if (mode === "collapsed") {
+    selectedId = null;
+    memoEditing = false;
+  }
   document.body.classList.toggle("collapsed", mode === "collapsed");
   document.body.classList.toggle("expanded", mode === "expanded");
   labelBtn("#sizeBtn", mode === "collapsed" ? "펼치기" : "바 모드로 축소");
@@ -875,6 +1098,8 @@ function wireUI() {
       $(`[data-add="q${e.key}"] input[type="text"]`)?.focus();
     }
   });
+
+  wireMemo();
 
   // Waking from sleep or coming back to the window can also cross midnight,
   // and either may happen while the rollover timer is still pending.

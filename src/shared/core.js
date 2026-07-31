@@ -15,6 +15,8 @@ const FALLBACK_QUAD = 'q4';
 
 /** Must match the add form's maxlength in index.html. */
 const MAX_TEXT = 200;
+/** Memos are free-form and multi-line, so they get a much looser cap. */
+const MAX_MEMO = 2000;
 
 const DAY_MS = 86400000;
 const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
@@ -92,9 +94,21 @@ function clampText(text) {
 }
 
 /**
- * Fill in fields older saves predate, and repair the one field whose bad value
- * is invisible: renderMatrix() only walks QUADS, so an unknown `quadrant`
- * would keep the task in the file while it disappears from every list.
+ * Same idea for memos, but blank means "no memo": the caller stores null so
+ * `task.memo` is either a non-empty string or absent, never `''`.
+ */
+function clampMemo(memo) {
+  const trimmed = String(memo == null ? '' : memo)
+    .trim()
+    .slice(0, MAX_MEMO);
+  return trimmed || null;
+}
+
+/**
+ * Fill in fields older saves predate, and repair the two fields whose bad
+ * values are invisible: renderMatrix() only walks QUADS, so an unknown
+ * `quadrant` would keep the task in the file while it disappears from every
+ * list, and a non-string `memo` would render as "[object Object]".
  * Never drops entries — that is purgeTask()'s job alone.
  */
 function normalizeTasks(list) {
@@ -105,6 +119,7 @@ function normalizeTasks(list) {
     completedAt: null,
     ...t,
     quadrant: QUADS.includes(t?.quadrant) ? t.quadrant : FALLBACK_QUAD,
+    memo: typeof t?.memo === 'string' ? clampMemo(t.memo) : null,
   }));
 }
 
@@ -139,6 +154,7 @@ if (typeof module !== 'undefined' && module.exports) {
     QUADS,
     FALLBACK_QUAD,
     MAX_TEXT,
+    MAX_MEMO,
     DAY_MS,
     WEEKDAY,
     startOfToday,
@@ -146,6 +162,7 @@ if (typeof module !== 'undefined' && module.exports) {
     parseDue,
     dueInfo,
     clampText,
+    clampMemo,
     normalizeTasks,
     DEFAULT_LAYOUT,
     MIN_RATIO,
