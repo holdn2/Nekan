@@ -759,11 +759,38 @@ body.resizing-both {
 .hitem {
   display: flex;
   align-items: center;
-  /* The memo block takes a full-width line of its own, so the row wraps. */
-  flex-wrap: wrap;
   gap: 10px;
   padding: 8px;
   border-radius: 8px;
+}
+
+/* Title + memo stack in the flex slot the title used to hold alone, so the
+   memo ends where the date column begins and never runs beside it. */
+.hmain {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* With a memo the row is several lines tall; everything beside it lines up
+   with the title rather than floating to the middle. */
+.hitem.has-memo {
+  align-items: flex-start;
+}
+
+.hitem.has-memo .num {
+  margin-top: 4px;
+}
+
+.hitem.has-memo .dot {
+  margin-top: 5px;
+}
+
+.hitem.has-memo .duebox,
+.hitem.has-memo .time {
+  margin-top: 1px;
 }
 
 .hitem:hover {
@@ -783,19 +810,25 @@ body.resizing-both {
   user-select: text;
 }
 
+/* The title/memo column is the only thing that may give up width, so the
+   timestamp and the buttons keep one line and stay aligned across rows. */
 .hitem .time {
+  flex: 0 0 auto;
   color: var(--faint);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .hitem .act {
+  flex: 0 0 auto;
   border: 1px solid var(--line-strong);
   border-radius: 6px;
   background: transparent;
   color: var(--muted);
   padding: 3px 8px;
   font-size: 11px;
+  white-space: nowrap;
   opacity: 0;
 }
 
@@ -818,10 +851,13 @@ body.resizing-both {
 /* Read-only memo under a history / trash row. There is no edit affordance on
    these tabs on purpose — the click only expands a clamped memo. */
 .hmemo {
-  flex: 0 0 100%;
   display: flex;
+  /* The icon marks the memo's first line; it must not drift to the middle
+     of a multi-line one. */
+  align-items: flex-start;
   gap: 7px;
-  margin: 0 0 0 25px;
+  /* The indent that lines this up under the title is measured in renderArchive
+     — the number column widens with the row count, so it is not a constant. */
   padding: 6px 9px;
   border-radius: 7px;
   background: var(--panel-2);
@@ -830,7 +866,7 @@ body.resizing-both {
 }
 
 .hmemo .memo-mark {
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .hmemo-text {
@@ -842,7 +878,7 @@ body.resizing-both {
   user-select: text;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   overflow: hidden;
 }
 

@@ -430,13 +430,21 @@ function renderArchive({
     time.className = "time";
     time.textContent = timeLabel(stamp(task));
 
-    li.append(numEl(index), dot, text);
+    // Title and memo share one column, so the memo lines up under the title
+    // and stops where the date column starts instead of running alongside it.
+    const main = document.createElement("div");
+    main.className = "hmain";
+    main.append(text);
+    if (task.memo) {
+      main.append(memoLine(task.memo));
+      li.classList.add("has-memo");
+    }
+
+    li.append(numEl(index), dot, main);
     const due = dueBadge(task.dueDate);
     if (due) li.append(due);
     li.append(time);
     actions(task).forEach((btn) => li.append(btn));
-    // Wraps onto its own line under the row, so it never squeezes the buttons.
-    if (task.memo) li.append(memoLine(task.memo));
     list.append(li);
     index += 1;
   });
@@ -547,7 +555,7 @@ function memoMark(memo) {
  * Read-only memo block for history / trash rows. These tabs deliberately have
  * no edit path — the panel that edits a memo only ever opens on the matrix —
  * so this is display only: no dblclick, no contentEditable, no save.
- * Long memos are clamped to two lines and expand on click.
+ * Long memos are clamped to three lines and expand on click.
  */
 function memoLine(memo) {
   const box = document.createElement("div");
