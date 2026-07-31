@@ -1,0 +1,973 @@
+<title>사분면 엣지 리사이즈 — 구현 요약</title>
+
+<style>
+  :root {
+    --ground: #f0eee6;
+    --surface: #faf9f5;
+    --surface-2: #f2f0e8;
+    --rule: #ddd8c9;
+    --rule-soft: #e7e3d6;
+    --ink: #1f1e1c;
+    --ink-2: #6b675e;
+    --ink-3: #a09b8e;
+    --accent: #d97757;
+    --accent-soft: #d9775720;
+    --good: #4c7a55;
+    --q1: #c85a4d;
+    --q2: #4a72b8;
+    --q3: #c1892c;
+    --q4: #8d887d;
+
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "SFMono-Regular", monospace;
+    --sans: "Malgun Gothic", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #1c1b1a;
+      --surface: #242322;
+      --surface-2: #2c2b28;
+      --rule: #3b3935;
+      --rule-soft: #302f2c;
+      --ink: #f2f0ea;
+      --ink-2: #a29d94;
+      --ink-3: #726d65;
+      --accent: #e08765;
+      --accent-soft: #e0876528;
+      --good: #7fae8a;
+      --q1: #e0736a;
+      --q2: #6f96d8;
+      --q3: #d7a24a;
+      --q4: #9d978c;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #1c1b1a;
+    --surface: #242322;
+    --surface-2: #2c2b28;
+    --rule: #3b3935;
+    --rule-soft: #302f2c;
+    --ink: #f2f0ea;
+    --ink-2: #a29d94;
+    --ink-3: #726d65;
+    --accent: #e08765;
+    --accent-soft: #e0876528;
+    --good: #7fae8a;
+    --q1: #e0736a;
+    --q2: #6f96d8;
+    --q3: #d7a24a;
+    --q4: #9d978c;
+  }
+
+  :root[data-theme="light"] {
+    --ground: #f0eee6;
+    --surface: #faf9f5;
+    --surface-2: #f2f0e8;
+    --rule: #ddd8c9;
+    --rule-soft: #e7e3d6;
+    --ink: #1f1e1c;
+    --ink-2: #6b675e;
+    --ink-3: #a09b8e;
+    --accent: #d97757;
+    --accent-soft: #d9775720;
+    --good: #4c7a55;
+    --q1: #c85a4d;
+    --q2: #4a72b8;
+    --q3: #c1892c;
+    --q4: #8d887d;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+  }
+
+  /* ---------- masthead ---------- */
+
+  .masthead { display: flex; flex-direction: column; gap: 14px; }
+
+  .kicker {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(28px, 5vw, 40px);
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  h1 em {
+    font-style: normal;
+    color: var(--accent);
+    box-shadow: inset 0 -0.3em 0 var(--accent-soft);
+  }
+
+  .lede {
+    margin: 0;
+    max-width: 60ch;
+    font-size: 17px;
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    margin: 14px 0 0;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .facts > div {
+    flex: 1 1 150px;
+    padding: 14px 18px 14px 0;
+    border-right: 1px solid var(--rule-soft);
+  }
+  .facts > div:last-child { border-right: 0; }
+
+  .facts dt {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .facts dd {
+    margin: 3px 0 0;
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- sections ---------- */
+
+  section { margin-top: 60px; }
+
+  .label {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin: 0 0 20px;
+    padding-bottom: 9px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .label h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.005em;
+  }
+
+  .label span {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-3);
+    letter-spacing: 0.08em;
+  }
+
+  p { margin: 0 0 14px; max-width: 66ch; text-wrap: pretty; }
+  p:last-child { margin-bottom: 0; }
+  .muted { color: var(--ink-2); }
+
+  b, strong { font-weight: 700; }
+  code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--surface-2);
+    border: 1px solid var(--rule-soft);
+    border-radius: 4px;
+    padding: 0.1em 0.36em;
+  }
+
+  /* ---------- live demo ---------- */
+
+  .demo { margin: 0; }
+
+  .demo-shell {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    padding: 14px;
+  }
+
+  .mx {
+    display: grid;
+    grid-template-columns: minmax(100px, 50fr) minmax(100px, 50fr);
+    grid-template-rows: minmax(70px, 50fr) minmax(70px, 50fr);
+    gap: 10px;
+    height: 330px;
+    user-select: none;
+    touch-action: none;
+  }
+
+  .mx.edge-col { cursor: col-resize; }
+  .mx.edge-row { cursor: row-resize; }
+  .mx.edge-both { cursor: nwse-resize; }
+
+  .qd {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    min-height: 0;
+    padding: 11px 13px;
+    background: var(--surface-2);
+    border: 1px solid var(--rule);
+    border-radius: 9px;
+    overflow: hidden;
+    transition: border-color 0.12s ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .qd { transition: none; }
+  }
+
+  .qd::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2px;
+    background: var(--bar);
+  }
+
+  .qd.q1 { --bar: var(--q1); }
+  .qd.q2 { --bar: var(--q2); }
+  .qd.q3 { --bar: var(--q3); }
+  .qd.q4 { --bar: var(--q4); }
+
+  .qd.edge-r { border-right-color: var(--accent); }
+  .qd.edge-l { border-left-color: var(--accent); }
+  .qd.edge-b { border-bottom-color: var(--accent); }
+
+  .qd-tag {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+
+  .qd-tag i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--bar);
+    flex: 0 0 auto;
+  }
+
+  .qd-name {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .qd-size {
+    margin-top: auto;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+
+  .readout {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 22px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule-soft);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+  }
+
+  .readout b {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .readout .state {
+    margin-left: auto;
+    padding: 2px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--rule);
+    color: var(--ink-3);
+    letter-spacing: 0.06em;
+  }
+
+  .readout .state.on {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  figcaption {
+    margin-top: 14px;
+    font-size: 13.5px;
+    color: var(--ink-2);
+    max-width: 66ch;
+  }
+
+  /* ---------- coupling diagram ---------- */
+
+  .couple {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .couple > div {
+    padding: 15px 17px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+  }
+
+  .couple h3 {
+    margin: 0 0 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 400;
+  }
+
+  .couple p { margin: 0; font-size: 14px; }
+
+  .arrow {
+    font-family: var(--mono);
+    color: var(--accent);
+    padding: 0 2px;
+  }
+
+  /* ---------- anatomy strip ---------- */
+
+  .anatomy {
+    display: flex;
+    align-items: stretch;
+    height: 92px;
+    margin: 0 0 16px;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .anatomy .band {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    line-height: 1.4;
+    color: var(--ink-3);
+    padding: 0 6px;
+  }
+
+  .anatomy .body { flex: 1 1 auto; background: var(--surface-2); }
+  .anatomy .reach { flex: 0 0 74px; background: var(--accent-soft); color: var(--accent); }
+  .anatomy .gutter {
+    flex: 0 0 92px;
+    background: var(--accent);
+    color: var(--ground);
+    font-weight: 700;
+  }
+  .anatomy .edge { flex: 0 0 3px; background: var(--ink-3); }
+
+  /* ---------- tables ---------- */
+
+  .scroll { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 9px 14px 9px 0;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+  }
+
+  thead th {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 400;
+    border-bottom-color: var(--rule);
+    white-space: nowrap;
+  }
+
+  td.num, th.num {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .pass {
+    color: var(--good);
+    font-family: var(--mono);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .files td:first-child {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    white-space: nowrap;
+  }
+
+  /* ---------- code ---------- */
+
+  pre {
+    margin: 0 0 16px;
+    padding: 16px 18px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.65;
+  }
+
+  pre code {
+    background: none;
+    border: 0;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  .cm { color: var(--ink-3); }
+  .kw { color: var(--accent); }
+
+  /* ---------- note ---------- */
+
+  .note {
+    padding: 15px 18px;
+    border-left: 2px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 0 8px 8px 0;
+  }
+
+  .note p { max-width: none; }
+
+  footer {
+    margin-top: 60px;
+    padding-top: 18px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+  }
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <p class="kicker">Eisenhower Matrix · 렌더러 변경</p>
+    <h1>사분면 크기 조절을 <em>엣지 드래그</em>로</h1>
+    <p class="lede">
+      별도의 조절 바를 전부 없애고, 2×2 CSS Grid의 공유 트랙 비율을
+      각 사분면의 경계에서 직접 끌어 바꾸도록 다시 만들었습니다.
+    </p>
+    <dl class="facts">
+      <div>
+        <dt>제거된 엘리먼트</dt>
+        <dd>splitter ×3, col ×2</dd>
+      </div>
+      <div>
+        <dt>레이아웃 상태</dt>
+        <dd>비율 2개</dd>
+      </div>
+      <div>
+        <dt>변경 파일</dt>
+        <dd>5</dd>
+      </div>
+      <div>
+        <dt>그랩 영역</dt>
+        <dd>18px</dd>
+      </div>
+    </dl>
+  </header>
+
+  <section>
+    <div class="label">
+      <h2>직접 해보기</h2>
+      <span>실제 로직을 그대로 옮긴 데모</span>
+    </div>
+
+    <figure class="demo">
+      <div class="demo-shell">
+        <div class="mx" id="mx">
+          <div class="qd q1" data-q="q1">
+            <span class="qd-tag"><i></i>Q1 · DO</span>
+            <span class="qd-name">Urgent &amp; Important</span>
+            <span class="qd-size" data-size="q1"></span>
+          </div>
+          <div class="qd q2" data-q="q2">
+            <span class="qd-tag"><i></i>Q2 · PLAN</span>
+            <span class="qd-name">Important &amp; Not Urgent</span>
+            <span class="qd-size" data-size="q2"></span>
+          </div>
+          <div class="qd q3" data-q="q3">
+            <span class="qd-tag"><i></i>Q3 · DELEGATE</span>
+            <span class="qd-name">Urgent &amp; Not Important</span>
+            <span class="qd-size" data-size="q3"></span>
+          </div>
+          <div class="qd q4" data-q="q4">
+            <span class="qd-tag"><i></i>Q4 · DELETE</span>
+            <span class="qd-name">Not Urgent &amp; Not Important</span>
+            <span class="qd-size" data-size="q4"></span>
+          </div>
+        </div>
+
+        <div class="readout">
+          <span>cols <b id="rCols">0.500</b></span>
+          <span>rows <b id="rRows">0.500</b></span>
+          <span id="rHint">경계 위로 커서를 옮겨 보세요</span>
+          <span class="state" id="rState">idle</span>
+        </div>
+      </div>
+
+      <figcaption>
+        사분면 경계에 커서를 올리면 모양이 바뀌고, 그대로 끌면 크기가 바뀝니다.
+        가운데 교차점은 가로·세로 동시 조절, 더블클릭은 반반으로 초기화입니다.
+        실제 앱과 동일한 판정·클램프 로직이며 최소 크기만 데모 크기에 맞게 줄였습니다.
+      </figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="label">
+      <h2>왜 한 칸만 커지지 않는가</h2>
+      <span>트랙을 4분면이 공유한다</span>
+    </div>
+
+    <p class="muted">
+      네 칸이 각자 크기를 갖는 대신, 가로 비율 하나와 세로 비율 하나가 격자 전체를 정의합니다.
+      그래서 한 칸을 늘리면 반대편이 정확히 그만큼 줄고, 같은 행·열의 칸도 함께 따라옵니다.
+    </p>
+
+    <div class="couple">
+      <div>
+        <h3>세로 경계 · cols</h3>
+        <p>
+          Q1 너비 <span class="arrow">↑</span> Q2 너비 <span class="arrow">↓</span><br />
+          같은 열인 Q3·Q4도 함께 움직입니다.
+        </p>
+      </div>
+      <div>
+        <h3>가로 경계 · rows</h3>
+        <p>
+          Q1 높이 <span class="arrow">↑</span> Q3·Q4 높이 <span class="arrow">↓</span><br />
+          같은 행인 Q2도 함께 움직입니다.
+        </p>
+      </div>
+      <div>
+        <h3>교차점</h3>
+        <p>
+          두 비율을 한 번에 조절합니다.<br />
+          커서는 <code>nwse-resize</code>.
+        </p>
+      </div>
+    </div>
+
+    <div class="scroll">
+      <pre><code><span class="cm">// 비율 두 개가 곧 격자 전체 — 아래 두 줄이 레이아웃의 전부입니다.</span>
+grid.style.gridTemplateColumns = track(layout.cols, MIN_COL_PX);
+grid.style.gridTemplateRows    = track(layout.rows, MIN_ROW_PX);
+
+<span class="cm">// minmax()의 px 하한이, 창이 작아져 드래그 클램프를 넘어설 때 칸을 지켜줍니다.</span>
+<span class="kw">const</span> track = (ratio, minPx) =>
+  `minmax(${minPx}px, ${(ratio * 100).toFixed(3)}fr) ` +
+  `minmax(${minPx}px, ${((1 - ratio) * 100).toFixed(3)}fr)`;</code></pre>
+    </div>
+  </section>
+
+  <section>
+    <div class="label">
+      <h2>그랩 영역</h2>
+      <span>엘리먼트 없이 좌표로 판정</span>
+    </div>
+
+    <p class="muted">
+      잡을 대상이 되는 엘리먼트가 없으므로, 포인터와 경계선 중심 사이의 거리로 판정합니다.
+      간격 10px에 사분면 안쪽으로 4px씩 더해 총 18px — 항목 목록은 테두리와 패딩 때문에
+      7px 안쪽에서 시작하므로, 그랩 영역이 항목을 침범하지 않습니다.
+    </p>
+
+    <div class="anatomy" aria-hidden="true">
+      <div class="band body">사분면 내용<br />커서 auto</div>
+      <div class="band edge"></div>
+      <div class="band reach">안쪽 4px<br />reach</div>
+      <div class="band gutter">간격 10px<br />gutter</div>
+      <div class="band reach">안쪽 4px<br />reach</div>
+      <div class="band edge"></div>
+      <div class="band body">사분면 내용<br />커서 auto</div>
+    </div>
+
+    <div class="scroll">
+      <pre><code><span class="cm">/** 이 점이 어느 경계 위인지: "col" · "row" · "both" · null */</span>
+<span class="kw">function</span> edgeAt(x, y) {
+  <span class="kw">const</span> m = metrics();                  <span class="cm">// 모서리 두 칸의 rect에서 직접 계산</span>
+  <span class="kw">const</span> col = Math.abs(x - m.x) &lt;= HIT;  <span class="cm">// HIT = 10/2 + 4 = 9</span>
+  <span class="kw">const</span> row = Math.abs(y - m.y) &lt;= HIT;
+  <span class="kw">if</span> (col &amp;&amp; row) <span class="kw">return</span> "both";
+  <span class="kw">return</span> col ? "col" : row ? "row" : <span class="kw">null</span>;
+}</code></pre>
+    </div>
+
+    <p class="muted">
+      커서는 상속되는 속성이라 격자에 한 번만 지정하면 사분면 경계까지 자연히 덮입니다.
+      드래그 중에는 포인터 캡처로 창 밖까지 따라가고, <code>lostpointercapture</code>가
+      어떤 방식으로 끝나든 리스너를 정리합니다.
+    </p>
+  </section>
+
+  <section>
+    <div class="label">
+      <h2>검증</h2>
+      <span>오프스크린 창에서 포인터 이벤트 합성</span>
+    </div>
+
+    <p class="muted">
+      GUI가 이 셸에서 뜨지 않아, Electron 오프스크린 창에 실제 페이지를 띄우고
+      포인터 이벤트를 만들어 넣은 뒤 실제 렌더링된 좌표를 측정했습니다.
+    </p>
+
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>동작</th>
+            <th>기대</th>
+            <th class="num">측정값</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>세로 경계 +120px</td>
+            <td>Q1·Q3 늘고 Q2·Q4 그만큼 줆</td>
+            <td class="num">483 → 603 / 483 → 363</td>
+            <td class="pass">통과</td>
+          </tr>
+          <tr>
+            <td>Q1 아래 엣지에서 +80px</td>
+            <td>Q1·Q2 늘고 Q3·Q4 줆</td>
+            <td class="num">291 → 371 / 291 → 211</td>
+            <td class="pass">통과</td>
+          </tr>
+          <tr>
+            <td>교차점 드래그</td>
+            <td>가로·세로 동시 변경</td>
+            <td class="num">423×241 · 543×341</td>
+            <td class="pass">통과</td>
+          </tr>
+          <tr>
+            <td>한계 초과 드래그 <span class="muted">(최소 창)</span></td>
+            <td>px 하한에서 멈춤</td>
+            <td class="num">180px · 110px 정확히</td>
+            <td class="pass">통과</td>
+          </tr>
+          <tr>
+            <td>문서 오버플로</td>
+            <td>가로 스크롤 없음</td>
+            <td class="num">760×520 = 뷰포트</td>
+            <td class="pass">통과</td>
+          </tr>
+          <tr>
+            <td>교차점 더블클릭</td>
+            <td>균등 복귀</td>
+            <td class="num">483×291 ×4</td>
+            <td class="pass">통과</td>
+          </tr>
+          <tr>
+            <td>사분면 내부 · 입력창 위</td>
+            <td>리사이즈로 오검출되지 않음</td>
+            <td class="num">cursor: auto</td>
+            <td class="pass">통과</td>
+          </tr>
+          <tr>
+            <td>구 저장값 마이그레이션</td>
+            <td>좌·우 행 비율을 평균</td>
+            <td class="num">{.62, .4, .6} → {.62, .5}</td>
+            <td class="pass">통과</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="label">
+      <h2>도중에 발견해 고친 것</h2>
+      <span>기존 코드에도 있던 결함</span>
+    </div>
+
+    <div class="note">
+      <p>
+        저장값에 <code>null</code>이 들어오면 <code>Number(null) === 0</code> 때문에
+        비율이 0으로 읽히고, 클램프를 거쳐 <b>0.15</b>로 굳어졌습니다.
+        기본값 0.5로 돌아가야 하는 자리입니다.
+      </p>
+      <p style="margin-bottom: 0">
+        실제 숫자만 받도록 렌더러와 <code>main.js</code>의 IPC 핸들러 양쪽을 고쳤습니다.
+        마이그레이션 검증 중에 <code>rows: null</code> 케이스가 0.15로 나오면서 드러난 문제입니다.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="label">
+      <h2>변경 파일</h2>
+      <span>5개</span>
+    </div>
+
+    <div class="scroll">
+      <table class="files">
+        <tbody>
+          <tr>
+            <td>src/renderer/index.html</td>
+            <td>열 래퍼와 splitter 제거, 사분면 4개를 격자에 직접 배치</td>
+          </tr>
+          <tr>
+            <td>src/renderer/styles.css</td>
+            <td>flex 2열 → 2×2 grid, 엣지 커서·강조 규칙, splitter 스타일 삭제</td>
+          </tr>
+          <tr>
+            <td>src/renderer/renderer.js</td>
+            <td><code>wireSplitters</code> → <code>wireQuadEdges</code>, 좌표 판정·클램프·마이그레이션</td>
+          </tr>
+          <tr>
+            <td>src/main.js</td>
+            <td>기본 레이아웃 <code>{cols, rows}</code>, IPC 검증 강화</td>
+          </tr>
+          <tr>
+            <td>README.md</td>
+            <td>「분면 크기 조절」 항목 추가</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="label">
+      <h2>남겨둔 것</h2>
+      <span>맞바꾼 부분</span>
+    </div>
+    <p class="muted">
+      이전 스플리터에는 Tab으로 포커스한 뒤 화살표 키로 조절하는 경로가 있었습니다.
+      포커스 가능한 엘리먼트가 사라지면서 함께 없어졌습니다 —
+      「조절 바를 따로 만들지 말라」는 요구와 맞바꾼 부분이라 그대로 두었고,
+      필요하면 단축키 형태로 다시 넣을 수 있습니다.
+    </p>
+  </section>
+
+  <footer>빌드 완료 · 기존 항목 13개 유지 · 데이터 백업 보관</footer>
+</div>
+
+<script>
+  (function () {
+    var GUTTER = 10;
+    var HIT = GUTTER / 2 + 4;
+    var MIN_COL = 100;
+    var MIN_ROW = 70;
+    var QUADS = ["q1", "q2", "q3", "q4"];
+
+    var mx = document.getElementById("mx");
+    var rCols = document.getElementById("rCols");
+    var rRows = document.getElementById("rRows");
+    var rHint = document.getElementById("rHint");
+    var rState = document.getElementById("rState");
+
+    var layout = { cols: 0.5, rows: 0.5 };
+    var dragging = null;
+
+    function track(ratio, minPx) {
+      return (
+        "minmax(" + minPx + "px, " + (ratio * 100).toFixed(3) + "fr) " +
+        "minmax(" + minPx + "px, " + ((1 - ratio) * 100).toFixed(3) + "fr)"
+      );
+    }
+
+    function apply() {
+      mx.style.gridTemplateColumns = track(layout.cols, MIN_COL);
+      mx.style.gridTemplateRows = track(layout.rows, MIN_ROW);
+      rCols.textContent = layout.cols.toFixed(3);
+      rRows.textContent = layout.rows.toFixed(3);
+      QUADS.forEach(function (q) {
+        var r = mx.querySelector('[data-q="' + q + '"]').getBoundingClientRect();
+        mx.querySelector('[data-size="' + q + '"]').textContent =
+          Math.round(r.width) + " × " + Math.round(r.height);
+      });
+    }
+
+    function clampAxis(value, span, minPx) {
+      if (!isFinite(value)) return 0.5;
+      var low = span > 0 ? Math.min(minPx / span, 0.5) : 0.15;
+      low = Math.max(0.15, low);
+      return Math.min(1 - low, Math.max(low, value));
+    }
+
+    function metrics() {
+      var a = mx.querySelector('[data-q="q1"]').getBoundingClientRect();
+      var d = mx.querySelector('[data-q="q4"]').getBoundingClientRect();
+      return {
+        left: a.left, top: a.top,
+        width: d.right - a.left, height: d.bottom - a.top,
+        x: (a.right + d.left) / 2, y: (a.bottom + d.top) / 2
+      };
+    }
+
+    function edgeAt(x, y) {
+      var m = metrics();
+      if (m.width <= 0 || m.height <= 0) return null;
+      if (x < m.left || x > m.left + m.width) return null;
+      if (y < m.top || y > m.top + m.height) return null;
+      var col = Math.abs(x - m.x) <= HIT;
+      var row = Math.abs(y - m.y) <= HIT;
+      if (col && row) return "both";
+      if (col) return "col";
+      if (row) return "row";
+      return null;
+    }
+
+    var HINTS = {
+      col: "세로 경계 — 좌우 너비",
+      row: "가로 경계 — 상하 높이",
+      both: "교차점 — 가로·세로 동시"
+    };
+
+    function mark(mode) {
+      mx.classList.toggle("edge-col", mode === "col");
+      mx.classList.toggle("edge-row", mode === "row");
+      mx.classList.toggle("edge-both", mode === "both");
+      var col = mode === "col" || mode === "both";
+      var row = mode === "row" || mode === "both";
+      QUADS.forEach(function (q) {
+        var el = mx.querySelector('[data-q="' + q + '"]');
+        el.classList.toggle("edge-r", col && (q === "q1" || q === "q3"));
+        el.classList.toggle("edge-l", col && (q === "q2" || q === "q4"));
+        el.classList.toggle("edge-b", row && (q === "q1" || q === "q2"));
+      });
+      rHint.textContent = mode
+        ? HINTS[mode]
+        : "경계 위로 커서를 옮겨 보세요";
+      rState.textContent = dragging ? "dragging" : mode ? "on edge" : "idle";
+      rState.classList.toggle("on", !!mode);
+    }
+
+    function ratiosAt(ev) {
+      var m = metrics();
+      if (dragging !== "row") {
+        var sw = m.width - GUTTER;
+        if (sw > 0) {
+          layout.cols = clampAxis(
+            (ev.clientX - m.left - GUTTER / 2) / sw, sw, MIN_COL
+          );
+        }
+      }
+      if (dragging !== "col") {
+        var sh = m.height - GUTTER;
+        if (sh > 0) {
+          layout.rows = clampAxis(
+            (ev.clientY - m.top - GUTTER / 2) / sh, sh, MIN_ROW
+          );
+        }
+      }
+    }
+
+    mx.addEventListener("pointermove", function (e) {
+      if (!dragging) mark(edgeAt(e.clientX, e.clientY));
+    });
+
+    mx.addEventListener("pointerleave", function () {
+      if (!dragging) mark(null);
+    });
+
+    mx.addEventListener("pointerdown", function (e) {
+      if (e.button !== 0 || !e.isPrimary) return;
+      var mode = edgeAt(e.clientX, e.clientY);
+      if (!mode) return;
+      e.preventDefault();
+      dragging = mode;
+      mark(mode);
+      mx.setPointerCapture(e.pointerId);
+
+      function onMove(ev) {
+        ratiosAt(ev);
+        apply();
+      }
+      function onUp(ev) {
+        dragging = null;
+        mark(ev ? edgeAt(ev.clientX, ev.clientY) : null);
+        mx.removeEventListener("pointermove", onMove);
+        mx.removeEventListener("pointerup", onUp);
+        mx.removeEventListener("pointercancel", onUp);
+        mx.removeEventListener("lostpointercapture", onUp);
+      }
+
+      mx.addEventListener("pointermove", onMove);
+      mx.addEventListener("pointerup", onUp);
+      mx.addEventListener("pointercancel", onUp);
+      mx.addEventListener("lostpointercapture", onUp);
+    });
+
+    mx.addEventListener("dblclick", function (e) {
+      var mode = edgeAt(e.clientX, e.clientY);
+      if (!mode) return;
+      if (mode !== "row") layout.cols = 0.5;
+      if (mode !== "col") layout.rows = 0.5;
+      apply();
+    });
+
+    window.addEventListener("resize", apply);
+    apply();
+  })();
+</script>
