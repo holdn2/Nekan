@@ -47,6 +47,13 @@ test/             node --test 용 단위 테스트 (shared/ 만 커버)
   저장돼버리면 다음 실행 때 440×48로 열린다.
 - 분면 비율 `layout.cols/rows`는 0.15~0.85로 클램프된다. 상수와 클램프 함수는
   `shared/core.js` 한 곳에만 있고 main·renderer가 그걸 부른다.
+- **메모 패널은 매트릭스에서 높이를 뺏지 않고 창을 키운다.** 렌더러가 CSS `--memo-h`를 읽어
+  `win:memo`로 넘기면 main.js가 그만큼 창을 늘리고, 실제로 늘어난 값(`memoDelta` — 화면에
+  여유가 없으면 요청보다 작다)을 저장하는 `bounds`에서 다시 빼준다(`boundsWithoutMemo`). 이걸
+  건너뛰면 재시작할 때마다 창이 패널 높이만큼 계속 자란다. 패널 높이를 바꿀 곳은 `styles.css`
+  하나뿐이다.
+- 항목 **클릭은 메모, 더블클릭은 텍스트 수정**이라 클릭 핸들러가 `CLICK_DELAY`만큼 기다렸다
+  동작한다. 이 지연을 없애면 더블클릭이 선택을 두 번 토글해서 창이 커졌다 작아진다.
 - 그리드 간격(`GUTTER`)은 CSS `--gutter`를 `getComputedStyle`로 읽어온다. 값을 바꿀 곳은
   `styles.css` 하나뿐이다.
 - **마감일 표시는 "오늘" 기준이라 시간이 지나면 틀려진다.** renderer.js의
