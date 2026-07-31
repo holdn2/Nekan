@@ -249,8 +249,11 @@ ipcMain.handle('settings:layout', (_e, layout) => {
   const base = defaultStore().settings.layout;
   const next = { ...base };
   Object.keys(base).forEach((key) => {
-    const value = Number(layout?.[key]);
-    if (Number.isFinite(value)) next[key] = Math.min(0.85, Math.max(0.15, value));
+    const value = layout?.[key];
+    // Only real numbers — Number(null) is 0, which would read as a valid ratio.
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      next[key] = Math.min(0.85, Math.max(0.15, value));
+    }
   });
   store.settings.layout = next;
   persist();

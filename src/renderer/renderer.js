@@ -594,17 +594,20 @@ function clampAxis(value, span, minPx) {
   return Math.min(1 - low, Math.max(low, value));
 }
 
+/** Ratios are always real numbers in the store; null/"" must not read as 0. */
+const ratio = (v) => (typeof v === "number" && Number.isFinite(v) ? v : NaN);
+
 /** Keep only sane numbers; anything else falls back to an even split. */
 function sanitizeLayout(saved) {
   const next = { ...DEFAULT_LAYOUT };
-  const cols = Number(saved?.cols);
+  const cols = ratio(saved?.cols);
   if (Number.isFinite(cols)) next.cols = clampRatio(cols);
 
   // Saves from the two-splitter layout gave each column its own row split;
   // the grid has a single shared one, so average them.
-  const rows = Number.isFinite(Number(saved?.rows))
-    ? Number(saved.rows)
-    : (Number(saved?.left) + Number(saved?.right)) / 2;
+  const rows = Number.isFinite(ratio(saved?.rows))
+    ? ratio(saved.rows)
+    : (ratio(saved?.left) + ratio(saved?.right)) / 2;
   if (Number.isFinite(rows)) next.rows = clampRatio(rows);
   return next;
 }
