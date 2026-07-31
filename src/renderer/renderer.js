@@ -431,13 +431,23 @@ function renderArchive({
     time.textContent = timeLabel(stamp(task));
 
     li.append(numEl(index), dot, text);
-    if (task.memo) li.append(memoMark(task.memo));
     const due = dueBadge(task.dueDate);
     if (due) li.append(due);
     li.append(time);
     actions(task).forEach((btn) => li.append(btn));
+    // Wraps onto its own line under the row, so it never squeezes the buttons.
+    if (task.memo) li.append(memoLine(task.memo));
     list.append(li);
     index += 1;
+  });
+
+  // Measured after insertion: only a memo that is actually cut off gets the
+  // pointer and the expand hint.
+  $$(".hmemo", list).forEach((box) => {
+    const text = $(".hmemo-text", box);
+    const clamped = text.scrollHeight > text.clientHeight + 1;
+    box.classList.toggle("clamped", clamped);
+    if (clamped) box.title = "전체 보기";
   });
 
   empty.classList.toggle("hidden", items.length > 0);
@@ -531,6 +541,35 @@ function memoMark(memo) {
   el.setAttribute("aria-label", "메모 있음");
   el.append(noteIcon());
   return el;
+}
+
+/**
+ * Read-only memo block for history / trash rows. These tabs deliberately have
+ * no edit path — the panel that edits a memo only ever opens on the matrix —
+ * so this is display only: no dblclick, no contentEditable, no save.
+ * Long memos are clamped to two lines and expand on click.
+ */
+function memoLine(memo) {
+  const box = document.createElement("div");
+  box.className = "hmemo";
+
+  const icon = document.createElement("span");
+  icon.className = "memo-mark";
+  icon.setAttribute("aria-hidden", "true");
+  icon.append(noteIcon());
+
+  const text = document.createElement("p");
+  text.className = "hmemo-text";
+  text.textContent = memo;
+
+  box.append(icon, text);
+  box.addEventListener("click", () => {
+    // Let a click that was really a text selection stand.
+    if (window.getSelection()?.toString()) return;
+    if (!box.classList.contains("clamped")) return;
+    box.title = box.classList.toggle("open") ? "접기" : "전체 보기";
+  });
+  return box;
 }
 
 /** Panel height comes from CSS so main.js and the stylesheet cannot drift. */
