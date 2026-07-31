@@ -6,13 +6,14 @@
   "author": "makersfarm",
   "license": "MIT",
   "scripts": {
+    "test": "node --test",
     "start": "electron .",
     "dist": "electron-builder --win portable",
     "dist:installer": "electron-builder --win nsis"
   },
   "devDependencies": {
-    "electron": "^33.2.0",
-    "electron-builder": "^25.1.8"
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3"
   },
   "build": {
     "appId": "com.makersfarm.eisenhower",

@@ -1,4 +1,5 @@
-const QUADS = ["q1", "q2", "q3", "q4"];
+// QUADS, the date helpers, clampText, normalizeTasks and the layout ratios all
+// come from shared/core.js, loaded as a plain script just before this one.
 
 let tasks = [];
 let mode = "expanded";
@@ -17,54 +18,32 @@ function save() {
   window.api.save(tasks);
 }
 
-/* ------------------------------------------------------------------ dates */
+/* --------------------------------------------------------- day rollover */
 
-const DAY_MS = 86400000;
-const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
+/**
+ * Every due-date label is relative to *today*, but this widget is meant to sit
+ * on screen for days. Without a rollover, an item added yesterday keeps its
+ * orange "오늘" chip until some unrelated click happens to re-render.
+ */
+let dayTimer = null;
+let renderedDay = startOfToday().getTime();
 
-function startOfToday() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
+function refreshIfDayChanged() {
+  const today = startOfToday().getTime();
+  if (today === renderedDay) return;
+  renderedDay = today;
+  render();
 }
 
-/** 'YYYY-MM-DD' → Date at local midnight, or null when unset/invalid. */
-function parseDue(value) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return null;
-  const [y, m, d] = value.split("-").map(Number);
-  const date = new Date(y, m - 1, d);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-/** Label + urgency state for a due date, relative to today. */
-function dueInfo(value) {
-  const date = parseDue(value);
-  if (!date) return null;
-  const days = Math.round((date - startOfToday()) / DAY_MS);
-
-  let text = `${date.getMonth() + 1}/${date.getDate()}(${WEEKDAY[date.getDay()]})`;
-  if (date.getFullYear() !== new Date().getFullYear()) {
-    text = `${String(date.getFullYear()).slice(2)}/${text}`;
-  }
-
-  let state = "far";
-  let hint;
-  if (days < 0) {
-    state = "overdue";
-    hint = `${-days}일 지남`;
-  } else if (days === 0) {
-    state = "today";
-    hint = "오늘";
-  } else if (days === 1) {
-    state = "soon";
-    hint = "내일";
-  } else if (days <= 3) {
-    state = "soon";
-    hint = `${days}일 남음`;
-  } else {
-    hint = `${days}일 남음`;
-  }
-  return { text, state, hint };
+function scheduleDayRollover() {
+  clearTimeout(dayTimer);
+  // +1s of slack so a timer that fires a hair early doesn't re-render the
+  // day that is still ending and then wait another 24h.
+  const wait = startOfTomorrow().getTime() - Date.now() + 1000;
+  dayTimer = setTimeout(() => {
+    refreshIfDayChanged();
+    scheduleDayRollover();
+  }, Math.max(1000, wait));
 }
 
 function calendarIcon() {
@@ -102,6 +81,7 @@ function dueChip(value, onChange) {
 
   const input = document.createElement("input");
   input.type = "date";
+  input.setAttribute("aria-label", "마감일");
 
   const face = document.createElement("span");
   face.className = "face";
@@ -112,6 +92,7 @@ function dueChip(value, onChange) {
   clear.className = "due-clear";
   clear.textContent = "×";
   clear.title = "날짜 지우기";
+  clear.setAttribute("aria-label", "마감일 지우기");
 
   box.append(chip, clear);
   box.draggable = false;
@@ -166,7 +147,7 @@ function dueBadge(value) {
 /* ------------------------------------------------------------------ data */
 
 function addTask(quadrant, text, dueDate) {
-  const trimmed = text.trim();
+  const trimmed = clampText(text);
   if (!trimmed) return;
   tasks.push({
     id: uid(),
@@ -232,7 +213,9 @@ function purgeTask(id) {
 function editTask(id, text) {
   const task = tasks.find((t) => t.id === id);
   if (!task) return;
-  const trimmed = text.trim();
+  // Inline editing is contentEditable, so the add form's maxlength does not
+  // apply — a pasted wall of text would be stored as-is.
+  const trimmed = clampText(text);
   if (!trimmed) {
     deleteTask(id);
     return;
@@ -281,6 +264,8 @@ function itemEl(task, index) {
   const check = document.createElement("button");
   check.className = "check";
   check.title = "완료 (히스토리로 이동)";
+  // Icon-only buttons: without this a screen reader announces "button".
+  check.setAttribute("aria-label", `완료: ${task.text}`);
   check.addEventListener("click", () => {
     li.classList.add("removing");
     setTimeout(() => completeTask(task.id), 160);
@@ -298,6 +283,7 @@ function itemEl(task, index) {
   del.className = "del";
   del.textContent = "×";
   del.title = "삭제 (휴지통으로 이동)";
+  del.setAttribute("aria-label", `삭제: ${task.text}`);
   del.addEventListener("click", () => {
     li.classList.add("removing");
     setTimeout(() => deleteTask(task.id), 160);
@@ -564,10 +550,11 @@ function wireDragAndDrop() {
  * q1 means narrower q2, and taller q1 means shorter q3 *and* q4 — which is
  * what makes it read as one matrix instead of four independent boxes.
  */
-const DEFAULT_LAYOUT = { cols: 0.5, rows: 0.5 };
-
-/** Must match --gutter in styles.css. */
-const GUTTER = 10;
+/** Read from CSS instead of duplicating it — the grid gap is the source. */
+const GUTTER =
+  Number.parseFloat(
+    getComputedStyle(document.documentElement).getPropertyValue("--gutter"),
+  ) || 10;
 /** How far past the gutter the grab zone reaches into each quadrant. */
 const EDGE_REACH = 4;
 const HIT = GUTTER / 2 + EDGE_REACH;
@@ -575,13 +562,9 @@ const HIT = GUTTER / 2 + EDGE_REACH;
 /** Smallest a quadrant may be dragged to, where the window can afford it. */
 const MIN_COL_PX = 180;
 const MIN_ROW_PX = 110;
-const MIN_RATIO = 0.15;
-const MAX_RATIO = 0.85;
 
 let layout = { ...DEFAULT_LAYOUT };
 let layoutTimer = null;
-
-const clampRatio = (v) => Math.min(MAX_RATIO, Math.max(MIN_RATIO, v));
 
 /**
  * Clamp to a pixel minimum while the window is big enough to honour it, and
@@ -592,24 +575,6 @@ function clampAxis(value, span, minPx) {
   const floor = span > 0 ? Math.min(minPx / span, 0.5) : MIN_RATIO;
   const low = Math.max(MIN_RATIO, floor);
   return Math.min(1 - low, Math.max(low, value));
-}
-
-/** Ratios are always real numbers in the store; null/"" must not read as 0. */
-const ratio = (v) => (typeof v === "number" && Number.isFinite(v) ? v : NaN);
-
-/** Keep only sane numbers; anything else falls back to an even split. */
-function sanitizeLayout(saved) {
-  const next = { ...DEFAULT_LAYOUT };
-  const cols = ratio(saved?.cols);
-  if (Number.isFinite(cols)) next.cols = clampRatio(cols);
-
-  // Saves from the two-splitter layout gave each column its own row split;
-  // the grid has a single shared one, so average them.
-  const rows = Number.isFinite(ratio(saved?.rows))
-    ? ratio(saved.rows)
-    : (ratio(saved?.left) + ratio(saved?.right)) / 2;
-  if (Number.isFinite(rows)) next.rows = clampRatio(rows);
-  return next;
 }
 
 /**
@@ -760,22 +725,38 @@ function wireQuadEdges() {
 
 /* ------------------------------------------------------------------ theme */
 
+/** Title and accessible name always move together on the icon-only buttons. */
+function labelBtn(sel, label) {
+  const btn = $(sel);
+  btn.title = label;
+  btn.setAttribute("aria-label", label);
+}
+
 function applyTheme(next, persist = true) {
   theme = next === "dark" ? "dark" : "light";
   document.documentElement.dataset.theme = theme;
-  $("#themeBtn").title =
-    theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환";
+  labelBtn(
+    "#themeBtn",
+    theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환",
+  );
   if (persist) window.api.setTheme(theme);
 }
 
+function applyPinned(on) {
+  $("#pinBtn").classList.toggle("on", on);
+  labelBtn("#pinBtn", on ? "항상 위 고정 해제" : "항상 위에 고정");
+}
+
 /* -------------------------------------------------------- window controls */
+
+/** Last mode pushed by the main process, which outranks the load snapshot. */
+let pushedMode = null;
 
 function applyMode(next) {
   mode = next;
   document.body.classList.toggle("collapsed", mode === "collapsed");
   document.body.classList.toggle("expanded", mode === "expanded");
-  const btn = $("#sizeBtn");
-  btn.title = mode === "collapsed" ? "펼치기" : "바 모드로 축소";
+  labelBtn("#sizeBtn", mode === "collapsed" ? "펼치기" : "바 모드로 축소");
   render();
 }
 
@@ -861,9 +842,7 @@ function wireUI() {
   $("#closeBtn").addEventListener("click", () => window.api.close());
 
   $("#pinBtn").addEventListener("click", async () => {
-    const on = await window.api.togglePin();
-    $("#pinBtn").classList.toggle("on", on);
-    $("#pinBtn").title = on ? "항상 위 고정 해제" : "항상 위에 고정";
+    applyPinned(await window.api.togglePin());
   });
 
   $("#barSummary").addEventListener("click", (e) => {
@@ -897,32 +876,35 @@ function wireUI() {
     }
   });
 
-  window.api.onMode(applyMode);
-}
-
-/** Older saves predate dueDate / deletedAt. */
-function normalize(list) {
-  return list.map((t) => ({
-    dueDate: null,
-    deletedAt: null,
-    completedAt: null,
-    ...t,
-  }));
+  // Waking from sleep or coming back to the window can also cross midnight,
+  // and either may happen while the rollover timer is still pending.
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshIfDayChanged();
+  });
+  window.addEventListener("focus", refreshIfDayChanged);
 }
 
 async function init() {
+  // Registered before the first await: the main process sends 'win:mode' from
+  // ready-to-show, and a listener attached later would miss it silently.
+  window.api.onMode((next) => {
+    pushedMode = next;
+    applyMode(next);
+  });
+
   const state = await window.api.load();
-  tasks = normalize(state.tasks || []);
+  tasks = normalizeTasks(state.tasks);
   applyTheme(state.settings?.theme || "light", false);
-  const pinned = state.settings?.alwaysOnTop !== false;
-  $("#pinBtn").classList.toggle("on", pinned);
-  $("#pinBtn").title = pinned ? "항상 위 고정 해제" : "항상 위에 고정";
+  applyPinned(state.settings?.alwaysOnTop !== false);
   layout = sanitizeLayout(state.settings?.layout);
   applyLayout();
   wireUI();
   wireDragAndDrop();
   wireQuadEdges();
-  applyMode(state.mode || "expanded");
+  // state.mode is a snapshot from before ready-to-show, so a mode that was
+  // pushed in the meantime is the newer truth.
+  applyMode(pushedMode || state.mode || "expanded");
+  scheduleDayRollover();
 }
 
 init();

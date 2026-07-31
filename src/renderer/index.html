@@ -17,22 +17,27 @@
       </div>
 
       <div class="bar-summary" id="barSummary">
-        <button class="chip" data-jump="q1">
+        <button class="chip" data-jump="q1" aria-label="Urgent &amp; Important 남은 개수">
           <i class="dot q1"></i><b id="c1">0</b>
         </button>
-        <button class="chip" data-jump="q2">
+        <button class="chip" data-jump="q2" aria-label="Important &amp; Not Urgent 남은 개수">
           <i class="dot q2"></i><b id="c2">0</b>
         </button>
-        <button class="chip" data-jump="q3">
+        <button class="chip" data-jump="q3" aria-label="Urgent &amp; Not Important 남은 개수">
           <i class="dot q3"></i><b id="c3">0</b>
         </button>
-        <button class="chip" data-jump="q4">
+        <button class="chip" data-jump="q4" aria-label="Not Urgent &amp; Not Important 남은 개수">
           <i class="dot q4"></i><b id="c4">0</b>
         </button>
       </div>
 
       <div class="win-actions">
-        <button class="win-btn" id="themeBtn" title="다크 모드로 전환">
+        <button
+          class="win-btn"
+          id="themeBtn"
+          title="다크 모드로 전환"
+          aria-label="다크 모드로 전환"
+        >
           <svg
             class="icon-sun"
             viewBox="0 0 16 16"
@@ -68,7 +73,12 @@
             />
           </svg>
         </button>
-        <button class="win-btn" id="pinBtn" title="항상 위에 고정">
+        <button
+          class="win-btn"
+          id="pinBtn"
+          title="항상 위에 고정"
+          aria-label="항상 위에 고정"
+        >
           <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
             <path
               d="M6 1h4l-.6 4.2 2.4 2.3v1.2H8.7V15L8 15.8 7.3 15V8.7H2.2V7.5l2.4-2.3z"
@@ -76,7 +86,12 @@
             />
           </svg>
         </button>
-        <button class="win-btn" id="sizeBtn" title="바 모드로 축소">
+        <button
+          class="win-btn"
+          id="sizeBtn"
+          title="바 모드로 축소"
+          aria-label="바 모드로 축소"
+        >
           <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
             <rect
               x="2"
@@ -91,12 +106,22 @@
             <path d="M2 6h12" stroke="currentColor" stroke-width="1.4" />
           </svg>
         </button>
-        <button class="win-btn" id="minBtn" title="작업표시줄로 최소화">
+        <button
+          class="win-btn"
+          id="minBtn"
+          title="작업표시줄로 최소화"
+          aria-label="작업표시줄로 최소화"
+        >
           <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
             <path d="M3 8h10" stroke="currentColor" stroke-width="1.4" />
           </svg>
         </button>
-        <button class="win-btn danger" id="closeBtn" title="완전히 닫기">
+        <button
+          class="win-btn danger"
+          id="closeBtn"
+          title="완전히 닫기"
+          aria-label="완전히 닫기"
+        >
           <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
             <path
               d="M4 4l8 8M12 4l-8 8"
@@ -356,6 +381,9 @@
       </div>
     </section>
 
+    <!-- Shared with the main process and the tests; defines the globals
+         renderer.js relies on, so it has to come first. -->
+    <script src="../shared/core.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>

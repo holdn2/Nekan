@@ -1,6 +1,8 @@
 const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const path = require('path');
-const fs = require('fs');
+
+const { sanitizeLayout } = require('./shared/core');
+const { loadStore, writeStore } = require('./shared/store-io');
 
 // Keep the data folder identical between `npm start` and the packaged build.
 app.setName('EisenhowerMatrix');
@@ -17,72 +19,22 @@ function storePath() {
   return path.join(app.getPath('userData'), 'data.json');
 }
 
-function defaultStore() {
-  return {
-    tasks: [],
-    settings: {
-      alwaysOnTop: true,
-      bounds: null,
-      mode: 'expanded',
-      theme: 'light',
-      // Quadrant grid ratios: q1/q3's share of the width, q1/q2's of the height.
-      layout: { cols: 0.5, rows: 0.5 },
-    },
-  };
+function legacyStorePath() {
+  return path.join(app.getPath('appData'), 'eisenhower-matrix', 'data.json');
 }
 
-/** Data written before the app name was pinned lived in a lower-cased folder. */
-function migrateLegacyStore() {
-  const legacy = path.join(app.getPath('appData'), 'eisenhower-matrix', 'data.json');
-  try {
-    if (!fs.existsSync(storePath()) && fs.existsSync(legacy)) {
-      fs.mkdirSync(path.dirname(storePath()), { recursive: true });
-      fs.copyFileSync(legacy, storePath());
-    }
-  } catch (err) {
-    console.error('legacy store migration failed', err);
-  }
-}
-
-function loadStore() {
-  migrateLegacyStore();
-  try {
-    const raw = fs.readFileSync(storePath(), 'utf8');
-    const parsed = JSON.parse(raw);
-    const base = defaultStore();
-    return {
-      tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
-      settings: { ...base.settings, ...(parsed.settings || {}) },
-    };
-  } catch {
-    return defaultStore();
-  }
-}
-
-/**
- * Write through a temp file + rename so an interrupted write can never leave
- * a truncated data.json behind (that would silently wipe every task).
- */
-function writeStore() {
-  const target = storePath();
-  const tmp = `${target}.tmp`;
-  try {
-    fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.writeFileSync(tmp, JSON.stringify(store, null, 2), 'utf8');
-    fs.renameSync(tmp, target);
-  } catch (err) {
-    console.error('failed to save store', err);
-  }
+function save() {
+  writeStore(storePath(), store);
 }
 
 function persist() {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(writeStore, 200);
+  saveTimer = setTimeout(save, 200);
 }
 
 function persistNow() {
   clearTimeout(saveTimer);
-  writeStore();
+  save();
 }
 
 /** Keep the window inside a visible display, in case a monitor went away. */
@@ -187,7 +139,7 @@ if (!gotLock) {
   });
 
   app.whenReady().then(() => {
-    store = loadStore();
+    store = loadStore(storePath(), legacyStorePath());
     createWindow();
 
     app.on('activate', () => {
@@ -246,15 +198,9 @@ ipcMain.handle('settings:theme', (_e, theme) => {
 });
 
 ipcMain.handle('settings:layout', (_e, layout) => {
-  const base = defaultStore().settings.layout;
-  const next = { ...base };
-  Object.keys(base).forEach((key) => {
-    const value = layout?.[key];
-    // Only real numbers — Number(null) is 0, which would read as a valid ratio.
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      next[key] = Math.min(0.85, Math.max(0.15, value));
-    }
-  });
+  // Same clamp as the renderer's — both sides call the shared helper so the
+  // bounds cannot drift apart.
+  const next = sanitizeLayout(layout);
   store.settings.layout = next;
   persist();
   return next;

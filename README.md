@@ -10,6 +10,7 @@ Claude 계열의 밝은 베이지 테마 + 다크 테마를 지원합니다.
 ```powershell
 npm install   # 최초 1회
 npm start
+npm test      # 저장·정규화·날짜 로직 단위 테스트 (선택)
 ```
 
 **포터블 exe 빌드**
@@ -59,6 +60,7 @@ npm run dist:installer  # NSIS 설치 파일이 필요할 때
 - 입력창 옆의 **달력 버튼**으로 추가할 때 바로 마감일을 지정할 수 있습니다.
 - 이미 있는 항목은 오른쪽 **날짜 칩을 클릭**하면 달력이 열리고, 옆의 `×` 로 날짜를 지웁니다.
 - 남은 기간에 따라 색이 바뀝니다: **지남**(빨강) / **오늘**(주황) / **3일 이내**(노랑) / 그 이후(회색)
+- 앱을 며칠 켜둬도 **자정이 지나면 색과 남은 일수가 알아서 갱신**됩니다.
 - 히스토리·휴지통 목록에서도 마감일이 함께 보입니다.
 
 ### 히스토리 탭
@@ -120,8 +122,12 @@ src/
   main.js              # 메인 프로세스: 창 모드 전환, 저장, IPC
   preload.js           # contextBridge 기반 IPC 브리지
   assets/icon.*        # 런타임에서 쓰는 아이콘 사본
+  shared/
+    core.js            # 날짜·정규화·레이아웃 비율 (메인·렌더러·테스트 공용)
+    store-io.js        # data.json 읽기/쓰기 (temp write + rename)
   renderer/
     index.html
     styles.css         # 라이트/다크 팔레트 (data-theme)
     renderer.js        # 상태 관리, 렌더링, 드래그앤드롭, 테마
+test/                  # node --test 단위 테스트
 ```
