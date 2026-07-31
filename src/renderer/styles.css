@@ -1,0 +1,1036 @@
+:root,
+:root[data-theme="light"] {
+  --bg: #f0eee6;
+  --panel: #faf9f5;
+  --panel-2: #f2f0e8;
+  --panel-3: #eae7dc;
+  --line: #e2ded1;
+  --line-strong: #d3cebe;
+  --text: #1f1e1c;
+  --muted: #6f6b61;
+  --faint: #a29d90;
+  --input-bg: #ffffff;
+  --accent: #d97757;
+  --accent-soft: #d9775722;
+  --danger: #b4453c;
+  --danger-soft: #b4453c1a;
+  --shadow: 0 1px 2px #0000000a;
+  --scroll: #cdc7b7;
+  --scroll-hover: #b8b1a0;
+  --q1: #c85a4d;
+  --q2: #4a72b8;
+  --q3: #c1892c;
+  --q4: #8d887d;
+  --radius: 10px;
+  /* Space between quadrants; the drag hit zone is this plus a few px each side. */
+  --gutter: 10px;
+}
+
+:root[data-theme="dark"] {
+  --bg: #1f1e1d;
+  --panel: #262624;
+  --panel-2: #302f2c;
+  --panel-3: #3a3936;
+  --line: #383734;
+  --line-strong: #4a4844;
+  --text: #f2f0ea;
+  --muted: #a7a299;
+  --faint: #78736b;
+  --input-bg: #1a1917;
+  --accent: #e08765;
+  --accent-soft: #e0876526;
+  --danger: #e0796f;
+  --danger-soft: #e0796f22;
+  --shadow: 0 1px 2px #00000038;
+  --scroll: #4a4844;
+  --scroll-hover: #5c5a55;
+  --q1: #e0736a;
+  --q2: #6f96d8;
+  --q3: #d7a24a;
+  --q4: #9d978c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Malgun Gothic", "Segoe UI", system-ui, sans-serif;
+  font-size: 13px;
+  overflow: hidden;
+  user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* ---------- title bar ---------- */
+.titlebar {
+  -webkit-app-region: drag;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 6px 0 12px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.logo {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  -webkit-user-drag: none;
+}
+
+.title {
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar-summary {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--muted);
+}
+
+.chip:hover {
+  border-color: var(--line-strong);
+  background: var(--panel-3);
+  color: var(--text);
+}
+
+.chip b {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.dot.q1 {
+  background: var(--q1);
+}
+.dot.q2 {
+  background: var(--q2);
+}
+.dot.q3 {
+  background: var(--q3);
+}
+.dot.q4 {
+  background: var(--q4);
+}
+
+.win-actions {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 6px;
+}
+
+.win-btn {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.win-btn:hover {
+  background: var(--panel-3);
+  color: var(--text);
+}
+
+.win-btn.danger:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.win-btn.on {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+#themeBtn .icon-moon,
+:root[data-theme="dark"] #themeBtn .icon-sun {
+  display: none;
+}
+
+:root[data-theme="dark"] #themeBtn .icon-moon {
+  display: block;
+}
+
+/* ---------- tabs ---------- */
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px 0;
+  flex: 0 0 auto;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px 8px 0 0;
+  background: transparent;
+  color: var(--muted);
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab.active {
+  background: var(--panel);
+  border-color: var(--line);
+  border-bottom-color: var(--panel);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.badge {
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--panel-3);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabs-right {
+  margin-left: auto;
+}
+
+.hint {
+  color: var(--faint);
+  font-size: 11px;
+}
+
+/* ---------- views ---------- */
+.view {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 8px 12px 12px;
+}
+
+.view.hidden {
+  display: none !important;
+}
+
+/* A 2×2 grid whose two track ratios are set from JS. The gutters are wide
+   enough to grab, and the hit zone reaches a few px into each quadrant so the
+   edges themselves are the handle — there is no separate splitter element. */
+.matrix {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: var(--gutter);
+  min-width: 0;
+  touch-action: none;
+}
+
+/* Cursor is inherited, so setting it on the grid covers the quadrant edges
+   too — the padding areas a drag actually starts on. */
+.matrix.edge-col {
+  cursor: col-resize;
+}
+
+.matrix.edge-row {
+  cursor: row-resize;
+}
+
+.matrix.edge-both {
+  cursor: nwse-resize;
+}
+
+/* While dragging, keep the whole window on the resize cursor. */
+body.resizing-col,
+body.resizing-col * {
+  cursor: col-resize !important;
+}
+
+body.resizing-row,
+body.resizing-row * {
+  cursor: row-resize !important;
+}
+
+body.resizing-both,
+body.resizing-both * {
+  cursor: nwse-resize !important;
+}
+
+body.resizing-col,
+body.resizing-row,
+body.resizing-both {
+  user-select: none;
+}
+
+.quad {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: border-color 0.12s ease;
+}
+
+/* The edges being dragged light up on both quadrants that share them.
+   (No top-edge rule: q3/q4 keep their coloured accent bar there.) */
+.quad.edge-r {
+  border-right-color: var(--accent);
+}
+.quad.edge-l {
+  border-left-color: var(--accent);
+}
+.quad.edge-b {
+  border-bottom-color: var(--accent);
+}
+
+.quad.drop {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.quad > header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.quad h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.quad .sub {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.quad .count {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--panel-3);
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.quad.q1 {
+  border-top: 2px solid var(--q1);
+}
+.quad.q2 {
+  border-top: 2px solid var(--q2);
+}
+.quad.q3 {
+  border-top: 2px solid var(--q3);
+}
+.quad.q4 {
+  border-top: 2px solid var(--q4);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.list:empty::after {
+  content: "비어 있음";
+  display: block;
+  padding: 14px 8px;
+  color: var(--faint);
+  font-size: 11px;
+  text-align: center;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  cursor: grab;
+}
+
+.item:hover {
+  background: var(--panel-2);
+}
+
+.item.dragging {
+  opacity: 0.4;
+}
+
+.item.removing {
+  opacity: 0;
+  transform: translateX(14px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.num {
+  flex: 0 0 auto;
+  min-width: 15px;
+  text-align: right;
+  color: var(--faint);
+  font-size: 11px;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.check {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  border: 1.6px solid var(--line-strong);
+  border-radius: 50%;
+  background: transparent;
+  padding: 0;
+}
+
+.check:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.item .text {
+  flex: 1 1 auto;
+  line-height: 1.45;
+  word-break: break-word;
+  white-space: pre-wrap;
+  user-select: text;
+}
+
+.item .text[contenteditable="true"] {
+  outline: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 0 3px;
+  background: var(--input-bg);
+}
+
+.del {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--faint);
+  line-height: 1;
+  opacity: 0;
+}
+
+.item:hover .del {
+  opacity: 1;
+}
+
+.del:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* ---------- due date chip ---------- */
+.duebox {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.due {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  min-width: 24px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--faint);
+  font-size: 11px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The native input sits invisibly on top so a click anywhere opens the picker. */
+.due input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Only the picker indicator remains, stretched to fill the chip, so a click
+   anywhere on it opens the native calendar instead of focusing a text field. */
+.due input::-webkit-datetime-edit,
+.due input::-webkit-inner-spin-button,
+.due input::-webkit-clear-button {
+  display: none;
+}
+
+.due input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.duebox:not(.set) .due {
+  opacity: 0;
+}
+
+.item:hover .duebox:not(.set) .due,
+.duebox:not(.set) .due:focus-within {
+  opacity: 1;
+}
+
+.due:hover {
+  border-color: var(--line-strong);
+  background: var(--panel-3);
+  color: var(--text);
+}
+
+.duebox.set .due {
+  border-color: var(--line);
+  background: var(--panel-2);
+  color: var(--muted);
+}
+
+.duebox.set.soon .due {
+  border-color: var(--q3);
+  color: var(--q3);
+}
+
+.duebox.set.today .due {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.duebox.set.overdue .due {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.duebox.static .due {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.due-clear {
+  width: 15px;
+  height: 15px;
+  margin-left: 1px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--faint);
+  font-size: 12px;
+  line-height: 1;
+  opacity: 0;
+}
+
+.duebox:not(.set) .due-clear,
+.duebox.static .due-clear {
+  display: none;
+}
+
+.item:hover .duebox.set .due-clear,
+.duebox.set:hover .due-clear,
+.add .duebox.set .due-clear {
+  opacity: 0.7;
+}
+
+.due-clear:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+  opacity: 1;
+}
+
+.add {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.add .due {
+  height: 30px;
+  min-width: 30px;
+  border-radius: 7px;
+  border-color: var(--line-strong);
+  background: var(--panel-2);
+  opacity: 1;
+}
+
+.add .duebox:not(.set) .due {
+  opacity: 1;
+}
+
+.add .due:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.add input[type="text"],
+.history-bar input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--input-bg);
+  color: var(--text);
+  font: inherit;
+  outline: none;
+  user-select: text;
+}
+
+.add input[type="text"]::placeholder,
+.history-bar input::placeholder {
+  color: var(--faint);
+}
+
+.add input[type="text"]:focus,
+.history-bar input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.add button {
+  width: 32px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.add button:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* ---------- history ---------- */
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-bar {
+  display: flex;
+  gap: 8px;
+}
+
+.ghost {
+  padding: 7px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--muted);
+}
+
+.ghost:hover {
+  color: var(--text);
+  background: var(--panel-2);
+}
+
+.ghost.danger:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.history-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+}
+
+.day {
+  padding: 10px 8px 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.hitem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.hitem:hover {
+  background: var(--panel-2);
+}
+
+.hitem .num {
+  line-height: 1;
+  margin-right: -4px;
+}
+
+.hitem .text {
+  flex: 1 1 auto;
+  color: var(--muted);
+  text-decoration: line-through;
+  word-break: break-word;
+  user-select: text;
+}
+
+.hitem .time {
+  color: var(--faint);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hitem .act {
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  padding: 3px 8px;
+  font-size: 11px;
+  opacity: 0;
+}
+
+.hitem:hover .act {
+  opacity: 1;
+}
+
+.hitem .act:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.hitem .act.danger:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+/* ---------- guide ---------- */
+.guide {
+  display: flex;
+  flex-direction: column;
+}
+
+.guide-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.guide-doc {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 26px 30px 40px;
+  line-height: 1.65;
+  user-select: text;
+}
+
+.guide-doc h1 {
+  margin: 0 0 10px;
+  font-size: 20px;
+  letter-spacing: -0.2px;
+}
+
+.guide-doc h2 {
+  margin: 30px 0 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  letter-spacing: 0.2px;
+}
+
+.guide-doc p {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+
+.guide-doc .lead {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.guide-doc em {
+  color: var(--text);
+  font-style: normal;
+  font-weight: 600;
+}
+
+.guide-doc b {
+  color: var(--text);
+}
+
+.guide-doc blockquote {
+  margin: 18px 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.guide-doc cite {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.guide-axes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.axis {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.axis h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.axis p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.guide-doc .note {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--panel-2);
+  font-size: 12px;
+}
+
+.guide-quads {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.guide-quad {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.guide-quad.q1 {
+  border-top: 2px solid var(--q1);
+}
+.guide-quad.q2 {
+  border-top: 2px solid var(--q2);
+}
+.guide-quad.q3 {
+  border-top: 2px solid var(--q3);
+}
+.guide-quad.q4 {
+  border-top: 2px solid var(--q4);
+}
+
+.guide-quad > header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.guide-quad h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.guide-quad .tag {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.guide-quad p {
+  margin: 0 0 6px;
+  font-size: 12px;
+}
+
+.guide-quad .ex {
+  color: var(--faint);
+}
+
+.guide-quad .tip {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.guide-steps,
+.guide-points {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--muted);
+}
+
+.guide-steps li,
+.guide-points li {
+  margin-bottom: 7px;
+}
+
+.guide-points.app {
+  padding: 12px 14px 12px 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  font-size: 12px;
+}
+
+.empty {
+  margin: 0;
+  padding: 28px 12px;
+  text-align: center;
+  color: var(--faint);
+}
+
+.empty.hidden {
+  display: none;
+}
+
+/* ---------- collapsed (bar) mode ---------- */
+body.collapsed .tabs,
+body.collapsed .view {
+  display: none !important;
+}
+
+body.collapsed .titlebar {
+  height: 100%;
+  border-bottom: 0;
+}
+
+body.expanded .bar-summary .chip {
+  cursor: default;
+}
+
+/* ---------- scrollbars ---------- */
+::-webkit-scrollbar {
+  width: 9px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scroll);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-hover);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
