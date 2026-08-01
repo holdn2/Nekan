@@ -265,6 +265,15 @@ ipcMain.handle('settings:layout', (_e, layout) => {
   return next;
 });
 
+// Unlike the memo panel, the inbox takes its height from the matrix instead of
+// growing the window, so there is nothing to resize here — only the fold state
+// to remember.
+ipcMain.handle('settings:inbox', (_e, open) => {
+  store.settings.inboxOpen = !!open;
+  persist();
+  return store.settings.inboxOpen;
+});
+
 ipcMain.handle('win:memo', (_e, open, height) => setMemoPanel(!!open, height));
 
 ipcMain.handle('win:togglePin', () => {

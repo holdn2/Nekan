@@ -16,6 +16,9 @@ function defaultStore() {
       bounds: null,
       mode: 'expanded',
       theme: 'light',
+      // Whether the "다 꺼내기" list above the matrix is unfolded. Collapsed by
+      // default so the matrix keeps its full height until it is wanted.
+      inboxOpen: false,
       // Quadrant grid ratios: q1/q3's share of the width, q1/q2's of the height.
       layout: { ...DEFAULT_LAYOUT },
     },

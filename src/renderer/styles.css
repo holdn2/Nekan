@@ -28,6 +28,11 @@
      hands it to main.js, which grows the window by exactly this much — so the
      value lives here and nowhere else. */
   --memo-h: 172px;
+  /* How tall the "다 꺼내기" list may grow before it starts scrolling. It sizes
+     to its content below this, so a short list costs the matrix almost nothing.
+     The vh term keeps the matrix the larger half on a short window, where the
+     px cap alone would leave the quadrants unusable. */
+  --inbox-max-h: 170px;
 }
 
 :root[data-theme="dark"] {
@@ -261,6 +266,121 @@ button {
 .hint {
   color: var(--faint);
   font-size: 11px;
+}
+
+/* ---------- inbox ("다 꺼내기") ---------- */
+/* Sits between the tabs and the matrix as its own flex row. flex-basis auto
+   with no grow means it is exactly as tall as its content, so the matrix keeps
+   everything the inbox does not use. */
+.inbox {
+  flex: 0 0 auto;
+  margin: 8px 12px 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: border-color 0.12s ease;
+}
+
+.inbox.hidden {
+  display: none !important;
+}
+
+.inbox.drop {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.inbox-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px 0 0;
+}
+
+.inbox-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 0;
+  background: transparent;
+  font-weight: 600;
+}
+
+.inbox-toggle:hover {
+  color: var(--accent);
+}
+
+/* Points right when folded, down when open — the only moving part of the
+   header, so it carries the whole open/closed signal. */
+.chev {
+  flex: 0 0 auto;
+  color: var(--faint);
+  transition: transform 0.15s ease;
+}
+
+.inbox.open .chev {
+  transform: rotate(90deg);
+}
+
+.inbox-toggle:hover .chev {
+  color: var(--accent);
+}
+
+.inbox-hint {
+  color: var(--faint);
+  font-size: 11px;
+  margin-left: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inbox-body {
+  display: none;
+  border-top: 1px solid var(--line);
+}
+
+.inbox.open .inbox-body {
+  display: block;
+}
+
+.inbox-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  max-height: min(var(--inbox-max-h), 26vh);
+  overflow-y: auto;
+}
+
+.inbox-list:empty::after {
+  content: "떠오르는 대로 적어두면 분류하지 않은 채로 여기 쌓입니다";
+  display: block;
+  padding: 10px 8px;
+  color: var(--faint);
+  font-size: 11px;
+  text-align: center;
+}
+
+/* No due chip, no check, no memo mark — the inbox is for getting it out of your
+   head, and the rest of the fields appear once it lands in a quadrant. */
+.inbox-item .text {
+  flex: 1 1 auto;
+  line-height: 1.45;
+  word-break: break-word;
+  white-space: pre-wrap;
+  user-select: text;
+}
+
+.dot.inbox {
+  background: transparent;
+  border: 1.5px solid var(--faint);
+}
+
+.chip.hidden {
+  display: none !important;
 }
 
 /* ---------- views ---------- */
@@ -1260,6 +1380,7 @@ body.resizing-both {
 /* ---------- collapsed (bar) mode ---------- */
 body.collapsed .tabs,
 body.collapsed .view,
+body.collapsed .inbox,
 body.collapsed .memo {
   display: none !important;
 }

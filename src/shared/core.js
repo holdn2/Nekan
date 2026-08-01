@@ -10,6 +10,15 @@
  */
 
 const QUADS = ['q1', 'q2', 'q3', 'q4'];
+/**
+ * The staging list above the matrix, where a task waits before it is classified.
+ * It is a fifth value for `quadrant`, not a fifth quadrant: QUADS still drives
+ * every 2×2 grid loop (renderMatrix, markEdge, the counts), so the inbox has to
+ * be rendered on its own and cannot be folded into those.
+ */
+const INBOX = 'inbox';
+/** Every place a task may legally sit. */
+const PLACES = [INBOX, ...QUADS];
 /** Where a task with an unknown quadrant lands. */
 const FALLBACK_QUAD = 'q4';
 
@@ -105,11 +114,28 @@ function clampMemo(memo) {
 }
 
 /**
+ * A brain dump usually arrives as a block of text rather than one line at a
+ * time, so every line of a paste becomes its own task. List markers people
+ * paste along with it ("- ", "* ", "1. ") are stripped, blank lines drop out,
+ * and the batch is capped so a stray paste of a whole document cannot flood
+ * the store.
+ */
+const MAX_BULK_LINES = 100;
+
+function splitBulkText(raw) {
+  return String(raw == null ? '' : raw)
+    .split(/\r?\n/)
+    .map((line) => clampText(line.replace(/^\s*(?:[-*•·]|\d{1,3}[.)])\s+/, '')))
+    .filter(Boolean)
+    .slice(0, MAX_BULK_LINES);
+}
+
+/**
  * Fill in fields older saves predate, and repair the two fields whose bad
- * values are invisible: renderMatrix() only walks QUADS, so an unknown
- * `quadrant` would keep the task in the file while it disappears from every
- * list, and a non-string `memo` would render as "[object Object]".
- * Never drops entries — that is purgeTask()'s job alone.
+ * values are invisible: the matrix only walks QUADS and the inbox only reads
+ * INBOX, so an unrecognised `quadrant` would keep the task in the file while it
+ * disappears from every list, and a non-string `memo` would render as
+ * "[object Object]". Never drops entries — that is purgeTask()'s job alone.
  */
 function normalizeTasks(list) {
   if (!Array.isArray(list)) return [];
@@ -118,7 +144,7 @@ function normalizeTasks(list) {
     deletedAt: null,
     completedAt: null,
     ...t,
-    quadrant: QUADS.includes(t?.quadrant) ? t.quadrant : FALLBACK_QUAD,
+    quadrant: PLACES.includes(t?.quadrant) ? t.quadrant : FALLBACK_QUAD,
     memo: typeof t?.memo === 'string' ? clampMemo(t.memo) : null,
   }));
 }
@@ -152,9 +178,12 @@ function sanitizeLayout(saved) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     QUADS,
+    INBOX,
+    PLACES,
     FALLBACK_QUAD,
     MAX_TEXT,
     MAX_MEMO,
+    MAX_BULK_LINES,
     DAY_MS,
     WEEKDAY,
     startOfToday,
@@ -163,6 +192,7 @@ if (typeof module !== 'undefined' && module.exports) {
     dueInfo,
     clampText,
     clampMemo,
+    splitBulkText,
     normalizeTasks,
     DEFAULT_LAYOUT,
     MIN_RATIO,

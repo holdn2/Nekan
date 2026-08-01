@@ -146,19 +146,35 @@ function dueBadge(value) {
 
 /* ------------------------------------------------------------------ data */
 
-function addTask(quadrant, text, dueDate) {
-  const trimmed = clampText(text);
-  if (!trimmed) return;
-  tasks.push({
+function makeTask(quadrant, text, dueDate) {
+  return {
     id: uid(),
-    text: trimmed,
+    text,
     quadrant,
     dueDate: dueDate || null,
     memo: null,
     createdAt: Date.now(),
     completedAt: null,
     deletedAt: null,
-  });
+  };
+}
+
+function addTask(quadrant, text, dueDate) {
+  const trimmed = clampText(text);
+  if (!trimmed) return;
+  tasks.push(makeTask(quadrant, trimmed, dueDate));
+  save();
+  render();
+}
+
+/**
+ * Bulk add for a pasted brain dump. One save and one render for the whole
+ * batch — going through addTask per line would rebuild the DOM for every line
+ * of the paste.
+ */
+function addTasks(quadrant, texts) {
+  if (!texts.length) return;
+  texts.forEach((text) => tasks.push(makeTask(quadrant, text, null)));
   save();
   render();
 }
@@ -240,6 +256,8 @@ function moveTask(id, quadrant, beforeId) {
 
 const activeOf = (q) =>
   tasks.filter((t) => !t.deletedAt && !t.completedAt && t.quadrant === q);
+/** Written down but not classified yet — same filter, fifth place. */
+const inboxTasks = () => activeOf(INBOX);
 const doneTasks = () =>
   tasks
     .filter((t) => !t.deletedAt && t.completedAt)
@@ -358,15 +376,59 @@ function renderMatrix() {
   });
 }
 
+/**
+ * An inbox row deliberately carries less than a quadrant row: no due chip, no
+ * check, no memo. Sorting out *what* a task is comes after getting it out of
+ * your head, and those controls only start to mean something once it has a
+ * quadrant. The text still edits on double-click, and × still soft-deletes.
+ */
+function inboxItemEl(task, index) {
+  const li = document.createElement("li");
+  li.className = "item inbox-item";
+  li.dataset.id = task.id;
+  li.draggable = true;
+
+  const text = document.createElement("span");
+  text.className = "text";
+  text.textContent = task.text;
+  text.title = "더블클릭하여 수정 · 분면으로 끌어다 놓아 분류";
+  text.addEventListener("dblclick", () => startEdit(li, text, task));
+
+  const del = document.createElement("button");
+  del.className = "del";
+  del.textContent = "×";
+  del.title = "삭제 (휴지통으로 이동)";
+  del.setAttribute("aria-label", `삭제: ${task.text}`);
+  del.addEventListener("click", () => {
+    li.classList.add("removing");
+    setTimeout(() => deleteTask(task.id), 160);
+  });
+
+  li.append(numEl(index), text, del);
+  return li;
+}
+
+function renderInbox() {
+  const items = inboxTasks();
+  $("#inboxList").replaceChildren(...items.map((t, i) => inboxItemEl(t, i)));
+  $("#inboxCount").textContent = String(items.length);
+}
+
 function renderCounts() {
   QUADS.forEach((q, i) => {
     $(`#c${i + 1}`).textContent = String(activeOf(q).length);
   });
+  // The bar chip stays out of the way until there is something unclassified, so
+  // seeing it at all is the signal.
+  const waiting = inboxTasks().length;
+  $("#cInbox").textContent = String(waiting);
+  $("#inboxChip").classList.toggle("hidden", waiting === 0);
   $("#doneCount").textContent = String(doneTasks().length);
   $("#trashCount").textContent = String(trashedTasks().length);
 }
 
 const QUAD_LABEL = {
+  inbox: "미분류",
   q1: "Urgent·Important",
   q2: "Important",
   q3: "Urgent",
@@ -586,11 +648,16 @@ const memoPanelHeight = () =>
     getComputedStyle(document.documentElement).getPropertyValue("--memo-h"),
   ) || 0;
 
-/** The selected task, or null once it has left the matrix. */
+/**
+ * The selected task, or null once it has left the matrix. Being dragged up to
+ * the inbox counts as leaving: those rows have no memo, so the panel closes
+ * itself rather than pointing at something the list no longer shows.
+ */
 function selectedTask() {
   if (!selectedId) return null;
   const task = tasks.find((t) => t.id === selectedId);
-  return task && !task.completedAt && !task.deletedAt ? task : null;
+  if (!task || task.completedAt || task.deletedAt) return null;
+  return task.quadrant === INBOX ? null : task;
 }
 
 /** Only the open/closed transition resizes; swapping tasks keeps the height. */
@@ -729,8 +796,10 @@ function render() {
   }
   renderCounts();
   if (mode === "collapsed") return;
-  if (activeTab === "matrix") renderMatrix();
-  else if (activeTab === "history") renderHistory();
+  if (activeTab === "matrix") {
+    renderInbox();
+    renderMatrix();
+  } else if (activeTab === "history") renderHistory();
   else if (activeTab === "trash") renderTrash();
   // the guide tab is static markup — nothing to render
   renderMemo();
@@ -746,11 +815,72 @@ function setTab(tab) {
   $$(".tab").forEach((btn) =>
     btn.classList.toggle("active", btn.dataset.tab === tab),
   );
+  // The inbox belongs to the matrix, so it travels with it rather than sitting
+  // above the history or trash lists.
+  $("#inboxPanel").classList.toggle("hidden", tab !== "matrix");
   $("#matrixView").classList.toggle("hidden", tab !== "matrix");
   $("#historyView").classList.toggle("hidden", tab !== "history");
   $("#trashView").classList.toggle("hidden", tab !== "trash");
   $("#guideView").classList.toggle("hidden", tab !== "guide");
   render();
+}
+
+/* ------------------------------------------------------------------ inbox */
+
+/**
+ * "다 꺼내기" — write everything down first, sort it into quadrants after.
+ *
+ * Folded by default, and unlike the memo panel it does *not* grow the window:
+ * it takes its height from the matrix. That is why the list is capped in CSS
+ * (`--inbox-max-h`) and scrolls past it — an unbounded staging list would push
+ * the quadrants off the bottom of a small window.
+ */
+let inboxOpen = false;
+
+function applyInboxOpen(open, persist = true) {
+  inboxOpen = Boolean(open);
+  $("#inboxPanel").classList.toggle("open", inboxOpen);
+  $("#inboxToggle").setAttribute("aria-expanded", String(inboxOpen));
+  if (persist) window.api.setInboxOpen(inboxOpen);
+}
+
+function focusInbox() {
+  applyInboxOpen(true);
+  $("#inboxInput").focus();
+}
+
+function wireInbox() {
+  const input = $("#inboxInput");
+
+  $("#inboxToggle").addEventListener("click", () => {
+    applyInboxOpen(!inboxOpen);
+    if (inboxOpen) input.focus();
+  });
+
+  $("#inboxAdd").addEventListener("submit", (e) => {
+    e.preventDefault();
+    addTask(INBOX, input.value, null);
+    input.value = "";
+    input.focus();
+  });
+
+  // Most brain dumps are already written down somewhere else. Pasting a block
+  // of lines should give one item per line, not a single item with newlines
+  // flattened into it.
+  input.addEventListener("paste", (e) => {
+    const raw = e.clipboardData?.getData("text") ?? "";
+    if (!raw.includes("\n")) return;
+    e.preventDefault();
+    // Splice the paste into whatever is already typed before cutting on
+    // newlines, so a half-finished line in the box becomes the first item
+    // instead of being silently dropped.
+    const merged =
+      input.value.slice(0, input.selectionStart) +
+      raw +
+      input.value.slice(input.selectionEnd);
+    addTasks(INBOX, splitBulkText(merged));
+    input.value = "";
+  });
 }
 
 /* ------------------------------------------------------------ drag & drop */
@@ -762,6 +892,9 @@ function afterElement(list, y) {
     return y < box.top + box.height / 2;
   });
 }
+
+/** Every place a task can be dropped: the four quadrants plus the inbox. */
+const dropZones = () => [...$$(".quad"), $("#inboxPanel")];
 
 function wireDragAndDrop() {
   let draggingId = null;
@@ -777,31 +910,35 @@ function wireDragAndDrop() {
 
   document.addEventListener("dragend", (e) => {
     e.target.closest?.(".item")?.classList.remove("dragging");
-    $$(".quad").forEach((q) => q.classList.remove("drop"));
+    dropZones().forEach((z) => z.classList.remove("drop"));
     draggingId = null;
   });
 
-  $$(".quad").forEach((quad) => {
-    const list = $(".list", quad);
+  dropZones().forEach((zone) => {
+    // The inbox zone is the whole section, header included, so a task can be
+    // sent back up while the list is folded. afterElement then measures hidden
+    // rows as zero-height and finds no insertion point, which lands the task at
+    // the end — the right answer for a drop on a collapsed header.
+    const list = $(".list, .inbox-list", zone);
 
-    quad.addEventListener("dragover", (e) => {
+    zone.addEventListener("dragover", (e) => {
       if (!draggingId) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
-      quad.classList.add("drop");
+      zone.classList.add("drop");
     });
 
-    quad.addEventListener("dragleave", (e) => {
-      if (!quad.contains(e.relatedTarget)) quad.classList.remove("drop");
+    zone.addEventListener("dragleave", (e) => {
+      if (!zone.contains(e.relatedTarget)) zone.classList.remove("drop");
     });
 
-    quad.addEventListener("drop", (e) => {
+    zone.addEventListener("drop", (e) => {
       e.preventDefault();
-      quad.classList.remove("drop");
+      zone.classList.remove("drop");
       const id = draggingId || e.dataTransfer.getData("text/plain");
       if (!id) return;
       const before = afterElement(list, e.clientY);
-      moveTask(id, quad.dataset.quad, before ? before.dataset.id : null);
+      moveTask(id, zone.dataset.quad, before ? before.dataset.id : null);
     });
   });
 }
@@ -1120,6 +1257,10 @@ function wireUI() {
     if (!chip || mode !== "collapsed") return;
     window.api.expand();
     setTab("matrix");
+    // The inbox chip is only there when something is waiting in it, so clicking
+    // it means "show me those" — unfold on the way out of bar mode. No focus
+    // here: the window is still resizing and would swallow it.
+    if (chip.dataset.jump === "inbox") applyInboxOpen(true);
   });
 
   $(".titlebar").addEventListener("dblclick", (e) => {
@@ -1138,6 +1279,14 @@ function wireUI() {
       applyTheme(theme === "dark" ? "light" : "dark");
       return;
     }
+    // Ctrl+0 continues the Ctrl+1~4 run: 0 is the "not sorted yet" slot.
+    if (e.ctrlKey && e.key === "0") {
+      e.preventDefault();
+      if (mode === "collapsed") return;
+      setTab("matrix");
+      focusInbox();
+      return;
+    }
     if (e.ctrlKey && ["1", "2", "3", "4"].includes(e.key)) {
       e.preventDefault();
       if (mode === "collapsed") return;
@@ -1146,6 +1295,7 @@ function wireUI() {
     }
   });
 
+  wireInbox();
   wireMemo();
 
   // Waking from sleep or coming back to the window can also cross midnight,
@@ -1168,6 +1318,7 @@ async function init() {
   tasks = normalizeTasks(state.tasks);
   applyTheme(state.settings?.theme || "light", false);
   applyPinned(state.settings?.alwaysOnTop !== false);
+  applyInboxOpen(state.settings?.inboxOpen === true, false);
   layout = sanitizeLayout(state.settings?.layout);
   applyLayout();
   wireUI();

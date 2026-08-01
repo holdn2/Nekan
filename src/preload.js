@@ -11,5 +11,6 @@ contextBridge.exposeInMainWorld('api', {
   setTheme: (theme) => ipcRenderer.invoke('settings:theme', theme),
   setLayout: (layout) => ipcRenderer.invoke('settings:layout', layout),
   setMemoPanel: (open, height) => ipcRenderer.invoke('win:memo', open, height),
+  setInboxOpen: (open) => ipcRenderer.invoke('settings:inbox', open),
   onMode: (cb) => ipcRenderer.on('win:mode', (_e, mode) => cb(mode)),
 });
