@@ -1,0 +1,248 @@
+/**
+ * The 2x2 grid, the quadrants and the task rows in them. The track ratios are
+ * set from JS; the gutters here are what the edge drag measures against.
+ */
+
+/* ---------- views ---------- */
+.view {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 8px 12px 12px;
+}
+
+.view.hidden {
+  display: none !important;
+}
+
+/* A 2×2 grid whose two track ratios are set from JS. The gutters are wide
+   enough to grab, and the hit zone reaches a few px into each quadrant so the
+   edges themselves are the handle — there is no separate splitter element. */
+.matrix {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: var(--gutter);
+  min-width: 0;
+}
+
+/* The horizontal grab zone lands on these, never on .list — so they can opt
+   out of touch panning without costing the lists their scroll. */
+.quad > header,
+.quad .add {
+  touch-action: none;
+}
+
+/* Cursor is inherited, so setting it on the grid covers the quadrant edges
+   too — the padding areas a drag actually starts on. */
+.matrix.edge-col {
+  cursor: col-resize;
+}
+
+.matrix.edge-row {
+  cursor: row-resize;
+}
+
+.matrix.edge-both {
+  cursor: nwse-resize;
+}
+
+/* While dragging, keep the whole window on the resize cursor. */
+body.resizing-col,
+body.resizing-col * {
+  cursor: col-resize !important;
+}
+
+body.resizing-row,
+body.resizing-row * {
+  cursor: row-resize !important;
+}
+
+body.resizing-both,
+body.resizing-both * {
+  cursor: nwse-resize !important;
+}
+
+body.resizing-col,
+body.resizing-row,
+body.resizing-both {
+  user-select: none;
+}
+
+.quad {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: border-color 0.12s ease;
+}
+
+/* The edges being dragged light up on both quadrants that share them.
+   (No top-edge rule: q3/q4 keep their coloured accent bar there.) */
+.quad.edge-r {
+  border-right-color: var(--accent);
+}
+.quad.edge-l {
+  border-left-color: var(--accent);
+}
+.quad.edge-b {
+  border-bottom-color: var(--accent);
+}
+
+.quad.drop {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.quad > header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.quad h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.quad .sub {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.quad .count {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--panel-3);
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.quad.q1 {
+  border-top: 2px solid var(--q1);
+}
+.quad.q2 {
+  border-top: 2px solid var(--q2);
+}
+.quad.q3 {
+  border-top: 2px solid var(--q3);
+}
+.quad.q4 {
+  border-top: 2px solid var(--q4);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.list:empty::after {
+  content: "비어 있음";
+  display: block;
+  padding: 14px 8px;
+  color: var(--faint);
+  font-size: 11px;
+  text-align: center;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  cursor: grab;
+}
+
+.item:hover {
+  background: var(--panel-2);
+}
+
+.item.dragging {
+  opacity: 0.4;
+}
+
+.item.removing {
+  opacity: 0;
+  transform: translateX(14px);
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+}
+
+.num {
+  flex: 0 0 auto;
+  min-width: 15px;
+  text-align: right;
+  color: var(--faint);
+  font-size: 11px;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.check {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  border: 1.6px solid var(--line-strong);
+  border-radius: 50%;
+  background: transparent;
+  padding: 0;
+}
+
+.check:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.item .text {
+  flex: 1 1 auto;
+  line-height: 1.45;
+  word-break: break-word;
+  white-space: pre-wrap;
+  user-select: text;
+}
+
+.item .text[contenteditable="true"] {
+  outline: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 0 3px;
+  background: var(--input-bg);
+}
+
+.del {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--faint);
+  line-height: 1;
+  opacity: 0;
+}
+
+.item:hover .del {
+  opacity: 1;
+}
+
+.del:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}

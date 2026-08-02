@@ -1,0 +1,94 @@
+/**
+ * Palette, theme switch and the element defaults everything else builds on.
+ * The custom properties JS reads live here: --gutter (layout.js), --memo-h
+ * (memo.js, which hands it to main.js as the window growth) and --inbox-max-h.
+ * Moving one of those out of :root would silently break the window accounting.
+ */
+
+:root,
+:root[data-theme="light"] {
+  --bg: #f0eee6;
+  --panel: #faf9f5;
+  --panel-2: #f2f0e8;
+  --panel-3: #eae7dc;
+  --line: #e2ded1;
+  --line-strong: #d3cebe;
+  --text: #1f1e1c;
+  --muted: #6f6b61;
+  --faint: #a29d90;
+  --input-bg: #ffffff;
+  --accent: #d97757;
+  --accent-soft: #d9775722;
+  --danger: #b4453c;
+  --danger-soft: #b4453c1a;
+  --shadow: 0 1px 2px #0000000a;
+  --scroll: #cdc7b7;
+  --scroll-hover: #b8b1a0;
+  --q1: #c85a4d;
+  --q2: #4a72b8;
+  --q3: #c1892c;
+  --q4: #8d887d;
+  --radius: 10px;
+  /* Space between quadrants; the drag hit zone is this plus a few px each side. */
+  --gutter: 10px;
+  /* Height the memo panel occupies, gap included. The renderer reads this and
+     hands it to main.js, which grows the window by exactly this much — so the
+     value lives here and nowhere else. */
+  --memo-h: 172px;
+  /* How tall the "다 꺼내기" list may grow before it starts scrolling. It sizes
+     to its content below this, so a short list costs the matrix almost nothing.
+     The vh term keeps the matrix the larger half on a short window, where the
+     px cap alone would leave the quadrants unusable. */
+  --inbox-max-h: 170px;
+}
+
+:root[data-theme="dark"] {
+  --bg: #1f1e1d;
+  --panel: #262624;
+  --panel-2: #302f2c;
+  --panel-3: #3a3936;
+  --line: #383734;
+  --line-strong: #4a4844;
+  --text: #f2f0ea;
+  --muted: #a7a299;
+  --faint: #78736b;
+  --input-bg: #1a1917;
+  --accent: #e08765;
+  --accent-soft: #e0876526;
+  --danger: #e0796f;
+  --danger-soft: #e0796f22;
+  --shadow: 0 1px 2px #00000038;
+  --scroll: #4a4844;
+  --scroll-hover: #5c5a55;
+  --q1: #e0736a;
+  --q2: #6f96d8;
+  --q3: #d7a24a;
+  --q4: #9d978c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Malgun Gothic", "Segoe UI", system-ui, sans-serif;
+  font-size: 13px;
+  overflow: hidden;
+  user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}

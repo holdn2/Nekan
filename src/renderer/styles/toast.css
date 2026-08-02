@@ -1,0 +1,65 @@
+/**
+ * The save/error strip. position: fixed so it never joins the flex column the
+ * memo panel and the inbox are accounting for.
+ */
+
+/* ---------- toast ---------- */
+/* Position: fixed so it never joins the flex column — the memo panel's height
+   is negotiated with main.js, and a toast in the flow would throw that off. */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 40px);
+  padding: 9px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 99px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 6px 20px #00000026;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+/* Faded out rather than removed, so it can animate both ways. */
+.toast.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 8px);
+}
+
+.toast.error {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.toast-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toast-act {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 99px;
+  padding: 3px 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.toast-act:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.toast-act.hidden {
+  display: none;
+}

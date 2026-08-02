@@ -1,0 +1,199 @@
+/**
+ * The due-date chip in both forms, and the four urgency states it can be in.
+ */
+
+/* ---------- due date chip ---------- */
+.duebox {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.due {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  min-width: 24px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--faint);
+  font-size: 11px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The native input sits invisibly on top so a click anywhere opens the picker. */
+.due input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Only the picker indicator remains, stretched to fill the chip, so a click
+   anywhere on it opens the native calendar instead of focusing a text field. */
+.due input::-webkit-datetime-edit,
+.due input::-webkit-inner-spin-button,
+.due input::-webkit-clear-button {
+  display: none;
+}
+
+.due input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.duebox:not(.set) .due {
+  opacity: 0;
+}
+
+.item:hover .duebox:not(.set) .due,
+.duebox:not(.set) .due:focus-within {
+  opacity: 1;
+}
+
+.due:hover {
+  border-color: var(--line-strong);
+  background: var(--panel-3);
+  color: var(--text);
+}
+
+.duebox.set .due {
+  border-color: var(--line);
+  background: var(--panel-2);
+  color: var(--muted);
+}
+
+.duebox.set.soon .due {
+  border-color: var(--q3);
+  color: var(--q3);
+}
+
+.duebox.set.today .due {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.duebox.set.overdue .due {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.duebox.static .due {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.due-clear {
+  width: 15px;
+  height: 15px;
+  margin-left: 1px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--faint);
+  font-size: 12px;
+  line-height: 1;
+  opacity: 0;
+}
+
+.duebox:not(.set) .due-clear,
+.duebox.static .due-clear {
+  display: none;
+}
+
+.item:hover .duebox.set .due-clear,
+.duebox.set:hover .due-clear,
+.add .duebox.set .due-clear {
+  opacity: 0.7;
+}
+
+.due-clear:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+  opacity: 1;
+}
+
+.add {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.add .due {
+  height: 30px;
+  min-width: 30px;
+  border-radius: 7px;
+  border-color: var(--line-strong);
+  background: var(--panel-2);
+  opacity: 1;
+}
+
+.add .duebox:not(.set) .due {
+  opacity: 1;
+}
+
+.add .due:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.add input[type="text"],
+.history-bar input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--input-bg);
+  color: var(--text);
+  font: inherit;
+  outline: none;
+  user-select: text;
+}
+
+.add input[type="text"]::placeholder,
+.history-bar input::placeholder {
+  color: var(--faint);
+}
+
+.add input[type="text"]:focus,
+.history-bar input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.add button {
+  width: 32px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.add button:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}

@@ -7,7 +7,22 @@
       content="default-src 'self'; style-src 'self'; script-src 'self'"
     />
     <title>Eisenhower Matrix</title>
-    <link rel="stylesheet" href="styles.css" />
+    <!-- One file per area, in the order they had inside the single stylesheet —
+         later ones override earlier ones, so this order is load-bearing.
+         @import is deliberately not used: it serialises the loads and gives the
+         cascade one more thing to depend on. -->
+    <link rel="stylesheet" href="styles/base.css" />
+    <link rel="stylesheet" href="styles/titlebar.css" />
+    <link rel="stylesheet" href="styles/tabs.css" />
+    <link rel="stylesheet" href="styles/inbox.css" />
+    <link rel="stylesheet" href="styles/matrix.css" />
+    <link rel="stylesheet" href="styles/due-chip.css" />
+    <link rel="stylesheet" href="styles/archive.css" />
+    <link rel="stylesheet" href="styles/guide.css" />
+    <link rel="stylesheet" href="styles/memo.css" />
+    <link rel="stylesheet" href="styles/toast.css" />
+    <link rel="stylesheet" href="styles/collapsed.css" />
+    <link rel="stylesheet" href="styles/scrollbars.css" />
   </head>
   <body class="expanded">
     <header class="titlebar">
