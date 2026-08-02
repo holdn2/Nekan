@@ -22,6 +22,33 @@ const PLACES = [INBOX, ...QUADS];
 /** Where a task with an unknown quadrant lands. */
 const FALLBACK_QUAD = 'q4';
 
+/**
+ * The two matrices the header toggle switches between. This is a property of
+ * the *task*, not of the file: both boards live in one data.json, so a task
+ * moving between them is one atomic save like every other change.
+ *
+ * The inbox is deliberately outside the split — it is shared, so anything
+ * sitting there has `space: null` and shows up on both boards. Classifying it
+ * (dragging it down into a quadrant) is what gives it a space.
+ */
+const SPACES = ['work', 'life'];
+/** Where tasks saved before the split — and any unknown value — land. */
+const DEFAULT_SPACE = 'work';
+const SPACE_LABEL = { work: '업무', life: '일상' };
+
+const sanitizeSpace = (v) => (SPACES.includes(v) ? v : DEFAULT_SPACE);
+
+/**
+ * The space a task in `quadrant` should carry. Kept in one place because both
+ * the renderer (on add / drop) and `normalizeTasks` have to agree that the
+ * inbox is space-less; if they drift, a shared task starts showing on only one
+ * board or a classified one on neither.
+ */
+function spaceFor(quadrant, space) {
+  if (quadrant === INBOX) return null;
+  return sanitizeSpace(space);
+}
+
 /** Must match the add form's maxlength in index.html. */
 const MAX_TEXT = 200;
 /** Memos are free-form and multi-line, so they get a much looser cap. */
@@ -131,22 +158,27 @@ function splitBulkText(raw) {
 }
 
 /**
- * Fill in fields older saves predate, and repair the two fields whose bad
+ * Fill in fields older saves predate, and repair the three fields whose bad
  * values are invisible: the matrix only walks QUADS and the inbox only reads
  * INBOX, so an unrecognised `quadrant` would keep the task in the file while it
- * disappears from every list, and a non-string `memo` would render as
+ * disappears from every list; a `space` the toggle does not know would do the
+ * same on both boards; and a non-string `memo` would render as
  * "[object Object]". Never drops entries — that is purgeTask()'s job alone.
  */
 function normalizeTasks(list) {
   if (!Array.isArray(list)) return [];
-  return list.map((t) => ({
-    dueDate: null,
-    deletedAt: null,
-    completedAt: null,
-    ...t,
-    quadrant: PLACES.includes(t?.quadrant) ? t.quadrant : FALLBACK_QUAD,
-    memo: typeof t?.memo === 'string' ? clampMemo(t.memo) : null,
-  }));
+  return list.map((t) => {
+    const quadrant = PLACES.includes(t?.quadrant) ? t.quadrant : FALLBACK_QUAD;
+    return {
+      dueDate: null,
+      deletedAt: null,
+      completedAt: null,
+      ...t,
+      quadrant,
+      space: spaceFor(quadrant, t?.space),
+      memo: typeof t?.memo === 'string' ? clampMemo(t.memo) : null,
+    };
+  });
 }
 
 /* ----------------------------------------------------------------- layout */
@@ -181,6 +213,11 @@ if (typeof module !== 'undefined' && module.exports) {
     INBOX,
     PLACES,
     FALLBACK_QUAD,
+    SPACES,
+    DEFAULT_SPACE,
+    SPACE_LABEL,
+    sanitizeSpace,
+    spaceFor,
     MAX_TEXT,
     MAX_MEMO,
     MAX_BULK_LINES,

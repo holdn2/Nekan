@@ -3,6 +3,8 @@
 
 let tasks = [];
 let mode = "expanded";
+/** Which matrix the header toggle is on; see applySpace(). */
+let activeSpace = DEFAULT_SPACE;
 let activeTab = "matrix";
 let historyQuery = "";
 let trashQuery = "";
@@ -151,6 +153,9 @@ function makeTask(quadrant, text, dueDate) {
     id: uid(),
     text,
     quadrant,
+    // Filed straight into a quadrant, it belongs to the matrix on screen; typed
+    // into the inbox, it belongs to neither yet (spaceFor returns null).
+    space: spaceFor(quadrant, activeSpace),
     dueDate: dueDate || null,
     memo: null,
     createdAt: Date.now(),
@@ -241,12 +246,21 @@ function editTask(id, text) {
   save();
 }
 
-/** Move `id` into `quadrant`, placed right before `beforeId` (or last). */
+/**
+ * Move `id` into `quadrant`, placed right before `beforeId` (or last).
+ *
+ * The drop also decides the task's matrix: dragging down out of the inbox files
+ * it under the board on screen, dragging back up into the inbox hands it back to
+ * both. That is what makes "다 꺼내기 → 분류" the moment a task becomes 업무 or
+ * 일상, and it is why a task can be re-filed to the other board by parking it in
+ * the inbox and pulling it down again on the other side.
+ */
 function moveTask(id, quadrant, beforeId) {
   const from = tasks.findIndex((t) => t.id === id);
   if (from === -1 || id === beforeId) return;
   const [task] = tasks.splice(from, 1);
   task.quadrant = quadrant;
+  task.space = spaceFor(quadrant, activeSpace);
   const to = beforeId ? tasks.findIndex((t) => t.id === beforeId) : -1;
   if (to === -1) tasks.push(task);
   else tasks.splice(to, 0, task);
@@ -254,16 +268,26 @@ function moveTask(id, quadrant, beforeId) {
   render();
 }
 
+/**
+ * On the matrix on screen. A `space` of null means the shared inbox, so those
+ * rows pass on both boards — every other list is one board's alone.
+ */
+const inSpace = (t) => t.space === null || t.space === activeSpace;
+
 const activeOf = (q) =>
-  tasks.filter((t) => !t.deletedAt && !t.completedAt && t.quadrant === q);
+  tasks.filter(
+    (t) => !t.deletedAt && !t.completedAt && t.quadrant === q && inSpace(t),
+  );
 /** Written down but not classified yet — same filter, fifth place. */
 const inboxTasks = () => activeOf(INBOX);
 const doneTasks = () =>
   tasks
-    .filter((t) => !t.deletedAt && t.completedAt)
+    .filter((t) => !t.deletedAt && t.completedAt && inSpace(t))
     .sort((a, b) => b.completedAt - a.completedAt);
 const trashedTasks = () =>
-  tasks.filter((t) => t.deletedAt).sort((a, b) => b.deletedAt - a.deletedAt);
+  tasks
+    .filter((t) => t.deletedAt && inSpace(t))
+    .sort((a, b) => b.deletedAt - a.deletedAt);
 
 /* -------------------------------------------------------------- rendering */
 
@@ -649,15 +673,17 @@ const memoPanelHeight = () =>
   ) || 0;
 
 /**
- * The selected task, or null once it has left the matrix. Being dragged up to
- * the inbox counts as leaving: those rows have no memo, so the panel closes
- * itself rather than pointing at something the list no longer shows.
+ * The selected task, or null once it has left the matrix on screen. Being
+ * dragged up to the inbox counts as leaving (those rows have no memo), and so
+ * does switching to the other board — in both cases the panel closes itself
+ * rather than pointing at something the list no longer shows.
  */
 function selectedTask() {
   if (!selectedId) return null;
   const task = tasks.find((t) => t.id === selectedId);
   if (!task || task.completedAt || task.deletedAt) return null;
-  return task.quadrant === INBOX ? null : task;
+  if (task.quadrant === INBOX || task.space !== activeSpace) return null;
+  return task;
 }
 
 /** Only the open/closed transition resizes; swapping tasks keeps the height. */
@@ -803,6 +829,39 @@ function render() {
   else if (activeTab === "trash") renderTrash();
   // the guide tab is static markup — nothing to render
   renderMemo();
+}
+
+/* ----------------------------------------------------------------- boards */
+
+/**
+ * 업무 / 일상. Both matrices live in the same task list — a board is just the
+ * `space` field — so switching is a filter and a re-render, never a load. The
+ * inbox is left out of the filter on purpose (see `inSpace`).
+ */
+const otherSpace = (space) => (space === SPACES[0] ? SPACES[1] : SPACES[0]);
+
+/**
+ * The bar is too narrow for both halves, so it shows only the active one and a
+ * click there means "switch" rather than "pick this". The titles have to say
+ * which it is, hence the mode check.
+ */
+function syncSpaceSwitch() {
+  const other = SPACE_LABEL[otherSpace(activeSpace)];
+  $$(".space-btn").forEach((btn) => {
+    const on = btn.dataset.space === activeSpace;
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-pressed", String(on));
+    btn.title =
+      mode === "collapsed"
+        ? `${other} 매트릭스로 전환`
+        : `${SPACE_LABEL[btn.dataset.space]} 매트릭스 보기`;
+  });
+}
+
+function applySpace(next, persist = true) {
+  activeSpace = sanitizeSpace(next);
+  syncSpaceSwitch();
+  if (persist) window.api.setSpace(activeSpace);
 }
 
 /* ------------------------------------------------------------------- tabs */
@@ -1220,6 +1279,8 @@ function applyMode(next) {
   document.body.classList.toggle("collapsed", mode === "collapsed");
   document.body.classList.toggle("expanded", mode === "expanded");
   labelBtn("#sizeBtn", mode === "collapsed" ? "펼치기" : "바 모드로 축소");
+  // The switch reads as a toggle in the bar and as a pair of tabs when expanded.
+  syncSpaceSwitch();
   render();
 }
 
@@ -1252,6 +1313,17 @@ function wireUI() {
   $$(".tab").forEach((btn) =>
     btn.addEventListener("click", () => setTab(btn.dataset.tab)),
   );
+
+  $("#spaceSwitch").addEventListener("click", (e) => {
+    const btn = e.target.closest(".space-btn");
+    if (!btn) return;
+    // Bar mode shows the active half only, so the click there is a toggle.
+    const next =
+      mode === "collapsed" ? otherSpace(activeSpace) : btn.dataset.space;
+    if (next === activeSpace) return;
+    applySpace(next);
+    render();
+  });
 
   $("#historySearch").addEventListener("input", (e) => {
     historyQuery = e.target.value;
@@ -1295,7 +1367,10 @@ function wireUI() {
       )
     )
       return;
-    tasks = tasks.filter((t) => !t.deletedAt);
+    // Only what the list just counted: the other board's trash is not on screen
+    // and must not go out with it.
+    const doomed = new Set(trashedTasks().map((t) => t.id));
+    tasks = tasks.filter((t) => !doomed.has(t.id));
     save();
     render();
   });
@@ -1388,6 +1463,7 @@ async function init() {
   applyTheme(state.settings?.theme || "light", false);
   applyPinned(state.settings?.alwaysOnTop !== false);
   applyInboxOpen(state.settings?.inboxOpen === true, false);
+  applySpace(state.settings?.activeSpace, false);
   layout = sanitizeLayout(state.settings?.layout);
   applyLayout();
   wireUI();

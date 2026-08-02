@@ -43,7 +43,52 @@ test('buildSnapshot keeps the inbox out of the quadrant sections', () => {
   assert.equal(snap.total, 2);
 });
 
-test('buildSnapshot exports only the active board', () => {
+test('buildSnapshot exports one board, with the shared inbox on both', () => {
+  const list = [
+    task({ text: 'work item', space: 'work' }),
+    task({ text: 'life item', space: 'life' }),
+    task({ text: 'unsorted', quadrant: 'inbox' }),
+  ];
+
+  const work = buildSnapshot(list, NOW, 'work');
+  assert.equal(work.spaceLabel, '업무');
+  assert.deepEqual(
+    work.quads.find((q) => q.key === 'q1').items.map((i) => i.text),
+    ['work item']
+  );
+  assert.deepEqual(
+    work.inbox.items.map((i) => i.text),
+    ['unsorted']
+  );
+
+  const life = buildSnapshot(list, NOW, 'life');
+  assert.equal(life.spaceLabel, '일상');
+  assert.deepEqual(
+    life.quads.find((q) => q.key === 'q1').items.map((i) => i.text),
+    ['life item']
+  );
+  // The inbox is shared, so it is in both documents rather than neither.
+  assert.deepEqual(
+    life.inbox.items.map((i) => i.text),
+    ['unsorted']
+  );
+});
+
+test('buildSnapshot puts a save from before the split on the default board', () => {
+  const legacy = [{ id: 'a', text: 'old', quadrant: 'q2' }];
+  assert.equal(buildSnapshot(legacy, NOW, 'work').total, 1);
+  assert.equal(buildSnapshot(legacy, NOW, 'life').total, 0);
+  // An unknown board name must not hide everything.
+  assert.equal(buildSnapshot(legacy, NOW, 'nope').total, 1);
+});
+
+test('the board name is in the printed documents', () => {
+  const snap = buildSnapshot([task({ text: 'a' })], NOW, 'life');
+  assert.match(toMarkdown(snap), /^# 아이젠하워 매트릭스 — 일상$/m);
+  assert.match(toHtml(snap), /class="board">일상</);
+});
+
+test('buildSnapshot leaves out completed and trashed tasks', () => {
   const snap = buildSnapshot(
     [
       task({ text: 'active' }),
@@ -125,10 +170,21 @@ test('html renders a memo with its line breaks preserved', () => {
   assert.match(html, /class="memo">one<br>two<\/p>/);
 });
 
-test('the suggested file name carries the day and the format', () => {
+test('the suggested file name carries the board, the day and the format', () => {
   assert.equal(isoDay(NOW), '2026-08-02');
-  assert.equal(defaultFileName(NOW), '아이젠하워 매트릭스 2026-08-02.pdf');
-  assert.equal(defaultFileName(NOW, 'md'), '아이젠하워 매트릭스 2026-08-02.md');
+  assert.equal(
+    defaultFileName(NOW, 'pdf', 'work'),
+    '아이젠하워 매트릭스 업무 2026-08-02.pdf'
+  );
+  assert.equal(
+    defaultFileName(NOW, 'md', 'life'),
+    '아이젠하워 매트릭스 일상 2026-08-02.md'
+  );
+  // The two exports must not be offered the same name.
+  assert.notEqual(
+    defaultFileName(NOW, 'pdf', 'work'),
+    defaultFileName(NOW, 'pdf', 'life')
+  );
 });
 
 test('an empty board reports a zero total so the caller can refuse', () => {

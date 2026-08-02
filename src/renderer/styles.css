@@ -121,6 +121,40 @@ button {
   text-overflow: ellipsis;
 }
 
+/* ---------- 업무 / 일상 switch ---------- */
+.space-switch {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-2);
+}
+
+.space-btn {
+  padding: 3px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.space-btn:hover {
+  color: var(--text);
+}
+
+.space-btn.active {
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+}
+
 .bar-summary {
   -webkit-app-region: no-drag;
   display: flex;
@@ -327,6 +361,20 @@ button {
 
 .inbox-toggle:hover .chev {
   color: var(--accent);
+}
+
+/* The header toggle scopes the rest of the app, so this list has to say out
+   loud that it is the exception. */
+.shared-tag {
+  flex: 0 0 auto;
+  margin-left: -2px;
+  padding: 1px 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 .inbox-hint {
@@ -1457,6 +1505,56 @@ body.collapsed .titlebar {
 
 body.expanded .bar-summary .chip {
   cursor: default;
+}
+
+/* 440px has no room for both halves and five count chips, so the bar keeps only
+   the half that is on — which doubles as the label for what the counts mean.
+   Clicking it switches to the other board (see the handler in wireUI). */
+body.collapsed .space-btn:not(.active) {
+  display: none;
+}
+
+body.collapsed .space-btn.active {
+  background: transparent;
+  box-shadow: none;
+}
+
+body.collapsed .space-btn.active:hover {
+  background: var(--panel-3);
+}
+
+/* Even one half of the switch is width the bar did not have: the row wanted
+   484px of the 440 available and pushed the window buttons off the right edge.
+   The brand goes first — it was already losing, squeezed to zero width with the
+   logo overflowing across the switch — and the rest gives back a few pixels
+   each. Measured against the widest the row ever gets: the inbox chip showing
+   and all five counts two digits wide. */
+body.collapsed .brand {
+  display: none;
+}
+
+body.collapsed .titlebar {
+  padding-left: 10px;
+  gap: 8px;
+}
+
+body.collapsed .space-btn {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+body.collapsed .bar-summary {
+  gap: 3px;
+}
+
+body.collapsed .chip {
+  padding: 3px 6px;
+  gap: 3px;
+}
+
+body.collapsed .win-btn {
+  width: 26px;
+  height: 26px;
 }
 
 /* ---------- scrollbars ---------- */

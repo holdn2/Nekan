@@ -29,6 +29,17 @@ test/             node --test 용 단위 테스트 (shared/ 만 커버)
   (`renderMatrix`, `renderCounts`, `markEdge`)가 쓴다 — 여기에 `'inbox'`를 넣으면 없는 DOM을
   찾아 죽는다. `PLACES = [INBOX, ...QUADS]`는 **유효한 `quadrant` 값 집합**이고
   `normalizeTasks()`의 검사에만 쓴다. 새 위치를 추가한다면 이 구분을 그대로 지킬 것.
+- **`space`는 "어느 매트릭스"이고 `quadrant`와 직교한다.** 업무/일상은 파일이 아니라 task의
+  필드로 나뉘어 있고(`SPACES`), 값은 `spaceFor(quadrant, space)` **한 곳에서만** 정해진다 —
+  `normalizeTasks()`와 렌더러의 `makeTask`/`moveTask`가 같은 함수를 부른다. 규칙은 하나뿐이다:
+  **`quadrant === INBOX`면 `space`는 반드시 `null`.** 인박스가 두 매트릭스의 공유 영역인 것이
+  이 null에서 나오고(`inSpace()`가 null을 양쪽 통과로 본다), 인박스에서 분면으로 끌어내리는
+  드롭이 소속을 정하는 유일한 순간이다. 인박스 행에 `space`를 남기면 그 항목이 한쪽에서만
+  보이고, 분면 항목의 `space`를 null로 두면 양쪽에 겹쳐 보인다.
+- **"화면에 보이는 것만" 거르는 곳이 전부 `inSpace()`를 거쳐야 한다.** 4분면·히스토리·휴지통·
+  헤더 개수·내보내기가 전부 활성 space 기준이다. 특히 `tasks`를 통째로 `filter`하는 일괄
+  작업(휴지통 비우기)은 **id 집합을 먼저 모아서** 지워야 한다 — 조건으로 지우면 화면에 없는
+  반대쪽 보드까지 날아간다.
 - **task는 절대 배열에서 지우지 않는다.** 상태는 세 개의 타임스탬프 필드로만 표현한다:
   - 활성: `completedAt === null && deletedAt === null`
   - 완료(히스토리): `completedAt !== null`
@@ -61,6 +72,10 @@ test/             node --test 용 단위 테스트 (shared/ 만 커버)
   높이를 가져간다. 그래서 main.js에 창 크기 회계가 없고 접힘 상태(`settings.inboxOpen`)만
   저장한다. 대신 목록이 4분면을 밀어내지 않도록 `styles.css`의 `--inbox-max-h`와 `26vh`가
   높이를 묶는다 — 이 상한을 없애면 항목이 쌓일수록 매트릭스가 화면 밖으로 나간다.
+- **바(440px)에는 남는 폭이 없다.** 업무/일상 토글을 넣으면서 타이틀바가 484px을 요구해 창
+  버튼이 오른쪽으로 밀려났다. 그래서 `body.collapsed`에서 브랜드(로고+제목)를 숨기고 칩·창
+  버튼 크기를 줄여 맞춰놨다 — 여유가 6px뿐이니 **바에 뭔가를 더 넣으면 반드시 실측**할 것
+  (`.titlebar`의 `scrollWidth`와 `#closeBtn`의 `right`를 `window.innerWidth`와 비교).
 - 인박스 행에는 마감일·완료·메모가 **의도적으로 없다**(`inboxItemEl`). 그래서 `selectedTask()`가
   `quadrant === INBOX`를 null로 본다 — 이걸 빼면 선택된 항목을 인박스로 끌어올렸을 때 메모
   패널이 열린 채 남는다.

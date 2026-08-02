@@ -6,7 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const { DEFAULT_LAYOUT } = require('./core');
+const { DEFAULT_LAYOUT, DEFAULT_SPACE } = require('./core');
 
 function defaultStore() {
   return {
@@ -19,6 +19,9 @@ function defaultStore() {
       // Whether the "다 꺼내기" list above the matrix is unfolded. Collapsed by
       // default so the matrix keeps its full height until it is wanted.
       inboxOpen: false,
+      // Which matrix the header toggle is on. Only the choice lives here — the
+      // tasks of both boards are in the one `tasks` array, tagged with `space`.
+      activeSpace: DEFAULT_SPACE,
       // Quadrant grid ratios: q1/q3's share of the width, q1/q2's of the height.
       layout: { ...DEFAULT_LAYOUT },
     },

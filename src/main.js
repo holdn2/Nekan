@@ -9,7 +9,7 @@ const {
 const fs = require('fs');
 const path = require('path');
 
-const { sanitizeLayout } = require('./shared/core');
+const { sanitizeLayout, sanitizeSpace, SPACE_LABEL } = require('./shared/core');
 const { loadStore, writeStore } = require('./shared/store-io');
 const {
   buildSnapshot,
@@ -288,6 +288,15 @@ ipcMain.handle('settings:inbox', (_e, open) => {
   return store.settings.inboxOpen;
 });
 
+// Which matrix the header toggle is showing. Nothing moves in the store: every
+// task carries its own `space`, so switching boards is purely a filter in the
+// renderer and only the choice has to survive a restart.
+ipcMain.handle('settings:space', (_e, space) => {
+  store.settings.activeSpace = sanitizeSpace(space);
+  persist();
+  return store.settings.activeSpace;
+});
+
 ipcMain.handle('win:memo', (_e, open, height) => setMemoPanel(!!open, height));
 
 /* ---------------------------------------------------------------- export */
@@ -332,12 +341,18 @@ async function renderPdf(html, target) {
 ipcMain.handle('export:run', async () => {
   if (!win || win.isDestroyed()) return { ok: false, reason: 'canceled' };
 
-  const snapshot = buildSnapshot(store.tasks);
+  // The export follows the header toggle: what comes out is the matrix that is
+  // on screen, plus the shared inbox. The other board is exported separately.
+  const space = sanitizeSpace(store.settings.activeSpace);
+  const snapshot = buildSnapshot(store.tasks, new Date(), space);
   if (!snapshot.total) return { ok: false, reason: 'empty' };
 
   const picked = await dialog.showSaveDialog(win, {
-    title: '매트릭스 내보내기',
-    defaultPath: path.join(app.getPath('documents'), defaultFileName()),
+    title: `${SPACE_LABEL[space]} 매트릭스 내보내기`,
+    defaultPath: path.join(
+      app.getPath('documents'),
+      defaultFileName(new Date(), 'pdf', space)
+    ),
     filters: EXPORT_FILTERS,
   });
   if (picked.canceled || !picked.filePath) {

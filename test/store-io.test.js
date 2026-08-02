@@ -9,6 +9,7 @@ const {
   loadStore,
   writeStore,
 } = require('../src/shared/store-io');
+const { DEFAULT_SPACE } = require('../src/shared/core');
 
 function tmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'em-store-'));
@@ -69,6 +70,9 @@ test('loadStore keeps unknown settings out of the way of defaults', () => {
   assert.equal(store.settings.theme, 'dark');
   assert.equal(store.settings.alwaysOnTop, true);
   assert.deepEqual(store.settings.layout, defaultStore().settings.layout);
+  // A save from before the 업무/일상 split has no choice recorded; it has to
+  // open on a real board rather than on undefined.
+  assert.equal(store.settings.activeSpace, DEFAULT_SPACE);
 });
 
 test('the legacy store is copied once, and never over an existing file', () => {

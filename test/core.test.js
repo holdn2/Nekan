@@ -5,6 +5,10 @@ const {
   QUADS,
   INBOX,
   PLACES,
+  SPACES,
+  DEFAULT_SPACE,
+  sanitizeSpace,
+  spaceFor,
   MAX_TEXT,
   MAX_BULK_LINES,
   splitBulkText,
@@ -64,6 +68,52 @@ test('normalizeTasks keeps a task parked in the inbox there', () => {
   assert.equal(task.quadrant, INBOX);
   assert.ok(PLACES.includes(INBOX));
   assert.ok(!QUADS.includes(INBOX), 'the grid loops must not walk the inbox');
+});
+
+test('normalizeTasks puts a save from before the split on a board', () => {
+  // Without a default here every pre-split task would match neither 업무 nor
+  // 일상 and vanish from both matrices while still sitting in data.json.
+  const [task] = normalizeTasks([{ id: 'a', text: 'x', quadrant: 'q2' }]);
+  assert.equal(task.space, DEFAULT_SPACE);
+  assert.ok(SPACES.includes(task.space));
+});
+
+test('normalizeTasks rescues an unknown space the same way', () => {
+  const bad = [
+    { id: 'a', text: 'a', quadrant: 'q1', space: 'other' },
+    { id: 'b', text: 'b', quadrant: 'q1', space: null },
+    { id: 'c', text: 'c', quadrant: 'q1', space: 3 },
+  ];
+  for (const task of normalizeTasks(bad)) {
+    assert.ok(SPACES.includes(task.space), `${task.id} landed on no board`);
+  }
+});
+
+test('normalizeTasks keeps a chosen board', () => {
+  const [task] = normalizeTasks([
+    { id: 'a', text: 'x', quadrant: 'q3', space: 'life' },
+  ]);
+  assert.equal(task.space, 'life');
+});
+
+test('the inbox belongs to no board, so both matrices show it', () => {
+  // `space: null` is what makes "다 꺼내기" shared. A stale space on an inbox
+  // task is dropped rather than honoured, or the row would show on one side
+  // only after being dragged back up.
+  const [fresh, stale] = normalizeTasks([
+    { id: 'a', text: 'x', quadrant: INBOX },
+    { id: 'b', text: 'y', quadrant: INBOX, space: 'work' },
+  ]);
+  assert.equal(fresh.space, null);
+  assert.equal(stale.space, null);
+});
+
+test('spaceFor is the one rule both the renderer and normalize follow', () => {
+  assert.equal(spaceFor(INBOX, 'work'), null);
+  assert.equal(spaceFor('q1', 'life'), 'life');
+  assert.equal(spaceFor('q1', undefined), DEFAULT_SPACE);
+  assert.equal(sanitizeSpace('life'), 'life');
+  assert.equal(sanitizeSpace('nope'), DEFAULT_SPACE);
 });
 
 test('splitBulkText turns a pasted block into one task per line', () => {

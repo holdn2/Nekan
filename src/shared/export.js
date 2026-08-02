@@ -7,11 +7,19 @@
  * that is easy to get wrong — which tasks are in, how an empty quadrant reads,
  * how text with `<` or `|` in it is escaped — is testable without the app.
  *
- * Only the *active* board is exported: the inbox plus the four quadrants.
- * Completed and trashed tasks belong to the history and trash tabs.
+ * Only what is on screen is exported: one matrix (업무 or 일상) — its inbox plus
+ * its four quadrants. Completed and trashed tasks belong to the history and
+ * trash tabs, and the other matrix belongs to its own export.
  */
 
-const { QUADS, INBOX, dueInfo, normalizeTasks } = require('./core');
+const {
+  QUADS,
+  INBOX,
+  SPACE_LABEL,
+  dueInfo,
+  normalizeTasks,
+  sanitizeSpace,
+} = require('./core');
 
 /** Mirrors the quadrant headers in renderer/index.html. */
 const QUAD_TITLES = {
@@ -44,9 +52,13 @@ function stampLabel(now = new Date()) {
   return `${isoDay(now)} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
 }
 
-/** Suggested save name; the extension picks the format in main.js. */
-function defaultFileName(now = new Date(), ext = 'pdf') {
-  return `아이젠하워 매트릭스 ${isoDay(now)}.${ext}`;
+/**
+ * Suggested save name; the extension picks the format in main.js. The board's
+ * name is in there because the two matrices export separately — without it the
+ * second file would be offered the name of the first.
+ */
+function defaultFileName(now = new Date(), ext = 'pdf', space) {
+  return `아이젠하워 매트릭스 ${SPACE_LABEL[sanitizeSpace(space)]} ${isoDay(now)}.${ext}`;
 }
 
 function exportItem(task, now) {
@@ -61,14 +73,17 @@ function exportItem(task, now) {
 }
 
 /**
- * The active board, in the order the lists show it. `normalizeTasks` runs first
+ * One matrix, in the order the lists show it. `normalizeTasks` runs first
  * because the main process holds data.json as it was read: a task saved before
  * a field existed, or with a quadrant this version does not know, has to land
  * in the same place the UI would put it rather than vanish from the export.
+ * It is also what puts every pre-split task on a board, and guarantees inbox
+ * tasks have no space — which is why they survive the filter on both boards.
  */
-function buildSnapshot(tasks, now = new Date()) {
+function buildSnapshot(tasks, now = new Date(), space) {
+  const board = sanitizeSpace(space);
   const list = normalizeTasks(tasks).filter(
-    (t) => !t.completedAt && !t.deletedAt
+    (t) => !t.completedAt && !t.deletedAt && (t.space === null || t.space === board)
   );
   const inList = (q) => list.filter((t) => t.quadrant === q);
 
@@ -89,6 +104,8 @@ function buildSnapshot(tasks, now = new Date()) {
 
   return {
     stamp: stampLabel(now),
+    space: board,
+    spaceLabel: SPACE_LABEL[board],
     total: sections.reduce((sum, s) => sum + s.items.length, 0),
     inbox: sections[0],
     quads: sections.slice(1),
@@ -123,7 +140,7 @@ function markdownSection(section) {
 
 function toMarkdown(snapshot) {
   const lines = [
-    '# 아이젠하워 매트릭스',
+    `# 아이젠하워 매트릭스 — ${snapshot.spaceLabel}`,
     '',
     `내보낸 시각: ${snapshot.stamp} · 항목 ${snapshot.total}개`,
     '',
@@ -186,7 +203,7 @@ function toHtml(snapshot) {
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>아이젠하워 매트릭스 ${escapeHtml(snapshot.stamp)}</title>
+<title>아이젠하워 매트릭스 ${escapeHtml(snapshot.spaceLabel)} ${escapeHtml(snapshot.stamp)}</title>
 <style>
   @page { size: A4 landscape; margin: 12mm; }
   * { box-sizing: border-box; }
@@ -199,6 +216,8 @@ function toHtml(snapshot) {
   .head { display: flex; align-items: baseline; gap: 10px;
     border-bottom: 2px solid #1f1e1c; padding-bottom: 8px; margin-bottom: 14px; }
   .head h1 { font-size: 17px; margin: 0; letter-spacing: .2px; }
+  .head .board { font-size: 12px; color: #6f6b61; border: 1px solid #d3cebe;
+    border-radius: 99px; padding: 1px 8px; }
   .head .meta { margin-left: auto; color: #6f6b61; font-size: 11px; }
   section { border: 1px solid #d3cebe; border-radius: 8px; padding: 9px 12px 11px;
     break-inside: avoid; }
@@ -232,6 +251,7 @@ function toHtml(snapshot) {
 <body>
 <div class="head">
   <h1>아이젠하워 매트릭스</h1>
+  <span class="board">${escapeHtml(snapshot.spaceLabel)}</span>
   <span class="meta">${escapeHtml(snapshot.stamp)} · 항목 ${snapshot.total}개</span>
 </div>
 ${htmlSection(snapshot.inbox, 'inbox')}
