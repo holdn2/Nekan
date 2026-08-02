@@ -1175,7 +1175,11 @@ function toggleSize() {
 /* ------------------------------------------------------------------- init */
 
 function wireUI() {
-  $$(".add").forEach((form) => {
+  // The inbox form shares the .add class for its styling but not this wiring:
+  // it has no `data-add` quadrant and no due-date chip, and wireInbox() binds
+  // its own submit. Matching it here would file a task under `undefined` and
+  // blank the input before that handler ever ran.
+  $$(".add:not(.inbox-add)").forEach((form) => {
     const input = $('input[type="text"]', form);
     const chip = dueChip(null, () => {});
     form.insertBefore(chip, $('button[type="submit"]', form));
