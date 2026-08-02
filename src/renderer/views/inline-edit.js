@@ -17,6 +17,12 @@ import { notify } from '../render-bus.js';
  * text selection inside a draggable element starts a drag instead of selecting.
  */
 export function startEdit(li, textEl, task) {
+  // The dblclick listener stays on the row while it is being edited, and
+  // double-clicking a word to select it is exactly what people do mid-edit.
+  // Without this the second dblclick would stack another keydown/blur pair and
+  // replace their selection with select-all.
+  if (textEl.isContentEditable) return;
+
   const original = task.text;
   li.draggable = false;
   textEl.contentEditable = 'true';

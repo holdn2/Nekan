@@ -13,7 +13,7 @@
 
 import { INBOX, clampMemo } from '../core-bridge.js';
 import { $ } from '../dom.js';
-import { findTask, getSpace, setMemo } from '../store.js';
+import { findTask, inSpace, setMemo } from '../store.js';
 import { notify } from '../render-bus.js';
 
 let selectedId = null;
@@ -62,7 +62,11 @@ export function selectedTask() {
   if (!selectedId) return null;
   const task = findTask(selectedId);
   if (!task || task.completedAt || task.deletedAt) return null;
-  if (task.quadrant === INBOX || task.space !== getSpace()) return null;
+  // The INBOX test cannot be folded into inSpace(): an inbox row has
+  // `space: null`, which inSpace() passes on purpose so the staging list is
+  // shared by both boards. Dropping it here would leave the panel open on a row
+  // that has no memo to show.
+  if (task.quadrant === INBOX || !inSpace(task)) return null;
   return task;
 }
 

@@ -44,6 +44,7 @@ function inboxItemEl(task, index) {
   del.title = '삭제 (휴지통으로 이동)';
   del.setAttribute('aria-label', `삭제: ${task.text}`);
   del.addEventListener('click', () => {
+    del.disabled = true;
     li.classList.add('removing');
     setTimeout(() => deleteTask(task.id), REMOVE_MS);
   });

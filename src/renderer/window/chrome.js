@@ -166,7 +166,14 @@ export function wireChrome() {
   $('#closeBtn').addEventListener('click', () => window.api.close());
 
   $('#pinBtn').addEventListener('click', async () => {
-    applyPinned(await window.api.togglePin());
+    // main is the authority on the pin state, so the button only ever reflects
+    // what it answers. If the call fails there is nothing new to reflect —
+    // leave the label alone rather than showing a state we did not reach.
+    try {
+      applyPinned(await window.api.togglePin());
+    } catch (err) {
+      console.error('togglePin failed', err);
+    }
   });
 
   $('#barSummary').addEventListener('click', (e) => {

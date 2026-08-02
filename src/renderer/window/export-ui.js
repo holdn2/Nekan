@@ -31,6 +31,12 @@ export async function exportBoard() {
       toast(`저장하지 못했습니다: ${res.message}`, { error: true, ms: 6000 });
     }
     // 'canceled' is the user closing the dialog — no message for that.
+  } catch (err) {
+    // main answers failures inside the result object, so reaching here means
+    // the IPC round trip itself broke. Without this the user would watch the
+    // dialog close and never learn that nothing was written.
+    console.error('export failed', err);
+    toast('저장하지 못했습니다.', { error: true, ms: 6000 });
   } finally {
     btn.disabled = false;
   }

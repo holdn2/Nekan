@@ -33,6 +33,10 @@ export function itemEl(task, index) {
   // Icon-only buttons: without this a screen reader announces "button".
   check.setAttribute('aria-label', `완료: ${task.text}`);
   check.addEventListener('click', () => {
+    // The row only leaves the DOM on the next render, which is REMOVE_MS away,
+    // so the button stays clickable until then. Disable it here so a second
+    // click cannot schedule the same change twice.
+    check.disabled = true;
     li.classList.add('removing');
     setTimeout(() => completeTask(task.id), REMOVE_MS);
   });
@@ -51,6 +55,7 @@ export function itemEl(task, index) {
   del.title = '삭제 (휴지통으로 이동)';
   del.setAttribute('aria-label', `삭제: ${task.text}`);
   del.addEventListener('click', () => {
+    del.disabled = true;
     li.classList.add('removing');
     setTimeout(() => deleteTask(task.id), REMOVE_MS);
   });

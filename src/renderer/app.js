@@ -17,6 +17,7 @@ import { normalizeTasks, startOfToday, startOfTomorrow } from './core-bridge.js'
 import { setTasks } from './store.js';
 import { subscribe } from './render-bus.js';
 import { $ } from './dom.js';
+import { toast } from './components/toast.js';
 import { renderMatrix, wireAddForms } from './views/matrix.js';
 import {
   applyInboxOpen,
@@ -104,32 +105,38 @@ function scheduleDayRollover() {
  */
 function wireShortcuts() {
   document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key.toLowerCase() === 'm') {
+    // Every shortcut here is Ctrl + one key. AltGr reports itself as
+    // ctrlKey+altKey on Windows, so without the altKey test a layout that types
+    // @ or € through AltGr would fire a shortcut *and* have preventDefault eat
+    // the character.
+    if (!e.ctrlKey || e.altKey) return;
+
+    if (e.key.toLowerCase() === 'm') {
       e.preventDefault();
       toggleSize();
       return;
     }
-    if (e.ctrlKey && e.key.toLowerCase() === 'e') {
+    if (e.key.toLowerCase() === 'e') {
       e.preventDefault();
       // Bar mode hides the button; keep the shortcut in step with it.
       if (getMode() === 'collapsed') return;
       exportBoard();
       return;
     }
-    if (e.ctrlKey && e.key.toLowerCase() === 'd') {
+    if (e.key.toLowerCase() === 'd') {
       e.preventDefault();
       toggleTheme();
       return;
     }
     // Ctrl+0 continues the Ctrl+1~4 run: 0 is the "not sorted yet" slot.
-    if (e.ctrlKey && e.key === '0') {
+    if (e.key === '0') {
       e.preventDefault();
       if (getMode() === 'collapsed') return;
       setTab('matrix');
       focusInbox();
       return;
     }
-    if (e.ctrlKey && ['1', '2', '3', '4'].includes(e.key)) {
+    if (['1', '2', '3', '4'].includes(e.key)) {
       e.preventDefault();
       if (getMode() === 'collapsed') return;
       setTab('matrix');
@@ -190,4 +197,13 @@ async function init() {
   scheduleDayRollover();
 }
 
-init();
+// A rejected state:load would otherwise skip every step after it and leave the
+// window showing unwired static markup, with nothing but an unhandled rejection
+// in a devtools console the user does not have open.
+init().catch((err) => {
+  console.error('renderer init failed', err);
+  toast('시작하지 못했습니다. 앱을 다시 실행해 주세요.', {
+    error: true,
+    ms: 20000,
+  });
+});
