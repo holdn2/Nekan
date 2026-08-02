@@ -182,16 +182,28 @@ powershell -ExecutionPolicy Bypass -File tools\make-icon.ps1
 build/icon.ico         # exe / 작업표시줄 아이콘
 tools/make-icon.ps1    # 아이콘 생성 스크립트
 src/
-  main.js              # 메인 프로세스: 창 모드 전환, 저장, IPC
+  main.js              # 앱 생명주기와 조립
   preload.js           # contextBridge 기반 IPC 브리지
   assets/icon.*        # 런타임에서 쓰는 아이콘 사본
+  main/
+    store.js           # data.json 메모리 사본 + 디바운스 저장
+    window.js          # 창 생성, 확장/바 모드, 메모 패널 높이 회계
+    export-service.js  # PDF·HTML·MD 쓰기
+    ipc.js             # ipcMain 핸들러 전부
   shared/
     core.js            # 날짜·정규화·레이아웃 비율·업무/일상 규칙 (메인·렌더러·테스트 공용)
     store-io.js        # data.json 읽기/쓰기 (temp write + rename)
     export.js          # 내보내기 문서 생성 (Markdown / 인쇄용 HTML → PDF)
-  renderer/
+  renderer/            # ES 모듈 (번들러 없음)
     index.html
-    styles.css         # 라이트/다크 팔레트 (data-theme)
-    renderer.js        # 상태 관리, 렌더링, 드래그앤드롭, 테마
+    app.js             # 진입점: 렌더 디스패처, 단축키, 초기화
+    store.js           # 할 일 배열과 모든 변경 (DOM을 모름)
+    render-bus.js      # "다시 그려라" 신호
+    core-bridge.js     # shared/core.js를 named export로
+    dom.js             # 공통 DOM 헬퍼
+    components/        # 아이콘, 마감일 칩, 메모 표시, 토스트
+    views/             # 4분면 · 다 꺼내기 · 히스토리/휴지통 · 메모 패널
+    window/            # 타이틀바·탭 · 분면 경계 드래그 · 드래그앤드롭 · 내보내기
+    styles/            # 영역별 12개 (라이트/다크 팔레트는 base.css)
 test/                  # node --test 단위 테스트
 ```
