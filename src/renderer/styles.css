@@ -306,7 +306,12 @@ button {
 /* Sits between the tabs and the matrix as its own flex row. flex-basis auto
    with no grow means it is exactly as tall as its content, so the matrix keeps
    everything the inbox does not use. */
-.inbox {
+/* The `section` in these selectors is load-bearing, not decoration: `inbox` is
+   also a `quadrant` value, so `.dot.inbox` marks the unclassified dot in the
+   summary chip and in history/trash rows. A bare `.inbox` rule would style
+   those 8px dots as if they were this panel — margins, box shadow and all —
+   and `body.collapsed .inbox` would delete the dot out of the bar chip. */
+section.inbox {
   flex: 0 0 auto;
   margin: 8px 12px 0;
   background: var(--panel);
@@ -317,11 +322,11 @@ button {
   transition: border-color 0.12s ease;
 }
 
-.inbox.hidden {
+section.inbox.hidden {
   display: none !important;
 }
 
-.inbox.drop {
+section.inbox.drop {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent) inset;
 }
@@ -355,7 +360,7 @@ button {
   transition: transform 0.15s ease;
 }
 
-.inbox.open .chev {
+section.inbox.open .chev {
   transform: rotate(90deg);
 }
 
@@ -391,7 +396,7 @@ button {
   border-top: 1px solid var(--line);
 }
 
-.inbox.open .inbox-body {
+section.inbox.open .inbox-body {
   display: block;
 }
 
@@ -422,9 +427,12 @@ button {
   user-select: text;
 }
 
+/* Hollow instead of coloured: the inbox is not a fifth quadrant, it is the
+   "no colour yet" state. Kept at 1.5px so the hole stays visible at 8px —
+   2px would fill in and read as just another solid dot. */
 .dot.inbox {
   background: transparent;
-  border: 1.5px solid var(--faint);
+  border: 1.5px solid var(--muted);
 }
 
 .chip.hidden {
@@ -1491,7 +1499,7 @@ body.resizing-both {
 /* ---------- collapsed (bar) mode ---------- */
 body.collapsed .tabs,
 body.collapsed .view,
-body.collapsed .inbox,
+body.collapsed section.inbox,
 body.collapsed .memo,
 body.collapsed #exportBtn,
 body.collapsed .toast {
