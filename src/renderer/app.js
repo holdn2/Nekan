@@ -1,50 +1,44 @@
 import {
   DEFAULT_LAYOUT,
-  INBOX,
   MIN_RATIO,
   QUADS,
   SPACE_LABEL,
-  clampMemo,
   normalizeTasks,
   sanitizeLayout,
-  splitBulkText,
   startOfToday,
   startOfTomorrow,
 } from './core-bridge.js';
 import {
   activeOf,
-  addTask,
-  addTasks,
-  completeTask,
-  deleteTask,
   doneTasks,
-  editTask,
-  findTask,
   getSpace,
   inboxTasks,
   moveTask,
-  purgeAll,
-  purgeTask,
-  restoreTask,
-  setDue,
-  setMemo,
   setSpace,
   setTasks,
-  subscribe,
-  trashAll,
   trashedTasks,
-  untrashAll,
-  untrashTask,
 } from './store.js';
-import { $, $$, actionBtn, labelBtn, numEl } from './dom.js';
-import { dueBadge, dueChip } from './components/due-chip.js';
-import { memoLine, memoMark } from './components/memo-mark.js';
+import { subscribe } from './render-bus.js';
+import { $, $$, labelBtn } from './dom.js';
 import { toast } from './components/toast.js';
+import { renderMatrix, wireAddForms } from './views/matrix.js';
+import {
+  applyInboxOpen,
+  focusInbox,
+  renderInbox,
+  wireInbox,
+} from './views/inbox.js';
+import { renderHistory, renderTrash, wireArchive } from './views/archive.js';
+import {
+  clearSelectionSilently,
+  dropStaleSelection,
+  renderMemo,
+  setSelected,
+  wireMemo,
+} from './views/memo.js';
 
 let mode = "expanded";
 let activeTab = "matrix";
-let historyQuery = "";
-let trashQuery = "";
 let theme = "light";
 
 /* --------------------------------------------------------- day rollover */
@@ -77,146 +71,6 @@ function scheduleDayRollover() {
 
 /* -------------------------------------------------------------- rendering */
 
-function itemEl(task, index) {
-  const li = document.createElement("li");
-  li.className = task.id === selectedId ? "item selected" : "item";
-  li.dataset.id = task.id;
-  li.draggable = true;
-
-  const check = document.createElement("button");
-  check.className = "check";
-  check.title = "완료 (히스토리로 이동)";
-  // Icon-only buttons: without this a screen reader announces "button".
-  check.setAttribute("aria-label", `완료: ${task.text}`);
-  check.addEventListener("click", () => {
-    li.classList.add("removing");
-    setTimeout(() => completeTask(task.id), 160);
-  });
-
-  const text = document.createElement("span");
-  text.className = "text";
-  text.textContent = task.text;
-  text.title = "클릭하여 메모 · 더블클릭하여 수정";
-  text.addEventListener("dblclick", () => startEdit(li, text, task));
-
-  const due = dueChip(task.dueDate, (value) => setDue(task.id, value));
-
-  const del = document.createElement("button");
-  del.className = "del";
-  del.textContent = "×";
-  del.title = "삭제 (휴지통으로 이동)";
-  del.setAttribute("aria-label", `삭제: ${task.text}`);
-  del.addEventListener("click", () => {
-    li.classList.add("removing");
-    setTimeout(() => deleteTask(task.id), 160);
-  });
-
-  li.append(numEl(index), check, text);
-  if (task.memo) li.append(memoMark(task.memo));
-  li.append(due, del);
-
-  // Click selects for the memo panel, double-click still edits the text — so a
-  // single click has to wait out the double-click window before it acts.
-  // Without the wait, a double-click would toggle the selection twice and the
-  // window would grow and shrink under the cursor.
-  li.addEventListener("click", (e) => {
-    if (e.detail > 1) return;
-    if (e.target.closest("button, .duebox")) return;
-    if (text.isContentEditable) return;
-    clearTimeout(clickTimer);
-    clickTimer = setTimeout(
-      () => setSelected(task.id === selectedId ? null : task.id),
-      CLICK_DELAY,
-    );
-  });
-  li.addEventListener("dblclick", () => clearTimeout(clickTimer));
-
-  return li;
-}
-
-function startEdit(li, textEl, task) {
-  const original = task.text;
-  li.draggable = false;
-  textEl.contentEditable = "true";
-  textEl.focus();
-
-  const range = document.createRange();
-  range.selectNodeContents(textEl);
-  const sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
-
-  const finish = (commit) => {
-    textEl.contentEditable = "false";
-    li.draggable = true;
-    textEl.removeEventListener("keydown", onKey);
-    textEl.removeEventListener("blur", onBlur);
-    if (commit) editTask(task.id, textEl.textContent);
-    else textEl.textContent = original;
-    render();
-  };
-  const onKey = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      finish(true);
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      finish(false);
-    }
-  };
-  const onBlur = () => finish(true);
-
-  textEl.addEventListener("keydown", onKey);
-  textEl.addEventListener("blur", onBlur);
-}
-
-function renderMatrix() {
-  QUADS.forEach((q) => {
-    const list = $(`[data-list="${q}"]`);
-    const items = activeOf(q);
-    list.replaceChildren(...items.map((task, i) => itemEl(task, i)));
-    $(`[data-count="${q}"]`).textContent = String(items.length);
-  });
-}
-
-/**
- * An inbox row deliberately carries less than a quadrant row: no due chip, no
- * check, no memo. Sorting out *what* a task is comes after getting it out of
- * your head, and those controls only start to mean something once it has a
- * quadrant. The text still edits on double-click, and × still soft-deletes.
- */
-function inboxItemEl(task, index) {
-  const li = document.createElement("li");
-  li.className = "item inbox-item";
-  li.dataset.id = task.id;
-  li.draggable = true;
-
-  const text = document.createElement("span");
-  text.className = "text";
-  text.textContent = task.text;
-  text.title = "더블클릭하여 수정 · 분면으로 끌어다 놓아 분류";
-  text.addEventListener("dblclick", () => startEdit(li, text, task));
-
-  const del = document.createElement("button");
-  del.className = "del";
-  del.textContent = "×";
-  del.title = "삭제 (휴지통으로 이동)";
-  del.setAttribute("aria-label", `삭제: ${task.text}`);
-  del.addEventListener("click", () => {
-    li.classList.add("removing");
-    setTimeout(() => deleteTask(task.id), 160);
-  });
-
-  li.append(numEl(index), text, del);
-  return li;
-}
-
-function renderInbox() {
-  const items = inboxTasks();
-  $("#inboxList").replaceChildren(...items.map((t, i) => inboxItemEl(t, i)));
-  $("#inboxCount").textContent = String(items.length);
-}
-
 function renderCounts() {
   QUADS.forEach((q, i) => {
     $(`#c${i + 1}`).textContent = String(activeOf(q).length);
@@ -230,302 +84,10 @@ function renderCounts() {
   $("#trashCount").textContent = String(trashedTasks().length);
 }
 
-const QUAD_LABEL = {
-  inbox: "미분류",
-  q1: "Urgent·Important",
-  q2: "Important",
-  q3: "Urgent",
-  q4: "기타",
-};
-
-const dayLabel = (ts) =>
-  new Date(ts).toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "short",
-  });
-
-const timeLabel = (ts) =>
-  new Date(ts).toLocaleTimeString("ko-KR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-/**
- * Shared renderer for the history and trash lists: rows grouped by day,
- * numbered from 1 within each day.
- */
-function renderArchive({
-  list,
-  empty,
-  items,
-  query,
-  stamp,
-  emptyText,
-  actions,
-}) {
-  list.replaceChildren();
-  let lastDay = "";
-  let index = 0;
-
-  items.forEach((task) => {
-    const day = dayLabel(stamp(task));
-    if (day !== lastDay) {
-      lastDay = day;
-      index = 0;
-      const head = document.createElement("li");
-      head.className = "day";
-      head.textContent = day;
-      list.append(head);
-    }
-
-    const li = document.createElement("li");
-    li.className = "hitem";
-
-    const dot = document.createElement("span");
-    dot.className = `dot ${task.quadrant}`;
-    dot.title = QUAD_LABEL[task.quadrant] || "";
-
-    const text = document.createElement("span");
-    text.className = "text";
-    text.textContent = task.text;
-
-    const time = document.createElement("span");
-    time.className = "time";
-    time.textContent = timeLabel(stamp(task));
-
-    // Title and memo share one column, so the memo lines up under the title
-    // and stops where the date column starts instead of running alongside it.
-    const main = document.createElement("div");
-    main.className = "hmain";
-    main.append(text);
-    if (task.memo) {
-      main.append(memoLine(task.memo));
-      li.classList.add("has-memo");
-    }
-
-    li.append(numEl(index), dot, main);
-    const due = dueBadge(task.dueDate);
-    if (due) li.append(due);
-    li.append(time);
-    actions(task).forEach((btn) => li.append(btn));
-    list.append(li);
-    index += 1;
-  });
-
-  // Measured after insertion: only a memo that is actually cut off gets the
-  // pointer and the expand hint.
-  $$(".hmemo", list).forEach((box) => {
-    const text = $(".hmemo-text", box);
-    const clamped = text.scrollHeight > text.clientHeight + 1;
-    box.classList.toggle("clamped", clamped);
-    if (clamped) box.title = "전체 보기";
-  });
-
-  empty.classList.toggle("hidden", items.length > 0);
-  empty.textContent = query.trim() ? "검색 결과가 없습니다." : emptyText;
-}
-
-const matches = (task, query) => {
-  const q = query.trim().toLowerCase();
-  return !q || task.text.toLowerCase().includes(q);
-};
-
-function renderHistory() {
-  renderArchive({
-    list: $("#historyList"),
-    empty: $("#historyEmpty"),
-    items: doneTasks().filter((t) => matches(t, historyQuery)),
-    query: historyQuery,
-    stamp: (t) => t.completedAt,
-    emptyText: "완료한 항목이 아직 없습니다.",
-    actions: (task) => [
-      actionBtn("되돌리기", () => restoreTask(task.id)),
-      actionBtn("삭제", () => deleteTask(task.id), true),
-    ],
-  });
-}
-
-function renderTrash() {
-  renderArchive({
-    list: $("#trashList"),
-    empty: $("#trashEmpty"),
-    items: trashedTasks().filter((t) => matches(t, trashQuery)),
-    query: trashQuery,
-    stamp: (t) => t.deletedAt,
-    emptyText: "휴지통이 비어 있습니다.",
-    actions: (task) => [
-      actionBtn("복원", () => untrashTask(task.id)),
-      actionBtn("영구 삭제", () => purgeTask(task.id), true),
-    ],
-  });
-}
-
-/* ------------------------------------------------------------------- memo */
-
-/**
- * One memo per task, shown in a panel under the matrix. Opening it grows the
- * window (main.js) rather than taking height from the quadrants, so the ratios
- * the user dragged stay exactly where they were.
- */
-let selectedId = null;
-/** Whether the textarea is up. A task with no memo yet always starts there. */
-let memoEditing = false;
-/** Long enough for the second click of a double-click to arrive first. */
-const CLICK_DELAY = 220;
-let clickTimer = null;
-
-/** Panel height comes from CSS so main.js and the stylesheet cannot drift. */
-const memoPanelHeight = () =>
-  Number.parseFloat(
-    getComputedStyle(document.documentElement).getPropertyValue("--memo-h"),
-  ) || 0;
-
-/**
- * The selected task, or null once it has left the matrix on screen. Being
- * dragged up to the inbox counts as leaving (those rows have no memo), and so
- * does switching to the other board — in both cases the panel closes itself
- * rather than pointing at something the list no longer shows.
- */
-function selectedTask() {
-  if (!selectedId) return null;
-  const task = findTask(selectedId);
-  if (!task || task.completedAt || task.deletedAt) return null;
-  if (task.quadrant === INBOX || task.space !== getSpace()) return null;
-  return task;
-}
-
-/** Only the open/closed transition resizes; swapping tasks keeps the height. */
-function setSelected(id) {
-  if (id === selectedId) return;
-  const wasOpen = selectedId !== null;
-  selectedId = id;
-  memoEditing = false;
-  if (wasOpen !== (id !== null)) {
-    window.api.setMemoPanel(id !== null, memoPanelHeight());
-  }
-  render();
-}
-
-/**
- * Rule for the save button: a new memo needs text, an edit needs text *and* a
- * change. `clampMemo` trims the same way the save path does, so what the button
- * compares is what would be written.
- */
-function memoSaveState() {
-  const task = selectedTask();
-  if (!task) return { value: null, original: null, canSave: false };
-  const value = clampMemo($("#memoInput").value);
-  const original = task.memo || null;
-  return { value, original, canSave: Boolean(value) && value !== original };
-}
-
-function syncMemoSave() {
-  $("#memoSave").disabled = !memoSaveState().canSave;
-}
-
-function renderMemo() {
-  const panel = $("#memoPanel");
-  const task = selectedTask();
-  if (!task) {
-    panel.classList.add("hidden");
-    panel.dataset.key = "";
-    return;
-  }
-  panel.classList.remove("hidden");
-
-  const memo = task.memo || "";
-  const editing = memoEditing || !memo;
-
-  $("#memoTitle").textContent = task.text;
-  $("#memoTitle").title = task.text;
-  $("#memoDot").className = `dot ${task.quadrant}`;
-  $("#memoText").textContent = memo;
-
-  // Only reseed the textarea when the panel actually changes what it is
-  // showing; an unrelated re-render must not wipe what is being typed.
-  const key = `${task.id}:${editing}`;
-  const input = $("#memoInput");
-  if (panel.dataset.key !== key) {
-    panel.dataset.key = key;
-    if (editing) {
-      input.value = memo;
-      input.focus();
-      input.setSelectionRange(input.value.length, input.value.length);
-    }
-  }
-
-  input.classList.toggle("hidden", !editing);
-  $("#memoText").classList.toggle("hidden", editing);
-  $("#memoSave").classList.toggle("hidden", !editing);
-  $("#memoCancel").classList.toggle("hidden", !editing || !memo);
-  $("#memoDelete").classList.toggle("hidden", editing || !memo);
-  $("#memoHint").textContent = editing
-    ? "Ctrl+Enter 저장 · Esc 취소"
-    : "더블클릭하여 수정";
-  syncMemoSave();
-}
-
-function saveMemo() {
-  const task = selectedTask();
-  const { value, canSave } = memoSaveState();
-  if (!task || !canSave) return;
-  memoEditing = false;
-  setMemo(task.id, value);
-}
-
-function cancelMemoEdit() {
-  // Nothing to fall back to when the memo is new — close the panel instead.
-  if (!selectedTask()?.memo) {
-    setSelected(null);
-    return;
-  }
-  memoEditing = false;
-  renderMemo();
-}
-
-function deleteMemo() {
-  const task = selectedTask();
-  if (!task || !task.memo) return;
-  if (!window.confirm("이 메모를 삭제할까요? 되돌릴 수 없습니다.")) return;
-  memoEditing = false;
-  setMemo(task.id, null);
-}
-
-function wireMemo() {
-  const input = $("#memoInput");
-  input.addEventListener("input", syncMemoSave);
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      cancelMemoEdit();
-    } else if (e.key === "Enter" && e.ctrlKey) {
-      e.preventDefault();
-      saveMemo();
-    }
-  });
-
-  $("#memoText").addEventListener("dblclick", () => {
-    memoEditing = true;
-    renderMemo();
-  });
-
-  $("#memoSave").addEventListener("click", saveMemo);
-  $("#memoCancel").addEventListener("click", cancelMemoEdit);
-  $("#memoDelete").addEventListener("click", deleteMemo);
-  $("#memoClose").addEventListener("click", () => setSelected(null));
-}
-
 /* -------------------------------------------------------------- rendering */
 
 function render() {
-  // Completing, trashing or purging the selected task takes the panel with it.
-  if (selectedId && !selectedTask()) {
-    selectedId = null;
-    memoEditing = false;
-    window.api.setMemoPanel(false, 0);
-  }
+  dropStaleSelection();
   renderCounts();
   if (mode === "collapsed") return;
   if (activeTab === "matrix") {
@@ -580,64 +142,6 @@ function setTab(tab) {
   $("#trashView").classList.toggle("hidden", tab !== "trash");
   $("#guideView").classList.toggle("hidden", tab !== "guide");
   render();
-}
-
-/* ------------------------------------------------------------------ inbox */
-
-/**
- * "다 꺼내기" — write everything down first, sort it into quadrants after.
- *
- * Folded by default, and unlike the memo panel it does *not* grow the window:
- * it takes its height from the matrix. That is why the list is capped in CSS
- * (`--inbox-max-h`) and scrolls past it — an unbounded staging list would push
- * the quadrants off the bottom of a small window.
- */
-let inboxOpen = false;
-
-function applyInboxOpen(open, persist = true) {
-  inboxOpen = Boolean(open);
-  $("#inboxPanel").classList.toggle("open", inboxOpen);
-  $("#inboxToggle").setAttribute("aria-expanded", String(inboxOpen));
-  if (persist) window.api.setInboxOpen(inboxOpen);
-}
-
-function focusInbox() {
-  applyInboxOpen(true);
-  $("#inboxInput").focus();
-}
-
-function wireInbox() {
-  const input = $("#inboxInput");
-
-  $("#inboxToggle").addEventListener("click", () => {
-    applyInboxOpen(!inboxOpen);
-    if (inboxOpen) input.focus();
-  });
-
-  $("#inboxAdd").addEventListener("submit", (e) => {
-    e.preventDefault();
-    addTask(INBOX, input.value, null);
-    input.value = "";
-    input.focus();
-  });
-
-  // Most brain dumps are already written down somewhere else. Pasting a block
-  // of lines should give one item per line, not a single item with newlines
-  // flattened into it.
-  input.addEventListener("paste", (e) => {
-    const raw = e.clipboardData?.getData("text") ?? "";
-    if (!raw.includes("\n")) return;
-    e.preventDefault();
-    // Splice the paste into whatever is already typed before cutting on
-    // newlines, so a half-finished line in the box becomes the first item
-    // instead of being silently dropped.
-    const merged =
-      input.value.slice(0, input.selectionStart) +
-      raw +
-      input.value.slice(input.selectionEnd);
-    addTasks(INBOX, splitBulkText(merged));
-    input.value = "";
-  });
 }
 
 /* ---------------------------------------------------------------- export */
@@ -939,10 +443,7 @@ function applyMode(next) {
   mode = next;
   // collapse() already dropped the panel's height on its way to the bar, so
   // clear the selection here without asking for another resize.
-  if (mode === "collapsed") {
-    selectedId = null;
-    memoEditing = false;
-  }
+  if (mode === "collapsed") clearSelectionSilently();
   document.body.classList.toggle("collapsed", mode === "collapsed");
   document.body.classList.toggle("expanded", mode === "expanded");
   labelBtn("#sizeBtn", mode === "collapsed" ? "펼치기" : "바 모드로 축소");
@@ -957,24 +458,6 @@ function toggleSize() {
 /* ------------------------------------------------------------------- init */
 
 function wireUI() {
-  // The inbox form shares the .add class for its styling but not this wiring:
-  // it has no `data-add` quadrant and no due-date chip, and wireInbox() binds
-  // its own submit. Matching it here would file a task under `undefined` and
-  // blank the input before that handler ever ran.
-  $$(".add:not(.inbox-add)").forEach((form) => {
-    const input = $('input[type="text"]', form);
-    const chip = dueChip(null, () => {});
-    form.insertBefore(chip, $('button[type="submit"]', form));
-
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      addTask(form.dataset.add, input.value, chip.input.value);
-      input.value = "";
-      chip.apply("");
-      input.focus();
-    });
-  });
-
   $$(".tab").forEach((btn) =>
     btn.addEventListener("click", () => setTab(btn.dataset.tab)),
   );
@@ -984,42 +467,6 @@ function wireUI() {
     if (!btn || btn.dataset.space === getSpace()) return;
     applySpace(btn.dataset.space);
     render();
-  });
-
-  $("#historySearch").addEventListener("input", (e) => {
-    historyQuery = e.target.value;
-    renderHistory();
-  });
-
-  $("#trashSearch").addEventListener("input", (e) => {
-    trashQuery = e.target.value;
-    renderTrash();
-  });
-
-  $("#clearHistory").addEventListener("click", () => {
-    const items = doneTasks();
-    if (!items.length) return;
-    if (!window.confirm(`완료한 항목 ${items.length}개를 휴지통으로 옮길까요?`))
-      return;
-    trashAll(items);
-  });
-
-  $("#restoreAll").addEventListener("click", () => {
-    untrashAll(trashedTasks());
-  });
-
-  $("#emptyTrash").addEventListener("click", () => {
-    const count = trashedTasks().length;
-    if (!count) return;
-    if (
-      !window.confirm(
-        `휴지통의 ${count}개 항목을 영구 삭제할까요? 되돌릴 수 없습니다.`,
-      )
-    )
-      return;
-    // Only what the list just counted: the other board's trash is not on screen
-    // and must not go out with it.
-    purgeAll(trashedTasks());
   });
 
   $("#themeBtn").addEventListener("click", () =>
@@ -1086,7 +533,9 @@ function wireUI() {
     }
   });
 
+  wireAddForms();
   wireInbox();
+  wireArchive();
   wireMemo();
 
   // Waking from sleep or coming back to the window can also cross midnight,

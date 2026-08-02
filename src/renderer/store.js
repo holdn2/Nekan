@@ -2,10 +2,9 @@
  * The task list and every change that can happen to it.
  *
  * This module knows nothing about the DOM. Views call a mutation, the mutation
- * writes to disk and tells whoever is listening that something changed —
- * `subscribe(render)` in app.js is what closes the loop. Keeping the arrow
- * pointing this way (views → store, never store → views) is what lets the two
- * halves be read on their own.
+ * writes to disk and announces the change on the render bus — app.js is what
+ * subscribes to it. Keeping the arrow pointing this way (views → store, never
+ * store → views) is what lets the two halves be read on their own.
  *
  * Three rules from the data model show up all over this file:
  *   - a task is never removed from the array; `completedAt` and `deletedAt`
@@ -15,6 +14,7 @@
  *   - anything that filters "what is on screen" goes through `inSpace()`.
  */
 
+import { notify } from './render-bus.js';
 import {
   DEFAULT_SPACE,
   INBOX,
@@ -28,13 +28,6 @@ let tasks = [];
 /** Which matrix the header toggle is on. Not a task field — a filter. */
 let activeSpace = DEFAULT_SPACE;
 
-const listeners = [];
-
-/** Register a callback to run after every committed change. */
-export function subscribe(fn) {
-  listeners.push(fn);
-}
-
 /** Persist without redrawing — for edits whose caller renders itself. */
 function persist() {
   window.api.save(tasks);
@@ -46,7 +39,7 @@ function persist() {
  */
 function commit() {
   persist();
-  listeners.forEach((fn) => fn());
+  notify();
 }
 
 /** Random enough for a local file; no coordination needed. */
