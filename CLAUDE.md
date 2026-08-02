@@ -11,6 +11,7 @@ src/preload.js    contextBridge → window.api (여기 없는 건 렌더러에�
 src/shared/
   core.js         날짜·정규화·레이아웃 비율 등 순수 로직. 메인·렌더러·테스트가 공유
   store-io.js     data.json 읽기/쓰기 (electron 의존 없음 — 경로는 호출자가 준다)
+  export.js       내보내기 문서 생성 (마크다운·인쇄용 HTML). 메인·테스트만 require
 src/renderer/
   index.html      4분면 + 히스토리/휴지통/가이드 탭의 정적 마크업
   renderer.js     전역 tasks 배열 하나가 유일한 상태. 모든 변경 → save() → render()
@@ -63,6 +64,13 @@ test/             node --test 용 단위 테스트 (shared/ 만 커버)
 - 인박스 행에는 마감일·완료·메모가 **의도적으로 없다**(`inboxItemEl`). 그래서 `selectedTask()`가
   `quadrant === INBOX`를 null로 본다 — 이걸 빼면 선택된 항목을 인박스로 끌어올렸을 때 메모
   패널이 열린 채 남는다.
+- **내보내기(`export:run`)는 렌더러가 아니라 main의 `store.tasks`에서 만든다.** 렌더러의 모든
+  변경이 `save()`를 거치므로 main의 배열이 곧 화면이고, IPC로 목록을 되돌려 받을 이유가 없다.
+  대신 `loadStore()`는 정규화를 하지 않으므로 `buildSnapshot()`이 `normalizeTasks()`를 먼저
+  돌린다 — 이걸 빼면 아직 렌더러가 한 번도 저장하지 않은 상태에서 내보낼 때 옛날 `data.json`의
+  항목이 통째로 빠진다. PDF는 `shared/export.js`의 HTML을 **숨은 BrowserWindow**에서
+  `printToPDF`로 찍는다(앱 창을 재사용하면 매트릭스 위에 문서가 번쩍인다). 그래서 인쇄물
+  모양을 바꿀 곳은 `export.js`의 `toHtml()` 하나뿐이고, `styles.css`와는 무관하다.
 - 항목 **클릭은 메모, 더블클릭은 텍스트 수정**이라 클릭 핸들러가 `CLICK_DELAY`만큼 기다렸다
   동작한다. 이 지연을 없애면 더블클릭이 선택을 두 번 토글해서 창이 커졌다 작아진다.
 - 그리드 간격(`GUTTER`)은 CSS `--gutter`를 `getComputedStyle`로 읽어온다. 값을 바꿀 곳은

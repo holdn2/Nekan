@@ -112,3 +112,16 @@ CSS `--inbox-max-h`(그리고 `min(..., 26vh)`)로 묶고 넘치면 목록 안�
 **이유** 이게 없으면 `npm start`는 `package.json`의 `eisenhower-matrix`를,
 패키징된 exe는 `productName`인 `EisenhowerMatrix`를 써서 데이터 폴더가 갈라진다.
 이미 갈라진 사용자를 위해 `migrateLegacyStore()`가 소문자 폴더에서 한 번 복사해온다.
+
+## 2026-08-02 — 내보내기 형식은 저장 대화상자의 확장자로 고른다
+
+**결정** 앱 안에 형식 선택 메뉴를 두지 않고, `dialog.showSaveDialog`의 파일 형식
+드롭다운(PDF/HTML/Markdown)에서 고른 확장자로 `export:run`이 분기한다. 세 형식 모두
+`shared/export.js`의 같은 스냅샷에서 나오고, PDF는 HTML을 숨은 창에서 `printToPDF`로 찍는다.
+
+**이유** 형식 선택 UI를 따로 만들면 타이틀바에 팝오버가 하나 더 생기고, 저장 위치를 묻는
+창은 어차피 떠야 한다. 확장자를 기준으로 삼으면 "PDF만 되고 HTML은 안 되는" 상태가 나올 수
+없고, HTML이 PDF의 원본이라 세 형식의 내용이 갈라지지 않는다.
+
+**대가** 사용자가 확장자를 직접 `.txt`로 바꿔 저장하면 PDF로 나간다(알 수 없는 확장자는
+전부 PDF 취급). 형식별로 다른 기본 파일명을 제안할 수도 없다 — 기본은 항상 `.pdf`다.

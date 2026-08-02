@@ -883,6 +883,62 @@ function wireInbox() {
   });
 }
 
+/* ----------------------------------------------------------------- toast */
+
+let toastTimer = null;
+
+/**
+ * Brief confirmation for things that happen outside the window (a file written
+ * to disk), where nothing on screen would otherwise change. `action` adds one
+ * button; it is cleared on every call so an old one cannot linger.
+ */
+function toast(message, { error = false, action = null, ms = 4000 } = {}) {
+  const box = $("#toast");
+  const act = $("#toastAct");
+  $("#toastText").textContent = message;
+  box.classList.toggle("error", error);
+
+  act.classList.toggle("hidden", !action);
+  act.onclick = action ? action.onClick : null;
+  if (action) act.textContent = action.label;
+
+  box.classList.remove("hidden");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => box.classList.add("hidden"), ms);
+}
+
+/* ---------------------------------------------------------------- export */
+
+/**
+ * The inbox and the four quadrants, written out as PDF, HTML or Markdown. The
+ * format comes from the extension picked in the native save dialog, and the
+ * document itself is built in the main process from the same task list that was
+ * last saved — so there is nothing to collect here beyond the click.
+ */
+async function exportBoard() {
+  const btn = $("#exportBtn");
+  if (btn.disabled) return;
+  btn.disabled = true;
+  try {
+    const res = await window.api.exportBoard();
+    if (res?.ok) {
+      toast(`저장했습니다 · ${res.name}`, {
+        action: {
+          label: "폴더 열기",
+          onClick: () => window.api.revealExport(res.path),
+        },
+      });
+    } else if (res?.reason === "empty") {
+      toast("내보낼 항목이 없습니다.");
+    } else if (res?.reason === "error") {
+      toast(`저장하지 못했습니다: ${res.message}`, { error: true, ms: 6000 });
+    }
+    // 'canceled' is the user closing the dialog — no message for that.
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 /* ------------------------------------------------------------ drag & drop */
 
 function afterElement(list, y) {
@@ -1248,6 +1304,8 @@ function wireUI() {
     applyTheme(theme === "dark" ? "light" : "dark"),
   );
 
+  $("#exportBtn").addEventListener("click", exportBoard);
+
   $("#sizeBtn").addEventListener("click", toggleSize);
   $("#minBtn").addEventListener("click", () => window.api.minimize());
   $("#closeBtn").addEventListener("click", () => window.api.close());
@@ -1276,6 +1334,13 @@ function wireUI() {
     if (e.ctrlKey && e.key.toLowerCase() === "m") {
       e.preventDefault();
       toggleSize();
+      return;
+    }
+    if (e.ctrlKey && e.key.toLowerCase() === "e") {
+      e.preventDefault();
+      // Bar mode hides the button; keep the shortcut in step with it.
+      if (mode === "collapsed") return;
+      exportBoard();
       return;
     }
     if (e.ctrlKey && e.key.toLowerCase() === "d") {

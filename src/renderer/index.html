@@ -58,6 +58,32 @@
       </div>
 
       <div class="win-actions">
+        <!-- Hidden in bar mode: the 440px bar has no room, and there is nothing
+             on screen to export from there anyway. -->
+        <button
+          class="win-btn"
+          id="exportBtn"
+          title="내보내기 (PDF · HTML · Markdown)"
+          aria-label="내보내기"
+        >
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <path
+              d="M8 1.8v7.6M5.2 6.8L8 9.6l2.8-2.8"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M2.6 11.4v1.4a1.4 1.4 0 0 0 1.4 1.4h8a1.4 1.4 0 0 0 1.4-1.4v-1.4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
         <button
           class="win-btn"
           id="themeBtn"
@@ -208,7 +234,7 @@
           <span class="badge" id="inboxCount">0</span>
         </button>
         <span class="inbox-hint"
-          >분류하기 전에 일단 다 적고, 아래 분면으로 끌어다 놓으세요</span
+          >분류하기 전에 일단 다 적고, 적절한 곳으로 끌어다 놓으세요</span
         >
       </header>
       <div class="inbox-body" id="inboxBody">
@@ -536,6 +562,11 @@
               교차점을 잡으면 가로·세로를 한 번에, 더블클릭하면 반반으로
               돌아갑니다.
             </li>
+            <li>
+              <b>내보내기</b>(타이틀바 ⤓ 또는 <b>Ctrl+E</b>)로 지금의 다
+              꺼내기·4분면을 PDF·HTML·Markdown으로 저장할 수 있습니다. 주간
+              회고나 공유용으로 그 시점의 판을 남겨두기 좋습니다.
+            </li>
           </ul>
         </article>
       </div>
@@ -576,6 +607,15 @@
         </footer>
       </div>
     </section>
+
+    <!-- Save confirmations and errors. Floats over everything so it never
+         changes the layout the memo panel and the inbox are accounting for. -->
+    <div class="toast hidden" id="toast" role="status" aria-live="polite">
+      <span class="toast-text" id="toastText"></span>
+      <button class="toast-act hidden" id="toastAct" type="button">
+        폴더 열기
+      </button>
+    </div>
 
     <!-- Shared with the main process and the tests; defines the globals
          renderer.js relies on, so it has to come first. -->
