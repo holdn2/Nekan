@@ -40,6 +40,9 @@ export const {
   DEFAULT_LAYOUT,
   MIN_RATIO,
   MAX_RATIO,
+  MIN_COL_PX,
+  MIN_ROW_PX,
   clampRatio,
+  clampAxis,
   sanitizeLayout,
 } = core;

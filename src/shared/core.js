@@ -193,6 +193,32 @@ const MAX_RATIO = 0.85;
 /** Keep a quadrant from being dragged away to nothing. */
 const clampRatio = (v) => Math.min(MAX_RATIO, Math.max(MIN_RATIO, v));
 
+/**
+ * Smallest a quadrant may be dragged to, in pixels, where the window can afford
+ * it. They live here with the ratio bounds because the drag clamp below and the
+ * renderer's grid `minmax()` floor have to be the same number — if they drift,
+ * the drag stops at one size while the grid lays out at another.
+ */
+const MIN_COL_PX = 180;
+const MIN_ROW_PX = 110;
+
+/**
+ * The clamp a drag uses: a pixel minimum while `span` is big enough to honour
+ * it, and the plain ratio floor once it is not.
+ *
+ * The upper bound is `MAX_RATIO` and the mirror of the floor, whichever is
+ * tighter. Taking the mirror alone would silently assume MAX_RATIO is always
+ * 1 - MIN_RATIO, and changing one of them in this file would then not reach the
+ * drag at all.
+ */
+function clampAxis(value, span, minPx) {
+  if (!Number.isFinite(value)) return 0.5;
+  const floor = span > 0 ? Math.min(minPx / span, 0.5) : MIN_RATIO;
+  const low = Math.max(MIN_RATIO, floor);
+  const high = Math.min(MAX_RATIO, 1 - low);
+  return Math.min(high, Math.max(low, value));
+}
+
 /** Ratios are always real numbers in the store; null/"" must not read as 0. */
 const asRatio = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : NaN);
 
@@ -251,7 +277,10 @@ const emCore = {
   DEFAULT_LAYOUT,
   MIN_RATIO,
   MAX_RATIO,
+  MIN_COL_PX,
+  MIN_ROW_PX,
   clampRatio,
+  clampAxis,
   sanitizeLayout,
 };
 

@@ -83,6 +83,10 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   저장돼버리면 다음 실행 때 440×48로 열린다.
 - 분면 비율 `layout.cols/rows`는 0.15~0.85로 클램프된다. 상수와 클램프 함수는
   `shared/core.js` 한 곳에만 있고 `main/ipc.js`와 `renderer/window/layout.js`가 그걸 부른다.
+  드래그용 픽셀 클램프(`clampAxis`)와 `MIN_COL_PX`/`MIN_ROW_PX`도 **거기 있어야 한다.**
+  이유가 둘이다: `clampAxis`의 상한을 `1 - MIN_RATIO`로 직접 쓰면 `MAX_RATIO`를 바꿔도
+  드래그에 반영되지 않고, `MIN_COL_PX`는 드래그 클램프와 `applyLayout()`의 `minmax()`
+  바닥값 **두 곳이 같은 값이어야** 한다.
 - **메모 패널은 매트릭스에서 높이를 뺏지 않고 창을 키운다.** 렌더러가 CSS `--memo-h`를 읽어
   `win:memo`로 넘기면 `main/window.js`가 그만큼 창을 늘리고, 실제로 늘어난 값(`memoDelta` — 화면에
   여유가 없으면 요청보다 작다)을 저장하는 `bounds`에서 다시 빼준다(`boundsWithoutMemo`). 이걸

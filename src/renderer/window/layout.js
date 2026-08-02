@@ -14,8 +14,10 @@
 
 import {
   DEFAULT_LAYOUT,
-  MIN_RATIO,
+  MIN_COL_PX,
+  MIN_ROW_PX,
   QUADS,
+  clampAxis,
   sanitizeLayout,
 } from '../core-bridge.js';
 import { $ } from '../dom.js';
@@ -35,27 +37,13 @@ const GUTTER =
 const EDGE_REACH = 4;
 const HIT = GUTTER / 2 + EDGE_REACH;
 
-/** Smallest a quadrant may be dragged to, where the window can afford it. */
-const MIN_COL_PX = 180;
-const MIN_ROW_PX = 110;
-
 let layout = { ...DEFAULT_LAYOUT };
 let layoutTimer = null;
 
 /**
- * Clamp to a pixel minimum while the window is big enough to honour it, and
- * to the plain ratio floor once it is not.
- */
-function clampAxis(value, span, minPx) {
-  if (!Number.isFinite(value)) return 0.5;
-  const floor = span > 0 ? Math.min(minPx / span, 0.5) : MIN_RATIO;
-  const low = Math.max(MIN_RATIO, floor);
-  return Math.min(1 - low, Math.max(low, value));
-}
-
-/**
- * Ratios become grid tracks. The px floor in each minmax() keeps a quadrant
- * usable when the window itself gets small enough to beat the drag clamp.
+ * Ratios become grid tracks. The px floor in each minmax() is the same constant
+ * the drag clamp uses — they have to agree, which is why both read it from
+ * shared/core.js rather than each keeping its own number.
  */
 function applyLayout() {
   const track = (ratio, minPx) =>

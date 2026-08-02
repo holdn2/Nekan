@@ -24,6 +24,9 @@ const {
   DEFAULT_LAYOUT,
   MIN_RATIO,
   MAX_RATIO,
+  MIN_COL_PX,
+  MIN_ROW_PX,
+  clampAxis,
 } = require('../src/shared/core');
 
 /** Local 'YYYY-MM-DD' for a day offset from today, the way the UI writes it. */
@@ -260,4 +263,49 @@ test('sanitizeLayout averages the legacy per-column row split', () => {
     cols: 0.4,
     rows: 0.4,
   });
+});
+
+/* ------------------------------------------------- quadrant drag clamping */
+
+test('clampAxis honours the pixel minimum while the window can afford it', () => {
+  // 1000px wide: 180px is 18% of it, so the drag stops there rather than at the
+  // 15% ratio floor.
+  const near = (got, want) =>
+    assert.ok(Math.abs(got - want) < 1e-9, `${got} != ${want}`);
+  near(clampAxis(0.05, 1000, MIN_COL_PX), 0.18);
+  near(clampAxis(0.95, 1000, MIN_COL_PX), 0.82);
+  // Well inside the range, the value passes through untouched.
+  assert.equal(clampAxis(0.42, 1000, MIN_COL_PX), 0.42);
+});
+
+test('clampAxis falls back to the ratio floor once the window is too small', () => {
+  // 400px wide: 180px would be 45% per side, which leaves nothing. The floor is
+  // capped at half, then the ratio bounds take over.
+  const low = clampAxis(0, 400, MIN_COL_PX);
+  assert.ok(low >= MIN_RATIO && low <= 0.5);
+  assert.ok(Math.abs(clampAxis(1, 400, MIN_COL_PX) - (1 - low)) < 1e-9);
+});
+
+test('clampAxis never leaves the shared ratio bounds', () => {
+  for (const span of [0, 120, 400, 1000, 4000]) {
+    for (const value of [-5, 0, 0.01, 0.5, 0.99, 5]) {
+      const got = clampAxis(value, span, MIN_ROW_PX);
+      assert.ok(
+        got >= MIN_RATIO && got <= MAX_RATIO,
+        `clampAxis(${value}, ${span}) = ${got} escaped [${MIN_RATIO}, ${MAX_RATIO}]`,
+      );
+    }
+  }
+});
+
+test('clampAxis recovers from a non-number instead of poisoning the layout', () => {
+  // A NaN would otherwise reach the grid template and blank the matrix.
+  assert.equal(clampAxis(NaN, 1000, MIN_COL_PX), 0.5);
+  assert.equal(clampAxis(undefined, 1000, MIN_COL_PX), 0.5);
+});
+
+test('a zero span cannot produce a ratio outside the bounds', () => {
+  // The grid is measured before it has been laid out on the first drag frame.
+  const got = clampAxis(0.9, 0, MIN_COL_PX);
+  assert.ok(got >= MIN_RATIO && got <= MAX_RATIO);
 });
