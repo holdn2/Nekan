@@ -4,9 +4,10 @@
  * It is loaded two different ways, so it must stay free of Node APIs, DOM
  * APIs and side effects:
  *   - main process / tests: `require('./shared/core')`
- *   - renderer: a plain <script> tag before renderer.js — every top-level
- *     binding becomes a global, which is why renderer.js must not re-declare
- *     these names (a second top-level `const` would be a SyntaxError).
+ *   - renderer: a plain <script> tag before the module graph, which publishes
+ *     the export list as `window.EM_CORE` for renderer/core-bridge.js to
+ *     re-export. Renderer modules have their own scope, so they may reuse these
+ *     names freely — they just have to import them rather than read globals.
  */
 
 const QUADS = ['q1', 'q2', 'q3', 'q4'];
@@ -207,34 +208,52 @@ function sanitizeLayout(saved) {
   return next;
 }
 
+/**
+ * The one export list, handed to whichever loader is running us.
+ *
+ * The name matters: in the renderer this is a classic script, so a top-level
+ * `const` lands in the global lexical scope, and a plain `api` would collide
+ * with the `window.api` that preload.js exposes (a SyntaxError that kills the
+ * whole file).
+ *
+ * `require` (main process, tests) gets it as module.exports. The renderer loads
+ * this file as a classic <script>, where top-level `const` bindings are *not*
+ * properties of window — so the module graph could not reach them. Publishing
+ * the same object on window gives renderer/core-bridge.js something to
+ * re-export as named imports.
+ */
+const emCore = {
+  QUADS,
+  INBOX,
+  PLACES,
+  FALLBACK_QUAD,
+  SPACES,
+  DEFAULT_SPACE,
+  SPACE_LABEL,
+  sanitizeSpace,
+  spaceFor,
+  MAX_TEXT,
+  MAX_MEMO,
+  MAX_BULK_LINES,
+  DAY_MS,
+  WEEKDAY,
+  startOfToday,
+  startOfTomorrow,
+  parseDue,
+  dueInfo,
+  clampText,
+  clampMemo,
+  splitBulkText,
+  normalizeTasks,
+  DEFAULT_LAYOUT,
+  MIN_RATIO,
+  MAX_RATIO,
+  clampRatio,
+  sanitizeLayout,
+};
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    QUADS,
-    INBOX,
-    PLACES,
-    FALLBACK_QUAD,
-    SPACES,
-    DEFAULT_SPACE,
-    SPACE_LABEL,
-    sanitizeSpace,
-    spaceFor,
-    MAX_TEXT,
-    MAX_MEMO,
-    MAX_BULK_LINES,
-    DAY_MS,
-    WEEKDAY,
-    startOfToday,
-    startOfTomorrow,
-    parseDue,
-    dueInfo,
-    clampText,
-    clampMemo,
-    splitBulkText,
-    normalizeTasks,
-    DEFAULT_LAYOUT,
-    MIN_RATIO,
-    MAX_RATIO,
-    clampRatio,
-    sanitizeLayout,
-  };
+  module.exports = emCore;
+} else if (typeof window !== 'undefined') {
+  window.EM_CORE = emCore;
 }

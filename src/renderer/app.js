@@ -1,5 +1,24 @@
-// QUADS, the date helpers, clampText, normalizeTasks and the layout ratios all
-// come from shared/core.js, loaded as a plain script just before this one.
+import {
+  DEFAULT_LAYOUT,
+  DEFAULT_SPACE,
+  INBOX,
+  MIN_RATIO,
+  QUADS,
+  SPACE_LABEL,
+  clampMemo,
+  clampText,
+  normalizeTasks,
+  sanitizeLayout,
+  sanitizeSpace,
+  spaceFor,
+  splitBulkText,
+  startOfToday,
+  startOfTomorrow,
+} from './core-bridge.js';
+import { $, $$, actionBtn, labelBtn, numEl } from './dom.js';
+import { dueBadge, dueChip } from './components/due-chip.js';
+import { memoLine, memoMark } from './components/memo-mark.js';
+import { toast } from './components/toast.js';
 
 let tasks = [];
 let mode = "expanded";
@@ -9,9 +28,6 @@ let activeTab = "matrix";
 let historyQuery = "";
 let trashQuery = "";
 let theme = "light";
-
-const $ = (sel, root = document) => root.querySelector(sel);
-const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
 const uid = () =>
   Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -46,104 +62,6 @@ function scheduleDayRollover() {
     refreshIfDayChanged();
     scheduleDayRollover();
   }, Math.max(1000, wait));
-}
-
-function calendarIcon() {
-  const ns = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(ns, "svg");
-  svg.setAttribute("viewBox", "0 0 16 16");
-  svg.setAttribute("width", "12");
-  svg.setAttribute("height", "12");
-  const box = document.createElementNS(ns, "rect");
-  box.setAttribute("x", "2.2");
-  box.setAttribute("y", "3.4");
-  box.setAttribute("width", "11.6");
-  box.setAttribute("height", "10.4");
-  box.setAttribute("rx", "1.6");
-  box.setAttribute("fill", "none");
-  box.setAttribute("stroke", "currentColor");
-  box.setAttribute("stroke-width", "1.3");
-  const lines = document.createElementNS(ns, "path");
-  lines.setAttribute("d", "M2.2 6.6h11.6M5.6 2v2.6M10.4 2v2.6");
-  lines.setAttribute("stroke", "currentColor");
-  lines.setAttribute("stroke-width", "1.3");
-  lines.setAttribute("stroke-linecap", "round");
-  svg.append(box, lines);
-  return svg;
-}
-
-/**
- * Editable due-date chip: a native date input stretched invisibly over a
- * compact face, so a click anywhere opens the OS date picker.
- */
-function dueChip(value, onChange) {
-  const box = document.createElement("span");
-  const chip = document.createElement("span");
-  chip.className = "due";
-
-  const input = document.createElement("input");
-  input.type = "date";
-  input.setAttribute("aria-label", "마감일");
-
-  const face = document.createElement("span");
-  face.className = "face";
-  chip.append(input, face);
-
-  const clear = document.createElement("button");
-  clear.type = "button";
-  clear.className = "due-clear";
-  clear.textContent = "×";
-  clear.title = "날짜 지우기";
-  clear.setAttribute("aria-label", "마감일 지우기");
-
-  box.append(chip, clear);
-  box.draggable = false;
-
-  const apply = (next) => {
-    input.value = next || "";
-    const info = dueInfo(next);
-    box.className = info ? `duebox set ${info.state}` : "duebox";
-    face.replaceChildren();
-    if (info) {
-      face.textContent = info.text;
-      chip.title = `마감 ${info.text} · ${info.hint}`;
-    } else {
-      face.append(calendarIcon());
-      chip.title = "마감일 지정";
-    }
-  };
-
-  input.addEventListener("change", () => {
-    apply(input.value);
-    onChange(input.value || null);
-  });
-  clear.addEventListener("click", (e) => {
-    e.stopPropagation();
-    apply("");
-    onChange(null);
-  });
-
-  apply(value);
-  box.input = input;
-  box.apply = apply;
-  return box;
-}
-
-/** Read-only version, for history / trash rows. */
-function dueBadge(value) {
-  const info = dueInfo(value);
-  if (!info) return null;
-  const box = document.createElement("span");
-  box.className = `duebox set ${info.state} static`;
-  const chip = document.createElement("span");
-  chip.className = "due";
-  chip.title = `마감 ${info.text} · ${info.hint}`;
-  const face = document.createElement("span");
-  face.className = "face";
-  face.textContent = info.text;
-  chip.append(face);
-  box.append(chip);
-  return box;
 }
 
 /* ------------------------------------------------------------------ data */
@@ -290,13 +208,6 @@ const trashedTasks = () =>
     .sort((a, b) => b.deletedAt - a.deletedAt);
 
 /* -------------------------------------------------------------- rendering */
-
-function numEl(index) {
-  const el = document.createElement("span");
-  el.className = "num";
-  el.textContent = `${index + 1}.`;
-  return el;
-}
 
 function itemEl(task, index) {
   const li = document.createElement("li");
@@ -548,14 +459,6 @@ function renderArchive({
   empty.textContent = query.trim() ? "검색 결과가 없습니다." : emptyText;
 }
 
-function actionBtn(label, onClick, danger = false) {
-  const btn = document.createElement("button");
-  btn.className = danger ? "act danger" : "act";
-  btn.textContent = label;
-  btn.addEventListener("click", onClick);
-  return btn;
-}
-
 const matches = (task, query) => {
   const q = query.trim().toLowerCase();
   return !q || task.text.toLowerCase().includes(q);
@@ -604,67 +507,6 @@ let memoEditing = false;
 /** Long enough for the second click of a double-click to arrive first. */
 const CLICK_DELAY = 220;
 let clickTimer = null;
-
-function noteIcon() {
-  const ns = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(ns, "svg");
-  svg.setAttribute("viewBox", "0 0 16 16");
-  svg.setAttribute("width", "11");
-  svg.setAttribute("height", "11");
-  svg.setAttribute("aria-hidden", "true");
-  const page = document.createElementNS(ns, "path");
-  page.setAttribute("d", "M3.4 2.2h9.2v11.6H3.4z");
-  page.setAttribute("fill", "none");
-  page.setAttribute("stroke", "currentColor");
-  page.setAttribute("stroke-width", "1.3");
-  page.setAttribute("stroke-linejoin", "round");
-  const lines = document.createElementNS(ns, "path");
-  lines.setAttribute("d", "M5.6 5.4h4.8M5.6 8h4.8M5.6 10.6h3");
-  lines.setAttribute("stroke", "currentColor");
-  lines.setAttribute("stroke-width", "1.3");
-  lines.setAttribute("stroke-linecap", "round");
-  svg.append(page, lines);
-  return svg;
-}
-
-/** The "has a memo" marker; the memo itself rides along as the tooltip. */
-function memoMark(memo) {
-  const el = document.createElement("span");
-  el.className = "memo-mark";
-  el.title = `메모: ${memo}`;
-  el.setAttribute("aria-label", "메모 있음");
-  el.append(noteIcon());
-  return el;
-}
-
-/**
- * Read-only memo block for history / trash rows. These tabs deliberately have
- * no edit path — the panel that edits a memo only ever opens on the matrix —
- * so this is display only: no dblclick, no contentEditable, no save.
- * Long memos are clamped to three lines and expand on click.
- */
-function memoLine(memo) {
-  const box = document.createElement("div");
-  box.className = "hmemo";
-
-  const icon = document.createElement("span");
-  icon.className = "memo-mark";
-  icon.setAttribute("aria-hidden", "true");
-  icon.append(noteIcon());
-
-  const text = document.createElement("p");
-  text.className = "hmemo-text";
-  text.textContent = memo;
-
-  box.append(icon, text);
-  box.addEventListener("click", () => {
-    // Let a click that was really a text selection stand.
-    if (window.getSelection()?.toString()) return;
-    if (!box.classList.contains("clamped")) return;
-    box.title = box.classList.toggle("open") ? "접기" : "전체 보기";
-  });
-  return box;
-}
 
 /** Panel height comes from CSS so main.js and the stylesheet cannot drift. */
 const memoPanelHeight = () =>
@@ -932,30 +774,6 @@ function wireInbox() {
     addTasks(INBOX, splitBulkText(merged));
     input.value = "";
   });
-}
-
-/* ----------------------------------------------------------------- toast */
-
-let toastTimer = null;
-
-/**
- * Brief confirmation for things that happen outside the window (a file written
- * to disk), where nothing on screen would otherwise change. `action` adds one
- * button; it is cleared on every call so an old one cannot linger.
- */
-function toast(message, { error = false, action = null, ms = 4000 } = {}) {
-  const box = $("#toast");
-  const act = $("#toastAct");
-  $("#toastText").textContent = message;
-  box.classList.toggle("error", error);
-
-  act.classList.toggle("hidden", !action);
-  act.onclick = action ? action.onClick : null;
-  if (action) act.textContent = action.label;
-
-  box.classList.remove("hidden");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => box.classList.add("hidden"), ms);
 }
 
 /* ---------------------------------------------------------------- export */
@@ -1232,13 +1050,6 @@ function wireQuadEdges() {
 }
 
 /* ------------------------------------------------------------------ theme */
-
-/** Title and accessible name always move together on the icon-only buttons. */
-function labelBtn(sel, label) {
-  const btn = $(sel);
-  btn.title = label;
-  btn.setAttribute("aria-label", label);
-}
 
 function applyTheme(next, persist = true) {
   theme = next === "dark" ? "dark" : "light";
