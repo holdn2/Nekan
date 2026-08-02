@@ -37,7 +37,9 @@ function load() {
   return store;
 }
 
+/** The whole store object — tasks and settings. */
 const getStore = () => store;
+/** Settings only; the half every module here actually touches. */
 const getSettings = () => store.settings;
 
 /** Replace the task list with what the renderer just sent. */

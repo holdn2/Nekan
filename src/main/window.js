@@ -36,7 +36,9 @@ let mode = 'expanded';
 let memoOpen = false;
 let memoDelta = 0;
 
+/** The BrowserWindow, or null before it is built / after it closed. */
 const getWindow = () => win;
+/** 'expanded' | 'collapsed'. Main owns this; the renderer follows. */
 const getMode = () => mode;
 
 /** Keep the window inside a visible display, in case a monitor went away. */

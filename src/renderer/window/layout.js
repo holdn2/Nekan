@@ -67,6 +67,10 @@ function applyLayout() {
   grid.style.gridTemplateRows = track(layout.rows, MIN_ROW_PX);
 }
 
+/**
+ * Persist the ratios, debounced: a drag fires this on every pointermove and
+ * each call would otherwise be an IPC round trip and a file write.
+ */
 function saveLayout() {
   clearTimeout(layoutTimer);
   layoutTimer = setTimeout(() => window.api.setLayout(layout), 150);
@@ -121,6 +125,11 @@ function markEdge(mode) {
   });
 }
 
+/**
+ * Bind the whole edge interaction: hover to mark, drag to resize, double-click
+ * to re-centre. Bound to the grid rather than to the quadrants so the pointer
+ * keeps being tracked when it crosses the gutter between them.
+ */
 export function wireQuadEdges() {
   const grid = $("#matrixView");
   let dragging = null;

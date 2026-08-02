@@ -40,6 +40,7 @@ const QUAD_COLOR = {
   q4: '#8d887d',
 };
 
+/** Two-digit number for the date and time stamps. */
 const pad = (n) => String(n).padStart(2, '0');
 
 /** 'YYYY-MM-DD', built locally so it matches the day the user sees. */
@@ -61,6 +62,10 @@ function defaultFileName(now = new Date(), ext = 'pdf', space) {
   return `아이젠하워 매트릭스 ${SPACE_LABEL[sanitizeSpace(space)]} ${isoDay(now)}.${ext}`;
 }
 
+/**
+ * One task, reduced to what a document needs. The live urgency is resolved
+ * here because a printed page cannot recompute it later.
+ */
 function exportItem(task, now) {
   const due = dueInfo(task.dueDate, now);
   return {
@@ -118,6 +123,7 @@ function buildSnapshot(tasks, now = new Date(), space) {
 /** Pipes and newlines would break the row a memo sits in. */
 const mdCell = (text) => String(text).replace(/\|/g, '\\|').replace(/\s+/g, ' ');
 
+/** One quadrant as a numbered markdown list, memos quoted underneath. */
 function markdownSection(section) {
   const lines = [`## ${section.title}`, '', `_${section.action}_`, ''];
   if (!section.items.length) {
@@ -138,6 +144,7 @@ function markdownSection(section) {
   return lines;
 }
 
+/** The whole document: header, then one section per quadrant. */
 function toMarkdown(snapshot) {
   const lines = [
     `# 아이젠하워 매트릭스 — ${snapshot.spaceLabel}`,
@@ -158,6 +165,7 @@ const escapeHtml = (text) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
+/** One row: title, optional due chip, optional memo paragraph. */
 function htmlItem(item) {
   const parts = [`<span class="t">${escapeHtml(item.text)}</span>`];
   if (item.due) {
@@ -172,6 +180,7 @@ function htmlItem(item) {
   return `<li><div class="row">${parts.join('')}</div>${memo}</li>`;
 }
 
+/** One quadrant card: coloured header, count, and the list (or "비어 있음"). */
 function htmlSection(section, tag) {
   const body = section.items.length
     ? `<ol>${section.items.map(htmlItem).join('')}</ol>`

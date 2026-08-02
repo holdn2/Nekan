@@ -37,6 +37,7 @@ const SPACES = ['work', 'life'];
 const DEFAULT_SPACE = 'work';
 const SPACE_LABEL = { work: '업무', life: '일상' };
 
+/** Any unknown value — including undefined — reads as the default board. */
 const sanitizeSpace = (v) => (SPACES.includes(v) ? v : DEFAULT_SPACE);
 
 /**
@@ -150,6 +151,7 @@ function clampMemo(memo) {
  */
 const MAX_BULK_LINES = 100;
 
+/** One pasted block → one task per surviving line. */
 function splitBulkText(raw) {
   return String(raw == null ? '' : raw)
     .split(/\r?\n/)
@@ -188,6 +190,7 @@ const DEFAULT_LAYOUT = { cols: 0.5, rows: 0.5 };
 const MIN_RATIO = 0.15;
 const MAX_RATIO = 0.85;
 
+/** Keep a quadrant from being dragged away to nothing. */
 const clampRatio = (v) => Math.min(MAX_RATIO, Math.max(MIN_RATIO, v));
 
 /** Ratios are always real numbers in the store; null/"" must not read as 0. */

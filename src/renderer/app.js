@@ -150,6 +150,11 @@ function wireShortcuts() {
 /** Last mode pushed by the main process, which outranks the load snapshot. */
 let pushedMode = null;
 
+/**
+ * Load, wire, draw. The order is what matters here: the mode listener before
+ * the first await, the store before anything reads it, and the wiring before
+ * the render that applyMode() triggers at the end.
+ */
 async function init() {
   // Registered before the first await: the main process sends 'win:mode' from
   // ready-to-show, and a listener attached later would miss it silently.

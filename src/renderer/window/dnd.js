@@ -25,6 +25,7 @@ function afterElement(list, y) {
 /** Every place a task can be dropped: the four quadrants plus the inbox. */
 const dropZones = () => [...$$(".quad"), $("#inboxPanel")];
 
+/** Bind the drag handlers. Called once; the zones outlive every render. */
 export function wireDragAndDrop() {
   let draggingId = null;
 

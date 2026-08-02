@@ -34,6 +34,7 @@ const QUAD_LABEL = {
   q4: '기타',
 };
 
+/** Day header: "2026년 8월 2일 (일)". */
 const dayLabel = (ts) =>
   new Date(ts).toLocaleDateString('ko-KR', {
     year: 'numeric',
@@ -42,6 +43,7 @@ const dayLabel = (ts) =>
     weekday: 'short',
   });
 
+/** Time column on a row, to the minute. */
 const timeLabel = (ts) =>
   new Date(ts).toLocaleTimeString('ko-KR', {
     hour: '2-digit',
