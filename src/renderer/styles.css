@@ -121,6 +121,40 @@ button {
   text-overflow: ellipsis;
 }
 
+/* ---------- 업무 / 일상 switch ---------- */
+.space-switch {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-2);
+}
+
+.space-btn {
+  padding: 3px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.space-btn:hover {
+  color: var(--text);
+}
+
+.space-btn.active {
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+}
+
 .bar-summary {
   -webkit-app-region: no-drag;
   display: flex;
@@ -272,7 +306,12 @@ button {
 /* Sits between the tabs and the matrix as its own flex row. flex-basis auto
    with no grow means it is exactly as tall as its content, so the matrix keeps
    everything the inbox does not use. */
-.inbox {
+/* The `section` in these selectors is load-bearing, not decoration: `inbox` is
+   also a `quadrant` value, so `.dot.inbox` marks the unclassified dot in the
+   summary chip and in history/trash rows. A bare `.inbox` rule would style
+   those 8px dots as if they were this panel — margins, box shadow and all —
+   and `body.collapsed .inbox` would delete the dot out of the bar chip. */
+section.inbox {
   flex: 0 0 auto;
   margin: 8px 12px 0;
   background: var(--panel);
@@ -283,11 +322,11 @@ button {
   transition: border-color 0.12s ease;
 }
 
-.inbox.hidden {
+section.inbox.hidden {
   display: none !important;
 }
 
-.inbox.drop {
+section.inbox.drop {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent) inset;
 }
@@ -321,12 +360,26 @@ button {
   transition: transform 0.15s ease;
 }
 
-.inbox.open .chev {
+section.inbox.open .chev {
   transform: rotate(90deg);
 }
 
 .inbox-toggle:hover .chev {
   color: var(--accent);
+}
+
+/* The header toggle scopes the rest of the app, so this list has to say out
+   loud that it is the exception. */
+.shared-tag {
+  flex: 0 0 auto;
+  margin-left: -2px;
+  padding: 1px 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 .inbox-hint {
@@ -343,7 +396,7 @@ button {
   border-top: 1px solid var(--line);
 }
 
-.inbox.open .inbox-body {
+section.inbox.open .inbox-body {
   display: block;
 }
 
@@ -374,9 +427,12 @@ button {
   user-select: text;
 }
 
+/* Hollow instead of coloured: the inbox is not a fifth quadrant, it is the
+   "no colour yet" state. Kept at 1.5px so the hole stays visible at 8px —
+   2px would fill in and read as just another solid dot. */
 .dot.inbox {
   background: transparent;
-  border: 1.5px solid var(--faint);
+  border: 1.5px solid var(--muted);
 }
 
 .chip.hidden {
@@ -1379,11 +1435,74 @@ body.resizing-both {
   color: var(--accent);
 }
 
+/* ---------- toast ---------- */
+/* Position: fixed so it never joins the flex column — the memo panel's height
+   is negotiated with main.js, and a toast in the flow would throw that off. */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 40px);
+  padding: 9px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 99px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 6px 20px #00000026;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+/* Faded out rather than removed, so it can animate both ways. */
+.toast.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 8px);
+}
+
+.toast.error {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.toast-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toast-act {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 99px;
+  padding: 3px 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.toast-act:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.toast-act.hidden {
+  display: none;
+}
+
 /* ---------- collapsed (bar) mode ---------- */
 body.collapsed .tabs,
 body.collapsed .view,
-body.collapsed .inbox,
-body.collapsed .memo {
+body.collapsed section.inbox,
+body.collapsed .memo,
+body.collapsed #exportBtn,
+body.collapsed .toast {
   display: none !important;
 }
 
@@ -1394,6 +1513,59 @@ body.collapsed .titlebar {
 
 body.expanded .bar-summary .chip {
   cursor: default;
+}
+
+/* The switch stays whole in the bar — both halves, same meaning as expanded —
+   and everything around it pays for the width. The row wanted 484px of the 440
+   available before any of this and pushed the window buttons off the right
+   edge. The brand goes first: it was already losing, squeezed to zero width
+   with the logo overflowing across the switch. Then the switch, the chips and
+   the window buttons each give back a few pixels.
+
+   The remaining slack is small, so anything added here has to be measured
+   against the widest the row ever gets — inbox chip showing, all five counts
+   two digits wide — not against a fresh install. */
+body.collapsed .brand {
+  display: none;
+}
+
+body.collapsed .titlebar {
+  padding: 0 4px 0 8px;
+  gap: 6px;
+}
+
+body.collapsed .space-switch {
+  gap: 1px;
+  padding: 1px;
+}
+
+body.collapsed .space-btn {
+  padding: 3px 7px;
+  font-size: 11px;
+}
+
+body.collapsed .bar-summary {
+  gap: 2px;
+}
+
+body.collapsed .chip {
+  padding: 3px 5px;
+  gap: 3px;
+}
+
+body.collapsed .win-actions {
+  margin-left: 2px;
+}
+
+body.collapsed .win-btn {
+  width: 25px;
+  height: 25px;
+}
+
+/* Appearance is not a window control, and the bar already hides the export
+   button on the same reasoning: there is no room, and Ctrl+D still works. */
+body.collapsed #themeBtn {
+  display: none;
 }
 
 /* ---------- scrollbars ---------- */

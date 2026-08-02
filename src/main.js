@@ -1,8 +1,22 @@
-const { app, BrowserWindow, ipcMain, screen } = require('electron');
+const {
+  app,
+  BrowserWindow,
+  ipcMain,
+  screen,
+  dialog,
+  shell,
+} = require('electron');
+const fs = require('fs');
 const path = require('path');
 
-const { sanitizeLayout } = require('./shared/core');
+const { sanitizeLayout, sanitizeSpace, SPACE_LABEL } = require('./shared/core');
 const { loadStore, writeStore } = require('./shared/store-io');
+const {
+  buildSnapshot,
+  defaultFileName,
+  toHtml,
+  toMarkdown,
+} = require('./shared/export');
 
 // Keep the data folder identical between `npm start` and the packaged build.
 app.setName('EisenhowerMatrix');
@@ -274,7 +288,100 @@ ipcMain.handle('settings:inbox', (_e, open) => {
   return store.settings.inboxOpen;
 });
 
+// Which matrix the header toggle is showing. Nothing moves in the store: every
+// task carries its own `space`, so switching boards is purely a filter in the
+// renderer and only the choice has to survive a restart.
+ipcMain.handle('settings:space', (_e, space) => {
+  store.settings.activeSpace = sanitizeSpace(space);
+  persist();
+  return store.settings.activeSpace;
+});
+
 ipcMain.handle('win:memo', (_e, open, height) => setMemoPanel(!!open, height));
+
+/* ---------------------------------------------------------------- export */
+
+// The chosen extension picks the format, so the native dialog's file-type
+// dropdown is the whole format picker — no menu of our own.
+const EXPORT_FILTERS = [
+  { name: 'PDF 문서', extensions: ['pdf'] },
+  { name: 'HTML 문서', extensions: ['html'] },
+  { name: '마크다운', extensions: ['md'] },
+];
+
+/**
+ * Print the export page in a throwaway window. It has to be a real window with
+ * a real load: `printToPDF` runs on a webContents, and borrowing the app's own
+ * would flash the document over the matrix. The HTML goes through a temp file
+ * rather than a data: URL so a long board cannot hit a URL length limit.
+ */
+async function renderPdf(html, target) {
+  const tmp = path.join(app.getPath('temp'), `em-export-${Date.now()}.html`);
+  fs.writeFileSync(tmp, html, 'utf8');
+
+  const printer = new BrowserWindow({
+    show: false,
+    webPreferences: { contextIsolation: true, nodeIntegration: false },
+  });
+  try {
+    await printer.loadFile(tmp);
+    const pdf = await printer.webContents.printToPDF({
+      printBackground: true,
+      pageSize: 'A4',
+      landscape: true,
+      margins: { top: 0.4, bottom: 0.4, left: 0.4, right: 0.4 },
+    });
+    fs.writeFileSync(target, pdf);
+  } finally {
+    if (!printer.isDestroyed()) printer.destroy();
+    fs.rmSync(tmp, { force: true });
+  }
+}
+
+ipcMain.handle('export:run', async () => {
+  if (!win || win.isDestroyed()) return { ok: false, reason: 'canceled' };
+
+  // The export follows the header toggle: what comes out is the matrix that is
+  // on screen, plus the shared inbox. The other board is exported separately.
+  const space = sanitizeSpace(store.settings.activeSpace);
+  const snapshot = buildSnapshot(store.tasks, new Date(), space);
+  if (!snapshot.total) return { ok: false, reason: 'empty' };
+
+  const picked = await dialog.showSaveDialog(win, {
+    title: `${SPACE_LABEL[space]} 매트릭스 내보내기`,
+    defaultPath: path.join(
+      app.getPath('documents'),
+      defaultFileName(new Date(), 'pdf', space)
+    ),
+    filters: EXPORT_FILTERS,
+  });
+  if (picked.canceled || !picked.filePath) {
+    return { ok: false, reason: 'canceled' };
+  }
+
+  const target = picked.filePath;
+  try {
+    const ext = path.extname(target).toLowerCase();
+    if (ext === '.md' || ext === '.markdown') {
+      fs.writeFileSync(target, toMarkdown(snapshot), 'utf8');
+    } else if (ext === '.html' || ext === '.htm') {
+      fs.writeFileSync(target, toHtml(snapshot), 'utf8');
+    } else {
+      // Anything else (including a name typed without an extension, which the
+      // dialog completes to .pdf) goes through the printer.
+      await renderPdf(toHtml(snapshot), target);
+    }
+  } catch (err) {
+    console.error('export failed', err);
+    return { ok: false, reason: 'error', message: String(err.message || err) };
+  }
+
+  return { ok: true, path: target, name: path.basename(target) };
+});
+
+ipcMain.handle('export:reveal', (_e, target) => {
+  if (typeof target === 'string' && target) shell.showItemInFolder(target);
+});
 
 ipcMain.handle('win:togglePin', () => {
   if (!win) return false;

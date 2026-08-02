@@ -3,6 +3,8 @@
 
 let tasks = [];
 let mode = "expanded";
+/** Which matrix the header toggle is on; see applySpace(). */
+let activeSpace = DEFAULT_SPACE;
 let activeTab = "matrix";
 let historyQuery = "";
 let trashQuery = "";
@@ -151,6 +153,9 @@ function makeTask(quadrant, text, dueDate) {
     id: uid(),
     text,
     quadrant,
+    // Filed straight into a quadrant, it belongs to the matrix on screen; typed
+    // into the inbox, it belongs to neither yet (spaceFor returns null).
+    space: spaceFor(quadrant, activeSpace),
     dueDate: dueDate || null,
     memo: null,
     createdAt: Date.now(),
@@ -241,12 +246,21 @@ function editTask(id, text) {
   save();
 }
 
-/** Move `id` into `quadrant`, placed right before `beforeId` (or last). */
+/**
+ * Move `id` into `quadrant`, placed right before `beforeId` (or last).
+ *
+ * The drop also decides the task's matrix: dragging down out of the inbox files
+ * it under the board on screen, dragging back up into the inbox hands it back to
+ * both. That is what makes "다 꺼내기 → 분류" the moment a task becomes 업무 or
+ * 일상, and it is why a task can be re-filed to the other board by parking it in
+ * the inbox and pulling it down again on the other side.
+ */
 function moveTask(id, quadrant, beforeId) {
   const from = tasks.findIndex((t) => t.id === id);
   if (from === -1 || id === beforeId) return;
   const [task] = tasks.splice(from, 1);
   task.quadrant = quadrant;
+  task.space = spaceFor(quadrant, activeSpace);
   const to = beforeId ? tasks.findIndex((t) => t.id === beforeId) : -1;
   if (to === -1) tasks.push(task);
   else tasks.splice(to, 0, task);
@@ -254,16 +268,26 @@ function moveTask(id, quadrant, beforeId) {
   render();
 }
 
+/**
+ * On the matrix on screen. A `space` of null means the shared inbox, so those
+ * rows pass on both boards — every other list is one board's alone.
+ */
+const inSpace = (t) => t.space === null || t.space === activeSpace;
+
 const activeOf = (q) =>
-  tasks.filter((t) => !t.deletedAt && !t.completedAt && t.quadrant === q);
+  tasks.filter(
+    (t) => !t.deletedAt && !t.completedAt && t.quadrant === q && inSpace(t),
+  );
 /** Written down but not classified yet — same filter, fifth place. */
 const inboxTasks = () => activeOf(INBOX);
 const doneTasks = () =>
   tasks
-    .filter((t) => !t.deletedAt && t.completedAt)
+    .filter((t) => !t.deletedAt && t.completedAt && inSpace(t))
     .sort((a, b) => b.completedAt - a.completedAt);
 const trashedTasks = () =>
-  tasks.filter((t) => t.deletedAt).sort((a, b) => b.deletedAt - a.deletedAt);
+  tasks
+    .filter((t) => t.deletedAt && inSpace(t))
+    .sort((a, b) => b.deletedAt - a.deletedAt);
 
 /* -------------------------------------------------------------- rendering */
 
@@ -649,15 +673,17 @@ const memoPanelHeight = () =>
   ) || 0;
 
 /**
- * The selected task, or null once it has left the matrix. Being dragged up to
- * the inbox counts as leaving: those rows have no memo, so the panel closes
- * itself rather than pointing at something the list no longer shows.
+ * The selected task, or null once it has left the matrix on screen. Being
+ * dragged up to the inbox counts as leaving (those rows have no memo), and so
+ * does switching to the other board — in both cases the panel closes itself
+ * rather than pointing at something the list no longer shows.
  */
 function selectedTask() {
   if (!selectedId) return null;
   const task = tasks.find((t) => t.id === selectedId);
   if (!task || task.completedAt || task.deletedAt) return null;
-  return task.quadrant === INBOX ? null : task;
+  if (task.quadrant === INBOX || task.space !== activeSpace) return null;
+  return task;
 }
 
 /** Only the open/closed transition resizes; swapping tasks keeps the height. */
@@ -805,6 +831,31 @@ function render() {
   renderMemo();
 }
 
+/* ----------------------------------------------------------------- boards */
+
+/**
+ * 업무 / 일상. Both matrices live in the same task list — a board is just the
+ * `space` field — so switching is a filter and a re-render, never a load. The
+ * inbox is left out of the filter on purpose (see `inSpace`).
+ *
+ * Both halves are on screen in either window mode, so a click always means
+ * "show me this one" and never "flip to the other".
+ */
+function syncSpaceSwitch() {
+  $$(".space-btn").forEach((btn) => {
+    const on = btn.dataset.space === activeSpace;
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-pressed", String(on));
+    btn.title = `${SPACE_LABEL[btn.dataset.space]} 매트릭스 보기`;
+  });
+}
+
+function applySpace(next, persist = true) {
+  activeSpace = sanitizeSpace(next);
+  syncSpaceSwitch();
+  if (persist) window.api.setSpace(activeSpace);
+}
+
 /* ------------------------------------------------------------------- tabs */
 
 function setTab(tab) {
@@ -881,6 +932,62 @@ function wireInbox() {
     addTasks(INBOX, splitBulkText(merged));
     input.value = "";
   });
+}
+
+/* ----------------------------------------------------------------- toast */
+
+let toastTimer = null;
+
+/**
+ * Brief confirmation for things that happen outside the window (a file written
+ * to disk), where nothing on screen would otherwise change. `action` adds one
+ * button; it is cleared on every call so an old one cannot linger.
+ */
+function toast(message, { error = false, action = null, ms = 4000 } = {}) {
+  const box = $("#toast");
+  const act = $("#toastAct");
+  $("#toastText").textContent = message;
+  box.classList.toggle("error", error);
+
+  act.classList.toggle("hidden", !action);
+  act.onclick = action ? action.onClick : null;
+  if (action) act.textContent = action.label;
+
+  box.classList.remove("hidden");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => box.classList.add("hidden"), ms);
+}
+
+/* ---------------------------------------------------------------- export */
+
+/**
+ * The inbox and the four quadrants, written out as PDF, HTML or Markdown. The
+ * format comes from the extension picked in the native save dialog, and the
+ * document itself is built in the main process from the same task list that was
+ * last saved — so there is nothing to collect here beyond the click.
+ */
+async function exportBoard() {
+  const btn = $("#exportBtn");
+  if (btn.disabled) return;
+  btn.disabled = true;
+  try {
+    const res = await window.api.exportBoard();
+    if (res?.ok) {
+      toast(`저장했습니다 · ${res.name}`, {
+        action: {
+          label: "폴더 열기",
+          onClick: () => window.api.revealExport(res.path),
+        },
+      });
+    } else if (res?.reason === "empty") {
+      toast("내보낼 항목이 없습니다.");
+    } else if (res?.reason === "error") {
+      toast(`저장하지 못했습니다: ${res.message}`, { error: true, ms: 6000 });
+    }
+    // 'canceled' is the user closing the dialog — no message for that.
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 /* ------------------------------------------------------------ drag & drop */
@@ -1197,6 +1304,13 @@ function wireUI() {
     btn.addEventListener("click", () => setTab(btn.dataset.tab)),
   );
 
+  $("#spaceSwitch").addEventListener("click", (e) => {
+    const btn = e.target.closest(".space-btn");
+    if (!btn || btn.dataset.space === activeSpace) return;
+    applySpace(btn.dataset.space);
+    render();
+  });
+
   $("#historySearch").addEventListener("input", (e) => {
     historyQuery = e.target.value;
     renderHistory();
@@ -1239,7 +1353,10 @@ function wireUI() {
       )
     )
       return;
-    tasks = tasks.filter((t) => !t.deletedAt);
+    // Only what the list just counted: the other board's trash is not on screen
+    // and must not go out with it.
+    const doomed = new Set(trashedTasks().map((t) => t.id));
+    tasks = tasks.filter((t) => !doomed.has(t.id));
     save();
     render();
   });
@@ -1247,6 +1364,8 @@ function wireUI() {
   $("#themeBtn").addEventListener("click", () =>
     applyTheme(theme === "dark" ? "light" : "dark"),
   );
+
+  $("#exportBtn").addEventListener("click", exportBoard);
 
   $("#sizeBtn").addEventListener("click", toggleSize);
   $("#minBtn").addEventListener("click", () => window.api.minimize());
@@ -1276,6 +1395,13 @@ function wireUI() {
     if (e.ctrlKey && e.key.toLowerCase() === "m") {
       e.preventDefault();
       toggleSize();
+      return;
+    }
+    if (e.ctrlKey && e.key.toLowerCase() === "e") {
+      e.preventDefault();
+      // Bar mode hides the button; keep the shortcut in step with it.
+      if (mode === "collapsed") return;
+      exportBoard();
       return;
     }
     if (e.ctrlKey && e.key.toLowerCase() === "d") {
@@ -1323,6 +1449,7 @@ async function init() {
   applyTheme(state.settings?.theme || "light", false);
   applyPinned(state.settings?.alwaysOnTop !== false);
   applyInboxOpen(state.settings?.inboxOpen === true, false);
+  applySpace(state.settings?.activeSpace, false);
   layout = sanitizeLayout(state.settings?.layout);
   applyLayout();
   wireUI();

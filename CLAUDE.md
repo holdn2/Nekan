@@ -11,6 +11,7 @@ src/preload.js    contextBridge → window.api (여기 없는 건 렌더러에�
 src/shared/
   core.js         날짜·정규화·레이아웃 비율 등 순수 로직. 메인·렌더러·테스트가 공유
   store-io.js     data.json 읽기/쓰기 (electron 의존 없음 — 경로는 호출자가 준다)
+  export.js       내보내기 문서 생성 (마크다운·인쇄용 HTML). 메인·테스트만 require
 src/renderer/
   index.html      4분면 + 히스토리/휴지통/가이드 탭의 정적 마크업
   renderer.js     전역 tasks 배열 하나가 유일한 상태. 모든 변경 → save() → render()
@@ -28,6 +29,17 @@ test/             node --test 용 단위 테스트 (shared/ 만 커버)
   (`renderMatrix`, `renderCounts`, `markEdge`)가 쓴다 — 여기에 `'inbox'`를 넣으면 없는 DOM을
   찾아 죽는다. `PLACES = [INBOX, ...QUADS]`는 **유효한 `quadrant` 값 집합**이고
   `normalizeTasks()`의 검사에만 쓴다. 새 위치를 추가한다면 이 구분을 그대로 지킬 것.
+- **`space`는 "어느 매트릭스"이고 `quadrant`와 직교한다.** 업무/일상은 파일이 아니라 task의
+  필드로 나뉘어 있고(`SPACES`), 값은 `spaceFor(quadrant, space)` **한 곳에서만** 정해진다 —
+  `normalizeTasks()`와 렌더러의 `makeTask`/`moveTask`가 같은 함수를 부른다. 규칙은 하나뿐이다:
+  **`quadrant === INBOX`면 `space`는 반드시 `null`.** 인박스가 두 매트릭스의 공유 영역인 것이
+  이 null에서 나오고(`inSpace()`가 null을 양쪽 통과로 본다), 인박스에서 분면으로 끌어내리는
+  드롭이 소속을 정하는 유일한 순간이다. 인박스 행에 `space`를 남기면 그 항목이 한쪽에서만
+  보이고, 분면 항목의 `space`를 null로 두면 양쪽에 겹쳐 보인다.
+- **"화면에 보이는 것만" 거르는 곳이 전부 `inSpace()`를 거쳐야 한다.** 4분면·히스토리·휴지통·
+  헤더 개수·내보내기가 전부 활성 space 기준이다. 특히 `tasks`를 통째로 `filter`하는 일괄
+  작업(휴지통 비우기)은 **id 집합을 먼저 모아서** 지워야 한다 — 조건으로 지우면 화면에 없는
+  반대쪽 보드까지 날아간다.
 - **task는 절대 배열에서 지우지 않는다.** 상태는 세 개의 타임스탬프 필드로만 표현한다:
   - 활성: `completedAt === null && deletedAt === null`
   - 완료(히스토리): `completedAt !== null`
@@ -60,9 +72,23 @@ test/             node --test 용 단위 테스트 (shared/ 만 커버)
   높이를 가져간다. 그래서 main.js에 창 크기 회계가 없고 접힘 상태(`settings.inboxOpen`)만
   저장한다. 대신 목록이 4분면을 밀어내지 않도록 `styles.css`의 `--inbox-max-h`와 `26vh`가
   높이를 묶는다 — 이 상한을 없애면 항목이 쌓일수록 매트릭스가 화면 밖으로 나간다.
+- **바(440px)에는 남는 폭이 없다.** 업무/일상 토글을 양쪽 다 보이게 넣으면서 타이틀바가
+  요구하는 폭이 창을 넘겨 창 버튼이 오른쪽으로 밀려났다. 그래서 `body.collapsed`에서
+  브랜드(로고+제목)와 **테마 버튼**을 숨기고 토글·칩·창 버튼 크기를 줄여 맞춰놨다 — 여유가
+  4px뿐이니 **바에 뭔가를 더 넣으면 반드시 실측**할 것: 개수를 전부 두 자리로 만들고
+  인박스 칩을 보이게 한 상태에서 `.titlebar`의 `scrollWidth`와 `#closeBtn`의 `right`를
+  `window.innerWidth`와 비교한다. 스크린샷으로 확인할 거면 `PrintWindow`는 오른쪽 영역이
+  갱신 안 된 채 찍히는 일이 있으니 CDP `Page.captureScreenshot`을 쓸 것.
 - 인박스 행에는 마감일·완료·메모가 **의도적으로 없다**(`inboxItemEl`). 그래서 `selectedTask()`가
   `quadrant === INBOX`를 null로 본다 — 이걸 빼면 선택된 항목을 인박스로 끌어올렸을 때 메모
   패널이 열린 채 남는다.
+- **내보내기(`export:run`)는 렌더러가 아니라 main의 `store.tasks`에서 만든다.** 렌더러의 모든
+  변경이 `save()`를 거치므로 main의 배열이 곧 화면이고, IPC로 목록을 되돌려 받을 이유가 없다.
+  대신 `loadStore()`는 정규화를 하지 않으므로 `buildSnapshot()`이 `normalizeTasks()`를 먼저
+  돌린다 — 이걸 빼면 아직 렌더러가 한 번도 저장하지 않은 상태에서 내보낼 때 옛날 `data.json`의
+  항목이 통째로 빠진다. PDF는 `shared/export.js`의 HTML을 **숨은 BrowserWindow**에서
+  `printToPDF`로 찍는다(앱 창을 재사용하면 매트릭스 위에 문서가 번쩍인다). 그래서 인쇄물
+  모양을 바꿀 곳은 `export.js`의 `toHtml()` 하나뿐이고, `styles.css`와는 무관하다.
 - 항목 **클릭은 메모, 더블클릭은 텍스트 수정**이라 클릭 핸들러가 `CLICK_DELAY`만큼 기다렸다
   동작한다. 이 지연을 없애면 더블클릭이 선택을 두 번 토글해서 창이 커졌다 작아진다.
 - 그리드 간격(`GUTTER`)은 CSS `--gutter`를 `getComputedStyle`로 읽어온다. 값을 바꿀 곳은
@@ -88,6 +114,21 @@ test/             node --test 용 단위 테스트 (shared/ 만 커버)
 `npm test` (`node --test`, 추가 의존성 없음) 가 `src/shared/`의 순수 함수만 덮는다 —
 데이터가 날아가는 규칙(정규화 기본값, quadrant 유효성, temp+rename 저장, 손상 파일 폴백)이
 여기 들어 있으니 이 파일들을 건드렸으면 반드시 돌린다. UI는 커버되지 않는다.
+
+**사용자가 패키징된 exe를 띄워둔 채인 경우가 많고, 그러면 단일 인스턴스 락 때문에
+`npm start`가 조용히 죽는다.** 사용자 앱을 끄지 말고 데이터 폴더를 갈라서 띄울 것:
+
+```
+npx electron . --user-data-dir=<임시폴더> --remote-debugging-port=9333
+```
+
+`--user-data-dir`은 `app.getPath('userData')`를 통째로 바꾸므로 락도 따로 잡고 실제
+`data.json`도 건드리지 않는다. 그 폴더에 `data.json`을 미리 써두면 원하는 상태로 시작할 수
+있다 (**폴더 바로 아래** — 하위에 `EisenhowerMatrix/`를 또 만들면 안 읽히고
+`migrateLegacyStore()`가 옛 데이터를 끌어온다). GUI 클릭은 좌표로 쏘지 말고 CDP로
+`Runtime.evaluate`를 보내 `document.querySelector(...).click()`을 하는 게 확실하다
+(Node 22의 전역 `WebSocket`이면 의존성 없이 붙는다). 창 스크린샷은 다른 창에 가려도
+`PrintWindow(hwnd, hdc, 2)`로 찍힌다 — `CopyFromScreen`은 검게 나온다.
 
 렌더러·창 동작은 여전히 `npm start`로 직접 띄워서 확인한다. 최소 확인 항목:
 할 일 추가 → 완료 → 히스토리에서 되돌리기 → 삭제 → 휴지통에서 복원 → 앱 재시작 후 유지.

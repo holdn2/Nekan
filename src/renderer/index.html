@@ -16,6 +16,19 @@
         <span class="title">Eisenhower Matrix</span>
       </div>
 
+      <!-- Which matrix is on screen. It sits in the title bar because it scopes
+           the whole app — the quadrants, the counts, history, trash and the
+           export all follow it. The one thing it does NOT scope is the inbox
+           below, which is why that panel says so on its own header. -->
+      <div class="space-switch" id="spaceSwitch" role="group" aria-label="매트릭스 선택">
+        <button class="space-btn active" data-space="work" aria-pressed="true">
+          업무
+        </button>
+        <button class="space-btn" data-space="life" aria-pressed="false">
+          일상
+        </button>
+      </div>
+
       <div class="bar-summary" id="barSummary">
         <!-- Hidden while the inbox is empty, so a visible count always means
              "there is something you have not classified yet". -->
@@ -58,6 +71,32 @@
       </div>
 
       <div class="win-actions">
+        <!-- Hidden in bar mode: the 440px bar has no room, and there is nothing
+             on screen to export from there anyway. -->
+        <button
+          class="win-btn"
+          id="exportBtn"
+          title="내보내기 (PDF · HTML · Markdown)"
+          aria-label="내보내기"
+        >
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <path
+              d="M8 1.8v7.6M5.2 6.8L8 9.6l2.8-2.8"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M2.6 11.4v1.4a1.4 1.4 0 0 0 1.4 1.4h8a1.4 1.4 0 0 0 1.4-1.4v-1.4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
         <button
           class="win-btn"
           id="themeBtn"
@@ -207,8 +246,13 @@
           <span class="inbox-label">다 꺼내기</span>
           <span class="badge" id="inboxCount">0</span>
         </button>
+        <!-- Spelled out because the toggle above scopes everything else: this
+             list is the one part both matrices share. -->
+        <span class="shared-tag" title="업무·일상 매트릭스가 함께 쓰는 목록입니다"
+          >공유</span
+        >
         <span class="inbox-hint"
-          >분류하기 전에 일단 다 적고, 아래 분면으로 끌어다 놓으세요</span
+          >업무·일상 구분 없이 일단 다 적고, 적절한 곳으로 끌어다 놓으세요</span
         >
       </header>
       <div class="inbox-body" id="inboxBody">
@@ -460,7 +504,14 @@
             <li>
               <b>다 꺼내기</b> — 머릿속에 있는 할 일을 일단 전부 적습니다.
               매트릭스 위의 <b>다 꺼내기</b> 목록이 이 단계를 위한 자리입니다.
-              분류는 나중에 하고, 여기서는 떠오르는 대로만 적으세요.
+              분류는 나중에 하고, 여기서는 떠오르는 대로만 적으세요. 이 목록은
+              <b>업무·일상 양쪽이 함께 쓰므로</b>, 어느 쪽 일인지도 아직 고르지
+              않아도 됩니다.
+            </li>
+            <li>
+              <b>업무인가 일상인가</b> — 위쪽 <b>업무 / 일상</b> 토글로 매트릭스를
+              두 벌 나눠 씁니다. 다 꺼내기에서 분면으로 끌어내리는 순간 그쪽
+              소속이 되고, 다시 위로 올리면 소속이 풀립니다.
             </li>
             <li>
               <b>중요도부터</b> — “안 해도 되는가?”를 먼저 묻습니다. 목표에
@@ -536,6 +587,11 @@
               교차점을 잡으면 가로·세로를 한 번에, 더블클릭하면 반반으로
               돌아갑니다.
             </li>
+            <li>
+              <b>내보내기</b>(타이틀바 ⤓ 또는 <b>Ctrl+E</b>)로 지금의 다
+              꺼내기·4분면을 PDF·HTML·Markdown으로 저장할 수 있습니다. 주간
+              회고나 공유용으로 그 시점의 판을 남겨두기 좋습니다.
+            </li>
           </ul>
         </article>
       </div>
@@ -576,6 +632,15 @@
         </footer>
       </div>
     </section>
+
+    <!-- Save confirmations and errors. Floats over everything so it never
+         changes the layout the memo panel and the inbox are accounting for. -->
+    <div class="toast hidden" id="toast" role="status" aria-live="polite">
+      <span class="toast-text" id="toastText"></span>
+      <button class="toast-act hidden" id="toastAct" type="button">
+        폴더 열기
+      </button>
+    </div>
 
     <!-- Shared with the main process and the tests; defines the globals
          renderer.js relies on, so it has to come first. -->
