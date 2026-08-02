@@ -1,40 +1,51 @@
 import {
   DEFAULT_LAYOUT,
-  DEFAULT_SPACE,
   INBOX,
   MIN_RATIO,
   QUADS,
   SPACE_LABEL,
   clampMemo,
-  clampText,
   normalizeTasks,
   sanitizeLayout,
-  sanitizeSpace,
-  spaceFor,
   splitBulkText,
   startOfToday,
   startOfTomorrow,
 } from './core-bridge.js';
+import {
+  activeOf,
+  addTask,
+  addTasks,
+  completeTask,
+  deleteTask,
+  doneTasks,
+  editTask,
+  findTask,
+  getSpace,
+  inboxTasks,
+  moveTask,
+  purgeAll,
+  purgeTask,
+  restoreTask,
+  setDue,
+  setMemo,
+  setSpace,
+  setTasks,
+  subscribe,
+  trashAll,
+  trashedTasks,
+  untrashAll,
+  untrashTask,
+} from './store.js';
 import { $, $$, actionBtn, labelBtn, numEl } from './dom.js';
 import { dueBadge, dueChip } from './components/due-chip.js';
 import { memoLine, memoMark } from './components/memo-mark.js';
 import { toast } from './components/toast.js';
 
-let tasks = [];
 let mode = "expanded";
-/** Which matrix the header toggle is on; see applySpace(). */
-let activeSpace = DEFAULT_SPACE;
 let activeTab = "matrix";
 let historyQuery = "";
 let trashQuery = "";
 let theme = "light";
-
-const uid = () =>
-  Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-
-function save() {
-  window.api.save(tasks);
-}
 
 /* --------------------------------------------------------- day rollover */
 
@@ -63,149 +74,6 @@ function scheduleDayRollover() {
     scheduleDayRollover();
   }, Math.max(1000, wait));
 }
-
-/* ------------------------------------------------------------------ data */
-
-function makeTask(quadrant, text, dueDate) {
-  return {
-    id: uid(),
-    text,
-    quadrant,
-    // Filed straight into a quadrant, it belongs to the matrix on screen; typed
-    // into the inbox, it belongs to neither yet (spaceFor returns null).
-    space: spaceFor(quadrant, activeSpace),
-    dueDate: dueDate || null,
-    memo: null,
-    createdAt: Date.now(),
-    completedAt: null,
-    deletedAt: null,
-  };
-}
-
-function addTask(quadrant, text, dueDate) {
-  const trimmed = clampText(text);
-  if (!trimmed) return;
-  tasks.push(makeTask(quadrant, trimmed, dueDate));
-  save();
-  render();
-}
-
-/**
- * Bulk add for a pasted brain dump. One save and one render for the whole
- * batch — going through addTask per line would rebuild the DOM for every line
- * of the paste.
- */
-function addTasks(quadrant, texts) {
-  if (!texts.length) return;
-  texts.forEach((text) => tasks.push(makeTask(quadrant, text, null)));
-  save();
-  render();
-}
-
-function completeTask(id) {
-  const task = tasks.find((t) => t.id === id);
-  if (!task) return;
-  task.completedAt = Date.now();
-  save();
-  render();
-}
-
-function restoreTask(id) {
-  const task = tasks.find((t) => t.id === id);
-  if (!task) return;
-  task.completedAt = null;
-  save();
-  render();
-}
-
-function setDue(id, value) {
-  const task = tasks.find((t) => t.id === id);
-  if (!task) return;
-  task.dueDate = value || null;
-  save();
-  render();
-}
-
-/** Soft delete — the task moves to the trash tab and stays restorable. */
-function deleteTask(id) {
-  const task = tasks.find((t) => t.id === id);
-  if (!task) return;
-  task.deletedAt = Date.now();
-  save();
-  render();
-}
-
-function untrashTask(id) {
-  const task = tasks.find((t) => t.id === id);
-  if (!task) return;
-  task.deletedAt = null;
-  save();
-  render();
-}
-
-/** Permanent removal — only reachable from the trash tab. */
-function purgeTask(id) {
-  tasks = tasks.filter((t) => t.id !== id);
-  save();
-  render();
-}
-
-function editTask(id, text) {
-  const task = tasks.find((t) => t.id === id);
-  if (!task) return;
-  // Inline editing is contentEditable, so the add form's maxlength does not
-  // apply — a pasted wall of text would be stored as-is.
-  const trimmed = clampText(text);
-  if (!trimmed) {
-    deleteTask(id);
-    return;
-  }
-  task.text = trimmed;
-  save();
-}
-
-/**
- * Move `id` into `quadrant`, placed right before `beforeId` (or last).
- *
- * The drop also decides the task's matrix: dragging down out of the inbox files
- * it under the board on screen, dragging back up into the inbox hands it back to
- * both. That is what makes "다 꺼내기 → 분류" the moment a task becomes 업무 or
- * 일상, and it is why a task can be re-filed to the other board by parking it in
- * the inbox and pulling it down again on the other side.
- */
-function moveTask(id, quadrant, beforeId) {
-  const from = tasks.findIndex((t) => t.id === id);
-  if (from === -1 || id === beforeId) return;
-  const [task] = tasks.splice(from, 1);
-  task.quadrant = quadrant;
-  task.space = spaceFor(quadrant, activeSpace);
-  const to = beforeId ? tasks.findIndex((t) => t.id === beforeId) : -1;
-  if (to === -1) tasks.push(task);
-  else tasks.splice(to, 0, task);
-  save();
-  render();
-}
-
-/**
- * On the matrix on screen. A `space` of null means the shared inbox, so those
- * rows pass on both boards — every other list is one board's alone.
- */
-const inSpace = (t) => t.space === null || t.space === activeSpace;
-
-const activeOf = (q) =>
-  tasks.filter(
-    (t) => !t.deletedAt && !t.completedAt && t.quadrant === q && inSpace(t),
-  );
-/** Written down but not classified yet — same filter, fifth place. */
-const inboxTasks = () => activeOf(INBOX);
-const doneTasks = () =>
-  tasks
-    .filter((t) => !t.deletedAt && t.completedAt && inSpace(t))
-    .sort((a, b) => b.completedAt - a.completedAt);
-const trashedTasks = () =>
-  tasks
-    .filter((t) => t.deletedAt && inSpace(t))
-    .sort((a, b) => b.deletedAt - a.deletedAt);
 
 /* -------------------------------------------------------------- rendering */
 
@@ -522,9 +390,9 @@ const memoPanelHeight = () =>
  */
 function selectedTask() {
   if (!selectedId) return null;
-  const task = tasks.find((t) => t.id === selectedId);
+  const task = findTask(selectedId);
   if (!task || task.completedAt || task.deletedAt) return null;
-  if (task.quadrant === INBOX || task.space !== activeSpace) return null;
+  if (task.quadrant === INBOX || task.space !== getSpace()) return null;
   return task;
 }
 
@@ -603,10 +471,8 @@ function saveMemo() {
   const task = selectedTask();
   const { value, canSave } = memoSaveState();
   if (!task || !canSave) return;
-  task.memo = value;
   memoEditing = false;
-  save();
-  render();
+  setMemo(task.id, value);
 }
 
 function cancelMemoEdit() {
@@ -623,10 +489,8 @@ function deleteMemo() {
   const task = selectedTask();
   if (!task || !task.memo) return;
   if (!window.confirm("이 메모를 삭제할까요? 되돌릴 수 없습니다.")) return;
-  task.memo = null;
   memoEditing = false;
-  save();
-  render();
+  setMemo(task.id, null);
 }
 
 function wireMemo() {
@@ -685,7 +549,7 @@ function render() {
  */
 function syncSpaceSwitch() {
   $$(".space-btn").forEach((btn) => {
-    const on = btn.dataset.space === activeSpace;
+    const on = btn.dataset.space === getSpace();
     btn.classList.toggle("active", on);
     btn.setAttribute("aria-pressed", String(on));
     btn.title = `${SPACE_LABEL[btn.dataset.space]} 매트릭스 보기`;
@@ -693,9 +557,9 @@ function syncSpaceSwitch() {
 }
 
 function applySpace(next, persist = true) {
-  activeSpace = sanitizeSpace(next);
+  const space = setSpace(next);
   syncSpaceSwitch();
-  if (persist) window.api.setSpace(activeSpace);
+  if (persist) window.api.setSpace(space);
 }
 
 /* ------------------------------------------------------------------- tabs */
@@ -1117,7 +981,7 @@ function wireUI() {
 
   $("#spaceSwitch").addEventListener("click", (e) => {
     const btn = e.target.closest(".space-btn");
-    if (!btn || btn.dataset.space === activeSpace) return;
+    if (!btn || btn.dataset.space === getSpace()) return;
     applySpace(btn.dataset.space);
     render();
   });
@@ -1137,22 +1001,11 @@ function wireUI() {
     if (!items.length) return;
     if (!window.confirm(`완료한 항목 ${items.length}개를 휴지통으로 옮길까요?`))
       return;
-    const now = Date.now();
-    items.forEach((t) => {
-      t.deletedAt = now;
-    });
-    save();
-    render();
+    trashAll(items);
   });
 
   $("#restoreAll").addEventListener("click", () => {
-    const items = trashedTasks();
-    if (!items.length) return;
-    items.forEach((t) => {
-      t.deletedAt = null;
-    });
-    save();
-    render();
+    untrashAll(trashedTasks());
   });
 
   $("#emptyTrash").addEventListener("click", () => {
@@ -1166,10 +1019,7 @@ function wireUI() {
       return;
     // Only what the list just counted: the other board's trash is not on screen
     // and must not go out with it.
-    const doomed = new Set(trashedTasks().map((t) => t.id));
-    tasks = tasks.filter((t) => !doomed.has(t.id));
-    save();
-    render();
+    purgeAll(trashedTasks());
   });
 
   $("#themeBtn").addEventListener("click", () =>
@@ -1256,7 +1106,10 @@ async function init() {
   });
 
   const state = await window.api.load();
-  tasks = normalizeTasks(state.tasks);
+  setTasks(normalizeTasks(state.tasks));
+  // Everything that changes a task ends in store.commit(), so one subscription
+  // here is what keeps the screen in step with the data.
+  subscribe(render);
   applyTheme(state.settings?.theme || "light", false);
   applyPinned(state.settings?.alwaysOnTop !== false);
   applyInboxOpen(state.settings?.inboxOpen === true, false);
