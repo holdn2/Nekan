@@ -356,7 +356,7 @@ button {
 }
 
 .inbox-list:empty::after {
-  content: "떠오르는 대로 적어두면 분류하지 않은 채로 여기 쌓입니다";
+  content: "떠오르는 대로 전부 적어두세요";
   display: block;
   padding: 10px 8px;
   color: var(--faint);
@@ -560,7 +560,9 @@ body.resizing-both {
 .item.removing {
   opacity: 0;
   transform: translateX(14px);
-  transition: opacity 0.16s ease, transform 0.16s ease;
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
 }
 
 .num {

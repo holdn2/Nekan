@@ -27,16 +27,32 @@
         >
           <i class="dot inbox"></i><b id="cInbox">0</b>
         </button>
-        <button class="chip" data-jump="q1" aria-label="Urgent &amp; Important 남은 개수">
+        <button
+          class="chip"
+          data-jump="q1"
+          aria-label="Urgent &amp; Important 남은 개수"
+        >
           <i class="dot q1"></i><b id="c1">0</b>
         </button>
-        <button class="chip" data-jump="q2" aria-label="Important &amp; Not Urgent 남은 개수">
+        <button
+          class="chip"
+          data-jump="q2"
+          aria-label="Important &amp; Not Urgent 남은 개수"
+        >
           <i class="dot q2"></i><b id="c2">0</b>
         </button>
-        <button class="chip" data-jump="q3" aria-label="Urgent &amp; Not Important 남은 개수">
+        <button
+          class="chip"
+          data-jump="q3"
+          aria-label="Urgent &amp; Not Important 남은 개수"
+        >
           <i class="dot q3"></i><b id="c3">0</b>
         </button>
-        <button class="chip" data-jump="q4" aria-label="Not Urgent &amp; Not Important 남은 개수">
+        <button
+          class="chip"
+          data-jump="q4"
+          aria-label="Not Urgent &amp; Not Important 남은 개수"
+        >
           <i class="dot q4"></i><b id="c4">0</b>
         </button>
       </div>
@@ -201,7 +217,7 @@
           <input
             type="text"
             id="inboxInput"
-            placeholder="생각나는 대로 적어보세요… (여러 줄을 붙여넣으면 줄마다 하나씩)"
+            placeholder="아무거나 적기 (여러 줄을 붙여넣으면 줄마다 하나씩 추가됩니다)"
             maxlength="200"
             autocomplete="off"
           />
@@ -328,10 +344,11 @@
         <article class="guide-doc">
           <h1>아이젠하워 매트릭스란?</h1>
           <p class="lead">
-            할 일을 <b>중요도</b>와 <b>긴급도</b> 두 축으로 나눠 네 칸에 배치하고,
-            칸마다 다른 방식으로 처리하는 우선순위 결정법입니다. 목록이 길어질수록
-            <em>“무엇부터 할까”</em>가 아니라 <em>“무엇을 하지 않을까”</em>를 먼저
-            정해주는 것이 이 프레임워크의 핵심입니다.
+            할 일을 <b>중요도</b>와 <b>긴급도</b> 두 축으로 나눠 네 칸에
+            배치하고, 칸마다 다른 방식으로 처리하는 우선순위 결정법입니다.
+            목록이 길어질수록 <em>“무엇부터 할까”</em>가 아니라
+            <em>“무엇을 하지 않을까”</em>를 먼저 정해주는 것이 이 프레임워크의
+            핵심입니다.
           </p>
 
           <blockquote>
@@ -342,8 +359,8 @@
 
           <p>
             미국 34대 대통령이자 2차 대전 연합군 총사령관이었던 아이젠하워의
-            일화에서 이름을 따왔고, 스티븐 코비가 『성공하는 사람들의 7가지 습관』에서
-            소개하며 널리 알려졌습니다.
+            일화에서 이름을 따왔고, 스티븐 코비가 『성공하는 사람들의 7가지
+            습관』에서 소개하며 널리 알려졌습니다.
           </p>
 
           <h2>두 개의 축</h2>
@@ -351,8 +368,8 @@
             <div class="axis">
               <h3>중요도</h3>
               <p>
-                내 <b>목표와 결과</b>에 기여하는가? 하지 않으면 장기적으로 손해가
-                생기는 일인가? 판단 기준은 <b>나</b>에게 있습니다.
+                내 <b>목표와 결과</b>에 기여하는가? 하지 않으면 장기적으로
+                손해가 생기는 일인가? 판단 기준은 <b>나</b>에게 있습니다.
               </p>
             </div>
             <div class="axis">
@@ -365,36 +382,56 @@
           </div>
           <p class="note">
             둘은 자주 혼동되지만 완전히 다른 축입니다. 울리는 알림은 긴급하지만
-            대개 중요하지 않고, 건강·공부·관계처럼 정말 중요한 일은 좀처럼 긴급해지지
-            않습니다.
+            대개 중요하지 않고, 건강·공부·관계처럼 정말 중요한 일은 좀처럼
+            긴급해지지 않습니다.
           </p>
 
           <h2>네 개의 분면</h2>
           <div class="guide-quads">
             <section class="guide-quad q1">
-              <header><span class="dot q1"></span><h3>Urgent &amp; Important</h3><span class="tag">Do · 지금 한다</span></header>
-              <p>마감이 코앞인 일, 사고·장애 대응, 오늘까지 회신해야 하는 요청.</p>
+              <header>
+                <span class="dot q1"></span>
+                <h3>Urgent &amp; Important</h3>
+                <span class="tag">Do · 지금 한다</span>
+              </header>
+              <p>
+                마감이 코앞인 일, 사고·장애 대응, 오늘까지 회신해야 하는 요청.
+              </p>
               <p class="ex">예: 내일 발표 자료, 서버 장애, 마감 당일 서류</p>
               <p class="tip">
-                이 칸이 늘 가득 차 있다면 위기 대응만 반복하고 있다는 신호입니다.
-                원인은 대개 아래 칸을 미뤄둔 데 있습니다.
+                이 칸이 늘 가득 차 있다면 위기 대응만 반복하고 있다는
+                신호입니다. 원인은 대개 아래 칸을 미뤄둔 데 있습니다.
               </p>
             </section>
 
             <section class="guide-quad q2">
-              <header><span class="dot q2"></span><h3>Important &amp; Not Urgent</h3><span class="tag">Plan · 일정을 잡는다</span></header>
+              <header>
+                <span class="dot q2"></span>
+                <h3>Important &amp; Not Urgent</h3>
+                <span class="tag">Plan · 일정을 잡는다</span>
+              </header>
               <p>지금 안 해도 아무도 뭐라 하지 않지만, 성과를 만드는 일들.</p>
               <p class="ex">예: 공부·운동, 설계와 리팩터링, 회고, 관계 관리</p>
               <p class="tip">
-                <b>여기가 이 매트릭스의 핵심입니다.</b> 시간을 미리 확보해두지 않으면
-                영원히 밀리고, 결국 긴급해진 뒤에야 1분면에서 처리하게 됩니다.
+                <b>여기가 이 매트릭스의 핵심입니다.</b> 시간을 미리 확보해두지
+                않으면 영원히 밀리고, 결국 긴급해진 뒤에야 1분면에서 처리하게
+                됩니다.
               </p>
             </section>
 
             <section class="guide-quad q3">
-              <header><span class="dot q3"></span><h3>Urgent &amp; Not Important</h3><span class="tag">Delegate · 넘기거나 줄인다</span></header>
-              <p>급해 보이지만 대부분 <b>남의 우선순위</b>가 나에게 넘어온 일.</p>
-              <p class="ex">예: 즉답을 요구하는 알림, 대신 해줄 수 있는 잡무, 참석 안 해도 되는 회의</p>
+              <header>
+                <span class="dot q3"></span>
+                <h3>Urgent &amp; Not Important</h3>
+                <span class="tag">Delegate · 넘기거나 줄인다</span>
+              </header>
+              <p>
+                급해 보이지만 대부분 <b>남의 우선순위</b>가 나에게 넘어온 일.
+              </p>
+              <p class="ex">
+                예: 즉답을 요구하는 알림, 대신 해줄 수 있는 잡무, 참석 안 해도
+                되는 회의
+              </p>
               <p class="tip">
                 넘길 사람이 없다면 “줄이기”가 답입니다. 처리 시간을 정해 몰아서
                 끝내거나, 알림을 꺼서 애초에 들어오지 않게 만드세요.
@@ -402,9 +439,15 @@
             </section>
 
             <section class="guide-quad q4">
-              <header><span class="dot q4"></span><h3>Not Urgent &amp; Not Important</h3><span class="tag">Delete · 지운다</span></header>
+              <header>
+                <span class="dot q4"></span>
+                <h3>Not Urgent &amp; Not Important</h3>
+                <span class="tag">Delete · 지운다</span>
+              </header>
               <p>습관적으로 하지만 남는 게 없는 일. 목록만 무겁게 만듭니다.</p>
-              <p class="ex">예: 목적 없는 피드 스크롤, 의미 없이 반복하는 확인</p>
+              <p class="ex">
+                예: 목적 없는 피드 스크롤, 의미 없이 반복하는 확인
+              </p>
               <p class="tip">
                 지우는 것도 결정입니다. 아깝다면 “언젠가 할 일” 목록으로 빼두고
                 매트릭스에서는 치우세요.
@@ -416,37 +459,83 @@
           <ol class="guide-steps">
             <li>
               <b>다 꺼내기</b> — 머릿속에 있는 할 일을 일단 전부 적습니다.
-              매트릭스 위의 <b>다 꺼내기</b> 목록이 이 단계를 위한 자리입니다. 분류는
-              나중에 하고, 여기서는 떠오르는 대로만 적으세요.
+              매트릭스 위의 <b>다 꺼내기</b> 목록이 이 단계를 위한 자리입니다.
+              분류는 나중에 하고, 여기서는 떠오르는 대로만 적으세요.
             </li>
-            <li><b>중요도부터</b> — “안 해도 되는가?”를 먼저 묻습니다. 목표에 기여하지 않으면 아래 두 칸입니다.</li>
-            <li><b>긴급도 판단</b> — 마감이 있는지, 지금 반응해야 하는지 봅니다.</li>
-            <li><b>분면에 배치</b> — 애매하면 덜 중요한 쪽에 두세요. 나중에 옮기면 됩니다.</li>
-            <li><b>2분면에 시간 확보</b> — 일정에 미리 자리를 잡아둡니다. 이게 빠지면 매트릭스는 그냥 목록이 됩니다.</li>
-            <li><b>주기적으로 다시 보기</b> — 하루 끝이나 주말에 분면을 재배치합니다. 긴급도는 시간이 지나면 바뀝니다.</li>
+            <li>
+              <b>중요도부터</b> — “안 해도 되는가?”를 먼저 묻습니다. 목표에
+              기여하지 않으면 아래 두 칸입니다.
+            </li>
+            <li>
+              <b>긴급도 판단</b> — 마감이 있는지, 지금 반응해야 하는지 봅니다.
+            </li>
+            <li>
+              <b>분면에 배치</b> — 애매하면 덜 중요한 쪽에 두세요. 나중에 옮기면
+              됩니다.
+            </li>
+            <li>
+              <b>2분면에 시간 확보</b> — 일정에 미리 자리를 잡아둡니다. 이게
+              빠지면 매트릭스는 그냥 목록이 됩니다.
+            </li>
+            <li>
+              <b>주기적으로 다시 보기</b> — 하루 끝이나 주말에 분면을
+              재배치합니다. 긴급도는 시간이 지나면 바뀝니다.
+            </li>
           </ol>
 
           <h2>기억할 것</h2>
           <ul class="guide-points">
-            <li><b>긴급함은 중요함이 아닙니다.</b> 소리가 큰 일이 값진 일은 아닙니다.</li>
-            <li><b>1분면이 많으면 2분면이 부족한 것입니다.</b> 미리 한 일이 급한 일을 줄입니다.</li>
-            <li><b>한 칸에 너무 많이 넣지 마세요.</b> 1분면이 5개를 넘으면 우선순위가 없는 것과 같습니다.</li>
-            <li><b>버리는 것이 목적입니다.</b> 네 칸에 나누는 이유는 3·4분면을 덜어내기 위해서입니다.</li>
+            <li>
+              <b>긴급함은 중요함이 아닙니다.</b> 소리가 큰 일이 값진 일은
+              아닙니다.
+            </li>
+            <li>
+              <b>1분면이 많으면 2분면이 부족한 것입니다.</b> 미리 한 일이 급한
+              일을 줄입니다.
+            </li>
+            <li>
+              <b>한 칸에 너무 많이 넣지 마세요.</b> 1분면이 5개를 넘으면
+              우선순위가 없는 것과 같습니다.
+            </li>
+            <li>
+              <b>버리는 것이 목적입니다.</b> 네 칸에 나누는 이유는 3·4분면을
+              덜어내기 위해서입니다.
+            </li>
           </ul>
 
           <h2>이 앱에서는</h2>
           <ul class="guide-points app">
             <li>
-              <b>다 꺼내기</b>에 먼저 쏟아내고 나중에 분류하세요. 적을 때마다 "이건 몇 분면이지"를
-              묻지 않아도 되니 훨씬 빨리 비워집니다. 다 적은 뒤에 하나씩 분면으로 끌어내리면
-              그때가 2·3번 단계입니다.
+              <b>다 꺼내기</b>에 먼저 쏟아내고 나중에 분류하세요. 적을 때마다
+              "이건 몇 분면이지"를 묻지 않아도 되니 훨씬 빨리 비워집니다. 다
+              적은 뒤에 하나씩 분면으로 끌어내리면 그때가 2·3번 단계입니다.
             </li>
-            <li><b>드래그</b>로 분면을 옮길 수 있습니다. 상황이 바뀌면 칸도 바뀝니다.</li>
-            <li><b>마감일</b>을 지정하면 남은 기간에 따라 색이 바뀌어 긴급도가 눈에 보입니다.</li>
-            <li><b>항목을 클릭</b>하면 아래에 메모가 열립니다. 왜 이 칸에 뒀는지, 다음에 무엇을 할지 적어두면 다시 볼 때 판단이 빨라집니다.</li>
-            <li><b>체크</b>하면 히스토리에 날짜별로 쌓입니다. 적어둔 메모도 함께 남아, 그때 무슨 생각이었는지 다시 읽어볼 수 있습니다(히스토리·휴지통에서는 읽기 전용).</li>
-            <li><b>삭제</b>는 휴지통으로 갑니다. 4분면을 과감히 비워도 되돌릴 수 있습니다.</li>
-            <li><b>사분면 경계를 드래그</b>하면 칸 크기가 바뀝니다. 가운데 교차점을 잡으면 가로·세로를 한 번에, 더블클릭하면 반반으로 돌아갑니다.</li>
+            <li>
+              <b>드래그</b>로 분면을 옮길 수 있습니다. 상황이 바뀌면 칸도
+              바뀝니다.
+            </li>
+            <li>
+              <b>마감일</b>을 지정하면 남은 기간에 따라 색이 바뀌어 긴급도가
+              눈에 보입니다.
+            </li>
+            <li>
+              <b>항목을 클릭</b>하면 아래에 메모가 열립니다. 왜 이 칸에 뒀는지,
+              다음에 무엇을 할지 적어두면 다시 볼 때 판단이 빨라집니다.
+            </li>
+            <li>
+              <b>체크</b>하면 히스토리에 날짜별로 쌓입니다. 적어둔 메모도 함께
+              남아, 그때 무슨 생각이었는지 다시 읽어볼 수
+              있습니다(히스토리·휴지통에서는 읽기 전용).
+            </li>
+            <li>
+              <b>삭제</b>는 휴지통으로 갑니다. 4분면을 과감히 비워도 되돌릴 수
+              있습니다.
+            </li>
+            <li>
+              <b>사분면 경계를 드래그</b>하면 칸 크기가 바뀝니다. 가운데
+              교차점을 잡으면 가로·세로를 한 번에, 더블클릭하면 반반으로
+              돌아갑니다.
+            </li>
           </ul>
         </article>
       </div>
@@ -460,7 +549,12 @@
         <header class="memo-head">
           <span class="dot" id="memoDot"></span>
           <span class="memo-title" id="memoTitle"></span>
-          <button class="memo-x" id="memoClose" title="메모 닫기" aria-label="메모 닫기">
+          <button
+            class="memo-x"
+            id="memoClose"
+            title="메모 닫기"
+            aria-label="메모 닫기"
+          >
             ✕
           </button>
         </header>
