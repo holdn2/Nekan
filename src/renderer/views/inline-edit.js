@@ -30,10 +30,13 @@ export function startEdit(li, textEl, task) {
 
   /** Leave edit mode; `commit` decides whether the typing survives. */
   const finish = (commit) => {
-    textEl.contentEditable = 'false';
-    li.draggable = true;
+    // Unhook first. Clearing contentEditable on a focused element blurs it, so
+    // doing that while onBlur is still attached re-enters finish(true) — and an
+    // Escape would save the edit it was cancelling.
     textEl.removeEventListener('keydown', onKey);
     textEl.removeEventListener('blur', onBlur);
+    textEl.contentEditable = 'false';
+    li.draggable = true;
     if (commit) editTask(task.id, textEl.textContent);
     else textEl.textContent = original;
     // editTask() saves without redrawing, so the one render happens here —
