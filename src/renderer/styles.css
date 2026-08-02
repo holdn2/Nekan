@@ -1507,54 +1507,57 @@ body.expanded .bar-summary .chip {
   cursor: default;
 }
 
-/* 440px has no room for both halves and five count chips, so the bar keeps only
-   the half that is on — which doubles as the label for what the counts mean.
-   Clicking it switches to the other board (see the handler in wireUI). */
-body.collapsed .space-btn:not(.active) {
-  display: none;
-}
+/* The switch stays whole in the bar — both halves, same meaning as expanded —
+   and everything around it pays for the width. The row wanted 484px of the 440
+   available before any of this and pushed the window buttons off the right
+   edge. The brand goes first: it was already losing, squeezed to zero width
+   with the logo overflowing across the switch. Then the switch, the chips and
+   the window buttons each give back a few pixels.
 
-body.collapsed .space-btn.active {
-  background: transparent;
-  box-shadow: none;
-}
-
-body.collapsed .space-btn.active:hover {
-  background: var(--panel-3);
-}
-
-/* Even one half of the switch is width the bar did not have: the row wanted
-   484px of the 440 available and pushed the window buttons off the right edge.
-   The brand goes first — it was already losing, squeezed to zero width with the
-   logo overflowing across the switch — and the rest gives back a few pixels
-   each. Measured against the widest the row ever gets: the inbox chip showing
-   and all five counts two digits wide. */
+   The remaining slack is small, so anything added here has to be measured
+   against the widest the row ever gets — inbox chip showing, all five counts
+   two digits wide — not against a fresh install. */
 body.collapsed .brand {
   display: none;
 }
 
 body.collapsed .titlebar {
-  padding-left: 10px;
-  gap: 8px;
+  padding: 0 4px 0 8px;
+  gap: 6px;
+}
+
+body.collapsed .space-switch {
+  gap: 1px;
+  padding: 1px;
 }
 
 body.collapsed .space-btn {
-  padding: 3px 8px;
+  padding: 3px 7px;
   font-size: 11px;
 }
 
 body.collapsed .bar-summary {
-  gap: 3px;
+  gap: 2px;
 }
 
 body.collapsed .chip {
-  padding: 3px 6px;
+  padding: 3px 5px;
   gap: 3px;
 }
 
+body.collapsed .win-actions {
+  margin-left: 2px;
+}
+
 body.collapsed .win-btn {
-  width: 26px;
-  height: 26px;
+  width: 25px;
+  height: 25px;
+}
+
+/* Appearance is not a window control, and the bar already hides the export
+   button on the same reasoning: there is no room, and Ctrl+D still works. */
+body.collapsed #themeBtn {
+  display: none;
 }
 
 /* ---------- scrollbars ---------- */

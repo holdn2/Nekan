@@ -837,24 +837,16 @@ function render() {
  * 업무 / 일상. Both matrices live in the same task list — a board is just the
  * `space` field — so switching is a filter and a re-render, never a load. The
  * inbox is left out of the filter on purpose (see `inSpace`).
- */
-const otherSpace = (space) => (space === SPACES[0] ? SPACES[1] : SPACES[0]);
-
-/**
- * The bar is too narrow for both halves, so it shows only the active one and a
- * click there means "switch" rather than "pick this". The titles have to say
- * which it is, hence the mode check.
+ *
+ * Both halves are on screen in either window mode, so a click always means
+ * "show me this one" and never "flip to the other".
  */
 function syncSpaceSwitch() {
-  const other = SPACE_LABEL[otherSpace(activeSpace)];
   $$(".space-btn").forEach((btn) => {
     const on = btn.dataset.space === activeSpace;
     btn.classList.toggle("active", on);
     btn.setAttribute("aria-pressed", String(on));
-    btn.title =
-      mode === "collapsed"
-        ? `${other} 매트릭스로 전환`
-        : `${SPACE_LABEL[btn.dataset.space]} 매트릭스 보기`;
+    btn.title = `${SPACE_LABEL[btn.dataset.space]} 매트릭스 보기`;
   });
 }
 
@@ -1279,8 +1271,6 @@ function applyMode(next) {
   document.body.classList.toggle("collapsed", mode === "collapsed");
   document.body.classList.toggle("expanded", mode === "expanded");
   labelBtn("#sizeBtn", mode === "collapsed" ? "펼치기" : "바 모드로 축소");
-  // The switch reads as a toggle in the bar and as a pair of tabs when expanded.
-  syncSpaceSwitch();
   render();
 }
 
@@ -1316,12 +1306,8 @@ function wireUI() {
 
   $("#spaceSwitch").addEventListener("click", (e) => {
     const btn = e.target.closest(".space-btn");
-    if (!btn) return;
-    // Bar mode shows the active half only, so the click there is a toggle.
-    const next =
-      mode === "collapsed" ? otherSpace(activeSpace) : btn.dataset.space;
-    if (next === activeSpace) return;
-    applySpace(next);
+    if (!btn || btn.dataset.space === activeSpace) return;
+    applySpace(btn.dataset.space);
     render();
   });
 
