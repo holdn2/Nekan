@@ -72,13 +72,15 @@ test/             node --test 용 단위 테스트 (shared/ 만 커버)
   높이를 가져간다. 그래서 main.js에 창 크기 회계가 없고 접힘 상태(`settings.inboxOpen`)만
   저장한다. 대신 목록이 4분면을 밀어내지 않도록 `styles.css`의 `--inbox-max-h`와 `26vh`가
   높이를 묶는다 — 이 상한을 없애면 항목이 쌓일수록 매트릭스가 화면 밖으로 나간다.
-- **바(440px)에는 남는 폭이 없다.** 업무/일상 토글을 양쪽 다 보이게 넣으면서 타이틀바가
-  요구하는 폭이 창을 넘겨 창 버튼이 오른쪽으로 밀려났다. 그래서 `body.collapsed`에서
-  브랜드(로고+제목)와 **테마 버튼**을 숨기고 토글·칩·창 버튼 크기를 줄여 맞춰놨다 — 여유가
-  4px뿐이니 **바에 뭔가를 더 넣으면 반드시 실측**할 것: 개수를 전부 두 자리로 만들고
-  인박스 칩을 보이게 한 상태에서 `.titlebar`의 `scrollWidth`와 `#closeBtn`의 `right`를
-  `window.innerWidth`와 비교한다. 스크린샷으로 확인할 거면 `PrintWindow`는 오른쪽 영역이
-  갱신 안 된 채 찍히는 일이 있으니 CDP `Page.captureScreenshot`을 쓸 것.
+- **`main.js`의 `BAR.width`는 타이틀바 내용이 정한다.** 원래 440px이었는데 업무/일상 토글이
+  들어가면서 한 줄이 484px을 요구해 창 버튼이 오른쪽 밖으로 밀려났다. 지금은 600px이고,
+  바에서 빠지는 건 `.title` 텍스트와 내보내기 버튼뿐이다(아이콘·토글·칩·창 버튼은 전부 남는다).
+  **바에 뭔가를 더 넣으면 줄이지 말고 `BAR.width`를 키우고, 반드시 실측**할 것: 개수를 전부
+  두 자리로 바꾸고 인박스 칩을 보이게 한 뒤 `.titlebar`의 `scrollWidth`와 `#closeBtn`의
+  `right`를 `window.innerWidth`와 비교한다(현재 최악의 경우 여유 20px). `.bar-summary`가
+  `margin-left:auto`라 `scrollWidth`만 보면 넘쳐도 딱 맞아 보이니, 스위치 오른쪽 끝과
+  `.bar-summary` 왼쪽 끝 사이 간격도 같이 볼 것. 스크린샷은 `PrintWindow`가 오른쪽 영역을
+  갱신 안 된 채 찍는 일이 있으니 CDP `Page.captureScreenshot`을 쓸 것.
 - 인박스 행에는 마감일·완료·메모가 **의도적으로 없다**(`inboxItemEl`). 그래서 `selectedTask()`가
   `quadrant === INBOX`를 null로 본다 — 이걸 빼면 선택된 항목을 인박스로 끌어올렸을 때 메모
   패널이 열린 채 남는다.
