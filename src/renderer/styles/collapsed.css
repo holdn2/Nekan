@@ -1,0 +1,40 @@
+/**
+ * Bar mode: what survives when the window is 600x48. Loaded after everything
+ * it overrides, which is the order it had inside the single stylesheet.
+ */
+
+/* ---------- collapsed (bar) mode ---------- */
+body.collapsed .tabs,
+body.collapsed .view,
+body.collapsed section.inbox,
+body.collapsed .memo,
+body.collapsed #exportBtn,
+body.collapsed .toast {
+  display: none !important;
+}
+
+body.collapsed .titlebar {
+  height: 100%;
+  border-bottom: 0;
+}
+
+body.expanded .bar-summary .chip {
+  cursor: default;
+}
+
+/* The bar keeps everything that means something at a glance: the icon, both
+   halves of the switch, the five counts and the window buttons. Only the app
+   name goes — it is the one thing the icon already says.
+
+   The row is what sets `BAR.width` in main.js (560px), not the other way
+   round. Anything added here has to be measured against the widest the row
+   ever gets — inbox chip showing, all five counts two digits wide — and the
+   bar widened to match rather than the contents squeezed further. */
+body.collapsed .title {
+  display: none;
+}
+
+body.collapsed .titlebar {
+  padding: 0 6px 0 10px;
+  gap: 8px;
+}

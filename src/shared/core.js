@@ -4,9 +4,10 @@
  * It is loaded two different ways, so it must stay free of Node APIs, DOM
  * APIs and side effects:
  *   - main process / tests: `require('./shared/core')`
- *   - renderer: a plain <script> tag before renderer.js — every top-level
- *     binding becomes a global, which is why renderer.js must not re-declare
- *     these names (a second top-level `const` would be a SyntaxError).
+ *   - renderer: a plain <script> tag before the module graph, which publishes
+ *     the export list as `window.EM_CORE` for renderer/core-bridge.js to
+ *     re-export. Renderer modules have their own scope, so they may reuse these
+ *     names freely — they just have to import them rather than read globals.
  */
 
 const QUADS = ['q1', 'q2', 'q3', 'q4'];
@@ -36,6 +37,7 @@ const SPACES = ['work', 'life'];
 const DEFAULT_SPACE = 'work';
 const SPACE_LABEL = { work: '업무', life: '일상' };
 
+/** Any unknown value — including undefined — reads as the default board. */
 const sanitizeSpace = (v) => (SPACES.includes(v) ? v : DEFAULT_SPACE);
 
 /**
@@ -149,6 +151,7 @@ function clampMemo(memo) {
  */
 const MAX_BULK_LINES = 100;
 
+/** One pasted block → one task per surviving line. */
 function splitBulkText(raw) {
   return String(raw == null ? '' : raw)
     .split(/\r?\n/)
@@ -187,7 +190,34 @@ const DEFAULT_LAYOUT = { cols: 0.5, rows: 0.5 };
 const MIN_RATIO = 0.15;
 const MAX_RATIO = 0.85;
 
+/** Keep a quadrant from being dragged away to nothing. */
 const clampRatio = (v) => Math.min(MAX_RATIO, Math.max(MIN_RATIO, v));
+
+/**
+ * Smallest a quadrant may be dragged to, in pixels, where the window can afford
+ * it. They live here with the ratio bounds because the drag clamp below and the
+ * renderer's grid `minmax()` floor have to be the same number — if they drift,
+ * the drag stops at one size while the grid lays out at another.
+ */
+const MIN_COL_PX = 180;
+const MIN_ROW_PX = 110;
+
+/**
+ * The clamp a drag uses: a pixel minimum while `span` is big enough to honour
+ * it, and the plain ratio floor once it is not.
+ *
+ * The upper bound is `MAX_RATIO` and the mirror of the floor, whichever is
+ * tighter. Taking the mirror alone would silently assume MAX_RATIO is always
+ * 1 - MIN_RATIO, and changing one of them in this file would then not reach the
+ * drag at all.
+ */
+function clampAxis(value, span, minPx) {
+  if (!Number.isFinite(value)) return 0.5;
+  const floor = span > 0 ? Math.min(minPx / span, 0.5) : MIN_RATIO;
+  const low = Math.max(MIN_RATIO, floor);
+  const high = Math.min(MAX_RATIO, 1 - low);
+  return Math.min(high, Math.max(low, value));
+}
 
 /** Ratios are always real numbers in the store; null/"" must not read as 0. */
 const asRatio = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : NaN);
@@ -207,34 +237,55 @@ function sanitizeLayout(saved) {
   return next;
 }
 
+/**
+ * The one export list, handed to whichever loader is running us.
+ *
+ * The name matters: in the renderer this is a classic script, so a top-level
+ * `const` lands in the global lexical scope, and a plain `api` would collide
+ * with the `window.api` that preload.js exposes (a SyntaxError that kills the
+ * whole file).
+ *
+ * `require` (main process, tests) gets it as module.exports. The renderer loads
+ * this file as a classic <script>, where top-level `const` bindings are *not*
+ * properties of window — so the module graph could not reach them. Publishing
+ * the same object on window gives renderer/core-bridge.js something to
+ * re-export as named imports.
+ */
+const emCore = {
+  QUADS,
+  INBOX,
+  PLACES,
+  FALLBACK_QUAD,
+  SPACES,
+  DEFAULT_SPACE,
+  SPACE_LABEL,
+  sanitizeSpace,
+  spaceFor,
+  MAX_TEXT,
+  MAX_MEMO,
+  MAX_BULK_LINES,
+  DAY_MS,
+  WEEKDAY,
+  startOfToday,
+  startOfTomorrow,
+  parseDue,
+  dueInfo,
+  clampText,
+  clampMemo,
+  splitBulkText,
+  normalizeTasks,
+  DEFAULT_LAYOUT,
+  MIN_RATIO,
+  MAX_RATIO,
+  MIN_COL_PX,
+  MIN_ROW_PX,
+  clampRatio,
+  clampAxis,
+  sanitizeLayout,
+};
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    QUADS,
-    INBOX,
-    PLACES,
-    FALLBACK_QUAD,
-    SPACES,
-    DEFAULT_SPACE,
-    SPACE_LABEL,
-    sanitizeSpace,
-    spaceFor,
-    MAX_TEXT,
-    MAX_MEMO,
-    MAX_BULK_LINES,
-    DAY_MS,
-    WEEKDAY,
-    startOfToday,
-    startOfTomorrow,
-    parseDue,
-    dueInfo,
-    clampText,
-    clampMemo,
-    splitBulkText,
-    normalizeTasks,
-    DEFAULT_LAYOUT,
-    MIN_RATIO,
-    MAX_RATIO,
-    clampRatio,
-    sanitizeLayout,
-  };
+  module.exports = emCore;
+} else if (typeof window !== 'undefined') {
+  window.EM_CORE = emCore;
 }

@@ -1,0 +1,141 @@
+/**
+ * "다 꺼내기" — the staging list above the matrix. --inbox-max-h and the 26vh
+ * cap are what stop a growing list from pushing the quadrants off screen.
+ */
+
+/* ---------- inbox ("다 꺼내기") ---------- */
+/* Sits between the tabs and the matrix as its own flex row. flex-basis auto
+   with no grow means it is exactly as tall as its content, so the matrix keeps
+   everything the inbox does not use. */
+/* The `section` in these selectors is load-bearing, not decoration: `inbox` is
+   also a `quadrant` value, so `.dot.inbox` marks the unclassified dot in the
+   summary chip and in history/trash rows. A bare `.inbox` rule would style
+   those 8px dots as if they were this panel — margins, box shadow and all —
+   and `body.collapsed .inbox` would delete the dot out of the bar chip. */
+section.inbox {
+  flex: 0 0 auto;
+  margin: 8px 12px 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: border-color 0.12s ease;
+}
+
+section.inbox.hidden {
+  display: none !important;
+}
+
+section.inbox.drop {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.inbox-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px 0 0;
+}
+
+.inbox-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 0;
+  background: transparent;
+  font-weight: 600;
+}
+
+.inbox-toggle:hover {
+  color: var(--accent);
+}
+
+/* Points right when folded, down when open — the only moving part of the
+   header, so it carries the whole open/closed signal. */
+.chev {
+  flex: 0 0 auto;
+  color: var(--faint);
+  transition: transform 0.15s ease;
+}
+
+section.inbox.open .chev {
+  transform: rotate(90deg);
+}
+
+.inbox-toggle:hover .chev {
+  color: var(--accent);
+}
+
+/* The header toggle scopes the rest of the app, so this list has to say out
+   loud that it is the exception. */
+.shared-tag {
+  flex: 0 0 auto;
+  margin-left: -2px;
+  padding: 1px 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.inbox-hint {
+  color: var(--faint);
+  font-size: 11px;
+  margin-left: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inbox-body {
+  display: none;
+  border-top: 1px solid var(--line);
+}
+
+section.inbox.open .inbox-body {
+  display: block;
+}
+
+.inbox-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  max-height: min(var(--inbox-max-h), 26vh);
+  overflow-y: auto;
+}
+
+.inbox-list:empty::after {
+  content: "떠오르는 대로 전부 적어두세요";
+  display: block;
+  padding: 10px 8px;
+  color: var(--faint);
+  font-size: 11px;
+  text-align: center;
+}
+
+/* No due chip, no check, no memo mark — the inbox is for getting it out of your
+   head, and the rest of the fields appear once it lands in a quadrant. */
+.inbox-item .text {
+  flex: 1 1 auto;
+  line-height: 1.45;
+  word-break: break-word;
+  white-space: pre-wrap;
+  user-select: text;
+}
+
+/* Hollow instead of coloured: the inbox is not a fifth quadrant, it is the
+   "no colour yet" state. Kept at 1.5px so the hole stays visible at 8px —
+   2px would fill in and read as just another solid dot. */
+.dot.inbox {
+  background: transparent;
+  border: 1.5px solid var(--muted);
+}
+
+.chip.hidden {
+  display: none !important;
+}

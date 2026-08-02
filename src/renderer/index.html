@@ -7,7 +7,22 @@
       content="default-src 'self'; style-src 'self'; script-src 'self'"
     />
     <title>Eisenhower Matrix</title>
-    <link rel="stylesheet" href="styles.css" />
+    <!-- One file per area, in the order they had inside the single stylesheet —
+         later ones override earlier ones, so this order is load-bearing.
+         @import is deliberately not used: it serialises the loads and gives the
+         cascade one more thing to depend on. -->
+    <link rel="stylesheet" href="styles/base.css" />
+    <link rel="stylesheet" href="styles/titlebar.css" />
+    <link rel="stylesheet" href="styles/tabs.css" />
+    <link rel="stylesheet" href="styles/inbox.css" />
+    <link rel="stylesheet" href="styles/matrix.css" />
+    <link rel="stylesheet" href="styles/due-chip.css" />
+    <link rel="stylesheet" href="styles/archive.css" />
+    <link rel="stylesheet" href="styles/guide.css" />
+    <link rel="stylesheet" href="styles/memo.css" />
+    <link rel="stylesheet" href="styles/toast.css" />
+    <link rel="stylesheet" href="styles/collapsed.css" />
+    <link rel="stylesheet" href="styles/scrollbars.css" />
   </head>
   <body class="expanded">
     <header class="titlebar">
@@ -651,9 +666,13 @@
       </button>
     </div>
 
-    <!-- Shared with the main process and the tests; defines the globals
-         renderer.js relies on, so it has to come first. -->
+    <!-- Shared with the main process and the tests. It is a classic script, not
+         a module, because the same file is `require`d by main.js and the tests —
+         so it publishes globals, which core-bridge.js re-exports as named
+         imports for the module graph below. Classic scripts run before deferred
+         module scripts, so those globals are always in place by the time app.js
+         evaluates. -->
     <script src="../shared/core.js"></script>
-    <script src="renderer.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>

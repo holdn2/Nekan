@@ -1,0 +1,199 @@
+/**
+ * The 가이드 tab. Static markup in index.html, so nothing here is JS-driven.
+ */
+
+/* ---------- guide ---------- */
+.guide {
+  display: flex;
+  flex-direction: column;
+}
+
+.guide-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.guide-doc {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 26px 30px 40px;
+  line-height: 1.65;
+  user-select: text;
+}
+
+.guide-doc h1 {
+  margin: 0 0 10px;
+  font-size: 20px;
+  letter-spacing: -0.2px;
+}
+
+.guide-doc h2 {
+  margin: 30px 0 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  letter-spacing: 0.2px;
+}
+
+.guide-doc p {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+
+.guide-doc .lead {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.guide-doc em {
+  color: var(--text);
+  font-style: normal;
+  font-weight: 600;
+}
+
+.guide-doc b {
+  color: var(--text);
+}
+
+.guide-doc blockquote {
+  margin: 18px 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.guide-doc cite {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.guide-axes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.axis {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.axis h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.axis p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.guide-doc .note {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--panel-2);
+  font-size: 12px;
+}
+
+.guide-quads {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.guide-quad {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.guide-quad.q1 {
+  border-top: 2px solid var(--q1);
+}
+.guide-quad.q2 {
+  border-top: 2px solid var(--q2);
+}
+.guide-quad.q3 {
+  border-top: 2px solid var(--q3);
+}
+.guide-quad.q4 {
+  border-top: 2px solid var(--q4);
+}
+
+.guide-quad > header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.guide-quad h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.guide-quad .tag {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.guide-quad p {
+  margin: 0 0 6px;
+  font-size: 12px;
+}
+
+.guide-quad .ex {
+  color: var(--faint);
+}
+
+.guide-quad .tip {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.guide-steps,
+.guide-points {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--muted);
+}
+
+.guide-steps li,
+.guide-points li {
+  margin-bottom: 7px;
+}
+
+.guide-points.app {
+  padding: 12px 14px 12px 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  font-size: 12px;
+}
+
+.empty {
+  margin: 0;
+  padding: 28px 12px;
+  text-align: center;
+  color: var(--faint);
+}
+
+.empty.hidden {
+  display: none;
+}

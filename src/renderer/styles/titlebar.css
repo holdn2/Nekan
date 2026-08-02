@@ -1,0 +1,167 @@
+/**
+ * The title bar: app icon, the 업무/일상 switch, the count chips and the window
+ * buttons. Bar mode reuses this row wholesale — see collapsed.css.
+ */
+
+/* ---------- title bar ---------- */
+.titlebar {
+  -webkit-app-region: drag;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 6px 0 12px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.logo {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  -webkit-user-drag: none;
+}
+
+.title {
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- 업무 / 일상 switch ---------- */
+.space-switch {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-2);
+}
+
+.space-btn {
+  padding: 3px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.space-btn:hover {
+  color: var(--text);
+}
+
+.space-btn.active {
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+}
+
+.bar-summary {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--muted);
+}
+
+.chip:hover {
+  border-color: var(--line-strong);
+  background: var(--panel-3);
+  color: var(--text);
+}
+
+.chip b {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.dot.q1 {
+  background: var(--q1);
+}
+.dot.q2 {
+  background: var(--q2);
+}
+.dot.q3 {
+  background: var(--q3);
+}
+.dot.q4 {
+  background: var(--q4);
+}
+
+.win-actions {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 6px;
+}
+
+.win-btn {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.win-btn:hover {
+  background: var(--panel-3);
+  color: var(--text);
+}
+
+.win-btn.danger:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.win-btn.on {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+#themeBtn .icon-moon,
+:root[data-theme="dark"] #themeBtn .icon-sun {
+  display: none;
+}
+
+:root[data-theme="dark"] #themeBtn .icon-moon {
+  display: block;
+}

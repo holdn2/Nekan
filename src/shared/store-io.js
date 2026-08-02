@@ -8,6 +8,7 @@ const path = require('path');
 
 const { DEFAULT_LAYOUT, DEFAULT_SPACE } = require('./core');
 
+/** A first-run store: no tasks, and the settings every reader assumes exist. */
 function defaultStore() {
   return {
     tasks: [],
@@ -40,6 +41,11 @@ function migrateLegacyStore(target, legacy) {
   }
 }
 
+/**
+ * Read data.json, falling back to the defaults for a missing or corrupt file.
+ * Merging settings over the defaults is what lets a new setting be added
+ * without an older file losing it.
+ */
 function loadStore(target, legacy) {
   if (legacy) migrateLegacyStore(target, legacy);
   try {

@@ -1,0 +1,56 @@
+/**
+ * The 매트릭스 / 히스토리 / 휴지통 / 가이드 tab strip.
+ */
+
+/* ---------- tabs ---------- */
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px 0;
+  flex: 0 0 auto;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px 8px 0 0;
+  background: transparent;
+  color: var(--muted);
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab.active {
+  background: var(--panel);
+  border-color: var(--line);
+  border-bottom-color: var(--panel);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.badge {
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--panel-3);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabs-right {
+  margin-left: auto;
+}
+
+.hint {
+  color: var(--faint);
+  font-size: 11px;
+}
