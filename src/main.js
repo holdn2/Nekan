@@ -22,7 +22,10 @@ const {
 app.setName('EisenhowerMatrix');
 
 const EXPANDED = { width: 1000, height: 700, minWidth: 760, minHeight: 520 };
-const BAR = { width: 440, height: 48 };
+// Wide enough for the whole bar row at comfortable sizes: icon, both halves of
+// the 업무/일상 switch, five count chips and every window button. It was 440
+// before the switch existed, which left nothing to give.
+const BAR = { width: 600, height: 48 };
 
 let win = null;
 let mode = 'expanded';

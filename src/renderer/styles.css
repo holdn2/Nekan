@@ -1515,57 +1515,21 @@ body.expanded .bar-summary .chip {
   cursor: default;
 }
 
-/* The switch stays whole in the bar — both halves, same meaning as expanded —
-   and everything around it pays for the width. The row wanted 484px of the 440
-   available before any of this and pushed the window buttons off the right
-   edge. The brand goes first: it was already losing, squeezed to zero width
-   with the logo overflowing across the switch. Then the switch, the chips and
-   the window buttons each give back a few pixels.
+/* The bar keeps everything that means something at a glance: the icon, both
+   halves of the switch, the five counts and the window buttons. Only the app
+   name goes — it is the one thing the icon already says.
 
-   The remaining slack is small, so anything added here has to be measured
-   against the widest the row ever gets — inbox chip showing, all five counts
-   two digits wide — not against a fresh install. */
-body.collapsed .brand {
+   The row is what sets `BAR.width` in main.js (560px), not the other way
+   round. Anything added here has to be measured against the widest the row
+   ever gets — inbox chip showing, all five counts two digits wide — and the
+   bar widened to match rather than the contents squeezed further. */
+body.collapsed .title {
   display: none;
 }
 
 body.collapsed .titlebar {
-  padding: 0 4px 0 8px;
-  gap: 6px;
-}
-
-body.collapsed .space-switch {
-  gap: 1px;
-  padding: 1px;
-}
-
-body.collapsed .space-btn {
-  padding: 3px 7px;
-  font-size: 11px;
-}
-
-body.collapsed .bar-summary {
-  gap: 2px;
-}
-
-body.collapsed .chip {
-  padding: 3px 5px;
-  gap: 3px;
-}
-
-body.collapsed .win-actions {
-  margin-left: 2px;
-}
-
-body.collapsed .win-btn {
-  width: 25px;
-  height: 25px;
-}
-
-/* Appearance is not a window control, and the bar already hides the export
-   button on the same reasoning: there is no room, and Ctrl+D still works. */
-body.collapsed #themeBtn {
-  display: none;
+  padding: 0 6px 0 10px;
+  gap: 8px;
 }
 
 /* ---------- scrollbars ---------- */
