@@ -122,6 +122,34 @@ test('buildSnapshot keeps list order within a quadrant', () => {
   );
 });
 
+test('the export follows orderKey, not the array', () => {
+  // The array is storage order; once rows carry a key the screen and the
+  // document both read that instead, or the printout disagrees with the app.
+  const snap = buildSnapshot(
+    [
+      task({ text: 'shown second', orderKey: 'b' }),
+      task({ text: 'shown first', orderKey: 'a' }),
+    ],
+    NOW
+  );
+  assert.deepEqual(
+    snap.quads[0].items.map((i) => i.text),
+    ['shown first', 'shown second']
+  );
+});
+
+test('a purged row is not in the export', () => {
+  const snap = buildSnapshot(
+    [task({ text: 'live' }), task({ text: '', purgedAt: 1, deletedAt: 1 })],
+    NOW
+  );
+  assert.equal(snap.total, 1);
+  assert.deepEqual(
+    snap.quads[0].items.map((i) => i.text),
+    ['live']
+  );
+});
+
 test('due dates carry both the date and the relative hint', () => {
   const snap = buildSnapshot([task({ dueDate: '2026-08-03' })], NOW);
   const { due } = snap.quads[0].items[0];

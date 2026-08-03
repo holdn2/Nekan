@@ -20,6 +20,10 @@ const {
   clampText,
   clampMemo,
   normalizeTasks,
+  orderKeyBetween,
+  compareOrder,
+  TOMBSTONE_TTL_MS,
+  dropExpiredTombstones,
   sanitizeLayout,
   DEFAULT_LAYOUT,
   MIN_RATIO,
@@ -308,4 +312,146 @@ test('a zero span cannot produce a ratio outside the bounds', () => {
   // The grid is measured before it has been laid out on the first drag frame.
   const got = clampAxis(0.9, 0, MIN_COL_PX);
   assert.ok(got >= MIN_RATIO && got <= MAX_RATIO);
+});
+
+/* -------------------------------------------------------------- order keys */
+
+test('an order key lands strictly between its neighbours', () => {
+  const a = orderKeyBetween(null, null);
+  const before = orderKeyBetween(null, a);
+  const after = orderKeyBetween(a, null);
+  assert.ok(before < a, `${before} < ${a}`);
+  assert.ok(a < after, `${a} < ${after}`);
+
+  const middle = orderKeyBetween(a, after);
+  assert.ok(a < middle && middle < after, `${a} < ${middle} < ${after}`);
+});
+
+test('there is always room between two keys, however close', () => {
+  // Repeatedly inserting at the same spot is the case that breaks a scheme
+  // built on numbers: eventually there is no value left between two rows.
+  let low = orderKeyBetween(null, null);
+  let high = orderKeyBetween(low, null);
+  for (let i = 0; i < 200; i += 1) {
+    const mid = orderKeyBetween(low, high);
+    assert.ok(low < mid && mid < high, `round ${i}: ${low} < ${mid} < ${high}`);
+    high = mid;
+  }
+});
+
+test('appending stays ordered over a long run', () => {
+  const keys = [];
+  let last = null;
+  for (let i = 0; i < 200; i += 1) {
+    last = orderKeyBetween(last, null);
+    keys.push(last);
+  }
+  assert.deepEqual(keys, [...keys].sort());
+});
+
+test('prepending stays ordered over a long run', () => {
+  const keys = [];
+  let first = null;
+  for (let i = 0; i < 200; i += 1) {
+    first = orderKeyBetween(null, first);
+    keys.unshift(first);
+  }
+  assert.deepEqual(keys, [...keys].sort());
+});
+
+test('a pair already out of sequence still yields a usable key', () => {
+  // A hand-edited or half-synced file can hand us a reversed pair; the drop has
+  // to complete anyway, landing before the row it was aimed at.
+  const low = orderKeyBetween(null, null);
+  const high = orderKeyBetween(low, null);
+  const got = orderKeyBetween(high, low);
+  assert.ok(got < low, `${got} < ${low}`);
+});
+
+test('compareOrder falls back to the id so the sort is total', () => {
+  const a = { id: 'a', orderKey: 'V' };
+  const b = { id: 'b', orderKey: 'V' };
+  assert.ok(compareOrder(a, b) < 0);
+  assert.ok(compareOrder(b, a) > 0);
+  assert.equal(compareOrder(a, a), 0);
+});
+
+test('normalizeTasks keeps the array order of a save that predates orderKey', () => {
+  const saved = ['first', 'second', 'third'].map((id) => ({
+    id,
+    quadrant: 'q1',
+    space: 'work',
+  }));
+  const sorted = normalizeTasks(saved).sort(compareOrder);
+  assert.deepEqual(
+    sorted.map((t) => t.id),
+    ['first', 'second', 'third'],
+  );
+});
+
+test('order keys are per quadrant and per board, not global', () => {
+  const saved = [
+    { id: 'w1', quadrant: 'q1', space: 'work' },
+    { id: 'l1', quadrant: 'q1', space: 'life' },
+    { id: 'w2', quadrant: 'q1', space: 'work' },
+    { id: 'q2a', quadrant: 'q2', space: 'work' },
+  ];
+  const byId = Object.fromEntries(normalizeTasks(saved).map((t) => [t.id, t]));
+  // Each group starts from scratch, so the first row of every group shares a
+  // key — they are only ever compared against their own quadrant.
+  assert.equal(byId.w1.orderKey, byId.l1.orderKey);
+  assert.equal(byId.w1.orderKey, byId.q2a.orderKey);
+  assert.ok(byId.w1.orderKey < byId.w2.orderKey);
+});
+
+test('a half-migrated list keeps the keys it already has', () => {
+  const existing = orderKeyBetween(null, null);
+  const saved = [
+    { id: 'new', quadrant: 'q1', space: 'work' },
+    { id: 'kept', quadrant: 'q1', space: 'work', orderKey: existing },
+  ];
+  const byId = Object.fromEntries(normalizeTasks(saved).map((t) => [t.id, t]));
+  assert.equal(byId.kept.orderKey, existing);
+  // The row without a key was listed first, so it has to sort first.
+  assert.ok(byId.new.orderKey < existing);
+});
+
+/* -------------------------------------------------------------- tombstones */
+
+test('normalizeTasks fills updatedAt and purgedAt', () => {
+  const [task] = normalizeTasks([{ id: 'a', quadrant: 'q1', createdAt: 1234 }]);
+  // Never edited since it was written, so creation time is the honest answer.
+  assert.equal(task.updatedAt, 1234);
+  assert.equal(task.purgedAt, null);
+
+  const [stamped] = normalizeTasks([{ id: 'b', quadrant: 'q1', updatedAt: 99 }]);
+  assert.equal(stamped.updatedAt, 99);
+});
+
+test('a tombstone survives normalization instead of being dropped', () => {
+  const list = normalizeTasks([
+    { id: 'gone', quadrant: 'q1', purgedAt: 5, text: '' },
+  ]);
+  assert.equal(list.length, 1);
+  assert.equal(list[0].purgedAt, 5);
+});
+
+test('tombstones are dropped only once they are older than the TTL', () => {
+  const now = 1_000_000_000_000;
+  const list = [
+    { id: 'live', purgedAt: null },
+    { id: 'fresh', purgedAt: now - 1000 },
+    { id: 'expired', purgedAt: now - TOMBSTONE_TTL_MS - 1 },
+  ];
+  assert.deepEqual(
+    dropExpiredTombstones(list, now).map((t) => t.id),
+    ['live', 'fresh'],
+  );
+});
+
+test('dropExpiredTombstones ignores a rubbish purgedAt', () => {
+  const now = 1_000_000_000_000;
+  const list = [{ id: 'a', purgedAt: 'yesterday' }, { id: 'b' }];
+  assert.equal(dropExpiredTombstones(list, now).length, 2);
+  assert.deepEqual(dropExpiredTombstones(null, now), []);
 });

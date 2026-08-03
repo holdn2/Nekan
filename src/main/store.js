@@ -14,6 +14,7 @@ const path = require('path');
 const { app } = require('electron');
 
 const { loadStore, writeStore } = require('../shared/store-io');
+const { dropExpiredTombstones } = require('../shared/core');
 
 let store = null;
 let saveTimer = null;
@@ -41,9 +42,16 @@ function legacyStorePaths() {
   ];
 }
 
-/** Read the file (migrating an older folder's first) and keep it in memory. */
+/**
+ * Read the file (migrating an older folder's first) and keep it in memory.
+ *
+ * Startup is where tombstones are collected: a permanently deleted row stays
+ * in the file so other devices learn it is gone, and this is the one moment
+ * where dropping the expired ones cannot race a write in progress.
+ */
 function load() {
   store = loadStore(storePath(), legacyStorePaths());
+  store.tasks = dropExpiredTombstones(store.tasks);
   return store;
 }
 

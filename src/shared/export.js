@@ -16,6 +16,7 @@ const {
   QUADS,
   INBOX,
   SPACE_LABEL,
+  compareOrder,
   dueInfo,
   normalizeTasks,
   sanitizeSpace,
@@ -88,9 +89,15 @@ function exportItem(task, now) {
 function buildSnapshot(tasks, now = new Date(), space) {
   const board = sanitizeSpace(space);
   const list = normalizeTasks(tasks).filter(
-    (t) => !t.completedAt && !t.deletedAt && (t.space === null || t.space === board)
+    (t) =>
+      !t.purgedAt &&
+      !t.completedAt &&
+      !t.deletedAt &&
+      (t.space === null || t.space === board)
   );
-  const inList = (q) => list.filter((t) => t.quadrant === q);
+  // Same order the quadrant shows: the array is storage order, `orderKey` is
+  // the user's. normalizeTasks() above has already given every row one.
+  const inList = (q) => list.filter((t) => t.quadrant === q).sort(compareOrder);
 
   const sections = [
     {
