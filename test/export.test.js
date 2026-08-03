@@ -84,7 +84,7 @@ test('buildSnapshot puts a save from before the split on the default board', () 
 
 test('the board name is in the printed documents', () => {
   const snap = buildSnapshot([task({ text: 'a' })], NOW, 'life');
-  assert.match(toMarkdown(snap), /^# 네칸 — 일상$/m);
+  assert.match(toMarkdown(snap), /^# Nekan — 일상$/m);
   assert.match(toHtml(snap), /class="board">일상</);
 });
 
@@ -139,7 +139,7 @@ test('markdown lists every section, empty ones included', () => {
   const md = toMarkdown(
     buildSnapshot([task({ quadrant: 'inbox', text: 'dump' })], NOW)
   );
-  assert.match(md, /^# 네칸/);
+  assert.match(md, /^# Nekan/);
   assert.match(md, /## 다 꺼내기[\s\S]*1\. dump/);
   assert.match(md, /## Urgent & Important[\s\S]*비어 있음/);
   assert.equal(md.endsWith('\n'), true);
@@ -174,11 +174,11 @@ test('the suggested file name carries the board, the day and the format', () => 
   assert.equal(isoDay(NOW), '2026-08-02');
   assert.equal(
     defaultFileName(NOW, 'pdf', 'work'),
-    '네칸 업무 2026-08-02.pdf'
+    'Nekan 업무 2026-08-02.pdf'
   );
   assert.equal(
     defaultFileName(NOW, 'md', 'life'),
-    '네칸 일상 2026-08-02.md'
+    'Nekan 일상 2026-08-02.md'
   );
   // The two exports must not be offered the same name.
   assert.notEqual(
