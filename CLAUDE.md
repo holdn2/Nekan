@@ -1,4 +1,4 @@
-# EisenhowerMatrix — 에이전트용 프로젝트 노트
+# 네칸 (Nekan) — 에이전트용 프로젝트 노트
 
 아이젠하워 매트릭스 데스크톱 위젯. Electron 43, 빌드는 electron-builder.
 **사용자 대상 기능 설명은 `README.md`에 있음. 이 파일은 중복하지 않고, 코드를 읽어서는 알기 어려운 것만 적는다.**
@@ -76,9 +76,15 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
 
 ## 알아두면 좋은 것
 
-- `app.setName('EisenhowerMatrix')`가 `main.js` 최상단에 있는 이유: `npm start`와 패키징된
-  exe가 **같은** `%APPDATA%\EisenhowerMatrix\data.json`을 보게 하려고. 지우면 개발용/배포용
-  데이터가 갈라진다. `migrateLegacyStore()`는 이 이름을 고정하기 전 데이터를 옮겨오는 코드다.
+- `app.setName('Nekan')`이 `main.js` 최상단에 있는 이유: `npm start`와 패키징된
+  exe가 **같은** `%APPDATA%\Nekan\data.json`을 보게 하려고. 지우면 개발용/배포용
+  데이터가 갈라진다. **이름이 바뀔 때마다 이 폴더도 바뀐다** — 그래서
+  `main/store.js`의 `legacyStorePaths()`가 옛 폴더를 **최신순 배열**로 넘기고
+  (`Nekan` ← `EisenhowerMatrix` ← `eisenhower-matrix`), `migrateLegacyStore()`가
+  존재하는 첫 파일 하나만 복사한다. **대상 파일이 이미 있으면 절대 덮지 않는다** —
+  덮으면 실행할 때마다 살아 있는 데이터가 옛 사본으로 되돌아간다.
+  또 이름을 바꾼다면: 새 이름을 `setName()`에 넣고, **직전 이름을 배열 맨 앞에** 넣는다
+  (배열은 최신순이고, 존재하는 첫 항목이 이긴다).
 - 창 위치(`bounds`)는 **expanded 모드일 때만** 저장한다 (`main/window.js`의 `rememberBounds`). 바 모드 크기가
   저장돼버리면 다음 실행 때 440×48로 열린다.
 - 분면 비율 `layout.cols/rows`는 0.15~0.85로 클램프된다. 상수와 클램프 함수는
@@ -152,7 +158,7 @@ npx electron . --user-data-dir=<임시폴더> --remote-debugging-port=9333
 
 `--user-data-dir`은 `app.getPath('userData')`를 통째로 바꾸므로 락도 따로 잡고 실제
 `data.json`도 건드리지 않는다. 그 폴더에 `data.json`을 미리 써두면 원하는 상태로 시작할 수
-있다 (**폴더 바로 아래** — 하위에 `EisenhowerMatrix/`를 또 만들면 안 읽히고
+있다 (**폴더 바로 아래** — 하위에 `Nekan/`을 또 만들면 안 읽히고
 `migrateLegacyStore()`가 옛 데이터를 끌어온다). GUI 클릭은 좌표로 쏘지 말고 CDP로
 `Runtime.evaluate`를 보내 `document.querySelector(...).click()`을 하는 게 확실하다
 (Node 22의 전역 `WebSocket`이면 의존성 없이 붙는다). 창 스크린샷은 다른 창에 가려도

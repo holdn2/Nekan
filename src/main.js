@@ -15,7 +15,7 @@ const { registerIpc } = require('./main/ipc');
 
 // Keep the data folder identical between `npm start` and the packaged build.
 // Without it the two read different data.json files.
-app.setName('EisenhowerMatrix');
+app.setName('Nekan');
 
 // A second launch should raise the window that is already there, not open a
 // rival one that would write over the same file.
