@@ -26,14 +26,24 @@ function storePath() {
   return path.join(app.getPath('userData'), 'data.json');
 }
 
-/** Data written before the app name was pinned lived in a lower-cased folder. */
-function legacyStorePath() {
-  return path.join(app.getPath('appData'), 'eisenhower-matrix', 'data.json');
+/**
+ * Folders this data has lived in before, newest first.
+ *
+ * `EisenhowerMatrix` is what app.setName() pinned before the rename to 네칸;
+ * `eisenhower-matrix` is older still, from before the name was pinned at all.
+ * Both are kept because a user can be sitting on either one.
+ */
+function legacyStorePaths() {
+  const appData = app.getPath('appData');
+  return [
+    path.join(appData, 'EisenhowerMatrix', 'data.json'),
+    path.join(appData, 'eisenhower-matrix', 'data.json'),
+  ];
 }
 
-/** Read the file (migrating the legacy one first) and keep it in memory. */
+/** Read the file (migrating an older folder's first) and keep it in memory. */
 function load() {
-  store = loadStore(storePath(), legacyStorePath());
+  store = loadStore(storePath(), legacyStorePaths());
   return store;
 }
 
@@ -66,7 +76,7 @@ function persistNow() {
 
 module.exports = {
   storePath,
-  legacyStorePath,
+  legacyStorePaths,
   load,
   getStore,
   getSettings,

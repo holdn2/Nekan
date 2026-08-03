@@ -93,3 +93,36 @@ test('the legacy store is copied once, and never over an existing file', () => {
   writeStore(target, current);
   assert.equal(loadStore(target, legacy).tasks[0].id, 'new');
 });
+
+test('a list of legacy folders is walked newest-first', () => {
+  const dir = tmpDir();
+  const target = path.join(dir, 'Nekan', 'data.json');
+  const write = (name, id) => {
+    const p = path.join(dir, name, 'data.json');
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    fs.writeFileSync(p, JSON.stringify({ tasks: [{ id, quadrant: 'q1' }] }));
+    return p;
+  };
+  // Both older folders exist: the rename has to take the newer one, or the app
+  // comes back holding data from two names ago.
+  const previous = write('EisenhowerMatrix', 'previous');
+  const oldest = write('eisenhower-matrix', 'oldest');
+
+  assert.equal(loadStore(target, [previous, oldest]).tasks[0].id, 'previous');
+});
+
+test('a legacy list skips the folders that are not there', () => {
+  const dir = tmpDir();
+  const target = path.join(dir, 'Nekan', 'data.json');
+  const oldest = path.join(dir, 'eisenhower-matrix', 'data.json');
+  fs.mkdirSync(path.dirname(oldest), { recursive: true });
+  fs.writeFileSync(oldest, JSON.stringify({ tasks: [{ id: 'oldest' }] }));
+
+  const missing = path.join(dir, 'EisenhowerMatrix', 'data.json');
+  assert.equal(loadStore(target, [missing, oldest]).tasks[0].id, 'oldest');
+});
+
+test('an empty legacy list is not a migration', () => {
+  const target = path.join(tmpDir(), 'data.json');
+  assert.deepEqual(loadStore(target, []), defaultStore());
+});

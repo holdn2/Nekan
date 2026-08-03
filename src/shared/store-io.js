@@ -29,13 +29,25 @@ function defaultStore() {
   };
 }
 
-/** Data written before the app name was pinned lived in a lower-cased folder. */
+/**
+ * Bring a data.json written under an older app name across, once.
+ *
+ * `legacy` may be a list because the folder has moved twice: before the app
+ * name was pinned it was lower-cased, and the rename to 네칸 moved it again.
+ * The list is walked newest-first and the first file that exists wins, so a
+ * user who has both folders keeps the more recent one.
+ *
+ * Never copies over an existing target — that would overwrite live data with
+ * a stale copy on every launch.
+ */
 function migrateLegacyStore(target, legacy) {
+  const sources = (Array.isArray(legacy) ? legacy : [legacy]).filter(Boolean);
   try {
-    if (!fs.existsSync(target) && fs.existsSync(legacy)) {
-      fs.mkdirSync(path.dirname(target), { recursive: true });
-      fs.copyFileSync(legacy, target);
-    }
+    if (fs.existsSync(target)) return;
+    const source = sources.find((p) => fs.existsSync(p));
+    if (!source) return;
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.copyFileSync(source, target);
   } catch (err) {
     console.error('legacy store migration failed', err);
   }
@@ -47,7 +59,7 @@ function migrateLegacyStore(target, legacy) {
  * without an older file losing it.
  */
 function loadStore(target, legacy) {
-  if (legacy) migrateLegacyStore(target, legacy);
+  if (legacy && legacy.length) migrateLegacyStore(target, legacy);
   try {
     const parsed = JSON.parse(fs.readFileSync(target, 'utf8'));
     const base = defaultStore();

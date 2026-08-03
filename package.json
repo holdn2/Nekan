@@ -1,7 +1,7 @@
 {
-  "name": "eisenhower-matrix",
+  "name": "nekan",
   "version": "1.0.0",
-  "description": "Eisenhower Matrix desktop widget",
+  "description": "네칸 — Eisenhower matrix desktop widget",
   "main": "src/main.js",
   "author": "makersfarm",
   "license": "MIT",
@@ -16,8 +16,8 @@
     "electron-builder": "^26.15.3"
   },
   "build": {
-    "appId": "com.makersfarm.eisenhower",
-    "productName": "EisenhowerMatrix",
+    "appId": "com.makersfarm.nekan",
+    "productName": "Nekan",
     "files": [
       "src/**/*",
       "package.json"
