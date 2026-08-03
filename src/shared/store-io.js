@@ -33,7 +33,7 @@ function defaultStore() {
  * Bring a data.json written under an older app name across, once.
  *
  * `legacy` may be a list because the folder has moved twice: before the app
- * name was pinned it was lower-cased, and the rename to 네칸 moved it again.
+ * name was pinned it was lower-cased, and the rename to Nekan moved it again.
  * The list is walked newest-first and the first file that exists wins, so a
  * user who has both folders keeps the more recent one.
  *

@@ -59,7 +59,7 @@ function stampLabel(now = new Date()) {
  * second file would be offered the name of the first.
  */
 function defaultFileName(now = new Date(), ext = 'pdf', space) {
-  return `네칸 ${SPACE_LABEL[sanitizeSpace(space)]} ${isoDay(now)}.${ext}`;
+  return `Nekan ${SPACE_LABEL[sanitizeSpace(space)]} ${isoDay(now)}.${ext}`;
 }
 
 /**
@@ -147,7 +147,7 @@ function markdownSection(section) {
 /** The whole document: header, then one section per quadrant. */
 function toMarkdown(snapshot) {
   const lines = [
-    `# 네칸 — ${snapshot.spaceLabel}`,
+    `# Nekan — ${snapshot.spaceLabel}`,
     '',
     `내보낸 시각: ${snapshot.stamp} · 항목 ${snapshot.total}개`,
     '',
@@ -212,7 +212,7 @@ function toHtml(snapshot) {
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>네칸 ${escapeHtml(snapshot.spaceLabel)} ${escapeHtml(snapshot.stamp)}</title>
+<title>Nekan ${escapeHtml(snapshot.spaceLabel)} ${escapeHtml(snapshot.stamp)}</title>
 <style>
   @page { size: A4 landscape; margin: 12mm; }
   * { box-sizing: border-box; }
@@ -259,7 +259,7 @@ function toHtml(snapshot) {
 </head>
 <body>
 <div class="head">
-  <h1>네칸</h1>
+  <h1>Nekan</h1>
   <span class="board">${escapeHtml(snapshot.spaceLabel)}</span>
   <span class="meta">${escapeHtml(snapshot.stamp)} · 항목 ${snapshot.total}개</span>
 </div>

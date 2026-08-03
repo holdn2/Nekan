@@ -29,7 +29,7 @@ function storePath() {
 /**
  * Folders this data has lived in before, newest first.
  *
- * `EisenhowerMatrix` is what app.setName() pinned before the rename to 네칸;
+ * `EisenhowerMatrix` is what app.setName() pinned before the rename to Nekan;
  * `eisenhower-matrix` is older still, from before the name was pinned at all.
  * Both are kept because a user can be sitting on either one.
  */
