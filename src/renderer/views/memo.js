@@ -61,7 +61,7 @@ const memoPanelHeight = () =>
 export function selectedTask() {
   if (!selectedId) return null;
   const task = findTask(selectedId);
-  if (!task || task.completedAt || task.deletedAt) return null;
+  if (!task || task.purgedAt || task.completedAt || task.deletedAt) return null;
   // The INBOX test cannot be folded into inSpace(): an inbox row has
   // `space: null`, which inSpace() passes on purpose so the staging list is
   // shared by both boards. Dropping it here would leave the panel open on a row

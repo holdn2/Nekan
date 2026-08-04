@@ -160,18 +160,181 @@ function splitBulkText(raw) {
     .slice(0, MAX_BULK_LINES);
 }
 
+/* ------------------------------------------------------------ order keys */
+
 /**
- * Fill in fields older saves predate, and repair the three fields whose bad
- * values are invisible: the matrix only walks QUADS and the inbox only reads
- * INBOX, so an unrecognised `quadrant` would keep the task in the file while it
- * disappears from every list; a `space` the toggle does not know would do the
- * same on both boards; and a non-string `memo` would render as
- * "[object Object]". Never drops entries — that is purgeTask()'s job alone.
+ * Where a task sits inside its quadrant is a string, not an array position.
+ *
+ * The array cannot carry it once the list is shared between devices: a server
+ * hands back a *set* of rows, and two devices that each reordered locally leave
+ * nothing to merge from. A key that sorts lexicographically survives that,
+ * and inserting between two neighbours only ever writes the row that moved —
+ * renumbering the whole quadrant would make every move a full-list write.
+ *
+ * Keys are digit strings read as the fraction after an implied "0.", so there
+ * is always room between any two of them. The alphabet is ASCII-ordered, which
+ * is what lets a plain `<` on the strings be the comparison.
+ */
+const ORDER_DIGITS =
+  '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const ORDER_BASE = ORDER_DIGITS.length;
+
+/**
+ * A key strictly between `a` and `b`, where '' is the start of the list and
+ * null is the end. Walks past the common prefix first, then splits the first
+ * digit that differs; when those digits are neighbours there is no room at this
+ * position, so it keeps `a`'s digit and recurses one place deeper.
+ */
+function orderMidpoint(a, b) {
+  if (b !== null) {
+    let n = 0;
+    while ((a[n] || '0') === b[n]) n += 1;
+    if (n > 0) return b.slice(0, n) + orderMidpoint(a.slice(n), b.slice(n));
+  }
+
+  const digitA = a ? ORDER_DIGITS.indexOf(a[0]) : 0;
+  const digitB = b !== null ? ORDER_DIGITS.indexOf(b[0]) : ORDER_BASE;
+
+  if (digitB - digitA > 1) {
+    return ORDER_DIGITS[Math.round(0.5 * (digitA + digitB))];
+  }
+  // The digits are adjacent. `b` has more to give if it is longer than one
+  // digit; otherwise the room has to come from extending `a`.
+  if (b !== null && b.length > 1) return b.slice(0, 1);
+  return ORDER_DIGITS[digitA] + orderMidpoint(a.slice(1), null);
+}
+
+/**
+ * Is this a key this file could have produced?
+ *
+ * Being a non-empty string is not enough. Two shapes are unusable:
+ *   - a character outside ORDER_DIGITS, which sorts against real keys by
+ *     accident rather than by the alphabet's order;
+ *   - a trailing lowest digit. There is no room in front of such a key —
+ *     `orderKeyBetween(null, '0')` can only return `'00…'`, and that sorts
+ *     *after* `'0'`, so a drop above the row would land below it.
+ *
+ * Neither can come out of orderMidpoint(); both can come from a hand-edited
+ * file or, later, from another device. A row carrying one is treated as having
+ * no key at all, which is what makes normalizeTasks() replace it.
+ */
+function isOrderKey(value) {
+  return (
+    typeof value === 'string' &&
+    value !== '' &&
+    value[value.length - 1] !== ORDER_DIGITS[0] &&
+    [...value].every((digit) => ORDER_DIGITS.includes(digit))
+  );
+}
+
+/**
+ * The order key for a row dropped between `before` and `after`. Either side may
+ * be missing: no `before` means the head of the list, no `after` means the tail.
+ *
+ * A neighbour that is not a usable key — or a pair already out of sequence —
+ * would make the midpoint meaningless, so the broken side is dropped rather
+ * than thrown on: a bad key in the file must not stop a drag from completing.
+ */
+function orderKeyBetween(before, after) {
+  const a = isOrderKey(before) ? before : '';
+  const b = isOrderKey(after) ? after : null;
+  if (b !== null && a >= b) return orderMidpoint('', b);
+  return orderMidpoint(a, b);
+}
+
+/** Sort comparator for rows of one quadrant; ties break on id so it is total. */
+function compareOrder(a, b) {
+  const ka = typeof a?.orderKey === 'string' ? a.orderKey : '';
+  const kb = typeof b?.orderKey === 'string' ? b.orderKey : '';
+  if (ka !== kb) return ka < kb ? -1 : 1;
+  const ia = String(a?.id);
+  const ib = String(b?.id);
+  if (ia === ib) return 0;
+  return ia < ib ? -1 : 1;
+}
+
+/** Keys only have to be unique within one quadrant of one board. */
+function orderGroupOf(task) {
+  return `${task.quadrant} ${task.space === null ? '' : task.space}`;
+}
+
+const hasOrderKey = (t) => isOrderKey(t?.orderKey);
+
+/**
+ * Give a key to every row saved before the field existed, in the array order
+ * the old builds displayed — that array order *is* the user's ordering, and
+ * losing it would shuffle their quadrants on first launch.
+ *
+ * Rows that already have a key keep it, so a file that is half migrated (a sync
+ * could deliver one) fills only its gaps: each missing row is placed between
+ * the previous key in its group and the next existing one.
+ */
+function assignOrderKeys(list) {
+  if (list.every(hasOrderKey)) return list;
+
+  // The nearest existing key *after* each index, within the same group.
+  const following = new Array(list.length).fill(null);
+  const seen = new Map();
+  for (let i = list.length - 1; i >= 0; i -= 1) {
+    const group = orderGroupOf(list[i]);
+    following[i] = seen.has(group) ? seen.get(group) : null;
+    if (hasOrderKey(list[i])) seen.set(group, list[i].orderKey);
+  }
+
+  const previous = new Map();
+  list.forEach((task, i) => {
+    const group = orderGroupOf(task);
+    if (hasOrderKey(task)) {
+      previous.set(group, task.orderKey);
+      return;
+    }
+    const key = orderKeyBetween(previous.get(group) || null, following[i]);
+    task.orderKey = key;
+    previous.set(group, key);
+  });
+  return list;
+}
+
+/* ------------------------------------------------------------- tombstones */
+
+/**
+ * How long a permanently deleted row stays in the file as a tombstone.
+ *
+ * Deleting for real used to mean dropping the row from the array, which works
+ * exactly as long as the array is the only copy. Once another device has it,
+ * a row that simply disappears here is a row that device still has — and it
+ * pushes it back. The tombstone is what tells the other side "this is gone".
+ * It can only be dropped for good once every device has certainly seen it.
+ */
+const TOMBSTONE_TTL_MS = 90 * DAY_MS;
+
+/**
+ * Drop tombstones old enough that no device can still be carrying the row.
+ * The only place a task really leaves the array — everything else is a flag.
+ */
+function dropExpiredTombstones(list, now = Date.now()) {
+  if (!Array.isArray(list)) return [];
+  return list.filter(
+    (t) =>
+      !(Number.isFinite(t?.purgedAt) && now - t.purgedAt > TOMBSTONE_TTL_MS),
+  );
+}
+
+/**
+ * Fill in fields older saves predate, and repair the ones whose bad values are
+ * invisible: the matrix only walks QUADS and the inbox only reads INBOX, so an
+ * unrecognised `quadrant` would keep the task in the file while it disappears
+ * from every list; a `space` the toggle does not know would do the same on both
+ * boards; a missing `orderKey` would collapse a quadrant's order; and a
+ * non-string `memo` would render as "[object Object]".
+ *
+ * Never drops entries — that is dropExpiredTombstones()'s job alone.
  */
 function normalizeTasks(list) {
   if (!Array.isArray(list)) return [];
-  return list.map((t) => {
+  const normalized = list.map((t) => {
     const quadrant = PLACES.includes(t?.quadrant) ? t.quadrant : FALLBACK_QUAD;
+    const createdAt = Number.isFinite(t?.createdAt) ? t.createdAt : 0;
     return {
       dueDate: null,
       deletedAt: null,
@@ -180,8 +343,14 @@ function normalizeTasks(list) {
       quadrant,
       space: spaceFor(quadrant, t?.space),
       memo: typeof t?.memo === 'string' ? clampMemo(t.memo) : null,
+      // A row that predates the field has never been edited since it was
+      // written, so its creation time is the honest last-changed time.
+      updatedAt: Number.isFinite(t?.updatedAt) ? t.updatedAt : createdAt,
+      purgedAt: Number.isFinite(t?.purgedAt) ? t.purgedAt : null,
+      orderKey: hasOrderKey(t) ? t.orderKey : null,
     };
   });
+  return assignOrderKeys(normalized);
 }
 
 /* ----------------------------------------------------------------- layout */
@@ -273,6 +442,11 @@ const emCore = {
   clampText,
   clampMemo,
   splitBulkText,
+  isOrderKey,
+  orderKeyBetween,
+  compareOrder,
+  TOMBSTONE_TTL_MS,
+  dropExpiredTombstones,
   normalizeTasks,
   DEFAULT_LAYOUT,
   MIN_RATIO,

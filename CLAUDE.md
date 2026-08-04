@@ -57,14 +57,22 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   드롭이 소속을 정하는 유일한 순간이다. 인박스 행에 `space`를 남기면 그 항목이 한쪽에서만
   보이고, 분면 항목의 `space`를 null로 두면 양쪽에 겹쳐 보인다.
 - **"화면에 보이는 것만" 거르는 곳이 전부 `inSpace()`를 거쳐야 한다.** 4분면·히스토리·휴지통·
-  헤더 개수·내보내기가 전부 활성 space 기준이다. 특히 `tasks`를 통째로 `filter`하는 일괄
-  작업(휴지통 비우기)은 **id 집합을 먼저 모아서** 지워야 한다 — 조건으로 지우면 화면에 없는
-  반대쪽 보드까지 날아간다.
-- **task는 절대 배열에서 지우지 않는다.** 상태는 세 개의 타임스탬프 필드로만 표현한다:
-  - 활성: `completedAt === null && deletedAt === null`
+  헤더 개수·내보내기가 전부 활성 space 기준이다. 일괄 작업은 **탭이 이미 보여준 행 목록을
+  그대로 받아서** 그 객체에 쓴다 — `tasks`를 조건으로 다시 거르면 화면에 없는 반대쪽 보드까지
+  날아간다.
+- **task는 절대 배열에서 지우지 않는다.** 상태는 네 개의 타임스탬프 필드로만 표현한다:
+  - 활성: `purgedAt === null && completedAt === null && deletedAt === null`
   - 완료(히스토리): `completedAt !== null`
   - 휴지통: `deletedAt !== null`
-  - 실제 `filter`로 제거하는 곳은 `purgeTask()` (영구 삭제) 단 하나뿐이다.
+  - 영구 삭제: `purgedAt !== null` — **묘비다.** 행은 파일에 남고 `text`·`memo`만 비운다.
+    지우면 아직 동기화하지 않은 다른 기기가 그 항목을 도로 밀어 넣는다.
+  - 실제 `filter`로 제거하는 곳은 `dropExpiredTombstones()` 단 하나뿐이고,
+    `main/store.js`의 `load()`가 시작할 때 한 번 부른다 (TTL 90일).
+- **분면 안의 순서는 배열 위치가 아니라 `orderKey`다.** 문자열을 사전순으로 비교하고
+  (`compareOrder`), 두 행 사이에 끼울 키는 `orderKeyBetween()`이 만든다 — 한 행만 쓰면 되므로
+  이동이 전체 목록 쓰기가 되지 않는다. 키는 **`(quadrant, space)` 조합 안에서만** 유효하니
+  다른 분면의 키와 비교하지 말 것. **배열을 재정렬하고 화면이 따라오길 기대하면 안 된다.**
+  목록을 뽑는 곳은 전부 `compareOrder`로 정렬해야 한다(`activeOf`, `export.js`의 `inList`).
 - **task 스키마에 필드를 추가하면 기존 `data.json`에는 그 필드가 없다.** `shared/core.js`의
   `normalizeTasks()`에서 기본값을 채워줘야 한다. 마이그레이션 코드 없이 필드를 읽으면 기존
   사용자 데이터에서 `undefined`가 된다. **값이 이상하면 화면에서 사라지는 필드**(`quadrant`
