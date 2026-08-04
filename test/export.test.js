@@ -139,8 +139,11 @@ test('the export follows orderKey, not the array', () => {
 });
 
 test('a purged row is not in the export', () => {
+  // Deliberately no `deletedAt`: a tombstone in the real store carries one, but
+  // leaving it here would let the trash filter pass this test on its own and
+  // the `purgedAt` check could be deleted without anything failing.
   const snap = buildSnapshot(
-    [task({ text: 'live' }), task({ text: '', purgedAt: 1, deletedAt: 1 })],
+    [task({ text: 'live' }), task({ text: '', purgedAt: 1 })],
     NOW
   );
   assert.equal(snap.total, 1);

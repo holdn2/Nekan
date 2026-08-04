@@ -20,6 +20,7 @@ const {
   clampText,
   clampMemo,
   normalizeTasks,
+  isOrderKey,
   orderKeyBetween,
   compareOrder,
   TOMBSTONE_TTL_MS,
@@ -366,6 +367,49 @@ test('a pair already out of sequence still yields a usable key', () => {
   const high = orderKeyBetween(low, null);
   const got = orderKeyBetween(high, low);
   assert.ok(got < low, `${got} < ${low}`);
+});
+
+test('a key with no room in front of it is not a key', () => {
+  // '0' is the trap: there is nothing between the head of the list and it, so
+  // orderKeyBetween(null, '0') can only answer '00…' — which sorts *after*
+  // '0' and would drop a row below the one it was aimed above.
+  assert.equal(isOrderKey('0'), false);
+  assert.equal(isOrderKey('V0'), false);
+  assert.equal(isOrderKey(''), false);
+  assert.equal(isOrderKey('V~'), false, 'digit outside the alphabet');
+  assert.equal(isOrderKey(null), false);
+  assert.equal(isOrderKey('V'), true);
+  assert.equal(isOrderKey('0V'), true, 'a leading lowest digit is fine');
+});
+
+test('normalizeTasks replaces a key that cannot be inserted in front of', () => {
+  const [zero] = normalizeTasks([
+    { id: 'a', quadrant: 'q1', space: 'work', orderKey: '0' },
+  ]);
+  assert.ok(isOrderKey(zero.orderKey), `got ${zero.orderKey}`);
+
+  const [junk] = normalizeTasks([
+    { id: 'b', quadrant: 'q1', space: 'work', orderKey: '~~' },
+  ]);
+  assert.ok(isOrderKey(junk.orderKey), `got ${junk.orderKey}`);
+});
+
+test('a drop above a repaired row really lands above it', () => {
+  // The whole point of rejecting '0': before the repair this ordered a, c, b.
+  const [head, tail] = normalizeTasks([
+    { id: 'a', quadrant: 'q1', space: 'work', orderKey: '0' },
+    { id: 'b', quadrant: 'q1', space: 'work', orderKey: 'V' },
+  ]);
+  const dropped = { id: 'c', orderKey: orderKeyBetween(null, head.orderKey) };
+  const order = [head, tail, dropped].sort(compareOrder).map((t) => t.id);
+  assert.deepEqual(order, ['c', 'a', 'b']);
+});
+
+test('orderKeyBetween ignores a neighbour it could not have produced', () => {
+  // A drag must still complete when the file holds a key from somewhere else.
+  assert.ok(isOrderKey(orderKeyBetween('~~', null)));
+  assert.ok(isOrderKey(orderKeyBetween(null, '~~')));
+  assert.ok(isOrderKey(orderKeyBetween('0', '0')));
 });
 
 test('compareOrder falls back to the id so the sort is total', () => {

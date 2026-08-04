@@ -205,16 +205,39 @@ function orderMidpoint(a, b) {
 }
 
 /**
+ * Is this a key this file could have produced?
+ *
+ * Being a non-empty string is not enough. Two shapes are unusable:
+ *   - a character outside ORDER_DIGITS, which sorts against real keys by
+ *     accident rather than by the alphabet's order;
+ *   - a trailing lowest digit. There is no room in front of such a key —
+ *     `orderKeyBetween(null, '0')` can only return `'00…'`, and that sorts
+ *     *after* `'0'`, so a drop above the row would land below it.
+ *
+ * Neither can come out of orderMidpoint(); both can come from a hand-edited
+ * file or, later, from another device. A row carrying one is treated as having
+ * no key at all, which is what makes normalizeTasks() replace it.
+ */
+function isOrderKey(value) {
+  return (
+    typeof value === 'string' &&
+    value !== '' &&
+    value[value.length - 1] !== ORDER_DIGITS[0] &&
+    [...value].every((digit) => ORDER_DIGITS.includes(digit))
+  );
+}
+
+/**
  * The order key for a row dropped between `before` and `after`. Either side may
  * be missing: no `before` means the head of the list, no `after` means the tail.
  *
- * A pair that is already out of sequence would make the midpoint meaningless,
- * so the broken side is dropped rather than thrown on — a bad key in the file
- * must not stop a drag from completing.
+ * A neighbour that is not a usable key — or a pair already out of sequence —
+ * would make the midpoint meaningless, so the broken side is dropped rather
+ * than thrown on: a bad key in the file must not stop a drag from completing.
  */
 function orderKeyBetween(before, after) {
-  const a = typeof before === 'string' && before ? before : '';
-  const b = typeof after === 'string' && after ? after : null;
+  const a = isOrderKey(before) ? before : '';
+  const b = isOrderKey(after) ? after : null;
   if (b !== null && a >= b) return orderMidpoint('', b);
   return orderMidpoint(a, b);
 }
@@ -235,7 +258,7 @@ function orderGroupOf(task) {
   return `${task.quadrant} ${task.space === null ? '' : task.space}`;
 }
 
-const hasOrderKey = (t) => typeof t?.orderKey === 'string' && t.orderKey !== '';
+const hasOrderKey = (t) => isOrderKey(t?.orderKey);
 
 /**
  * Give a key to every row saved before the field existed, in the array order
@@ -419,6 +442,7 @@ const emCore = {
   clampText,
   clampMemo,
   splitBulkText,
+  isOrderKey,
   orderKeyBetween,
   compareOrder,
   TOMBSTONE_TTL_MS,
