@@ -133,22 +133,32 @@ export function applyPinned(on) {
  * invisible because they need nothing from the user, and because the update is
  * applied on quit whether or not it was ever noticed — the button and the toast
  * only offer to bring that forward.
+ *
+ * `announce` splits news from state, and only news is worth interrupting for. A
+ * pushed status is news: something finished downloading just now. The one that
+ * comes back with state:load is not — it is how things already were, and the
+ * renderer asking for it has either just started or just reloaded. The button
+ * belongs to both; the toast belongs only to the first.
  */
-export function applyUpdateStatus(status) {
+export function applyUpdateStatus(status, { announce = false } = {}) {
   const ready = status?.state === "ready";
   $("#updateBtn").classList.toggle("hidden", !ready);
   if (!ready) return;
 
+  // Both strings put the version somewhere a Korean particle never follows it:
+  // the one that would (…1.0.1'은' / …1.0.2'는') depends on how the last digit
+  // is read aloud, and no single wording is right for every release.
   const version = status.version ? ` ${status.version}` : "";
   labelBtn("#updateBtn", `새 버전${version} 준비됨 — 지금 재시작하여 적용`);
 
-  // Once per version. The status is re-sent on every reload, and a toast that
-  // came back with it would be an interruption the user already answered.
-  if (announced === status.version) return;
+  // `announced` is the guard against the same news arriving twice; it is module
+  // state and a reload clears it, which is exactly why the reload path above
+  // must not announce in the first place.
+  if (!announce || announced === status.version) return;
   announced = status.version;
   // No toast in a bar — collapsed.css hides it — but the button is there, and
   // the update lands on the next quit regardless.
-  toast(`새 버전${version}을 받았습니다.`, {
+  toast(`새 버전을 받았습니다.${version && ` (${status.version})`}`, {
     ms: 10000,
     action: { label: "지금 재시작", onClick: () => window.api.installUpdate() },
   });

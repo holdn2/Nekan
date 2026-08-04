@@ -184,7 +184,7 @@ async function init() {
   // reply below could still be in flight when it lands.
   window.api.onUpdateStatus((next) => {
     pushedUpdate = next;
-    applyUpdateStatus(next);
+    applyUpdateStatus(next, { announce: true });
   });
 
   const state = await window.api.load();
@@ -208,6 +208,8 @@ async function init() {
   wireDragAndDrop();
   wireQuadEdges();
 
+  // No announce: this is the state as it already stood, and a reload arrives
+  // here too. Whatever landed as a push above has announced itself already.
   applyUpdateStatus(pushedUpdate || state.update);
   // state.mode is a snapshot from before ready-to-show, so a mode that was
   // pushed in the meantime is the newer truth. This is also the first render.
