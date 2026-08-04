@@ -93,8 +93,18 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   덮으면 실행할 때마다 살아 있는 데이터가 옛 사본으로 되돌아간다.
   또 이름을 바꾼다면: 새 이름을 `setName()`에 넣고, **직전 이름을 배열 맨 앞에** 넣는다
   (배열은 최신순이고, 존재하는 첫 항목이 이긴다).
-- 창 위치(`bounds`)는 **expanded 모드일 때만** 저장한다 (`main/window.js`의 `rememberBounds`). 바 모드 크기가
-  저장돼버리면 다음 실행 때 440×48로 열린다.
+- **창 크기는 expanded 모드의 것만 저장한다** (`main/window.js`의 `rememberPlacement`). 바 크기가
+  저장돼버리면 다음 실행 때 600×48로 열린다. 바는 **위치만** `settings.barPosition`에 따로 남는다.
+- **모드 전환의 기준점은 창에 물어보지 않고 저장된 값을 쓴다.** `expand()`는 `barPosition`에서,
+  `collapse()`는 `bounds`에서 출발한다. `win.getBounds()`로 재면 배율이 걸린 화면에서 요청값과
+  1~2px 어긋난 값이 돌아오고, 그걸로 다음 전환의 기준을 잡으면 **토글할 때마다 위젯이 몇 px씩
+  화면을 걸어간다**(실측으로 왕복당 +4px). 같은 이유로 `switching` 플래그가 켜져 있는 동안에는
+  `rememberPlacement`가 아무것도 저장하지 않는다 — 전환·창 생성이 일으킨 resize/move는
+  사용자가 옮긴 것이 아니다.
+- 어느 모서리를 기준으로 펼치고 접을지는 `shared/core.js`의 `expandOrigin()`·`collapseOrigin()`
+  **두 순수 함수에만** 있다. 화면 오른쪽에 붙은 바는 오른쪽 끝을 맞춰 왼쪽으로 자라고, 오른쪽
+  절반에 있는 창은 오른쪽 끝으로 접힌다. 이 둘이 짝이라 왕복해도 제자리다 — 한쪽만 고치면
+  토글할 때마다 위젯이 이동한다.
 - 분면 비율 `layout.cols/rows`는 0.15~0.85로 클램프된다. 상수와 클램프 함수는
   `shared/core.js` 한 곳에만 있고 `main/ipc.js`와 `renderer/window/layout.js`가 그걸 부른다.
   드래그용 픽셀 클램프(`clampAxis`)와 `MIN_COL_PX`/`MIN_ROW_PX`도 **거기 있어야 한다.**

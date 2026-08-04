@@ -388,6 +388,63 @@ function clampAxis(value, span, minPx) {
   return Math.min(high, Math.max(low, value));
 }
 
+/* ------------------------------------------------------- window placement */
+
+/**
+ * Keep a `length` long window starting at `start` inside `min`..`min + span`.
+ * A window taller or wider than the display gets the near edge; there is no
+ * placement that fits, and hanging off the far edge hides the title bar.
+ */
+function clampSpan(start, length, min, span) {
+  return Math.min(Math.max(start, min), Math.max(min, min + span - length));
+}
+
+/**
+ * Where the expanded window goes when the bar grows into it.
+ *
+ * It grows from the bar's top-left, because that corner is where the user just
+ * clicked. The exception is a bar sitting near the right of the display:
+ * growing rightwards from there would push most of the window past the edge,
+ * so the two right edges are lined up instead and the window grows leftwards.
+ *
+ * Vertically there is no such pivot — the window simply grows downwards — so a
+ * bar near the bottom is pushed up by the clamp until it fits. Both axes are
+ * clamped here rather than left to the caller: this is the function that knows
+ * how big the window is about to become.
+ *
+ * `bar` is where the bar is *now*, never a remembered position — moving the
+ * bar and then opening it has to open it where it was left.
+ */
+function expandOrigin(bar, size, area) {
+  const fitsGrowingRight = bar.x + size.width <= area.x + area.width;
+  const x = fitsGrowingRight ? bar.x : bar.x + bar.width - size.width;
+  return {
+    x: clampSpan(x, size.width, area.x, area.width),
+    y: clampSpan(bar.y, size.height, area.y, area.height),
+  };
+}
+
+/**
+ * Where the bar goes when the expanded window folds into it.
+ *
+ * The window keeps whichever side of the display it is on: one whose middle is
+ * past the middle of the screen folds onto its own right edge, so the bar stays
+ * under the eye instead of jumping left and leaving a gap.
+ *
+ * This pairs with expandOrigin(): a window that was opened right-aligned folds
+ * back to exactly the bar position it came from. A window sitting in the middle
+ * can shift once on its first fold, and is stable from then on.
+ */
+function collapseOrigin(bounds, bar, area) {
+  const middleOfScreen = area.x + area.width / 2;
+  const onTheRight = bounds.x + bounds.width / 2 > middleOfScreen;
+  const x = onTheRight ? bounds.x + bounds.width - bar.width : bounds.x;
+  return {
+    x: clampSpan(x, bar.width, area.x, area.width),
+    y: clampSpan(bounds.y, bar.height, area.y, area.height),
+  };
+}
+
 /** Ratios are always real numbers in the store; null/"" must not read as 0. */
 const asRatio = (v) => (typeof v === "number" && Number.isFinite(v) ? v : NaN);
 
@@ -455,6 +512,8 @@ const emCore = {
   MIN_ROW_PX,
   clampRatio,
   clampAxis,
+  expandOrigin,
+  collapseOrigin,
   sanitizeLayout,
 };
 
