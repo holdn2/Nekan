@@ -45,9 +45,27 @@ npm run release   # 빌드 + GitHub Release에 업로드 (GH_TOKEN 필요)
 1. `package.json`의 `version`을 올리고 커밋한다.
 2. `npm run release` — electron-builder가 설치 파일과 `latest.yml`을 만들어
    해당 버전의 **draft** Release로 올린다.
-3. GitHub에서 그 Release를 **publish**한다. 설치된 앱들은 이때부터 새 버전을 보게 된다.
+3. **draft가 하나이고 파일이 세 개인지 확인한다.** (아래 참고)
+   ```powershell
+   gh api repos/holdn2/Nekan/releases --jq '.[] | "\(.tag_name) draft=\(.draft) \([.assets[].name])"'
+   ```
+4. GitHub에서 그 Release를 **publish**한다. 설치된 앱들은 이때부터 새 버전을 보게 된다.
 
 `latest.yml`이 곧 업데이트 피드다. 설치 파일만 따로 올리면 아무도 업데이트되지 않는다.
+
+> **electron-builder가 같은 태그로 draft를 두 개 만드는 일이 있다.** 업로드가 병렬로 돌면서
+> 둘 다 "릴리스가 없네"라고 판단해 각자 만드는 경쟁 상태이고, 그러면 `.blockmap`만 다른
+> draft로 갈라진다 (v1.0.0에서 실제로 겪었다). 갈라졌으면 빈 쪽을 지우고 파일을 옮긴다.
+>
+> ```powershell
+> gh api -X DELETE repos/holdn2/Nekan/releases/<빈 쪽 id>
+> gh api --method POST -H "Content-Type: application/octet-stream" `
+>   "https://uploads.github.com/repos/holdn2/Nekan/releases/<남긴 id>/assets?name=Nekan-Setup-<ver>.exe.blockmap" `
+>   --input "dist\Nekan-Setup-<ver>.exe.blockmap"
+> ```
+>
+> `.blockmap`이 빠져도 업데이트 자체는 된다 — 차등 다운로드가 404로 실패하고 매번 100MB를
+> 통째로 받을 뿐이다.
 
 ## 기능
 
