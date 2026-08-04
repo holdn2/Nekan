@@ -11,6 +11,7 @@ src/main/
   store.js        메모리 위의 data.json + 디바운스 저장 (persist / persistNow)
   window.js       창 생성, expanded/collapsed 전환, 메모 패널 높이 회계
   export-service.js  PDF·HTML·MD 쓰기 (숨은 창에서 printToPDF)
+  updater.js      electron-updater. 창을 모르고, main.js가 넘긴 콜백으로만 알린다
   ipc.js          ipcMain.handle 전부. 새 채널을 만들 때 첫 번째로 여는 파일
 src/preload.js    contextBridge → window.api (여기 없는 건 렌더러에서 못 씀)
 src/shared/       메인·렌더러·테스트가 공유. 여기만 테스트가 덮는다
@@ -121,14 +122,15 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   저장한다. 대신 목록이 4분면을 밀어내지 않도록 `styles/base.css`의 `--inbox-max-h`와 `styles/inbox.css`의 `26vh`가
   높이를 묶는다 — 이 상한을 없애면 항목이 쌓일수록 매트릭스가 화면 밖으로 나간다.
 - **`main/window.js`의 `BAR.width`는 타이틀바 내용이 정한다.** 원래 440px이었는데 업무/일상 토글이
-  들어가면서 한 줄이 484px을 요구해 창 버튼이 오른쪽 밖으로 밀려났다. 지금은 600px이고,
-  바에서 빠지는 건 `.title` 텍스트와 내보내기 버튼뿐이다(아이콘·토글·칩·창 버튼은 전부 남는다).
-  **바에 뭔가를 더 넣으면 줄이지 말고 `BAR.width`를 키우고, 반드시 실측**할 것: 개수를 전부
-  두 자리로 바꾸고 인박스 칩을 보이게 한 뒤 `.titlebar`의 `scrollWidth`와 `#closeBtn`의
-  `right`를 `window.innerWidth`와 비교한다(현재 최악의 경우 여유 20px). `.bar-summary`가
-  `margin-left:auto`라 `scrollWidth`만 보면 넘쳐도 딱 맞아 보이니, 스위치 오른쪽 끝과
-  `.bar-summary` 왼쪽 끝 사이 간격도 같이 볼 것. 스크린샷은 `PrintWindow`가 오른쪽 영역을
-  갱신 안 된 채 찍는 일이 있으니 CDP `Page.captureScreenshot`을 쓸 것.
+  들어가면서 한 줄이 484px을 요구해 창 버튼이 오른쪽 밖으로 밀려났고, 업데이트 버튼이 들어가며
+  600 → 640px이 됐다. 바에서 빠지는 건 `.title` 텍스트와 내보내기 버튼뿐이다(아이콘·토글·칩·
+  업데이트 버튼·창 버튼은 전부 남는다). **바에 뭔가를 더 넣으면 줄이지 말고 `BAR.width`를 키우고,
+  반드시 실측**할 것: 개수를 전부 두 자리로 바꾸고 인박스 칩과 `#updateBtn`을 보이게 한 뒤
+  `.titlebar`의 `scrollWidth`와 `#closeBtn`의 `right`를 `window.innerWidth`와 비교한다
+  (현재 최악의 경우 여유 28px). `.bar-summary`가 `margin-left:auto`라 `scrollWidth`만 보면
+  넘쳐도 딱 맞아 보이니, 스위치 오른쪽 끝과 `.bar-summary` 왼쪽 끝 사이 간격도 같이 볼 것.
+  스크린샷은 `PrintWindow`가 오른쪽 영역을 갱신 안 된 채 찍는 일이 있으니 CDP
+  `Page.captureScreenshot`을 쓸 것.
 - 인박스 행에는 마감일·완료·메모가 **의도적으로 없다**(`inboxItemEl`). 그래서 `selectedTask()`가
   `quadrant === INBOX`를 null로 본다 — 이걸 빼면 선택된 항목을 인박스로 끌어올렸을 때 메모
   패널이 열린 채 남는다.
@@ -139,6 +141,21 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   항목이 통째로 빠진다. PDF는 `shared/export.js`의 HTML을 **숨은 BrowserWindow**에서
   `printToPDF`로 찍는다(앱 창을 재사용하면 매트릭스 위에 문서가 번쩍인다). 그래서 인쇄물
   모양을 바꿀 곳은 `shared/export.js`의 `toHtml()` 하나뿐이고, `renderer/styles/`와는 무관하다.
+- **자동 업데이트는 `app.isPackaged`가 아니면 아예 시작하지 않는다.** `npm start`에는 읽을
+  `app-update.yml`이 없어서 매번 실패할 뿐이고, 개발 중인 앱이 릴리스본으로 자기를 갈아치우는
+  것도 원하는 일이 아니다. **그래서 `npm start`로는 업데이트 경로를 한 줄도 검증할 수 없다** —
+  아래 "검증"의 로컬 피드 절차를 쓸 것.
+  화면에 나오는 상태는 `ready` **하나뿐이다.** 확인·다운로드 중에 버튼을 띄우면 눌러도 아무
+  일이 없는 죽은 버튼이 되고, 어차피 `autoInstallOnAppQuit`이라 닫으면 적용된다 — 버튼은
+  "지금 당길래?"라는 선택지일 뿐이다. 상태를 늘리고 싶으면 그 상태에서 **사용자가 할 수 있는
+  일이 있는지** 먼저 물을 것.
+  `updater.js`는 `BrowserWindow`를 모른다. 알림은 `main.js`가 넘긴 콜백 한 개로만 나가고,
+  그 콜백이 `getWindow()`를 부른다. 여기서 window를 직접 import하면 조립이 main.js 밖으로
+  샌다.
+- **`package.json`의 `files`에 `node_modules`가 없어도 런타임 의존성은 asar에 들어간다.**
+  electron-builder가 production dependency를 따로 수집하기 때문이다(확인: asar 헤더에
+  `node_modules/electron-updater`가 있다). 그러니 `files`에 `node_modules/**/*`를 넣지 말 것 —
+  넣으면 electron-builder가 하던 정리(README·테스트 제외)를 스스로 해야 한다.
 - 항목 **클릭은 메모, 더블클릭은 텍스트 수정**이라 클릭 핸들러가 `CLICK_DELAY`만큼 기다렸다
   동작한다. 이 지연을 없애면 더블클릭이 선택을 두 번 토글해서 창이 커졌다 작아진다.
 - 그리드 간격(`GUTTER`)은 CSS `--gutter`를 `getComputedStyle`로 읽어온다. 값을 바꿀 곳은
@@ -184,3 +201,22 @@ npx electron . --user-data-dir=<임시폴더> --remote-debugging-port=9333
 
 렌더러·창 동작은 여전히 `npm start`로 직접 띄워서 확인한다. 최소 확인 항목:
 할 일 추가 → 완료 → 히스토리에서 되돌리기 → 삭제 → 휴지통에서 복원 → 앱 재시작 후 유지.
+
+**업데이트 경로는 GitHub에 릴리스를 올리지 않고도 통째로 검증할 수 있다.** 설치본이 읽는
+피드를 localhost로 돌려놓으면 된다:
+
+1. 현재 버전(예: 1.0.0)으로 `npm run dist` → 그 설치 파일을 실행해 **실제로 설치**한다
+   (`%LOCALAPPDATA%\Programs\Nekan`, 권한 안 물어봄). 압축만 푼 `win-unpacked`로는 안 된다 —
+   electron-updater가 설치 경로를 기준으로 새 설치 파일을 돌린다.
+2. `package.json`의 `version`을 잠깐 올려 다시 빌드하고, 새 `*.exe`·`*.blockmap`·`latest.yml`
+   세 개를 빈 폴더에 모아 정적 서버로 띄운다. 그리고 **버전을 원래대로 되돌린다.**
+3. 설치된 앱의 `resources\app-update.yml`을 `provider: generic` + `url: http://127.0.0.1:8080`
+   으로 덮는다. (업데이트가 적용되면 새 빌드의 파일로 저절로 되돌아온다.)
+4. **사용자 앱이 떠 있으면 락 때문에 조용히 죽으니** 설치된 exe도 `--user-data-dir`로 띄운다.
+   10초 뒤 확인이 돌고, 다 받으면 `#updateBtn`의 `hidden`이 풀린다. 눌러서 재시작되는지,
+   `Nekan.exe`의 `VersionInfo`가 올라갔는지 본다.
+5. 끝나면 **테스트 설치본을 `Uninstall Nekan.exe /S`로 지운다.** 릴리스되지 않은 높은 버전이
+   남아 있으면 나중에 진짜 릴리스가 더 낮아서 영영 업데이트가 안 온다.
+
+옛 버전의 `.blockmap`이 피드에 없으면 차등 다운로드가 404로 실패하고 전체를 받는다 —
+로그에 뜨지만 정상이다. 실제 Release에는 두 버전이 다 있어서 생기지 않는다.

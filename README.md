@@ -5,9 +5,27 @@ Claude 계열의 밝은 베이지 테마 + 다크 테마를 지원합니다.
 
 이름은 네 칸(4분면)에서 왔습니다. 앱 안팎에서 표기는 `Nekan` 하나로 통일합니다.
 
-## 실행 방법
+## 설치
 
-**개발/일반 실행**
+[Releases](https://github.com/holdn2/Nekan/releases)에서 최신 `Nekan-Setup-x.y.z.exe`를 받아 실행하면 됩니다.
+클릭 한 번으로 끝나고 **관리자 권한을 묻지 않습니다** — 내 계정 폴더에만 설치되기 때문입니다.
+설치가 끝나면 바탕화면과 시작 메뉴에 **Nekan** 바로가기가 생깁니다.
+
+> 코드 서명을 아직 하지 않아서 Windows SmartScreen이 "PC를 보호했습니다" 경고를 띄웁니다.
+> **추가 정보 → 실행**을 누르면 설치됩니다.
+
+## 업데이트
+
+**따로 할 일이 없습니다.** 앱이 켜져 있는 동안 알아서 새 버전을 확인하고 백그라운드로 받아둡니다.
+받아둔 버전은 **앱을 닫을 때 저절로 적용**되므로, 신경 쓰지 않아도 다음에 켤 때는 최신입니다.
+
+기다리기 싫으면 타이틀바에 나타나는 <b>↑</b> 버튼(또는 함께 뜨는 알림의 **지금 재시작**)을 누르면
+그 자리에서 재시작하며 적용합니다. **이 버튼은 받아둔 버전이 있을 때만 보입니다** — 보이지 않는다면
+이미 최신이거나 아직 받는 중입니다. 확인에 실패해도(네트워크 없음 등) 아무 것도 뜨지 않습니다.
+
+할 일 데이터는 설치 폴더가 아니라 `%APPDATA%\Nekan`에 있어서 업데이트해도 그대로 남습니다.
+
+## 실행 방법 (개발)
 
 ```powershell
 npm install   # 최초 1회
@@ -15,14 +33,21 @@ npm start
 npm test      # 저장·정규화·날짜 로직 단위 테스트 (선택)
 ```
 
-**포터블 exe 빌드**
+**설치 파일 빌드**
 
 ```powershell
-npm run dist            # dist\Nekan 1.0.0.exe (설치 불필요)
-npm run dist:installer  # NSIS 설치 파일이 필요할 때
+npm run dist      # dist\Nekan-Setup-1.0.0.exe — 로컬 확인용, 업로드하지 않음
+npm run release   # 빌드 + GitHub Release에 업로드 (GH_TOKEN 필요)
 ```
 
-바탕화면의 **Nekan** 바로가기로 바로 실행할 수 있습니다.
+**릴리스 절차**
+
+1. `package.json`의 `version`을 올리고 커밋한다.
+2. `npm run release` — electron-builder가 설치 파일과 `latest.yml`을 만들어
+   해당 버전의 **draft** Release로 올린다.
+3. GitHub에서 그 Release를 **publish**한다. 설치된 앱들은 이때부터 새 버전을 보게 된다.
+
+`latest.yml`이 곧 업데이트 피드다. 설치 파일만 따로 올리면 아무도 업데이트되지 않는다.
 
 ## 기능
 
@@ -196,6 +221,7 @@ src/
     store.js           # data.json 메모리 사본 + 디바운스 저장
     window.js          # 창 생성, 확장/바 모드, 메모 패널 높이 회계
     export-service.js  # PDF·HTML·MD 쓰기
+    updater.js         # GitHub Releases 확인 · 백그라운드 다운로드
     ipc.js             # ipcMain 핸들러 전부
   shared/
     core.js            # 날짜·정규화·레이아웃 비율·업무/일상 규칙 (메인·렌더러·테스트 공용)

@@ -1,5 +1,5 @@
 /**
- * Bar mode: what survives when the window is 600x48. Loaded after everything
+ * Bar mode: what survives when the window is 640x48. Loaded after everything
  * it overrides, which is the order it had inside the single stylesheet.
  */
 
@@ -24,12 +24,15 @@ body.expanded .bar-summary .chip {
 
 /* The bar keeps everything that means something at a glance: the icon, both
    halves of the switch, the five counts and the window buttons. Only the app
-   name goes — it is the one thing the icon already says.
+   name goes — it is the one thing the icon already says. The update button
+   stays: the bar is the mode this widget is left in, and hiding it there would
+   mean the one user who never expands the window never hears about a release.
 
-   The row is what sets `BAR.width` in main.js (560px), not the other way
+   The row is what sets `BAR.width` in main/window.js (640px), not the other way
    round. Anything added here has to be measured against the widest the row
-   ever gets — inbox chip showing, all five counts two digits wide — and the
-   bar widened to match rather than the contents squeezed further. */
+   ever gets — inbox chip showing, all five counts two digits wide, update
+   button visible — and the bar widened to match rather than the contents
+   squeezed further. */
 body.collapsed .title {
   display: none;
 }
