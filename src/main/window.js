@@ -218,7 +218,7 @@ function collapse(at) {
   // widget across the screen a few pixels per toggle.
   const from = sanitizeBounds(settings.bounds) || win.getBounds();
   const area = screen.getDisplayMatching(from).workArea;
-  const origin = at || collapseOrigin(from, BAR.width, area);
+  const origin = at || collapseOrigin(from, BAR, area);
 
   mode = "collapsed";
   settings.mode = mode;
