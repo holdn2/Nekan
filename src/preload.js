@@ -15,5 +15,8 @@ contextBridge.exposeInMainWorld("api", {
   setSpace: (space) => ipcRenderer.invoke("settings:space", space),
   exportBoard: () => ipcRenderer.invoke("export:run"),
   revealExport: (target) => ipcRenderer.invoke("export:reveal", target),
+  installUpdate: () => ipcRenderer.invoke("update:install"),
   onMode: (cb) => ipcRenderer.on("win:mode", (_e, mode) => cb(mode)),
+  onUpdateStatus: (cb) =>
+    ipcRenderer.on("update:status", (_e, status) => cb(status)),
 });

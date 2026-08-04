@@ -91,6 +91,36 @@
       </div>
 
       <div class="win-actions">
+        <!-- The one button that is not always here. It appears only once a new
+             version has finished downloading, so seeing it at all is the
+             message; until then the update is silent and would be applied on
+             quit anyway. It stays in bar mode on purpose — that is where this
+             widget is usually left, and `BAR.width` is sized to hold it. -->
+        <button
+          class="win-btn hidden"
+          id="updateBtn"
+          title="업데이트 준비됨"
+          aria-label="업데이트 준비됨"
+        >
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <circle
+              cx="8"
+              cy="8"
+              r="6.2"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.4"
+            />
+            <path
+              d="M8 11.4V5M5.4 7.6L8 5l2.6 2.6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
         <!-- Hidden in bar mode: the 440px bar has no room, and there is nothing
              on screen to export from there anyway. -->
         <button

@@ -28,15 +28,20 @@ const {
   setMemoPanel,
 } = require("./window");
 const { revealExport, runExport } = require("./export-service");
+const { getUpdateStatus, installUpdate } = require("./updater");
 
 /** Bind every channel. Called once, before the window is created. */
 function registerIpc() {
   /* ------------------------------------------------------------- state */
 
+  // `mode` and `update` ride along for the same reason: both are main's to
+  // decide and both are also pushed, so a renderer that starts (or reloads)
+  // after the fact still has the current answer without asking for it.
   ipcMain.handle("state:load", () => ({
     tasks: getStore().tasks,
     settings: getSettings(),
     mode: getMode(),
+    update: getUpdateStatus(),
   }));
 
   ipcMain.handle("state:save", (_e, tasks) => {
@@ -127,6 +132,12 @@ function registerIpc() {
 
   ipcMain.handle("export:run", () => runExport(getWindow()));
   ipcMain.handle("export:reveal", (_e, target) => revealExport(target));
+
+  /* ------------------------------------------------------------ update */
+
+  // Quits the app on the way through, so there is nothing useful to return
+  // beyond "there was something to install".
+  ipcMain.handle("update:install", () => installUpdate());
 }
 
 module.exports = { registerIpc };

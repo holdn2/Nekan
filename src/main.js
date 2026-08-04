@@ -10,8 +10,9 @@
 const { BrowserWindow, app } = require("electron");
 
 const { load, persistNow } = require("./main/store");
-const { createWindow } = require("./main/window");
+const { createWindow, getWindow } = require("./main/window");
 const { registerIpc } = require("./main/ipc");
+const { initUpdater } = require("./main/updater");
 
 // Keep the data folder identical between `npm start` and the packaged build.
 // Without it the two read different data.json files.
@@ -38,6 +39,13 @@ if (!gotLock) {
     load();
     registerIpc();
     createWindow();
+    // Last, and knowing nothing about windows itself: this is the wire from the
+    // updater to whichever window is on screen when it has news.
+    initUpdater((status) => {
+      const win = getWindow();
+      if (win && !win.isDestroyed())
+        win.webContents.send("update:status", status);
+    });
 
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();

@@ -9,6 +9,7 @@
 import { QUADS, SPACE_LABEL } from "../core-bridge.js";
 import { $, $$, labelBtn } from "../dom.js";
 import { notify } from "../render-bus.js";
+import { toast } from "../components/toast.js";
 import {
   activeOf,
   doneTasks,
@@ -24,6 +25,8 @@ import { exportBoard } from "./export-ui.js";
 let mode = "expanded";
 let activeTab = "matrix";
 let theme = "light";
+/** The version already announced, so the toast fires once per download. */
+let announced = null;
 
 /** 'expanded' | 'collapsed'. The render dispatcher skips the lists in a bar. */
 export const getMode = () => mode;
@@ -120,6 +123,47 @@ export function applyPinned(on) {
   labelBtn("#pinBtn", on ? "항상 위 고정 해제" : "항상 위에 고정");
 }
 
+/* ----------------------------------------------------------------- update */
+
+/**
+ * Reflect what the main process knows about a new version.
+ *
+ * There is one visible state and it is the last one: a version that has already
+ * been downloaded and is waiting for a restart. Checking and downloading stay
+ * invisible because they need nothing from the user, and because the update is
+ * applied on quit whether or not it was ever noticed — the button and the toast
+ * only offer to bring that forward.
+ *
+ * `announce` splits news from state, and only news is worth interrupting for. A
+ * pushed status is news: something finished downloading just now. The one that
+ * comes back with state:load is not — it is how things already were, and the
+ * renderer asking for it has either just started or just reloaded. The button
+ * belongs to both; the toast belongs only to the first.
+ */
+export function applyUpdateStatus(status, { announce = false } = {}) {
+  const ready = status?.state === "ready";
+  $("#updateBtn").classList.toggle("hidden", !ready);
+  if (!ready) return;
+
+  // Both strings put the version somewhere a Korean particle never follows it:
+  // the one that would (…1.0.1'은' / …1.0.2'는') depends on how the last digit
+  // is read aloud, and no single wording is right for every release.
+  const version = status.version ? ` ${status.version}` : "";
+  labelBtn("#updateBtn", `새 버전${version} 준비됨 — 지금 재시작하여 적용`);
+
+  // `announced` is the guard against the same news arriving twice; it is module
+  // state and a reload clears it, which is exactly why the reload path above
+  // must not announce in the first place.
+  if (!announce || announced === status.version) return;
+  announced = status.version;
+  // No toast in a bar — collapsed.css hides it — but the button is there, and
+  // the update lands on the next quit regardless.
+  toast(`새 버전을 받았습니다.${version && ` (${status.version})`}`, {
+    ms: 10000,
+    action: { label: "지금 재시작", onClick: () => window.api.installUpdate() },
+  });
+}
+
 /* -------------------------------------------------------- window controls */
 
 /**
@@ -160,6 +204,7 @@ export function wireChrome() {
 
   $("#themeBtn").addEventListener("click", toggleTheme);
   $("#exportBtn").addEventListener("click", exportBoard);
+  $("#updateBtn").addEventListener("click", () => window.api.installUpdate());
 
   $("#sizeBtn").addEventListener("click", toggleSize);
   $("#minBtn").addEventListener("click", () => window.api.minimize());
