@@ -10,8 +10,8 @@
  * on document (for the rows, which are rebuilt on every render).
  */
 
-import { $, $$ } from '../dom.js';
-import { moveTask } from '../store.js';
+import { $, $$ } from "../dom.js";
+import { moveTask } from "../store.js";
 
 /** The row the dragged one should be inserted before, or undefined for last. */
 function afterElement(list, y) {

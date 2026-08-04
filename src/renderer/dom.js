@@ -17,8 +17,8 @@ export const $$ = (sel, root = document) =>
  * restart it inside each day group.
  */
 export function numEl(index) {
-  const el = document.createElement('span');
-  el.className = 'num';
+  const el = document.createElement("span");
+  el.className = "num";
   el.textContent = `${index + 1}.`;
   return el;
 }
@@ -28,10 +28,10 @@ export function numEl(index) {
  * throw something away (삭제 / 영구 삭제), which the stylesheet tints red.
  */
 export function actionBtn(label, onClick, danger = false) {
-  const btn = document.createElement('button');
-  btn.className = danger ? 'act danger' : 'act';
+  const btn = document.createElement("button");
+  btn.className = danger ? "act danger" : "act";
   btn.textContent = label;
-  btn.addEventListener('click', onClick);
+  btn.addEventListener("click", onClick);
   return btn;
 }
 
@@ -42,5 +42,5 @@ export function actionBtn(label, onClick, danger = false) {
 export function labelBtn(sel, label) {
   const btn = $(sel);
   btn.title = label;
-  btn.setAttribute('aria-label', label);
+  btn.setAttribute("aria-label", label);
 }

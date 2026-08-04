@@ -20,29 +20,29 @@ const {
   dueInfo,
   normalizeTasks,
   sanitizeSpace,
-} = require('./core');
+} = require("./core");
 
 /** Mirrors the quadrant headers in renderer/index.html. */
 const QUAD_TITLES = {
-  q1: { title: 'Urgent & Important', action: 'Do 진행하기' },
-  q2: { title: 'Important & Not Urgent', action: 'Plan 계획하기' },
-  q3: { title: 'Urgent & Not Important', action: 'Delegate 위임하기' },
-  q4: { title: 'Not Urgent & Not Important', action: 'Delete 제거하기' },
+  q1: { title: "Urgent & Important", action: "Do 진행하기" },
+  q2: { title: "Important & Not Urgent", action: "Plan 계획하기" },
+  q3: { title: "Urgent & Not Important", action: "Delegate 위임하기" },
+  q4: { title: "Not Urgent & Not Important", action: "Delete 제거하기" },
 };
 
-const INBOX_TITLE = '다 꺼내기';
+const INBOX_TITLE = "다 꺼내기";
 
 /** Print colours, matching the light palette in styles.css. */
 const QUAD_COLOR = {
-  inbox: '#8d887d',
-  q1: '#c85a4d',
-  q2: '#4a72b8',
-  q3: '#c1892c',
-  q4: '#8d887d',
+  inbox: "#8d887d",
+  q1: "#c85a4d",
+  q2: "#4a72b8",
+  q3: "#c1892c",
+  q4: "#8d887d",
 };
 
 /** Two-digit number for the date and time stamps. */
-const pad = (n) => String(n).padStart(2, '0');
+const pad = (n) => String(n).padStart(2, "0");
 
 /** 'YYYY-MM-DD', built locally so it matches the day the user sees. */
 function isoDay(now = new Date()) {
@@ -59,7 +59,7 @@ function stampLabel(now = new Date()) {
  * name is in there because the two matrices export separately — without it the
  * second file would be offered the name of the first.
  */
-function defaultFileName(now = new Date(), ext = 'pdf', space) {
+function defaultFileName(now = new Date(), ext = "pdf", space) {
   return `Nekan ${SPACE_LABEL[sanitizeSpace(space)]} ${isoDay(now)}.${ext}`;
 }
 
@@ -93,7 +93,7 @@ function buildSnapshot(tasks, now = new Date(), space) {
       !t.purgedAt &&
       !t.completedAt &&
       !t.deletedAt &&
-      (t.space === null || t.space === board)
+      (t.space === null || t.space === board),
   );
   // Same order the quadrant shows: the array is storage order, `orderKey` is
   // the user's. normalizeTasks() above has already given every row one.
@@ -103,7 +103,7 @@ function buildSnapshot(tasks, now = new Date(), space) {
     {
       key: INBOX,
       title: INBOX_TITLE,
-      action: '분류하기 전에 적어둔 것',
+      action: "분류하기 전에 적어둔 것",
       items: inList(INBOX).map((t) => exportItem(t, now)),
     },
     ...QUADS.map((q) => ({
@@ -128,17 +128,18 @@ function buildSnapshot(tasks, now = new Date(), space) {
 /* -------------------------------------------------------------- markdown */
 
 /** Pipes and newlines would break the row a memo sits in. */
-const mdCell = (text) => String(text).replace(/\|/g, '\\|').replace(/\s+/g, ' ');
+const mdCell = (text) =>
+  String(text).replace(/\|/g, "\\|").replace(/\s+/g, " ");
 
 /** One quadrant as a numbered markdown list, memos quoted underneath. */
 function markdownSection(section) {
-  const lines = [`## ${section.title}`, '', `_${section.action}_`, ''];
+  const lines = [`## ${section.title}`, "", `_${section.action}_`, ""];
   if (!section.items.length) {
-    lines.push('_(비어 있음)_', '');
+    lines.push("_(비어 있음)_", "");
     return lines;
   }
   section.items.forEach((item, i) => {
-    const due = item.due ? ` — 마감 ${item.due.text} (${item.due.hint})` : '';
+    const due = item.due ? ` — 마감 ${item.due.text} (${item.due.hint})` : "";
     lines.push(`${i + 1}. ${mdCell(item.text)}${due}`);
     // Memo lines are indented so they stay inside the numbered item.
     if (item.memo) {
@@ -147,7 +148,7 @@ function markdownSection(section) {
         .forEach((line) => lines.push(`   > ${mdCell(line)}`));
     }
   });
-  lines.push('');
+  lines.push("");
   return lines;
 }
 
@@ -155,22 +156,22 @@ function markdownSection(section) {
 function toMarkdown(snapshot) {
   const lines = [
     `# Nekan — ${snapshot.spaceLabel}`,
-    '',
+    "",
     `내보낸 시각: ${snapshot.stamp} · 항목 ${snapshot.total}개`,
-    '',
+    "",
   ];
   snapshot.sections.forEach((s) => lines.push(...markdownSection(s)));
-  return `${lines.join('\n').trimEnd()}\n`;
+  return `${lines.join("\n").trimEnd()}\n`;
 }
 
 /* ------------------------------------------------------------------ html */
 
 const escapeHtml = (text) =>
   String(text)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 
 /** One row: title, optional due chip, optional memo paragraph. */
 function htmlItem(item) {
@@ -178,30 +179,30 @@ function htmlItem(item) {
   if (item.due) {
     parts.push(
       `<span class="due ${item.due.state}">${escapeHtml(item.due.text)}` +
-        ` · ${escapeHtml(item.due.hint)}</span>`
+        ` · ${escapeHtml(item.due.hint)}</span>`,
     );
   }
   const memo = item.memo
-    ? `<p class="memo">${escapeHtml(item.memo).replace(/\r?\n/g, '<br>')}</p>`
-    : '';
-  return `<li><div class="row">${parts.join('')}</div>${memo}</li>`;
+    ? `<p class="memo">${escapeHtml(item.memo).replace(/\r?\n/g, "<br>")}</p>`
+    : "";
+  return `<li><div class="row">${parts.join("")}</div>${memo}</li>`;
 }
 
 /** One quadrant card: coloured header, count, and the list (or "비어 있음"). */
 function htmlSection(section, tag) {
   const body = section.items.length
-    ? `<ol>${section.items.map(htmlItem).join('')}</ol>`
+    ? `<ol>${section.items.map(htmlItem).join("")}</ol>`
     : '<p class="empty">비어 있음</p>';
   return (
     `<section class="${tag} ${section.key}">` +
-    '<header>' +
+    "<header>" +
     `<span class="dot"></span>` +
     `<h2>${escapeHtml(section.title)}</h2>` +
     `<span class="act">${escapeHtml(section.action)}</span>` +
     `<span class="n">${section.items.length}</span>` +
-    '</header>' +
+    "</header>" +
     body +
-    '</section>'
+    "</section>"
   );
 }
 
@@ -213,7 +214,7 @@ function htmlSection(section, tag) {
 function toHtml(snapshot) {
   const dots = Object.entries(QUAD_COLOR)
     .map(([key, color]) => `.${key} .dot{background:${color}}`)
-    .join('');
+    .join("");
 
   return `<!doctype html>
 <html lang="ko">
@@ -270,8 +271,8 @@ function toHtml(snapshot) {
   <span class="board">${escapeHtml(snapshot.spaceLabel)}</span>
   <span class="meta">${escapeHtml(snapshot.stamp)} · 항목 ${snapshot.total}개</span>
 </div>
-${htmlSection(snapshot.inbox, 'inbox')}
-<div class="grid">${snapshot.quads.map((q) => htmlSection(q, 'quad')).join('')}</div>
+${htmlSection(snapshot.inbox, "inbox")}
+<div class="grid">${snapshot.quads.map((q) => htmlSection(q, "quad")).join("")}</div>
 </body>
 </html>
 `;

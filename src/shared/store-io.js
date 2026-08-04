@@ -3,10 +3,10 @@
  * Paths come from the caller (main.js knows where userData lives).
  */
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-const { DEFAULT_LAYOUT, DEFAULT_SPACE } = require('./core');
+const { DEFAULT_LAYOUT, DEFAULT_SPACE } = require("./core");
 
 /** A first-run store: no tasks, and the settings every reader assumes exist. */
 function defaultStore() {
@@ -15,8 +15,8 @@ function defaultStore() {
     settings: {
       alwaysOnTop: true,
       bounds: null,
-      mode: 'expanded',
-      theme: 'light',
+      mode: "expanded",
+      theme: "light",
       // Whether the "다 꺼내기" list above the matrix is unfolded. Collapsed by
       // default so the matrix keeps its full height until it is wanted.
       inboxOpen: false,
@@ -49,7 +49,7 @@ function migrateLegacyStore(target, legacy) {
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.copyFileSync(source, target);
   } catch (err) {
-    console.error('legacy store migration failed', err);
+    console.error("legacy store migration failed", err);
   }
 }
 
@@ -61,7 +61,7 @@ function migrateLegacyStore(target, legacy) {
 function loadStore(target, legacy) {
   if (legacy && legacy.length) migrateLegacyStore(target, legacy);
   try {
-    const parsed = JSON.parse(fs.readFileSync(target, 'utf8'));
+    const parsed = JSON.parse(fs.readFileSync(target, "utf8"));
     const base = defaultStore();
     return {
       tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
@@ -80,11 +80,11 @@ function writeStore(target, store) {
   const tmp = `${target}.tmp`;
   try {
     fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.writeFileSync(tmp, JSON.stringify(store, null, 2), 'utf8');
+    fs.writeFileSync(tmp, JSON.stringify(store, null, 2), "utf8");
     fs.renameSync(tmp, target);
     return true;
   } catch (err) {
-    console.error('failed to save store', err);
+    console.error("failed to save store", err);
     return false;
   }
 }

@@ -1,5 +1,5 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
+const test = require("node:test");
+const assert = require("node:assert/strict");
 
 const {
   QUADS,
@@ -32,212 +32,218 @@ const {
   MIN_COL_PX,
   MIN_ROW_PX,
   clampAxis,
-} = require('../src/shared/core');
+} = require("../src/shared/core");
 
 /** Local 'YYYY-MM-DD' for a day offset from today, the way the UI writes it. */
 function dayString(offset) {
   const d = startOfToday();
   d.setDate(d.getDate() + offset);
-  const pad = (n) => String(n).padStart(2, '0');
+  const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-test('normalizeTasks fills fields older saves predate', () => {
-  const [task] = normalizeTasks([{ id: 'a', text: 'x', quadrant: 'q2' }]);
+test("normalizeTasks fills fields older saves predate", () => {
+  const [task] = normalizeTasks([{ id: "a", text: "x", quadrant: "q2" }]);
   assert.equal(task.dueDate, null);
   assert.equal(task.completedAt, null);
   assert.equal(task.deletedAt, null);
 });
 
-test('normalizeTasks keeps existing values, including falsy timestamps', () => {
+test("normalizeTasks keeps existing values, including falsy timestamps", () => {
   const [task] = normalizeTasks([
-    { id: 'a', text: 'x', quadrant: 'q1', dueDate: '2026-01-02', completedAt: 5 },
+    {
+      id: "a",
+      text: "x",
+      quadrant: "q1",
+      dueDate: "2026-01-02",
+      completedAt: 5,
+    },
   ]);
-  assert.equal(task.dueDate, '2026-01-02');
+  assert.equal(task.dueDate, "2026-01-02");
   assert.equal(task.completedAt, 5);
 });
 
-test('normalizeTasks rescues an unknown quadrant', () => {
+test("normalizeTasks rescues an unknown quadrant", () => {
   const bad = [
-    { id: 'a', text: 'a', quadrant: 'q5' },
-    { id: 'b', text: 'b' },
-    { id: 'c', text: 'c', quadrant: null },
-    { id: 'd', text: 'd', quadrant: 'INBOX' },
+    { id: "a", text: "a", quadrant: "q5" },
+    { id: "b", text: "b" },
+    { id: "c", text: "c", quadrant: null },
+    { id: "d", text: "d", quadrant: "INBOX" },
   ];
   for (const task of normalizeTasks(bad)) {
     assert.ok(QUADS.includes(task.quadrant), `${task.id} landed outside QUADS`);
   }
 });
 
-test('normalizeTasks keeps a task parked in the inbox there', () => {
+test("normalizeTasks keeps a task parked in the inbox there", () => {
   // The inbox is a fifth legal place, not a bad quadrant to be repaired — a
   // brain dump must survive a restart without being swept into q4.
-  const [task] = normalizeTasks([{ id: 'a', text: 'x', quadrant: INBOX }]);
+  const [task] = normalizeTasks([{ id: "a", text: "x", quadrant: INBOX }]);
   assert.equal(task.quadrant, INBOX);
   assert.ok(PLACES.includes(INBOX));
-  assert.ok(!QUADS.includes(INBOX), 'the grid loops must not walk the inbox');
+  assert.ok(!QUADS.includes(INBOX), "the grid loops must not walk the inbox");
 });
 
-test('normalizeTasks puts a save from before the split on a board', () => {
+test("normalizeTasks puts a save from before the split on a board", () => {
   // Without a default here every pre-split task would match neither 업무 nor
   // 일상 and vanish from both matrices while still sitting in data.json.
-  const [task] = normalizeTasks([{ id: 'a', text: 'x', quadrant: 'q2' }]);
+  const [task] = normalizeTasks([{ id: "a", text: "x", quadrant: "q2" }]);
   assert.equal(task.space, DEFAULT_SPACE);
   assert.ok(SPACES.includes(task.space));
 });
 
-test('normalizeTasks rescues an unknown space the same way', () => {
+test("normalizeTasks rescues an unknown space the same way", () => {
   const bad = [
-    { id: 'a', text: 'a', quadrant: 'q1', space: 'other' },
-    { id: 'b', text: 'b', quadrant: 'q1', space: null },
-    { id: 'c', text: 'c', quadrant: 'q1', space: 3 },
+    { id: "a", text: "a", quadrant: "q1", space: "other" },
+    { id: "b", text: "b", quadrant: "q1", space: null },
+    { id: "c", text: "c", quadrant: "q1", space: 3 },
   ];
   for (const task of normalizeTasks(bad)) {
     assert.ok(SPACES.includes(task.space), `${task.id} landed on no board`);
   }
 });
 
-test('normalizeTasks keeps a chosen board', () => {
+test("normalizeTasks keeps a chosen board", () => {
   const [task] = normalizeTasks([
-    { id: 'a', text: 'x', quadrant: 'q3', space: 'life' },
+    { id: "a", text: "x", quadrant: "q3", space: "life" },
   ]);
-  assert.equal(task.space, 'life');
+  assert.equal(task.space, "life");
 });
 
-test('the inbox belongs to no board, so both matrices show it', () => {
+test("the inbox belongs to no board, so both matrices show it", () => {
   // `space: null` is what makes "다 꺼내기" shared. A stale space on an inbox
   // task is dropped rather than honoured, or the row would show on one side
   // only after being dragged back up.
   const [fresh, stale] = normalizeTasks([
-    { id: 'a', text: 'x', quadrant: INBOX },
-    { id: 'b', text: 'y', quadrant: INBOX, space: 'work' },
+    { id: "a", text: "x", quadrant: INBOX },
+    { id: "b", text: "y", quadrant: INBOX, space: "work" },
   ]);
   assert.equal(fresh.space, null);
   assert.equal(stale.space, null);
 });
 
-test('spaceFor is the one rule both the renderer and normalize follow', () => {
-  assert.equal(spaceFor(INBOX, 'work'), null);
-  assert.equal(spaceFor('q1', 'life'), 'life');
-  assert.equal(spaceFor('q1', undefined), DEFAULT_SPACE);
-  assert.equal(sanitizeSpace('life'), 'life');
-  assert.equal(sanitizeSpace('nope'), DEFAULT_SPACE);
+test("spaceFor is the one rule both the renderer and normalize follow", () => {
+  assert.equal(spaceFor(INBOX, "work"), null);
+  assert.equal(spaceFor("q1", "life"), "life");
+  assert.equal(spaceFor("q1", undefined), DEFAULT_SPACE);
+  assert.equal(sanitizeSpace("life"), "life");
+  assert.equal(sanitizeSpace("nope"), DEFAULT_SPACE);
 });
 
-test('splitBulkText turns a pasted block into one task per line', () => {
-  assert.deepEqual(splitBulkText('보고서 초안\n치과 예약\n회고 정리'), [
-    '보고서 초안',
-    '치과 예약',
-    '회고 정리',
+test("splitBulkText turns a pasted block into one task per line", () => {
+  assert.deepEqual(splitBulkText("보고서 초안\n치과 예약\n회고 정리"), [
+    "보고서 초안",
+    "치과 예약",
+    "회고 정리",
   ]);
 });
 
-test('splitBulkText drops blank lines and pasted list markers', () => {
+test("splitBulkText drops blank lines and pasted list markers", () => {
   assert.deepEqual(
-    splitBulkText('- 보고서\r\n\r\n* 치과\n1. 회고\n2) 운동\n   \n• 장보기'),
-    ['보고서', '치과', '회고', '운동', '장보기'],
+    splitBulkText("- 보고서\r\n\r\n* 치과\n1. 회고\n2) 운동\n   \n• 장보기"),
+    ["보고서", "치과", "회고", "운동", "장보기"],
   );
 });
 
-test('splitBulkText applies the same caps as a typed task', () => {
-  assert.deepEqual(splitBulkText('  여백  '), ['여백']);
-  assert.equal(splitBulkText('x'.repeat(MAX_TEXT + 50))[0].length, MAX_TEXT);
+test("splitBulkText applies the same caps as a typed task", () => {
+  assert.deepEqual(splitBulkText("  여백  "), ["여백"]);
+  assert.equal(splitBulkText("x".repeat(MAX_TEXT + 50))[0].length, MAX_TEXT);
   const flood = Array.from({ length: MAX_BULK_LINES + 40 }, (_, i) => `t${i}`);
-  assert.equal(splitBulkText(flood.join('\n')).length, MAX_BULK_LINES);
+  assert.equal(splitBulkText(flood.join("\n")).length, MAX_BULK_LINES);
 });
 
-test('splitBulkText yields nothing for input that is all whitespace', () => {
-  assert.deepEqual(splitBulkText('\n\n   \n'), []);
+test("splitBulkText yields nothing for input that is all whitespace", () => {
+  assert.deepEqual(splitBulkText("\n\n   \n"), []);
   assert.deepEqual(splitBulkText(null), []);
   assert.deepEqual(splitBulkText(undefined), []);
 });
 
-test('normalizeTasks never drops entries', () => {
+test("normalizeTasks never drops entries", () => {
   const list = [
-    { id: 'a', text: 'a', quadrant: 'q1' },
-    { id: 'b', text: 'b', quadrant: 'zzz', deletedAt: 1 },
-    { id: 'c', text: 'c', quadrant: 'q3', completedAt: 2 },
+    { id: "a", text: "a", quadrant: "q1" },
+    { id: "b", text: "b", quadrant: "zzz", deletedAt: 1 },
+    { id: "c", text: "c", quadrant: "q3", completedAt: 2 },
   ];
   assert.equal(normalizeTasks(list).length, 3);
   assert.deepEqual(
     normalizeTasks(list).map((t) => t.id),
-    ['a', 'b', 'c'],
+    ["a", "b", "c"],
   );
 });
 
-test('normalizeTasks tolerates a missing or broken tasks array', () => {
+test("normalizeTasks tolerates a missing or broken tasks array", () => {
   assert.deepEqual(normalizeTasks(undefined), []);
   assert.deepEqual(normalizeTasks(null), []);
-  assert.deepEqual(normalizeTasks('nope'), []);
+  assert.deepEqual(normalizeTasks("nope"), []);
 });
 
-test('clampText trims and caps at the shared limit', () => {
-  assert.equal(clampText('  hi  '), 'hi');
-  assert.equal(clampText('x'.repeat(MAX_TEXT + 50)).length, MAX_TEXT);
-  assert.equal(clampText(null), '');
-  assert.equal(clampText(undefined), '');
+test("clampText trims and caps at the shared limit", () => {
+  assert.equal(clampText("  hi  "), "hi");
+  assert.equal(clampText("x".repeat(MAX_TEXT + 50)).length, MAX_TEXT);
+  assert.equal(clampText(null), "");
+  assert.equal(clampText(undefined), "");
 });
 
-test('clampMemo trims, caps, and turns blank into null', () => {
-  assert.equal(clampMemo('  note  '), 'note');
-  assert.equal(clampMemo('line\nline'), 'line\nline');
-  assert.equal(clampMemo('x'.repeat(MAX_MEMO + 50)).length, MAX_MEMO);
-  assert.equal(clampMemo('   '), null);
-  assert.equal(clampMemo(''), null);
+test("clampMemo trims, caps, and turns blank into null", () => {
+  assert.equal(clampMemo("  note  "), "note");
+  assert.equal(clampMemo("line\nline"), "line\nline");
+  assert.equal(clampMemo("x".repeat(MAX_MEMO + 50)).length, MAX_MEMO);
+  assert.equal(clampMemo("   "), null);
+  assert.equal(clampMemo(""), null);
   assert.equal(clampMemo(null), null);
   assert.equal(clampMemo(undefined), null);
 });
 
-test('normalizeTasks defaults memo and rejects non-strings', () => {
+test("normalizeTasks defaults memo and rejects non-strings", () => {
   const [plain, str, obj, blank] = normalizeTasks([
-    { id: 'a', text: 'a', quadrant: 'q1' },
-    { id: 'b', text: 'b', quadrant: 'q1', memo: '  hi  ' },
-    { id: 'c', text: 'c', quadrant: 'q1', memo: { oops: 1 } },
-    { id: 'd', text: 'd', quadrant: 'q1', memo: '   ' },
+    { id: "a", text: "a", quadrant: "q1" },
+    { id: "b", text: "b", quadrant: "q1", memo: "  hi  " },
+    { id: "c", text: "c", quadrant: "q1", memo: { oops: 1 } },
+    { id: "d", text: "d", quadrant: "q1", memo: "   " },
   ]);
   assert.equal(plain.memo, null);
-  assert.equal(str.memo, 'hi');
+  assert.equal(str.memo, "hi");
   // A non-string would render as "[object Object]" in the panel.
   assert.equal(obj.memo, null);
   assert.equal(blank.memo, null);
 });
 
-test('parseDue accepts only real YYYY-MM-DD days', () => {
-  assert.equal(parseDue('2026-02-31'), null);
-  assert.equal(parseDue('2026-13-01'), null);
-  assert.equal(parseDue('26-01-01'), null);
-  assert.equal(parseDue(''), null);
+test("parseDue accepts only real YYYY-MM-DD days", () => {
+  assert.equal(parseDue("2026-02-31"), null);
+  assert.equal(parseDue("2026-13-01"), null);
+  assert.equal(parseDue("26-01-01"), null);
+  assert.equal(parseDue(""), null);
   assert.equal(parseDue(null), null);
-  assert.equal(parseDue('2026-03-09').getDate(), 9);
+  assert.equal(parseDue("2026-03-09").getDate(), 9);
 });
 
-test('dueInfo classifies days relative to today', () => {
-  assert.equal(dueInfo(dayString(-2)).state, 'overdue');
-  assert.equal(dueInfo(dayString(-2)).hint, '2일 지남');
-  assert.equal(dueInfo(dayString(0)).state, 'today');
-  assert.equal(dueInfo(dayString(1)).hint, '내일');
-  assert.equal(dueInfo(dayString(3)).state, 'soon');
-  assert.equal(dueInfo(dayString(4)).state, 'far');
+test("dueInfo classifies days relative to today", () => {
+  assert.equal(dueInfo(dayString(-2)).state, "overdue");
+  assert.equal(dueInfo(dayString(-2)).hint, "2일 지남");
+  assert.equal(dueInfo(dayString(0)).state, "today");
+  assert.equal(dueInfo(dayString(1)).hint, "내일");
+  assert.equal(dueInfo(dayString(3)).state, "soon");
+  assert.equal(dueInfo(dayString(4)).state, "far");
   assert.equal(dueInfo(null), null);
 });
 
-test('dueInfo is relative to the day it is asked about, not the parse', () => {
-  const due = '2026-03-10';
+test("dueInfo is relative to the day it is asked about, not the parse", () => {
+  const due = "2026-03-10";
   const before = new Date(2026, 2, 9, 23, 59, 59);
   const after = new Date(2026, 2, 10, 0, 0, 1);
-  assert.equal(dueInfo(due, before).state, 'soon');
-  assert.equal(dueInfo(due, before).hint, '내일');
+  assert.equal(dueInfo(due, before).state, "soon");
+  assert.equal(dueInfo(due, before).hint, "내일");
   // Same task, one second later: the label must move on its own.
-  assert.equal(dueInfo(due, after).state, 'today');
+  assert.equal(dueInfo(due, after).state, "today");
 });
 
-test('dueInfo prefixes the year only when it differs from now', () => {
+test("dueInfo prefixes the year only when it differs from now", () => {
   const now = new Date(2026, 5, 1);
-  assert.equal(dueInfo('2026-06-10', now).text.startsWith('6/10'), true);
-  assert.equal(dueInfo('2027-06-10', now).text.startsWith('27/'), true);
+  assert.equal(dueInfo("2026-06-10", now).text.startsWith("6/10"), true);
+  assert.equal(dueInfo("2027-06-10", now).text.startsWith("27/"), true);
 });
 
-test('startOfTomorrow lands on the next local midnight', () => {
+test("startOfTomorrow lands on the next local midnight", () => {
   const now = new Date(2026, 2, 9, 17, 30, 12, 400);
   const next = startOfTomorrow(now);
   assert.equal(next.getDate(), 10);
@@ -246,7 +252,7 @@ test('startOfTomorrow lands on the next local midnight', () => {
   assert.ok(next.getTime() > now.getTime());
 });
 
-test('sanitizeLayout clamps ratios into the drag range', () => {
+test("sanitizeLayout clamps ratios into the drag range", () => {
   assert.deepEqual(sanitizeLayout({ cols: 0.01, rows: 0.99 }), {
     cols: MIN_RATIO,
     rows: MAX_RATIO,
@@ -257,13 +263,19 @@ test('sanitizeLayout clamps ratios into the drag range', () => {
   });
 });
 
-test('sanitizeLayout falls back to an even split for junk', () => {
-  for (const junk of [undefined, null, {}, { cols: null, rows: '0.4' }, { cols: NaN }]) {
+test("sanitizeLayout falls back to an even split for junk", () => {
+  for (const junk of [
+    undefined,
+    null,
+    {},
+    { cols: null, rows: "0.4" },
+    { cols: NaN },
+  ]) {
     assert.deepEqual(sanitizeLayout(junk), DEFAULT_LAYOUT);
   }
 });
 
-test('sanitizeLayout averages the legacy per-column row split', () => {
+test("sanitizeLayout averages the legacy per-column row split", () => {
   assert.deepEqual(sanitizeLayout({ cols: 0.4, left: 0.3, right: 0.5 }), {
     cols: 0.4,
     rows: 0.4,
@@ -272,7 +284,7 @@ test('sanitizeLayout averages the legacy per-column row split', () => {
 
 /* ------------------------------------------------- quadrant drag clamping */
 
-test('clampAxis honours the pixel minimum while the window can afford it', () => {
+test("clampAxis honours the pixel minimum while the window can afford it", () => {
   // 1000px wide: 180px is 18% of it, so the drag stops there rather than at the
   // 15% ratio floor.
   const near = (got, want) =>
@@ -283,7 +295,7 @@ test('clampAxis honours the pixel minimum while the window can afford it', () =>
   assert.equal(clampAxis(0.42, 1000, MIN_COL_PX), 0.42);
 });
 
-test('clampAxis falls back to the ratio floor once the window is too small', () => {
+test("clampAxis falls back to the ratio floor once the window is too small", () => {
   // 400px wide: 180px would be 45% per side, which leaves nothing. The floor is
   // capped at half, then the ratio bounds take over.
   const low = clampAxis(0, 400, MIN_COL_PX);
@@ -291,7 +303,7 @@ test('clampAxis falls back to the ratio floor once the window is too small', () 
   assert.ok(Math.abs(clampAxis(1, 400, MIN_COL_PX) - (1 - low)) < 1e-9);
 });
 
-test('clampAxis never leaves the shared ratio bounds', () => {
+test("clampAxis never leaves the shared ratio bounds", () => {
   for (const span of [0, 120, 400, 1000, 4000]) {
     for (const value of [-5, 0, 0.01, 0.5, 0.99, 5]) {
       const got = clampAxis(value, span, MIN_ROW_PX);
@@ -303,13 +315,13 @@ test('clampAxis never leaves the shared ratio bounds', () => {
   }
 });
 
-test('clampAxis recovers from a non-number instead of poisoning the layout', () => {
+test("clampAxis recovers from a non-number instead of poisoning the layout", () => {
   // A NaN would otherwise reach the grid template and blank the matrix.
   assert.equal(clampAxis(NaN, 1000, MIN_COL_PX), 0.5);
   assert.equal(clampAxis(undefined, 1000, MIN_COL_PX), 0.5);
 });
 
-test('a zero span cannot produce a ratio outside the bounds', () => {
+test("a zero span cannot produce a ratio outside the bounds", () => {
   // The grid is measured before it has been laid out on the first drag frame.
   const got = clampAxis(0.9, 0, MIN_COL_PX);
   assert.ok(got >= MIN_RATIO && got <= MAX_RATIO);
@@ -317,7 +329,7 @@ test('a zero span cannot produce a ratio outside the bounds', () => {
 
 /* -------------------------------------------------------------- order keys */
 
-test('an order key lands strictly between its neighbours', () => {
+test("an order key lands strictly between its neighbours", () => {
   const a = orderKeyBetween(null, null);
   const before = orderKeyBetween(null, a);
   const after = orderKeyBetween(a, null);
@@ -328,7 +340,7 @@ test('an order key lands strictly between its neighbours', () => {
   assert.ok(a < middle && middle < after, `${a} < ${middle} < ${after}`);
 });
 
-test('there is always room between two keys, however close', () => {
+test("there is always room between two keys, however close", () => {
   // Repeatedly inserting at the same spot is the case that breaks a scheme
   // built on numbers: eventually there is no value left between two rows.
   let low = orderKeyBetween(null, null);
@@ -340,7 +352,7 @@ test('there is always room between two keys, however close', () => {
   }
 });
 
-test('appending stays ordered over a long run', () => {
+test("appending stays ordered over a long run", () => {
   const keys = [];
   let last = null;
   for (let i = 0; i < 200; i += 1) {
@@ -350,7 +362,7 @@ test('appending stays ordered over a long run', () => {
   assert.deepEqual(keys, [...keys].sort());
 });
 
-test('prepending stays ordered over a long run', () => {
+test("prepending stays ordered over a long run", () => {
   const keys = [];
   let first = null;
   for (let i = 0; i < 200; i += 1) {
@@ -360,7 +372,7 @@ test('prepending stays ordered over a long run', () => {
   assert.deepEqual(keys, [...keys].sort());
 });
 
-test('a pair already out of sequence still yields a usable key', () => {
+test("a pair already out of sequence still yields a usable key", () => {
   // A hand-edited or half-synced file can hand us a reversed pair; the drop has
   // to complete anyway, landing before the row it was aimed at.
   const low = orderKeyBetween(null, null);
@@ -369,76 +381,76 @@ test('a pair already out of sequence still yields a usable key', () => {
   assert.ok(got < low, `${got} < ${low}`);
 });
 
-test('a key with no room in front of it is not a key', () => {
+test("a key with no room in front of it is not a key", () => {
   // '0' is the trap: there is nothing between the head of the list and it, so
   // orderKeyBetween(null, '0') can only answer '00…' — which sorts *after*
   // '0' and would drop a row below the one it was aimed above.
-  assert.equal(isOrderKey('0'), false);
-  assert.equal(isOrderKey('V0'), false);
-  assert.equal(isOrderKey(''), false);
-  assert.equal(isOrderKey('V~'), false, 'digit outside the alphabet');
+  assert.equal(isOrderKey("0"), false);
+  assert.equal(isOrderKey("V0"), false);
+  assert.equal(isOrderKey(""), false);
+  assert.equal(isOrderKey("V~"), false, "digit outside the alphabet");
   assert.equal(isOrderKey(null), false);
-  assert.equal(isOrderKey('V'), true);
-  assert.equal(isOrderKey('0V'), true, 'a leading lowest digit is fine');
+  assert.equal(isOrderKey("V"), true);
+  assert.equal(isOrderKey("0V"), true, "a leading lowest digit is fine");
 });
 
-test('normalizeTasks replaces a key that cannot be inserted in front of', () => {
+test("normalizeTasks replaces a key that cannot be inserted in front of", () => {
   const [zero] = normalizeTasks([
-    { id: 'a', quadrant: 'q1', space: 'work', orderKey: '0' },
+    { id: "a", quadrant: "q1", space: "work", orderKey: "0" },
   ]);
   assert.ok(isOrderKey(zero.orderKey), `got ${zero.orderKey}`);
 
   const [junk] = normalizeTasks([
-    { id: 'b', quadrant: 'q1', space: 'work', orderKey: '~~' },
+    { id: "b", quadrant: "q1", space: "work", orderKey: "~~" },
   ]);
   assert.ok(isOrderKey(junk.orderKey), `got ${junk.orderKey}`);
 });
 
-test('a drop above a repaired row really lands above it', () => {
+test("a drop above a repaired row really lands above it", () => {
   // The whole point of rejecting '0': before the repair this ordered a, c, b.
   const [head, tail] = normalizeTasks([
-    { id: 'a', quadrant: 'q1', space: 'work', orderKey: '0' },
-    { id: 'b', quadrant: 'q1', space: 'work', orderKey: 'V' },
+    { id: "a", quadrant: "q1", space: "work", orderKey: "0" },
+    { id: "b", quadrant: "q1", space: "work", orderKey: "V" },
   ]);
-  const dropped = { id: 'c', orderKey: orderKeyBetween(null, head.orderKey) };
+  const dropped = { id: "c", orderKey: orderKeyBetween(null, head.orderKey) };
   const order = [head, tail, dropped].sort(compareOrder).map((t) => t.id);
-  assert.deepEqual(order, ['c', 'a', 'b']);
+  assert.deepEqual(order, ["c", "a", "b"]);
 });
 
-test('orderKeyBetween ignores a neighbour it could not have produced', () => {
+test("orderKeyBetween ignores a neighbour it could not have produced", () => {
   // A drag must still complete when the file holds a key from somewhere else.
-  assert.ok(isOrderKey(orderKeyBetween('~~', null)));
-  assert.ok(isOrderKey(orderKeyBetween(null, '~~')));
-  assert.ok(isOrderKey(orderKeyBetween('0', '0')));
+  assert.ok(isOrderKey(orderKeyBetween("~~", null)));
+  assert.ok(isOrderKey(orderKeyBetween(null, "~~")));
+  assert.ok(isOrderKey(orderKeyBetween("0", "0")));
 });
 
-test('compareOrder falls back to the id so the sort is total', () => {
-  const a = { id: 'a', orderKey: 'V' };
-  const b = { id: 'b', orderKey: 'V' };
+test("compareOrder falls back to the id so the sort is total", () => {
+  const a = { id: "a", orderKey: "V" };
+  const b = { id: "b", orderKey: "V" };
   assert.ok(compareOrder(a, b) < 0);
   assert.ok(compareOrder(b, a) > 0);
   assert.equal(compareOrder(a, a), 0);
 });
 
-test('normalizeTasks keeps the array order of a save that predates orderKey', () => {
-  const saved = ['first', 'second', 'third'].map((id) => ({
+test("normalizeTasks keeps the array order of a save that predates orderKey", () => {
+  const saved = ["first", "second", "third"].map((id) => ({
     id,
-    quadrant: 'q1',
-    space: 'work',
+    quadrant: "q1",
+    space: "work",
   }));
   const sorted = normalizeTasks(saved).sort(compareOrder);
   assert.deepEqual(
     sorted.map((t) => t.id),
-    ['first', 'second', 'third'],
+    ["first", "second", "third"],
   );
 });
 
-test('order keys are per quadrant and per board, not global', () => {
+test("order keys are per quadrant and per board, not global", () => {
   const saved = [
-    { id: 'w1', quadrant: 'q1', space: 'work' },
-    { id: 'l1', quadrant: 'q1', space: 'life' },
-    { id: 'w2', quadrant: 'q1', space: 'work' },
-    { id: 'q2a', quadrant: 'q2', space: 'work' },
+    { id: "w1", quadrant: "q1", space: "work" },
+    { id: "l1", quadrant: "q1", space: "life" },
+    { id: "w2", quadrant: "q1", space: "work" },
+    { id: "q2a", quadrant: "q2", space: "work" },
   ];
   const byId = Object.fromEntries(normalizeTasks(saved).map((t) => [t.id, t]));
   // Each group starts from scratch, so the first row of every group shares a
@@ -448,11 +460,11 @@ test('order keys are per quadrant and per board, not global', () => {
   assert.ok(byId.w1.orderKey < byId.w2.orderKey);
 });
 
-test('a half-migrated list keeps the keys it already has', () => {
+test("a half-migrated list keeps the keys it already has", () => {
   const existing = orderKeyBetween(null, null);
   const saved = [
-    { id: 'new', quadrant: 'q1', space: 'work' },
-    { id: 'kept', quadrant: 'q1', space: 'work', orderKey: existing },
+    { id: "new", quadrant: "q1", space: "work" },
+    { id: "kept", quadrant: "q1", space: "work", orderKey: existing },
   ];
   const byId = Object.fromEntries(normalizeTasks(saved).map((t) => [t.id, t]));
   assert.equal(byId.kept.orderKey, existing);
@@ -462,40 +474,42 @@ test('a half-migrated list keeps the keys it already has', () => {
 
 /* -------------------------------------------------------------- tombstones */
 
-test('normalizeTasks fills updatedAt and purgedAt', () => {
-  const [task] = normalizeTasks([{ id: 'a', quadrant: 'q1', createdAt: 1234 }]);
+test("normalizeTasks fills updatedAt and purgedAt", () => {
+  const [task] = normalizeTasks([{ id: "a", quadrant: "q1", createdAt: 1234 }]);
   // Never edited since it was written, so creation time is the honest answer.
   assert.equal(task.updatedAt, 1234);
   assert.equal(task.purgedAt, null);
 
-  const [stamped] = normalizeTasks([{ id: 'b', quadrant: 'q1', updatedAt: 99 }]);
+  const [stamped] = normalizeTasks([
+    { id: "b", quadrant: "q1", updatedAt: 99 },
+  ]);
   assert.equal(stamped.updatedAt, 99);
 });
 
-test('a tombstone survives normalization instead of being dropped', () => {
+test("a tombstone survives normalization instead of being dropped", () => {
   const list = normalizeTasks([
-    { id: 'gone', quadrant: 'q1', purgedAt: 5, text: '' },
+    { id: "gone", quadrant: "q1", purgedAt: 5, text: "" },
   ]);
   assert.equal(list.length, 1);
   assert.equal(list[0].purgedAt, 5);
 });
 
-test('tombstones are dropped only once they are older than the TTL', () => {
+test("tombstones are dropped only once they are older than the TTL", () => {
   const now = 1_000_000_000_000;
   const list = [
-    { id: 'live', purgedAt: null },
-    { id: 'fresh', purgedAt: now - 1000 },
-    { id: 'expired', purgedAt: now - TOMBSTONE_TTL_MS - 1 },
+    { id: "live", purgedAt: null },
+    { id: "fresh", purgedAt: now - 1000 },
+    { id: "expired", purgedAt: now - TOMBSTONE_TTL_MS - 1 },
   ];
   assert.deepEqual(
     dropExpiredTombstones(list, now).map((t) => t.id),
-    ['live', 'fresh'],
+    ["live", "fresh"],
   );
 });
 
-test('dropExpiredTombstones ignores a rubbish purgedAt', () => {
+test("dropExpiredTombstones ignores a rubbish purgedAt", () => {
   const now = 1_000_000_000_000;
-  const list = [{ id: 'a', purgedAt: 'yesterday' }, { id: 'b' }];
+  const list = [{ id: "a", purgedAt: "yesterday" }, { id: "b" }];
   assert.equal(dropExpiredTombstones(list, now).length, 2);
   assert.deepEqual(dropExpiredTombstones(null, now), []);
 });

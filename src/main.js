@@ -7,15 +7,15 @@
  * out.
  */
 
-const { BrowserWindow, app } = require('electron');
+const { BrowserWindow, app } = require("electron");
 
-const { load, persistNow } = require('./main/store');
-const { createWindow } = require('./main/window');
-const { registerIpc } = require('./main/ipc');
+const { load, persistNow } = require("./main/store");
+const { createWindow } = require("./main/window");
+const { registerIpc } = require("./main/ipc");
 
 // Keep the data folder identical between `npm start` and the packaged build.
 // Without it the two read different data.json files.
-app.setName('Nekan');
+app.setName("Nekan");
 
 // A second launch should raise the window that is already there, not open a
 // rival one that would write over the same file.
@@ -24,7 +24,7 @@ const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
 } else {
-  app.on('second-instance', () => {
+  app.on("second-instance", () => {
     const win = BrowserWindow.getAllWindows()[0];
     if (win) {
       if (win.isMinimized()) win.restore();
@@ -39,17 +39,17 @@ if (!gotLock) {
     registerIpc();
     createWindow();
 
-    app.on('activate', () => {
+    app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
   });
 
   // Both quit paths flush the debounced write — otherwise the last few seconds
   // of changes would be lost.
-  app.on('window-all-closed', () => {
+  app.on("window-all-closed", () => {
     persistNow();
     app.quit();
   });
 
-  app.on('before-quit', persistNow);
+  app.on("before-quit", persistNow);
 }

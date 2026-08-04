@@ -10,18 +10,18 @@
  *     names freely — they just have to import them rather than read globals.
  */
 
-const QUADS = ['q1', 'q2', 'q3', 'q4'];
+const QUADS = ["q1", "q2", "q3", "q4"];
 /**
  * The staging list above the matrix, where a task waits before it is classified.
  * It is a fifth value for `quadrant`, not a fifth quadrant: QUADS still drives
  * every 2×2 grid loop (renderMatrix, markEdge, the counts), so the inbox has to
  * be rendered on its own and cannot be folded into those.
  */
-const INBOX = 'inbox';
+const INBOX = "inbox";
 /** Every place a task may legally sit. */
 const PLACES = [INBOX, ...QUADS];
 /** Where a task with an unknown quadrant lands. */
-const FALLBACK_QUAD = 'q4';
+const FALLBACK_QUAD = "q4";
 
 /**
  * The two matrices the header toggle switches between. This is a property of
@@ -32,10 +32,10 @@ const FALLBACK_QUAD = 'q4';
  * sitting there has `space: null` and shows up on both boards. Classifying it
  * (dragging it down into a quadrant) is what gives it a space.
  */
-const SPACES = ['work', 'life'];
+const SPACES = ["work", "life"];
 /** Where tasks saved before the split — and any unknown value — land. */
-const DEFAULT_SPACE = 'work';
-const SPACE_LABEL = { work: '업무', life: '일상' };
+const DEFAULT_SPACE = "work";
+const SPACE_LABEL = { work: "업무", life: "일상" };
 
 /** Any unknown value — including undefined — reads as the default board. */
 const sanitizeSpace = (v) => (SPACES.includes(v) ? v : DEFAULT_SPACE);
@@ -57,7 +57,7 @@ const MAX_TEXT = 200;
 const MAX_MEMO = 2000;
 
 const DAY_MS = 86400000;
-const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
+const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
 
 /* ------------------------------------------------------------------ dates */
 
@@ -79,8 +79,8 @@ function startOfTomorrow(now = new Date()) {
 
 /** 'YYYY-MM-DD' → Date at local midnight, or null when unset/invalid. */
 function parseDue(value) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return null;
-  const [y, m, d] = value.split('-').map(Number);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return null;
+  const [y, m, d] = value.split("-").map(Number);
   const date = new Date(y, m - 1, d);
   if (Number.isNaN(date.getTime())) return null;
   // Reject roll-overs like 2026-02-31 → Mar 3.
@@ -102,19 +102,19 @@ function dueInfo(value, now = new Date()) {
     text = `${String(date.getFullYear()).slice(2)}/${text}`;
   }
 
-  let state = 'far';
+  let state = "far";
   let hint;
   if (days < 0) {
-    state = 'overdue';
+    state = "overdue";
     hint = `${-days}일 지남`;
   } else if (days === 0) {
-    state = 'today';
-    hint = '오늘';
+    state = "today";
+    hint = "오늘";
   } else if (days === 1) {
-    state = 'soon';
-    hint = '내일';
+    state = "soon";
+    hint = "내일";
   } else if (days <= 3) {
-    state = 'soon';
+    state = "soon";
     hint = `${days}일 남음`;
   } else {
     hint = `${days}일 남음`;
@@ -126,7 +126,7 @@ function dueInfo(value, now = new Date()) {
 
 /** Trim and cut to the shared length cap; inline editing has no maxlength. */
 function clampText(text) {
-  return String(text == null ? '' : text)
+  return String(text == null ? "" : text)
     .trim()
     .slice(0, MAX_TEXT);
 }
@@ -136,7 +136,7 @@ function clampText(text) {
  * `task.memo` is either a non-empty string or absent, never `''`.
  */
 function clampMemo(memo) {
-  const trimmed = String(memo == null ? '' : memo)
+  const trimmed = String(memo == null ? "" : memo)
     .trim()
     .slice(0, MAX_MEMO);
   return trimmed || null;
@@ -153,9 +153,9 @@ const MAX_BULK_LINES = 100;
 
 /** One pasted block → one task per surviving line. */
 function splitBulkText(raw) {
-  return String(raw == null ? '' : raw)
+  return String(raw == null ? "" : raw)
     .split(/\r?\n/)
-    .map((line) => clampText(line.replace(/^\s*(?:[-*•·]|\d{1,3}[.)])\s+/, '')))
+    .map((line) => clampText(line.replace(/^\s*(?:[-*•·]|\d{1,3}[.)])\s+/, "")))
     .filter(Boolean)
     .slice(0, MAX_BULK_LINES);
 }
@@ -176,7 +176,7 @@ function splitBulkText(raw) {
  * is what lets a plain `<` on the strings be the comparison.
  */
 const ORDER_DIGITS =
-  '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 const ORDER_BASE = ORDER_DIGITS.length;
 
 /**
@@ -188,7 +188,7 @@ const ORDER_BASE = ORDER_DIGITS.length;
 function orderMidpoint(a, b) {
   if (b !== null) {
     let n = 0;
-    while ((a[n] || '0') === b[n]) n += 1;
+    while ((a[n] || "0") === b[n]) n += 1;
     if (n > 0) return b.slice(0, n) + orderMidpoint(a.slice(n), b.slice(n));
   }
 
@@ -220,8 +220,8 @@ function orderMidpoint(a, b) {
  */
 function isOrderKey(value) {
   return (
-    typeof value === 'string' &&
-    value !== '' &&
+    typeof value === "string" &&
+    value !== "" &&
     value[value.length - 1] !== ORDER_DIGITS[0] &&
     [...value].every((digit) => ORDER_DIGITS.includes(digit))
   );
@@ -236,16 +236,16 @@ function isOrderKey(value) {
  * than thrown on: a bad key in the file must not stop a drag from completing.
  */
 function orderKeyBetween(before, after) {
-  const a = isOrderKey(before) ? before : '';
+  const a = isOrderKey(before) ? before : "";
   const b = isOrderKey(after) ? after : null;
-  if (b !== null && a >= b) return orderMidpoint('', b);
+  if (b !== null && a >= b) return orderMidpoint("", b);
   return orderMidpoint(a, b);
 }
 
 /** Sort comparator for rows of one quadrant; ties break on id so it is total. */
 function compareOrder(a, b) {
-  const ka = typeof a?.orderKey === 'string' ? a.orderKey : '';
-  const kb = typeof b?.orderKey === 'string' ? b.orderKey : '';
+  const ka = typeof a?.orderKey === "string" ? a.orderKey : "";
+  const kb = typeof b?.orderKey === "string" ? b.orderKey : "";
   if (ka !== kb) return ka < kb ? -1 : 1;
   const ia = String(a?.id);
   const ib = String(b?.id);
@@ -255,7 +255,7 @@ function compareOrder(a, b) {
 
 /** Keys only have to be unique within one quadrant of one board. */
 function orderGroupOf(task) {
-  return `${task.quadrant} ${task.space === null ? '' : task.space}`;
+  return `${task.quadrant} ${task.space === null ? "" : task.space}`;
 }
 
 const hasOrderKey = (t) => isOrderKey(t?.orderKey);
@@ -342,7 +342,7 @@ function normalizeTasks(list) {
       ...t,
       quadrant,
       space: spaceFor(quadrant, t?.space),
-      memo: typeof t?.memo === 'string' ? clampMemo(t.memo) : null,
+      memo: typeof t?.memo === "string" ? clampMemo(t.memo) : null,
       // A row that predates the field has never been edited since it was
       // written, so its creation time is the honest last-changed time.
       updatedAt: Number.isFinite(t?.updatedAt) ? t.updatedAt : createdAt,
@@ -389,7 +389,7 @@ function clampAxis(value, span, minPx) {
 }
 
 /** Ratios are always real numbers in the store; null/"" must not read as 0. */
-const asRatio = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : NaN);
+const asRatio = (v) => (typeof v === "number" && Number.isFinite(v) ? v : NaN);
 
 /** Keep only sane numbers; anything else falls back to an even split. */
 function sanitizeLayout(saved) {
@@ -458,8 +458,8 @@ const emCore = {
   sanitizeLayout,
 };
 
-if (typeof module !== 'undefined' && module.exports) {
+if (typeof module !== "undefined" && module.exports) {
   module.exports = emCore;
-} else if (typeof window !== 'undefined') {
+} else if (typeof window !== "undefined") {
   window.EM_CORE = emCore;
 }

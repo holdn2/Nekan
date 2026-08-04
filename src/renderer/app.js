@@ -13,20 +13,24 @@
  * its own.
  */
 
-import { normalizeTasks, startOfToday, startOfTomorrow } from './core-bridge.js';
-import { setTasks } from './store.js';
-import { subscribe } from './render-bus.js';
-import { $ } from './dom.js';
-import { toast } from './components/toast.js';
-import { renderMatrix, wireAddForms } from './views/matrix.js';
+import {
+  normalizeTasks,
+  startOfToday,
+  startOfTomorrow,
+} from "./core-bridge.js";
+import { setTasks } from "./store.js";
+import { subscribe } from "./render-bus.js";
+import { $ } from "./dom.js";
+import { toast } from "./components/toast.js";
+import { renderMatrix, wireAddForms } from "./views/matrix.js";
 import {
   applyInboxOpen,
   focusInbox,
   renderInbox,
   wireInbox,
-} from './views/inbox.js';
-import { renderHistory, renderTrash, wireArchive } from './views/archive.js';
-import { dropStaleSelection, renderMemo, wireMemo } from './views/memo.js';
+} from "./views/inbox.js";
+import { renderHistory, renderTrash, wireArchive } from "./views/archive.js";
+import { dropStaleSelection, renderMemo, wireMemo } from "./views/memo.js";
 import {
   applyMode,
   applyPinned,
@@ -39,10 +43,10 @@ import {
   toggleSize,
   toggleTheme,
   wireChrome,
-} from './window/chrome.js';
-import { setLayout, wireQuadEdges } from './window/layout.js';
-import { wireDragAndDrop } from './window/dnd.js';
-import { exportBoard } from './window/export-ui.js';
+} from "./window/chrome.js";
+import { setLayout, wireQuadEdges } from "./window/layout.js";
+import { wireDragAndDrop } from "./window/dnd.js";
+import { exportBoard } from "./window/export-ui.js";
 
 /* -------------------------------------------------------------- rendering */
 
@@ -55,13 +59,13 @@ function render() {
   dropStaleSelection();
   renderCounts();
   // A bar shows nothing but its chips, and renderCounts already did those.
-  if (getMode() === 'collapsed') return;
+  if (getMode() === "collapsed") return;
   const tab = getTab();
-  if (tab === 'matrix') {
+  if (tab === "matrix") {
     renderInbox();
     renderMatrix();
-  } else if (tab === 'history') renderHistory();
-  else if (tab === 'trash') renderTrash();
+  } else if (tab === "history") renderHistory();
+  else if (tab === "trash") renderTrash();
   // the guide tab is static markup — nothing to render
   renderMemo();
 }
@@ -90,10 +94,13 @@ function scheduleDayRollover() {
   // +1s of slack so a timer that fires a hair early doesn't re-render the
   // day that is still ending and then wait another 24h.
   const wait = startOfTomorrow().getTime() - Date.now() + 1000;
-  dayTimer = setTimeout(() => {
-    refreshIfDayChanged();
-    scheduleDayRollover();
-  }, Math.max(1000, wait));
+  dayTimer = setTimeout(
+    () => {
+      refreshIfDayChanged();
+      scheduleDayRollover();
+    },
+    Math.max(1000, wait),
+  );
 }
 
 /* -------------------------------------------------------------- shortcuts */
@@ -104,52 +111,52 @@ function scheduleDayRollover() {
  * guard), and because one listener is easier to keep consistent than six.
  */
 function wireShortcuts() {
-  document.addEventListener('keydown', (e) => {
+  document.addEventListener("keydown", (e) => {
     // Every shortcut here is Ctrl + one key. AltGr reports itself as
     // ctrlKey+altKey on Windows, so without the altKey test a layout that types
     // @ or € through AltGr would fire a shortcut *and* have preventDefault eat
     // the character.
     if (!e.ctrlKey || e.altKey) return;
 
-    if (e.key.toLowerCase() === 'm') {
+    if (e.key.toLowerCase() === "m") {
       e.preventDefault();
       toggleSize();
       return;
     }
-    if (e.key.toLowerCase() === 'e') {
+    if (e.key.toLowerCase() === "e") {
       e.preventDefault();
       // Bar mode hides the button; keep the shortcut in step with it.
-      if (getMode() === 'collapsed') return;
+      if (getMode() === "collapsed") return;
       exportBoard();
       return;
     }
-    if (e.key.toLowerCase() === 'd') {
+    if (e.key.toLowerCase() === "d") {
       e.preventDefault();
       toggleTheme();
       return;
     }
     // Ctrl+0 continues the Ctrl+1~4 run: 0 is the "not sorted yet" slot.
-    if (e.key === '0') {
+    if (e.key === "0") {
       e.preventDefault();
-      if (getMode() === 'collapsed') return;
-      setTab('matrix');
+      if (getMode() === "collapsed") return;
+      setTab("matrix");
       focusInbox();
       return;
     }
-    if (['1', '2', '3', '4'].includes(e.key)) {
+    if (["1", "2", "3", "4"].includes(e.key)) {
       e.preventDefault();
-      if (getMode() === 'collapsed') return;
-      setTab('matrix');
+      if (getMode() === "collapsed") return;
+      setTab("matrix");
       $(`[data-add="q${e.key}"] input[type="text"]`)?.focus();
     }
   });
 
   // Waking from sleep or coming back to the window can also cross midnight,
   // and either may happen while the rollover timer is still pending.
-  document.addEventListener('visibilitychange', () => {
+  document.addEventListener("visibilitychange", () => {
     if (!document.hidden) refreshIfDayChanged();
   });
-  window.addEventListener('focus', refreshIfDayChanged);
+  window.addEventListener("focus", refreshIfDayChanged);
 }
 
 /* ------------------------------------------------------------------- init */
@@ -176,7 +183,7 @@ async function init() {
   // the screen in step with the data.
   subscribe(render);
 
-  applyTheme(state.settings?.theme || 'light', false);
+  applyTheme(state.settings?.theme || "light", false);
   applyPinned(state.settings?.alwaysOnTop !== false);
   applyInboxOpen(state.settings?.inboxOpen === true, false);
   applySpace(state.settings?.activeSpace, false);
@@ -193,7 +200,7 @@ async function init() {
 
   // state.mode is a snapshot from before ready-to-show, so a mode that was
   // pushed in the meantime is the newer truth. This is also the first render.
-  applyMode(pushedMode || state.mode || 'expanded');
+  applyMode(pushedMode || state.mode || "expanded");
   scheduleDayRollover();
 }
 
@@ -201,8 +208,8 @@ async function init() {
 // window showing unwired static markup, with nothing but an unhandled rejection
 // in a devtools console the user does not have open.
 init().catch((err) => {
-  console.error('renderer init failed', err);
-  toast('시작하지 못했습니다. 앱을 다시 실행해 주세요.', {
+  console.error("renderer init failed", err);
+  toast("시작하지 못했습니다. 앱을 다시 실행해 주세요.", {
     error: true,
     ms: 20000,
   });

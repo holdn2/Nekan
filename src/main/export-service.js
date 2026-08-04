@@ -9,23 +9,23 @@
  * dialog, which makes the dialog's file-type dropdown the whole format picker.
  */
 
-const fs = require('fs');
-const path = require('path');
-const { BrowserWindow, app, dialog, shell } = require('electron');
+const fs = require("fs");
+const path = require("path");
+const { BrowserWindow, app, dialog, shell } = require("electron");
 
-const { sanitizeSpace, SPACE_LABEL } = require('../shared/core');
+const { sanitizeSpace, SPACE_LABEL } = require("../shared/core");
 const {
   buildSnapshot,
   defaultFileName,
   toHtml,
   toMarkdown,
-} = require('../shared/export');
-const { getSettings, getStore } = require('./store');
+} = require("../shared/export");
+const { getSettings, getStore } = require("./store");
 
 const EXPORT_FILTERS = [
-  { name: 'PDF 문서', extensions: ['pdf'] },
-  { name: 'HTML 문서', extensions: ['html'] },
-  { name: '마크다운', extensions: ['md'] },
+  { name: "PDF 문서", extensions: ["pdf"] },
+  { name: "HTML 문서", extensions: ["html"] },
+  { name: "마크다운", extensions: ["md"] },
 ];
 
 /**
@@ -35,8 +35,8 @@ const EXPORT_FILTERS = [
  * rather than a data: URL so a long board cannot hit a URL length limit.
  */
 async function renderPdf(html, target) {
-  const tmp = path.join(app.getPath('temp'), `em-export-${Date.now()}.html`);
-  fs.writeFileSync(tmp, html, 'utf8');
+  const tmp = path.join(app.getPath("temp"), `em-export-${Date.now()}.html`);
+  fs.writeFileSync(tmp, html, "utf8");
 
   const printer = new BrowserWindow({
     show: false,
@@ -46,7 +46,7 @@ async function renderPdf(html, target) {
     await printer.loadFile(tmp);
     const pdf = await printer.webContents.printToPDF({
       printBackground: true,
-      pageSize: 'A4',
+      pageSize: "A4",
       landscape: true,
       margins: { top: 0.4, bottom: 0.4, left: 0.4, right: 0.4 },
     });
@@ -65,39 +65,39 @@ async function renderPdf(html, target) {
  * shared inbox. The other board is a separate export.
  */
 async function runExport(parent) {
-  if (!parent || parent.isDestroyed()) return { ok: false, reason: 'canceled' };
+  if (!parent || parent.isDestroyed()) return { ok: false, reason: "canceled" };
 
   const space = sanitizeSpace(getSettings().activeSpace);
   const snapshot = buildSnapshot(getStore().tasks, new Date(), space);
-  if (!snapshot.total) return { ok: false, reason: 'empty' };
+  if (!snapshot.total) return { ok: false, reason: "empty" };
 
   const picked = await dialog.showSaveDialog(parent, {
     title: `${SPACE_LABEL[space]} 매트릭스 내보내기`,
     defaultPath: path.join(
-      app.getPath('documents'),
-      defaultFileName(new Date(), 'pdf', space)
+      app.getPath("documents"),
+      defaultFileName(new Date(), "pdf", space),
     ),
     filters: EXPORT_FILTERS,
   });
   if (picked.canceled || !picked.filePath) {
-    return { ok: false, reason: 'canceled' };
+    return { ok: false, reason: "canceled" };
   }
 
   const target = picked.filePath;
   try {
     const ext = path.extname(target).toLowerCase();
-    if (ext === '.md' || ext === '.markdown') {
-      fs.writeFileSync(target, toMarkdown(snapshot), 'utf8');
-    } else if (ext === '.html' || ext === '.htm') {
-      fs.writeFileSync(target, toHtml(snapshot), 'utf8');
+    if (ext === ".md" || ext === ".markdown") {
+      fs.writeFileSync(target, toMarkdown(snapshot), "utf8");
+    } else if (ext === ".html" || ext === ".htm") {
+      fs.writeFileSync(target, toHtml(snapshot), "utf8");
     } else {
       // Anything else (including a name typed without an extension, which the
       // dialog completes to .pdf) goes through the printer.
       await renderPdf(toHtml(snapshot), target);
     }
   } catch (err) {
-    console.error('export failed', err);
-    return { ok: false, reason: 'error', message: String(err.message || err) };
+    console.error("export failed", err);
+    return { ok: false, reason: "error", message: String(err.message || err) };
   }
 
   return { ok: true, path: target, name: path.basename(target) };
@@ -105,7 +105,7 @@ async function runExport(parent) {
 
 /** Show the written file in Explorer — the toast's "폴더 열기". */
 function revealExport(target) {
-  if (typeof target === 'string' && target) shell.showItemInFolder(target);
+  if (typeof target === "string" && target) shell.showItemInFolder(target);
 }
 
 module.exports = { runExport, revealExport };

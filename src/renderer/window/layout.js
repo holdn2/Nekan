@@ -19,8 +19,8 @@ import {
   QUADS,
   clampAxis,
   sanitizeLayout,
-} from '../core-bridge.js';
-import { $ } from '../dom.js';
+} from "../core-bridge.js";
+import { $ } from "../dom.js";
 
 /**
  * Two ratios drive the whole 2×2 grid: `cols` is q1/q3's share of the width,

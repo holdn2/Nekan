@@ -14,13 +14,13 @@
  *     the panel height on every restart.
  */
 
-const path = require('path');
-const { BrowserWindow, screen } = require('electron');
+const path = require("path");
+const { BrowserWindow, screen } = require("electron");
 
-const { getSettings, persist } = require('./store');
+const { getSettings, persist } = require("./store");
 
 /** Where preload.js, the renderer and the icon live, from this folder. */
-const SRC = path.join(__dirname, '..');
+const SRC = path.join(__dirname, "..");
 
 const EXPANDED = { width: 1000, height: 700, minWidth: 760, minHeight: 520 };
 // Wide enough for the whole bar row at comfortable sizes: icon, both halves of
@@ -32,7 +32,7 @@ const BAR = { width: 600, height: 48 };
 const MEMO_MAX = 400;
 
 let win = null;
-let mode = 'expanded';
+let mode = "expanded";
 let memoOpen = false;
 let memoDelta = 0;
 
@@ -64,7 +64,7 @@ function boundsWithoutMemo() {
  * (no window, or a bar, which has no panel).
  */
 function setMemoPanel(open, height) {
-  if (!win || win.isDestroyed() || mode !== 'expanded') return memoOpen;
+  if (!win || win.isDestroyed() || mode !== "expanded") return memoOpen;
   if (open === memoOpen) return memoOpen;
 
   const before = win.getBounds();
@@ -105,40 +105,40 @@ function createWindow() {
     minHeight: EXPANDED.minHeight,
     frame: false,
     show: false,
-    backgroundColor: settings.theme === 'dark' ? '#1f1e1d' : '#f0eee6',
-    icon: path.join(SRC, 'assets', 'icon.ico'),
+    backgroundColor: settings.theme === "dark" ? "#1f1e1d" : "#f0eee6",
+    icon: path.join(SRC, "assets", "icon.ico"),
     alwaysOnTop: settings.alwaysOnTop !== false,
     skipTaskbar: false,
     webPreferences: {
-      preload: path.join(SRC, 'preload.js'),
+      preload: path.join(SRC, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
 
-  win.loadFile(path.join(SRC, 'renderer', 'index.html'));
+  win.loadFile(path.join(SRC, "renderer", "index.html"));
 
   // A reload starts the renderer with nothing selected, so the panel height
   // main is still holding would be stranded — the window would stay tall with
   // no panel in it, and the saved bounds would drift by that much.
-  win.webContents.on('did-finish-load', () => {
+  win.webContents.on("did-finish-load", () => {
     if (memoOpen) setMemoPanel(false);
   });
 
-  win.once('ready-to-show', () => {
+  win.once("ready-to-show", () => {
     win.show();
-    if (settings.mode === 'collapsed') collapse();
+    if (settings.mode === "collapsed") collapse();
   });
 
   const rememberBounds = () => {
-    if (!win || win.isDestroyed() || mode !== 'expanded') return;
+    if (!win || win.isDestroyed() || mode !== "expanded") return;
     getSettings().bounds = boundsWithoutMemo();
     persist();
   };
-  win.on('resize', rememberBounds);
-  win.on('move', rememberBounds);
+  win.on("resize", rememberBounds);
+  win.on("move", rememberBounds);
 
-  win.on('closed', () => {
+  win.on("closed", () => {
     win = null;
   });
 
@@ -147,11 +147,11 @@ function createWindow() {
 
 /** Shrink to the always-on-top bar, keeping the top-left corner in place. */
 function collapse() {
-  if (!win || mode === 'collapsed') return;
+  if (!win || mode === "collapsed") return;
   const settings = getSettings();
   settings.bounds = boundsWithoutMemo();
   const { x, y } = win.getBounds();
-  mode = 'collapsed';
+  mode = "collapsed";
   settings.mode = mode;
   // The bar has no memo panel; the renderer drops its selection to match.
   memoOpen = false;
@@ -159,13 +159,13 @@ function collapse() {
   win.setResizable(false);
   win.setMinimumSize(BAR.width, BAR.height);
   win.setBounds({ x, y, width: BAR.width, height: BAR.height });
-  win.webContents.send('win:mode', mode);
+  win.webContents.send("win:mode", mode);
   persist();
 }
 
 /** Back to the remembered expanded bounds, or the defaults if there are none. */
 function expand() {
-  if (!win || mode === 'expanded') return;
+  if (!win || mode === "expanded") return;
   const settings = getSettings();
   const { x, y } = win.getBounds();
   const target = sanitizeBounds(settings.bounds) || {
@@ -174,7 +174,7 @@ function expand() {
     width: EXPANDED.width,
     height: EXPANDED.height,
   };
-  mode = 'expanded';
+  mode = "expanded";
   settings.mode = mode;
   win.setMinimumSize(EXPANDED.minWidth, EXPANDED.minHeight);
   win.setResizable(true);
@@ -184,7 +184,7 @@ function expand() {
     width: Math.max(target.width, EXPANDED.minWidth),
     height: Math.max(target.height, EXPANDED.minHeight),
   });
-  win.webContents.send('win:mode', mode);
+  win.webContents.send("win:mode", mode);
   persist();
 }
 

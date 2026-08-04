@@ -6,9 +6,9 @@
  * what the data is, which is why they live together and away from the store.
  */
 
-import { QUADS, SPACE_LABEL } from '../core-bridge.js';
-import { $, $$, labelBtn } from '../dom.js';
-import { notify } from '../render-bus.js';
+import { QUADS, SPACE_LABEL } from "../core-bridge.js";
+import { $, $$, labelBtn } from "../dom.js";
+import { notify } from "../render-bus.js";
 import {
   activeOf,
   doneTasks,
@@ -16,14 +16,14 @@ import {
   inboxTasks,
   setSpace,
   trashedTasks,
-} from '../store.js';
-import { applyInboxOpen } from '../views/inbox.js';
-import { clearSelectionSilently, setSelected } from '../views/memo.js';
-import { exportBoard } from './export-ui.js';
+} from "../store.js";
+import { applyInboxOpen } from "../views/inbox.js";
+import { clearSelectionSilently, setSelected } from "../views/memo.js";
+import { exportBoard } from "./export-ui.js";
 
-let mode = 'expanded';
-let activeTab = 'matrix';
-let theme = 'light';
+let mode = "expanded";
+let activeTab = "matrix";
+let theme = "light";
 
 /** 'expanded' | 'collapsed'. The render dispatcher skips the lists in a bar. */
 export const getMode = () => mode;
@@ -43,10 +43,10 @@ export function renderCounts() {
   // The bar chip stays out of the way until there is something unclassified, so
   // seeing it at all is the signal.
   const waiting = inboxTasks().length;
-  $('#cInbox').textContent = String(waiting);
-  $('#inboxChip').classList.toggle('hidden', waiting === 0);
-  $('#doneCount').textContent = String(doneTasks().length);
-  $('#trashCount').textContent = String(trashedTasks().length);
+  $("#cInbox").textContent = String(waiting);
+  $("#inboxChip").classList.toggle("hidden", waiting === 0);
+  $("#doneCount").textContent = String(doneTasks().length);
+  $("#trashCount").textContent = String(trashedTasks().length);
 }
 
 /* ----------------------------------------------------------------- boards */
@@ -60,10 +60,10 @@ export function renderCounts() {
  * "show me this one" and never "flip to the other".
  */
 function syncSpaceSwitch() {
-  $$('.space-btn').forEach((btn) => {
+  $$(".space-btn").forEach((btn) => {
     const on = btn.dataset.space === getSpace();
-    btn.classList.toggle('active', on);
-    btn.setAttribute('aria-pressed', String(on));
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-pressed", String(on));
     btn.title = `${SPACE_LABEL[btn.dataset.space]} 매트릭스 보기`;
   });
 }
@@ -81,18 +81,18 @@ export function applySpace(next, persist = true) {
 export function setTab(tab) {
   // The panel belongs to the matrix; leaving the tab closes it (and gives the
   // window its height back) rather than leaving it pointing at a hidden row.
-  if (tab !== 'matrix') setSelected(null);
+  if (tab !== "matrix") setSelected(null);
   activeTab = tab;
-  $$('.tab').forEach((btn) =>
-    btn.classList.toggle('active', btn.dataset.tab === tab),
+  $$(".tab").forEach((btn) =>
+    btn.classList.toggle("active", btn.dataset.tab === tab),
   );
   // The inbox belongs to the matrix, so it travels with it rather than sitting
   // above the history or trash lists.
-  $('#inboxPanel').classList.toggle('hidden', tab !== 'matrix');
-  $('#matrixView').classList.toggle('hidden', tab !== 'matrix');
-  $('#historyView').classList.toggle('hidden', tab !== 'history');
-  $('#trashView').classList.toggle('hidden', tab !== 'trash');
-  $('#guideView').classList.toggle('hidden', tab !== 'guide');
+  $("#inboxPanel").classList.toggle("hidden", tab !== "matrix");
+  $("#matrixView").classList.toggle("hidden", tab !== "matrix");
+  $("#historyView").classList.toggle("hidden", tab !== "history");
+  $("#trashView").classList.toggle("hidden", tab !== "trash");
+  $("#guideView").classList.toggle("hidden", tab !== "guide");
   notify();
 }
 
@@ -100,24 +100,24 @@ export function setTab(tab) {
 
 /** Swap the palette. The stylesheet keys off data-theme on <html>. */
 export function applyTheme(next, persist = true) {
-  theme = next === 'dark' ? 'dark' : 'light';
+  theme = next === "dark" ? "dark" : "light";
   document.documentElement.dataset.theme = theme;
   labelBtn(
-    '#themeBtn',
-    theme === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환',
+    "#themeBtn",
+    theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환",
   );
   if (persist) window.api.setTheme(theme);
 }
 
 /** Ctrl+D and the title-bar button both come through here. */
 export function toggleTheme() {
-  applyTheme(theme === 'dark' ? 'light' : 'dark');
+  applyTheme(theme === "dark" ? "light" : "dark");
 }
 
 /** Reflect the always-on-top state main.js reports back. */
 export function applyPinned(on) {
-  $('#pinBtn').classList.toggle('on', on);
-  labelBtn('#pinBtn', on ? '항상 위 고정 해제' : '항상 위에 고정');
+  $("#pinBtn").classList.toggle("on", on);
+  labelBtn("#pinBtn", on ? "항상 위 고정 해제" : "항상 위에 고정");
 }
 
 /* -------------------------------------------------------- window controls */
@@ -130,16 +130,16 @@ export function applyMode(next) {
   mode = next;
   // collapse() already dropped the panel's height on its way to the bar, so
   // clear the selection here without asking for another resize.
-  if (mode === 'collapsed') clearSelectionSilently();
-  document.body.classList.toggle('collapsed', mode === 'collapsed');
-  document.body.classList.toggle('expanded', mode === 'expanded');
-  labelBtn('#sizeBtn', mode === 'collapsed' ? '펼치기' : '바 모드로 축소');
+  if (mode === "collapsed") clearSelectionSilently();
+  document.body.classList.toggle("collapsed", mode === "collapsed");
+  document.body.classList.toggle("expanded", mode === "expanded");
+  labelBtn("#sizeBtn", mode === "collapsed" ? "펼치기" : "바 모드로 축소");
   notify();
 }
 
 /** Ctrl+M, the size button and a double-click on the bar all land here. */
 export function toggleSize() {
-  if (mode === 'collapsed') window.api.expand();
+  if (mode === "collapsed") window.api.expand();
   else window.api.collapse();
 }
 
@@ -147,48 +147,48 @@ export function toggleSize() {
 
 /** Bind the title bar and the tab strip. Called once at startup. */
 export function wireChrome() {
-  $$('.tab').forEach((btn) =>
-    btn.addEventListener('click', () => setTab(btn.dataset.tab)),
+  $$(".tab").forEach((btn) =>
+    btn.addEventListener("click", () => setTab(btn.dataset.tab)),
   );
 
-  $('#spaceSwitch').addEventListener('click', (e) => {
-    const btn = e.target.closest('.space-btn');
+  $("#spaceSwitch").addEventListener("click", (e) => {
+    const btn = e.target.closest(".space-btn");
     if (!btn || btn.dataset.space === getSpace()) return;
     applySpace(btn.dataset.space);
     notify();
   });
 
-  $('#themeBtn').addEventListener('click', toggleTheme);
-  $('#exportBtn').addEventListener('click', exportBoard);
+  $("#themeBtn").addEventListener("click", toggleTheme);
+  $("#exportBtn").addEventListener("click", exportBoard);
 
-  $('#sizeBtn').addEventListener('click', toggleSize);
-  $('#minBtn').addEventListener('click', () => window.api.minimize());
-  $('#closeBtn').addEventListener('click', () => window.api.close());
+  $("#sizeBtn").addEventListener("click", toggleSize);
+  $("#minBtn").addEventListener("click", () => window.api.minimize());
+  $("#closeBtn").addEventListener("click", () => window.api.close());
 
-  $('#pinBtn').addEventListener('click', async () => {
+  $("#pinBtn").addEventListener("click", async () => {
     // main is the authority on the pin state, so the button only ever reflects
     // what it answers. If the call fails there is nothing new to reflect —
     // leave the label alone rather than showing a state we did not reach.
     try {
       applyPinned(await window.api.togglePin());
     } catch (err) {
-      console.error('togglePin failed', err);
+      console.error("togglePin failed", err);
     }
   });
 
-  $('#barSummary').addEventListener('click', (e) => {
-    const chip = e.target.closest('.chip');
-    if (!chip || mode !== 'collapsed') return;
+  $("#barSummary").addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip || mode !== "collapsed") return;
     window.api.expand();
-    setTab('matrix');
+    setTab("matrix");
     // The inbox chip is only there when something is waiting in it, so clicking
     // it means "show me those" — unfold on the way out of bar mode. No focus
     // here: the window is still resizing and would swallow it.
-    if (chip.dataset.jump === 'inbox') applyInboxOpen(true);
+    if (chip.dataset.jump === "inbox") applyInboxOpen(true);
   });
 
-  $('.titlebar').addEventListener('dblclick', (e) => {
-    if (e.target.closest('button')) return;
+  $(".titlebar").addEventListener("dblclick", (e) => {
+    if (e.target.closest("button")) return;
     toggleSize();
   });
 }

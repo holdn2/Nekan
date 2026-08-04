@@ -5,8 +5,8 @@
  * change size or lose its place in the list while it is being edited.
  */
 
-import { editTask } from '../store.js';
-import { notify } from '../render-bus.js';
+import { editTask } from "../store.js";
+import { notify } from "../render-bus.js";
 
 /**
  * Turn `textEl` into an editor with everything selected, and keep it there
@@ -25,7 +25,7 @@ export function startEdit(li, textEl, task) {
 
   const original = task.text;
   li.draggable = false;
-  textEl.contentEditable = 'true';
+  textEl.contentEditable = "true";
   textEl.focus();
 
   const range = document.createRange();
@@ -39,9 +39,9 @@ export function startEdit(li, textEl, task) {
     // Unhook first. Clearing contentEditable on a focused element blurs it, so
     // doing that while onBlur is still attached re-enters finish(true) — and an
     // Escape would save the edit it was cancelling.
-    textEl.removeEventListener('keydown', onKey);
-    textEl.removeEventListener('blur', onBlur);
-    textEl.contentEditable = 'false';
+    textEl.removeEventListener("keydown", onKey);
+    textEl.removeEventListener("blur", onBlur);
+    textEl.contentEditable = "false";
     li.draggable = true;
     if (commit) editTask(task.id, textEl.textContent);
     else textEl.textContent = original;
@@ -51,16 +51,16 @@ export function startEdit(li, textEl, task) {
   };
 
   const onKey = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       finish(true);
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       e.preventDefault();
       finish(false);
     }
   };
   const onBlur = () => finish(true);
 
-  textEl.addEventListener('keydown', onKey);
-  textEl.addEventListener('blur', onBlur);
+  textEl.addEventListener("keydown", onKey);
+  textEl.addEventListener("blur", onBlur);
 }

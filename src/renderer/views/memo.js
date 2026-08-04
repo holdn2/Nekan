@@ -11,10 +11,10 @@
  * "whose memo is open".
  */
 
-import { INBOX, clampMemo } from '../core-bridge.js';
-import { $ } from '../dom.js';
-import { findTask, inSpace, setMemo } from '../store.js';
-import { notify } from '../render-bus.js';
+import { INBOX, clampMemo } from "../core-bridge.js";
+import { $ } from "../dom.js";
+import { findTask, inSpace, setMemo } from "../store.js";
+import { notify } from "../render-bus.js";
 
 let selectedId = null;
 /** Whether the textarea is up. A task with no memo yet always starts there. */
@@ -33,9 +33,9 @@ export const isSelected = (id) => id === selectedId;
  * grow and shrink under the cursor.
  */
 export function wireRowSelection(li, textEl, task) {
-  li.addEventListener('click', (e) => {
+  li.addEventListener("click", (e) => {
     if (e.detail > 1) return;
-    if (e.target.closest('button, .duebox')) return;
+    if (e.target.closest("button, .duebox")) return;
     if (textEl.isContentEditable) return;
     clearTimeout(clickTimer);
     clickTimer = setTimeout(
@@ -43,13 +43,13 @@ export function wireRowSelection(li, textEl, task) {
       CLICK_DELAY,
     );
   });
-  li.addEventListener('dblclick', () => clearTimeout(clickTimer));
+  li.addEventListener("dblclick", () => clearTimeout(clickTimer));
 }
 
 /** Panel height comes from CSS so main.js and the stylesheet cannot drift. */
 const memoPanelHeight = () =>
   Number.parseFloat(
-    getComputedStyle(document.documentElement).getPropertyValue('--memo-h'),
+    getComputedStyle(document.documentElement).getPropertyValue("--memo-h"),
   ) || 0;
 
 /**
@@ -110,39 +110,39 @@ export function clearSelectionSilently() {
 function memoSaveState() {
   const task = selectedTask();
   if (!task) return { value: null, original: null, canSave: false };
-  const value = clampMemo($('#memoInput').value);
+  const value = clampMemo($("#memoInput").value);
   const original = task.memo || null;
   return { value, original, canSave: Boolean(value) && value !== original };
 }
 
 /** Enable/disable 저장 as the textarea changes. */
 function syncMemoSave() {
-  $('#memoSave').disabled = !memoSaveState().canSave;
+  $("#memoSave").disabled = !memoSaveState().canSave;
 }
 
 /** Draw the panel for the selected task, or hide it when there is none. */
 export function renderMemo() {
-  const panel = $('#memoPanel');
+  const panel = $("#memoPanel");
   const task = selectedTask();
   if (!task) {
-    panel.classList.add('hidden');
-    panel.dataset.key = '';
+    panel.classList.add("hidden");
+    panel.dataset.key = "";
     return;
   }
-  panel.classList.remove('hidden');
+  panel.classList.remove("hidden");
 
-  const memo = task.memo || '';
+  const memo = task.memo || "";
   const editing = memoEditing || !memo;
 
-  $('#memoTitle').textContent = task.text;
-  $('#memoTitle').title = task.text;
-  $('#memoDot').className = `dot ${task.quadrant}`;
-  $('#memoText').textContent = memo;
+  $("#memoTitle").textContent = task.text;
+  $("#memoTitle").title = task.text;
+  $("#memoDot").className = `dot ${task.quadrant}`;
+  $("#memoText").textContent = memo;
 
   // Only reseed the textarea when the panel actually changes what it is
   // showing; an unrelated re-render must not wipe what is being typed.
   const key = `${task.id}:${editing}`;
-  const input = $('#memoInput');
+  const input = $("#memoInput");
   if (panel.dataset.key !== key) {
     panel.dataset.key = key;
     if (editing) {
@@ -152,14 +152,14 @@ export function renderMemo() {
     }
   }
 
-  input.classList.toggle('hidden', !editing);
-  $('#memoText').classList.toggle('hidden', editing);
-  $('#memoSave').classList.toggle('hidden', !editing);
-  $('#memoCancel').classList.toggle('hidden', !editing || !memo);
-  $('#memoDelete').classList.toggle('hidden', editing || !memo);
-  $('#memoHint').textContent = editing
-    ? 'Ctrl+Enter 저장 · Esc 취소'
-    : '더블클릭하여 수정';
+  input.classList.toggle("hidden", !editing);
+  $("#memoText").classList.toggle("hidden", editing);
+  $("#memoSave").classList.toggle("hidden", !editing);
+  $("#memoCancel").classList.toggle("hidden", !editing || !memo);
+  $("#memoDelete").classList.toggle("hidden", editing || !memo);
+  $("#memoHint").textContent = editing
+    ? "Ctrl+Enter 저장 · Esc 취소"
+    : "더블클릭하여 수정";
   syncMemoSave();
 }
 
@@ -187,32 +187,32 @@ function cancelMemoEdit() {
 function deleteMemo() {
   const task = selectedTask();
   if (!task || !task.memo) return;
-  if (!window.confirm('이 메모를 삭제할까요? 되돌릴 수 없습니다.')) return;
+  if (!window.confirm("이 메모를 삭제할까요? 되돌릴 수 없습니다.")) return;
   memoEditing = false;
   setMemo(task.id, null);
 }
 
 /** Bind the panel's own controls. The rows are wired by wireRowSelection. */
 export function wireMemo() {
-  const input = $('#memoInput');
-  input.addEventListener('input', syncMemoSave);
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
+  const input = $("#memoInput");
+  input.addEventListener("input", syncMemoSave);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
       e.preventDefault();
       cancelMemoEdit();
-    } else if (e.key === 'Enter' && e.ctrlKey) {
+    } else if (e.key === "Enter" && e.ctrlKey) {
       e.preventDefault();
       saveMemo();
     }
   });
 
-  $('#memoText').addEventListener('dblclick', () => {
+  $("#memoText").addEventListener("dblclick", () => {
     memoEditing = true;
     renderMemo();
   });
 
-  $('#memoSave').addEventListener('click', saveMemo);
-  $('#memoCancel').addEventListener('click', cancelMemoEdit);
-  $('#memoDelete').addEventListener('click', deleteMemo);
-  $('#memoClose').addEventListener('click', () => setSelected(null));
+  $("#memoSave").addEventListener("click", saveMemo);
+  $("#memoCancel").addEventListener("click", cancelMemoEdit);
+  $("#memoDelete").addEventListener("click", deleteMemo);
+  $("#memoClose").addEventListener("click", () => setSelected(null));
 }

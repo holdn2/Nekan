@@ -8,12 +8,12 @@
  * went — the format itself is decided by the extension in the native dialog.
  */
 
-import { $ } from '../dom.js';
-import { toast } from '../components/toast.js';
+import { $ } from "../dom.js";
+import { toast } from "../components/toast.js";
 
 /** Run one export round trip. Safe to call from the button or Ctrl+E. */
 export async function exportBoard() {
-  const btn = $('#exportBtn');
+  const btn = $("#exportBtn");
   if (btn.disabled) return;
   btn.disabled = true;
   try {
@@ -21,13 +21,13 @@ export async function exportBoard() {
     if (res?.ok) {
       toast(`저장했습니다 · ${res.name}`, {
         action: {
-          label: '폴더 열기',
+          label: "폴더 열기",
           onClick: () => window.api.revealExport(res.path),
         },
       });
-    } else if (res?.reason === 'empty') {
-      toast('내보낼 항목이 없습니다.');
-    } else if (res?.reason === 'error') {
+    } else if (res?.reason === "empty") {
+      toast("내보낼 항목이 없습니다.");
+    } else if (res?.reason === "error") {
       toast(`저장하지 못했습니다: ${res.message}`, { error: true, ms: 6000 });
     }
     // 'canceled' is the user closing the dialog — no message for that.
@@ -35,8 +35,8 @@ export async function exportBoard() {
     // main answers failures inside the result object, so reaching here means
     // the IPC round trip itself broke. Without this the user would watch the
     // dialog close and never learn that nothing was written.
-    console.error('export failed', err);
-    toast('저장하지 못했습니다.', { error: true, ms: 6000 });
+    console.error("export failed", err);
+    toast("저장하지 못했습니다.", { error: true, ms: 6000 });
   } finally {
     btn.disabled = false;
   }

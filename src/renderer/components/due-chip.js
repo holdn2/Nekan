@@ -7,8 +7,8 @@
  * chip looks like — never what a date means.
  */
 
-import { dueInfo } from '../core-bridge.js';
-import { calendarIcon } from './icons.js';
+import { dueInfo } from "../core-bridge.js";
+import { calendarIcon } from "./icons.js";
 
 /**
  * Editable chip: a native date input stretched invisibly over a compact face,
@@ -20,51 +20,51 @@ import { calendarIcon } from './icons.js';
  * `onChange` receives the new 'YYYY-MM-DD' string, or null when it is cleared.
  */
 export function dueChip(value, onChange) {
-  const box = document.createElement('span');
-  const chip = document.createElement('span');
-  chip.className = 'due';
+  const box = document.createElement("span");
+  const chip = document.createElement("span");
+  chip.className = "due";
 
-  const input = document.createElement('input');
-  input.type = 'date';
-  input.setAttribute('aria-label', '마감일');
+  const input = document.createElement("input");
+  input.type = "date";
+  input.setAttribute("aria-label", "마감일");
 
-  const face = document.createElement('span');
-  face.className = 'face';
+  const face = document.createElement("span");
+  face.className = "face";
   chip.append(input, face);
 
-  const clear = document.createElement('button');
-  clear.type = 'button';
-  clear.className = 'due-clear';
-  clear.textContent = '×';
-  clear.title = '날짜 지우기';
-  clear.setAttribute('aria-label', '마감일 지우기');
+  const clear = document.createElement("button");
+  clear.type = "button";
+  clear.className = "due-clear";
+  clear.textContent = "×";
+  clear.title = "날짜 지우기";
+  clear.setAttribute("aria-label", "마감일 지우기");
 
   box.append(chip, clear);
   box.draggable = false;
 
   /** Repaint the face for `next`; an empty date falls back to the icon. */
   const apply = (next) => {
-    input.value = next || '';
+    input.value = next || "";
     const info = dueInfo(next);
-    box.className = info ? `duebox set ${info.state}` : 'duebox';
+    box.className = info ? `duebox set ${info.state}` : "duebox";
     face.replaceChildren();
     if (info) {
       face.textContent = info.text;
       chip.title = `마감 ${info.text} · ${info.hint}`;
     } else {
       face.append(calendarIcon());
-      chip.title = '마감일 지정';
+      chip.title = "마감일 지정";
     }
   };
 
-  input.addEventListener('change', () => {
+  input.addEventListener("change", () => {
     apply(input.value);
     onChange(input.value || null);
   });
-  clear.addEventListener('click', (e) => {
+  clear.addEventListener("click", (e) => {
     // The row underneath treats a click as "select for the memo panel".
     e.stopPropagation();
-    apply('');
+    apply("");
     onChange(null);
   });
 
@@ -82,13 +82,13 @@ export function dueChip(value, onChange) {
 export function dueBadge(value) {
   const info = dueInfo(value);
   if (!info) return null;
-  const box = document.createElement('span');
+  const box = document.createElement("span");
   box.className = `duebox set ${info.state} static`;
-  const chip = document.createElement('span');
-  chip.className = 'due';
+  const chip = document.createElement("span");
+  chip.className = "due";
   chip.title = `마감 ${info.text} · ${info.hint}`;
-  const face = document.createElement('span');
-  face.className = 'face';
+  const face = document.createElement("span");
+  face.className = "face";
   face.textContent = info.text;
   chip.append(face);
   box.append(chip);

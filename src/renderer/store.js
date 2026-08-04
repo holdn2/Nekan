@@ -16,7 +16,7 @@
  *     here may reorder the array and expect the screen to follow.
  */
 
-import { notify } from './render-bus.js';
+import { notify } from "./render-bus.js";
 import {
   DEFAULT_SPACE,
   INBOX,
@@ -25,7 +25,7 @@ import {
   orderKeyBetween,
   sanitizeSpace,
   spaceFor,
-} from './core-bridge.js';
+} from "./core-bridge.js";
 
 /** The whole renderer state that survives a restart. */
 let tasks = [];
@@ -234,7 +234,7 @@ export function untrashTask(id) {
  */
 function tombstone(task) {
   task.purgedAt = Date.now();
-  task.text = '';
+  task.text = "";
   task.memo = null;
 }
 

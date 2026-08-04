@@ -10,11 +10,11 @@
  * Anything that must not be lost (quit, close) calls persistNow() instead.
  */
 
-const path = require('path');
-const { app } = require('electron');
+const path = require("path");
+const { app } = require("electron");
 
-const { loadStore, writeStore } = require('../shared/store-io');
-const { dropExpiredTombstones } = require('../shared/core');
+const { loadStore, writeStore } = require("../shared/store-io");
+const { dropExpiredTombstones } = require("../shared/core");
 
 let store = null;
 let saveTimer = null;
@@ -24,7 +24,7 @@ let saveTimer = null;
  * `npm start` and the packaged exe read the same file.
  */
 function storePath() {
-  return path.join(app.getPath('userData'), 'data.json');
+  return path.join(app.getPath("userData"), "data.json");
 }
 
 /**
@@ -35,10 +35,10 @@ function storePath() {
  * Both are kept because a user can be sitting on either one.
  */
 function legacyStorePaths() {
-  const appData = app.getPath('appData');
+  const appData = app.getPath("appData");
   return [
-    path.join(appData, 'EisenhowerMatrix', 'data.json'),
-    path.join(appData, 'eisenhower-matrix', 'data.json'),
+    path.join(appData, "EisenhowerMatrix", "data.json"),
+    path.join(appData, "eisenhower-matrix", "data.json"),
   ];
 }
 

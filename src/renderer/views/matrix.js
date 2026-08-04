@@ -6,13 +6,19 @@
  * class of bug — there is no partial update that can disagree with the store.
  */
 
-import { QUADS } from '../core-bridge.js';
-import { $, $$, numEl } from '../dom.js';
-import { dueChip } from '../components/due-chip.js';
-import { memoMark } from '../components/memo-mark.js';
-import { activeOf, addTask, completeTask, deleteTask, setDue } from '../store.js';
-import { isSelected, wireRowSelection } from './memo.js';
-import { startEdit } from './inline-edit.js';
+import { QUADS } from "../core-bridge.js";
+import { $, $$, numEl } from "../dom.js";
+import { dueChip } from "../components/due-chip.js";
+import { memoMark } from "../components/memo-mark.js";
+import {
+  activeOf,
+  addTask,
+  completeTask,
+  deleteTask,
+  setDue,
+} from "../store.js";
+import { isSelected, wireRowSelection } from "./memo.js";
+import { startEdit } from "./inline-edit.js";
 
 /** Matches the row's fade-out in styles.css, so the change lands unseen. */
 const REMOVE_MS = 160;
@@ -22,41 +28,41 @@ const REMOVE_MS = 160;
  * only its position in the list on screen — the "1." in front of it.
  */
 export function itemEl(task, index) {
-  const li = document.createElement('li');
-  li.className = isSelected(task.id) ? 'item selected' : 'item';
+  const li = document.createElement("li");
+  li.className = isSelected(task.id) ? "item selected" : "item";
   li.dataset.id = task.id;
   li.draggable = true;
 
-  const check = document.createElement('button');
-  check.className = 'check';
-  check.title = '완료 (히스토리로 이동)';
+  const check = document.createElement("button");
+  check.className = "check";
+  check.title = "완료 (히스토리로 이동)";
   // Icon-only buttons: without this a screen reader announces "button".
-  check.setAttribute('aria-label', `완료: ${task.text}`);
-  check.addEventListener('click', () => {
+  check.setAttribute("aria-label", `완료: ${task.text}`);
+  check.addEventListener("click", () => {
     // The row only leaves the DOM on the next render, which is REMOVE_MS away,
     // so the button stays clickable until then. Disable it here so a second
     // click cannot schedule the same change twice.
     check.disabled = true;
-    li.classList.add('removing');
+    li.classList.add("removing");
     setTimeout(() => completeTask(task.id), REMOVE_MS);
   });
 
-  const text = document.createElement('span');
-  text.className = 'text';
+  const text = document.createElement("span");
+  text.className = "text";
   text.textContent = task.text;
-  text.title = '클릭하여 메모 · 더블클릭하여 수정';
-  text.addEventListener('dblclick', () => startEdit(li, text, task));
+  text.title = "클릭하여 메모 · 더블클릭하여 수정";
+  text.addEventListener("dblclick", () => startEdit(li, text, task));
 
   const due = dueChip(task.dueDate, (value) => setDue(task.id, value));
 
-  const del = document.createElement('button');
-  del.className = 'del';
-  del.textContent = '×';
-  del.title = '삭제 (휴지통으로 이동)';
-  del.setAttribute('aria-label', `삭제: ${task.text}`);
-  del.addEventListener('click', () => {
+  const del = document.createElement("button");
+  del.className = "del";
+  del.textContent = "×";
+  del.title = "삭제 (휴지통으로 이동)";
+  del.setAttribute("aria-label", `삭제: ${task.text}`);
+  del.addEventListener("click", () => {
     del.disabled = true;
-    li.classList.add('removing');
+    li.classList.add("removing");
     setTimeout(() => deleteTask(task.id), REMOVE_MS);
   });
 
@@ -88,16 +94,16 @@ export function renderMatrix() {
  * and blank the input before that handler ever ran.
  */
 export function wireAddForms() {
-  $$('.add:not(.inbox-add)').forEach((form) => {
+  $$(".add:not(.inbox-add)").forEach((form) => {
     const input = $('input[type="text"]', form);
     const chip = dueChip(null, () => {});
     form.insertBefore(chip, $('button[type="submit"]', form));
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener("submit", (e) => {
       e.preventDefault();
       addTask(form.dataset.add, input.value, chip.input.value);
-      input.value = '';
-      chip.apply('');
+      input.value = "";
+      chip.apply("");
       input.focus();
     });
   });
