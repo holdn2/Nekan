@@ -6,12 +6,14 @@
  * subscribes to it. Keeping the arrow pointing this way (views → store, never
  * store → views) is what lets the two halves be read on their own.
  *
- * Three rules from the data model show up all over this file:
- *   - a task is never removed from the array; `completedAt` and `deletedAt`
- *     decide which list it appears in. `purge` is the single exception.
+ * Four rules from the data model show up all over this file:
+ *   - a task is never removed from the array. `completedAt`, `deletedAt` and
+ *     `purgedAt` decide which list it appears in, if any.
  *   - `quadrant === INBOX` means `space === null`, which is what makes the
  *     inbox shared between the two boards. `spaceFor()` owns that rule.
  *   - anything that filters "what is on screen" goes through `inSpace()`.
+ *   - order inside a quadrant is `orderKey`, not the array position. Nothing
+ *     here may reorder the array and expect the screen to follow.
  */
 
 import { notify } from './render-bus.js';
@@ -19,6 +21,8 @@ import {
   DEFAULT_SPACE,
   INBOX,
   clampText,
+  compareOrder,
+  orderKeyBetween,
   sanitizeSpace,
   spaceFor,
 } from './core-bridge.js';
@@ -28,8 +32,24 @@ let tasks = [];
 /** Which matrix the header toggle is on. Not a task field — a filter. */
 let activeSpace = DEFAULT_SPACE;
 
+/**
+ * Mark the rows a mutation changed.
+ *
+ * `updatedAt` is what decides who wins when the same task was edited on two
+ * devices, so a mutation that forgets to stamp it silently loses that edit.
+ * Every write goes through persist(), which is why the stamping lives here
+ * rather than in each of the twenty callers.
+ */
+function touch(rows) {
+  const now = Date.now();
+  rows.flat().forEach((task) => {
+    if (task) task.updatedAt = now;
+  });
+}
+
 /** Persist without redrawing — for edits whose caller renders itself. */
-function persist() {
+function persist(...touched) {
+  touch(touched);
   window.api.save(tasks);
 }
 
@@ -37,8 +57,8 @@ function persist() {
  * Persist and tell the app to redraw. Every mutation below ends here, which is
  * why no view has to remember to save: reaching the store *is* saving.
  */
-function commit() {
-  persist();
+function commit(...touched) {
+  persist(...touched);
   notify();
 }
 
@@ -78,11 +98,21 @@ export const inSpace = (t) => t.space === null || t.space === activeSpace;
 
 /* -------------------------------------------------------------- selectors */
 
-/** Live rows of one quadrant: not completed, not trashed, on this board. */
+/**
+ * Live rows of one quadrant: not purged, not trashed, not completed, on this
+ * board — in `orderKey` order, which is the only order the screen has.
+ */
 export const activeOf = (q) =>
-  tasks.filter(
-    (t) => !t.deletedAt && !t.completedAt && t.quadrant === q && inSpace(t),
-  );
+  tasks
+    .filter(
+      (t) =>
+        !t.purgedAt &&
+        !t.deletedAt &&
+        !t.completedAt &&
+        t.quadrant === q &&
+        inSpace(t),
+    )
+    .sort(compareOrder);
 
 /** Written down but not classified yet — same filter, fifth place. */
 export const inboxTasks = () => activeOf(INBOX);
@@ -90,19 +120,26 @@ export const inboxTasks = () => activeOf(INBOX);
 /** History, newest first. */
 export const doneTasks = () =>
   tasks
-    .filter((t) => !t.deletedAt && t.completedAt && inSpace(t))
+    .filter((t) => !t.purgedAt && !t.deletedAt && t.completedAt && inSpace(t))
     .sort((a, b) => b.completedAt - a.completedAt);
 
 /** Trash, newest first. Completed-then-deleted rows belong here, not history. */
 export const trashedTasks = () =>
   tasks
-    .filter((t) => t.deletedAt && inSpace(t))
+    .filter((t) => !t.purgedAt && t.deletedAt && inSpace(t))
     .sort((a, b) => b.deletedAt - a.deletedAt);
 
 /* ------------------------------------------------------------------- add */
 
+/** The key that lands a new row after everything already in `quadrant`. */
+function tailKey(quadrant) {
+  const rows = activeOf(quadrant);
+  return orderKeyBetween(rows.length ? rows[rows.length - 1].orderKey : null);
+}
+
 /** A new task, filed into `quadrant` on the board that is on screen. */
 function makeTask(quadrant, text, dueDate) {
+  const now = Date.now();
   return {
     id: uid(),
     text,
@@ -112,9 +149,14 @@ function makeTask(quadrant, text, dueDate) {
     space: spaceFor(quadrant, activeSpace),
     dueDate: dueDate || null,
     memo: null,
-    createdAt: Date.now(),
+    // Read after the row is in `tasks`, so this has to be computed while it is
+    // still out: tailKey() looks at the rows it will sit behind.
+    orderKey: tailKey(quadrant),
+    createdAt: now,
+    updatedAt: now,
     completedAt: null,
     deletedAt: null,
+    purgedAt: null,
   };
 }
 
@@ -130,6 +172,9 @@ export function addTask(quadrant, text, dueDate) {
  * Bulk add for a pasted brain dump. One save and one render for the whole
  * batch — going through addTask per line would rebuild the DOM for every line
  * of the paste.
+ *
+ * The tasks are pushed one at a time because each one's key is read off the
+ * row before it; building them all first would give the whole paste one key.
  */
 export function addTasks(quadrant, texts) {
   if (!texts.length) return;
@@ -144,7 +189,7 @@ export function completeTask(id) {
   const task = findTask(id);
   if (!task) return;
   task.completedAt = Date.now();
-  commit();
+  commit(task);
 }
 
 /** Undo a completion — back to the quadrant it came from. */
@@ -152,7 +197,7 @@ export function restoreTask(id) {
   const task = findTask(id);
   if (!task) return;
   task.completedAt = null;
-  commit();
+  commit(task);
 }
 
 /** Set or clear the due date ('YYYY-MM-DD' or null). */
@@ -160,7 +205,7 @@ export function setDue(id, value) {
   const task = findTask(id);
   if (!task) return;
   task.dueDate = value || null;
-  commit();
+  commit(task);
 }
 
 /** Soft delete — the task moves to the trash tab and stays restorable. */
@@ -168,7 +213,7 @@ export function deleteTask(id) {
   const task = findTask(id);
   if (!task) return;
   task.deletedAt = Date.now();
-  commit();
+  commit(task);
 }
 
 /** Undo a soft delete. */
@@ -176,13 +221,28 @@ export function untrashTask(id) {
   const task = findTask(id);
   if (!task) return;
   task.deletedAt = null;
-  commit();
+  commit(task);
 }
 
-/** Permanent removal — the one place a task leaves the array. */
+/**
+ * Permanent delete. The row stays in the array as a tombstone rather than being
+ * dropped: another device that has not synced yet still holds it, and a row
+ * that merely vanishes here is one that device would push straight back. Its
+ * text and memo go, because the marker has to outlive them by months.
+ *
+ * dropExpiredTombstones() in shared/core.js is what finally removes it.
+ */
+function tombstone(task) {
+  task.purgedAt = Date.now();
+  task.text = '';
+  task.memo = null;
+}
+
 export function purgeTask(id) {
-  tasks = tasks.filter((t) => t.id !== id);
-  commit();
+  const task = findTask(id);
+  if (!task) return;
+  tombstone(task);
+  commit(task);
 }
 
 /**
@@ -201,7 +261,7 @@ export function editTask(id, text) {
     return;
   }
   task.text = trimmed;
-  persist();
+  persist(task);
 }
 
 /** Attach or replace a task's memo. */
@@ -209,7 +269,7 @@ export function setMemo(id, memo) {
   const task = findTask(id);
   if (!task) return;
   task.memo = memo;
-  commit();
+  commit(task);
 }
 
 /**
@@ -222,15 +282,21 @@ export function setMemo(id, memo) {
  * the inbox and pulling it down again on the other side.
  */
 export function moveTask(id, quadrant, beforeId) {
-  const from = tasks.findIndex((t) => t.id === id);
-  if (from === -1 || id === beforeId) return;
-  const [task] = tasks.splice(from, 1);
+  const task = findTask(id);
+  if (!task || id === beforeId) return;
+
+  // Set the destination first: the neighbours are read from that quadrant, and
+  // the moving row has to be excluded from its own placement.
   task.quadrant = quadrant;
   task.space = spaceFor(quadrant, activeSpace);
-  const to = beforeId ? tasks.findIndex((t) => t.id === beforeId) : -1;
-  if (to === -1) tasks.push(task);
-  else tasks.splice(to, 0, task);
-  commit();
+
+  const siblings = activeOf(quadrant).filter((t) => t.id !== id);
+  const at = beforeId ? siblings.findIndex((t) => t.id === beforeId) : -1;
+  const after = at === -1 ? null : siblings[at];
+  const before = at === -1 ? siblings[siblings.length - 1] : siblings[at - 1];
+  task.orderKey = orderKeyBetween(before?.orderKey, after?.orderKey);
+
+  commit(task);
 }
 
 /* ------------------------------------------------------------ bulk (tabs) */
@@ -241,11 +307,11 @@ export function moveTask(id, quadrant, beforeId) {
  * from a condition would sweep up the *other* board's rows, which are not
  * visible and were never part of what the user confirmed.
  *
- * Only `purgeAll` collects ids. The other two write to the task objects they
- * were handed, and those are the very objects in `tasks` — a mutation cannot
- * reach a row that is not in `items`, so it is already id-precise. Purging
- * rebuilds the array instead of writing to a task, and rebuilding needs an
- * identity test; that is what the id set is for, not extra safety.
+ * All three write to the task objects they were handed, and those are the very
+ * objects in `tasks` — a mutation cannot reach a row outside `items`, so they
+ * are id-precise as they stand. `purgeAll` used to be the exception because it
+ * rebuilt the array and rebuilding needs an identity test; now that purging is
+ * a tombstone it writes to the row like the others.
  */
 
 /** "전체 휴지통으로" — soft-delete the whole history list. */
@@ -255,7 +321,7 @@ export function trashAll(items) {
   items.forEach((t) => {
     t.deletedAt = now;
   });
-  commit();
+  commit(items);
 }
 
 /** "전체 복원" — pull the whole trash list back out. */
@@ -264,17 +330,12 @@ export function untrashAll(items) {
   items.forEach((t) => {
     t.deletedAt = null;
   });
-  commit();
+  commit(items);
 }
 
-/**
- * "휴지통 비우기" — permanent, so the ids are collected first and the array is
- * filtered by membership. Filtering by `deletedAt` instead would delete the
- * other board's trash along with it.
- */
+/** "휴지통 비우기" — permanent for the user, a tombstone in the file. */
 export function purgeAll(items) {
   if (!items.length) return;
-  const doomed = new Set(items.map((t) => t.id));
-  tasks = tasks.filter((t) => !doomed.has(t.id));
-  commit();
+  items.forEach(tombstone);
+  commit(items);
 }
