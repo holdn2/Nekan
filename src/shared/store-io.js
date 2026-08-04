@@ -23,6 +23,10 @@ function defaultStore() {
       // Which matrix the header toggle is on. Only the choice lives here — the
       // tasks of both boards are in the one `tasks` array, tagged with `space`.
       activeSpace: DEFAULT_SPACE,
+      // Where the bar was left, so quitting from bar mode and coming back does
+      // not reopen it at the expanded window's corner. Position only — the bar
+      // has one size and saving it would reopen the app 600x48.
+      barPosition: null,
       // Quadrant grid ratios: q1/q3's share of the width, q1/q2's of the height.
       layout: { ...DEFAULT_LAYOUT },
     },

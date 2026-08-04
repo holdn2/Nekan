@@ -388,6 +388,43 @@ function clampAxis(value, span, minPx) {
   return Math.min(high, Math.max(low, value));
 }
 
+/* ------------------------------------------------------- window placement */
+
+/**
+ * Where the expanded window goes when the bar grows into it.
+ *
+ * It grows from the bar's top-left, because that corner is where the user just
+ * clicked. The exception is a bar sitting near the right of the display:
+ * growing rightwards from there would push most of the window past the edge,
+ * so the two right edges are lined up instead and the window grows leftwards.
+ *
+ * `bar` is where the bar is *now*, never a remembered position — moving the
+ * bar and then opening it has to open it where it was left.
+ */
+function expandOrigin(bar, size, area) {
+  const fitsGrowingRight = bar.x + size.width <= area.x + area.width;
+  const x = fitsGrowingRight ? bar.x : bar.x + bar.width - size.width;
+  return { x, y: bar.y };
+}
+
+/**
+ * Where the bar goes when the expanded window folds into it.
+ *
+ * The window keeps whichever side of the display it is on: one whose middle is
+ * past the middle of the screen folds onto its own right edge, so the bar stays
+ * under the eye instead of jumping left and leaving a gap.
+ *
+ * This pairs with expandOrigin(): a window that was opened right-aligned folds
+ * back to exactly the bar position it came from. A window sitting in the middle
+ * can shift once on its first fold, and is stable from then on.
+ */
+function collapseOrigin(bounds, barWidth, area) {
+  const middleOfScreen = area.x + area.width / 2;
+  const onTheRight = bounds.x + bounds.width / 2 > middleOfScreen;
+  const x = onTheRight ? bounds.x + bounds.width - barWidth : bounds.x;
+  return { x, y: bounds.y };
+}
+
 /** Ratios are always real numbers in the store; null/"" must not read as 0. */
 const asRatio = (v) => (typeof v === "number" && Number.isFinite(v) ? v : NaN);
 
@@ -455,6 +492,8 @@ const emCore = {
   MIN_ROW_PX,
   clampRatio,
   clampAxis,
+  expandOrigin,
+  collapseOrigin,
   sanitizeLayout,
 };
 
