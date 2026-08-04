@@ -7,13 +7,16 @@
   "license": "MIT",
   "scripts": {
     "test": "node --test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "start": "electron .",
     "dist": "electron-builder --win portable",
     "dist:installer": "electron-builder --win nsis"
   },
   "devDependencies": {
     "electron": "^43.2.0",
-    "electron-builder": "^26.15.3"
+    "electron-builder": "^26.15.3",
+    "prettier": "^3.9.6"
   },
   "build": {
     "appId": "com.makersfarm.nekan",
