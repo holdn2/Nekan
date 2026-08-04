@@ -1,0 +1,13 @@
+# Check every text file out with LF, on Windows too.
+#
+# Without this, core.autocrlf=true hands the working tree CRLF while Prettier is
+# pinned to endOfLine: lf, so `npm run format:check` fails on files nobody has
+# touched and every save flips the line endings back and forth. It also stops a
+# CRLF rewrite from reaching a commit — one did, and turned a 157 line change to
+# src/shared/core.js into a 441 line diff.
+* text=auto eol=lf
+
+# Binaries git should never look inside.
+*.ico binary
+*.png binary
+*.pdf binary
