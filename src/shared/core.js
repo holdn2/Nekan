@@ -255,7 +255,7 @@ function compareOrder(a, b) {
 
 /** Keys only have to be unique within one quadrant of one board. */
 function orderGroupOf(task) {
-  return `${task.quadrant} ${task.space === null ? "" : task.space}`;
+  return `${task.quadrant}\u0000${task.space === null ? "" : task.space}`;
 }
 
 const hasOrderKey = (t) => isOrderKey(t?.orderKey);

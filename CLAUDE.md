@@ -44,6 +44,11 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
 때문이다. 그 객체 이름이 `emCore`인 이유도 같은 성질 때문이다: `api`로 두면 preload가 이미
 노출한 `window.api`와 최상위 선언이 충돌해 **파일 전체가 SyntaxError로 죽는다.**
 
+**제어 문자는 이스케이프로만 쓴다.** `orderGroupOf()`의 구분자처럼 U+0000이 필요하면
+`\u0000`이라고 쓸 것 — 파일에 0x00 바이트를 날것으로 넣으면 **ripgrep이 그 파일을 바이너리로
+보고 검색을 통째로 거부한다.** 하필 가장 자주 읽는 파일이라 대가가 크다. git은 앞 8000바이트만
+보고 판단해서 diff는 멀쩡해 보이니, 깨지기 전까지 아무도 모른다.
+
 ## 반드시 지켜야 할 것 (어기면 데이터가 날아감)
 
 - **`QUADS`와 `PLACES`는 다르다.** `QUADS`는 네 개뿐이고 2×2 격자를 도는 루프
@@ -204,6 +209,19 @@ npx electron . --user-data-dir=<임시폴더> --remote-debugging-port=9333
 `Runtime.evaluate`를 보내 `document.querySelector(...).click()`을 하는 게 확실하다
 (Node 22의 전역 `WebSocket`이면 의존성 없이 붙는다). 창 스크린샷은 다른 창에 가려도
 `PrintWindow(hwnd, hdc, 2)`로 찍힌다 — `CopyFromScreen`은 검게 나온다.
+
+**서버 규칙은 `npm test`가 못 덮는다.** LWW와 커서는 `supabase/migrations/0001_tasks.sql`의
+트리거 안에 있고, 트리거는 **써 봐야만** 확인된다. 마이그레이션을 고쳤으면 반드시 돌릴 것:
+
+```sh
+NEKAN_SUPABASE_URL=... NEKAN_SUPABASE_ANON_KEY=... node supabase/verify.js
+```
+
+두 계정으로 기기 두 대를 흉내 내 22가지를 본다
+(LWW·동점·묘비·삭제 차단·RLS 격리·커서·페이지 넘기기·계정 삭제·RPC 권한).
+**이 스크립트는 여러 번 돌려도 같은 결과가 나와야 한다** — 첫 판은 고정 타임스탬프를 써서
+딱 한 번만 통과했다. 두 번째 판부터는 앞 실행이 남긴 행이 더 새것이라 트리거가 (정확하게)
+버렸기 때문이다. **빈 테이블에서만 통과하는 검증은 검증이 아니다.**
 
 렌더러·창 동작은 여전히 `npm start`로 직접 띄워서 확인한다. 최소 확인 항목:
 할 일 추가 → 완료 → 히스토리에서 되돌리기 → 삭제 → 휴지통에서 복원 → 앱 재시작 후 유지.
