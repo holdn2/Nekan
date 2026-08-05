@@ -245,7 +245,7 @@ npx electron . --user-data-dir=<임시폴더>
 성능은 **레이아웃까지 동기로 강제해서** 재야 한다
 (`document.body.offsetHeight`) — `requestAnimationFrame`은 창이 가려지면 아예 안 돌아서
 2ms 같은 값이 나온다. 실측 기준: 히스토리 행 하나가 약 180µs, 그래서 렌더 상한이 100이다
-(`views/archive.js`의 `PAGE`). 검색은 한 글자마다 다시 그리므로 **한 번이 100ms 안**이어야 한다.
+(`renderer/views/archive.js`의 `PAGE`). 검색은 한 글자마다 다시 그리므로 **한 번이 100ms 안**이어야 한다.
 
 **업데이트 경로는 GitHub에 릴리스를 올리지 않고도 통째로 검증할 수 있다.** 설치본이 읽는
 피드를 localhost로 돌려놓으면 된다:

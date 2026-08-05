@@ -103,7 +103,7 @@ function build(opts, now) {
   const quads = ["q1", "q2", "q3", "q4"];
   for (const quadrant of quads) {
     for (let i = 0; i < opts.quad; i += 1) {
-      // A quarter of them on the 일상 board, so switching spaces is not a
+      // A quarter of them on the life board, so switching spaces is not a
       // no-op and the counts differ between the two.
       tasks.push(make({ quadrant, space: i % 4 === 0 ? "life" : "work" }));
     }
