@@ -25,17 +25,20 @@ import {
 /**
  * How many rows either tab draws before it stops and offers a button.
  *
- * Not a guess. A row costs about 180µs to build and lay out, measured at 2,084
- * of them (322/355/374/431/451ms across five runs). The search box re-renders
- * on every keystroke, so the budget is one keystroke inside 100ms: 200 rows is
- * 36ms, 500 is 90ms and already at the edge. At fifteen visible rows in a
- * default window this is thirteen screens of scrolling, so at three completions
- * a day nobody meets the button for two months.
+ * A row costs about 180µs to build and lay out, measured at 2,084 of them
+ * (322/355/374/431/451ms across five runs). The search box re-renders on every
+ * keystroke, so the budget is one keystroke inside 100ms: 100 rows is 18ms, 200
+ * is 36ms, 500 is 90ms and already at the edge.
+ *
+ * 100 rather than the 200 this started at. Both are comfortably inside the
+ * budget, so the number is not really about speed any more -- it is about how
+ * much a list is allowed to weigh before it says so. At fifteen visible rows in
+ * a default window this is still seven screens of scrolling.
  *
  * The data is never cut -- only what gets built. Search still looks at all of
  * it; see renderHistory.
  */
-const PAGE = 200;
+const PAGE = 100;
 
 let historyQuery = "";
 let trashQuery = "";
