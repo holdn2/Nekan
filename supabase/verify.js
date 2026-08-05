@@ -267,6 +267,74 @@ const pull = (token, since = 0, limit = 500) =>
     `${page.length} vs ${all.body.length}`,
   );
 
+  console.log("\n== 계정 삭제 ==");
+  // On a throwaway account made for this check alone. Deleting one of the two
+  // above would work exactly once and take the rest of the run with it.
+  const leaving = await session([
+    `nekan-leaving-${run}@example.com`,
+    `leaving-${run}`,
+  ]);
+  await push(leaving.access_token, [
+    {
+      ...row({ id: id("leaving") }),
+      user_id: leaving.user.id,
+    },
+  ]);
+  const hadRow = (await pull(leaving.access_token, 0)).body.length === 1;
+
+  const gone = await api("/rest/v1/rpc/delete_account", {
+    token: leaving.access_token,
+    method: "POST",
+    body: {},
+  });
+  check(
+    "본인 계정을 지울 수 있다",
+    gone.status === 200 || gone.status === 204,
+    `status ${gone.status} ${JSON.stringify(gone.body).slice(0, 160)}`,
+  );
+
+  const after = await pull(leaving.access_token, 0);
+  check(
+    "계정과 함께 할 일도 사라진다",
+    hadRow && (after.status === 401 || after.body.length === 0),
+    `had=${hadRow} status=${after.status} ${JSON.stringify(after.body).slice(0, 120)}`,
+  );
+
+  const relogin = await api("/auth/v1/token?grant_type=password", {
+    method: "POST",
+    body: {
+      email: `nekan-leaving-${run}@example.com`,
+      password: `leaving-${run}`,
+    },
+  });
+  check(
+    "지운 계정으로는 다시 로그인되지 않는다",
+    !relogin.body?.access_token,
+    JSON.stringify(relogin.body).slice(0, 160),
+  );
+
+  const anonRpc = await api("/rest/v1/rpc/delete_account", {
+    method: "POST",
+    body: {},
+  });
+  check(
+    "로그인하지 않고는 삭제를 부를 수 없다",
+    anonRpc.status !== 200 && anonRpc.status !== 204,
+    `status ${anonRpc.status}`,
+  );
+
+  console.log("\n== 묘비 청소 예약 ==");
+  const cron = await api("/rest/v1/rpc/purge_expired_tombstones", {
+    token: mine.access_token,
+    method: "POST",
+    body: {},
+  });
+  check(
+    "청소 함수는 클라이언트가 직접 못 부른다",
+    cron.status !== 200 && cron.status !== 204,
+    `status ${cron.status}`,
+  );
+
   // Bury this run's leftovers. They cannot be deleted -- that is the rule being
   // tested above -- so they leave the only way anything leaves.
   await push(
