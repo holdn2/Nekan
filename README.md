@@ -45,27 +45,18 @@ npm run release   # 빌드 + GitHub Release에 업로드 (GH_TOKEN 필요)
 1. `package.json`의 `version`을 올리고 커밋한다.
 2. `npm run release` — electron-builder가 설치 파일과 `latest.yml`을 만들어
    해당 버전의 **draft** Release로 올린다.
-3. **draft가 하나이고 파일이 세 개인지 확인한다.** (아래 참고)
-   ```powershell
-   gh api repos/holdn2/Nekan/releases --jq '.[] | "\(.tag_name) draft=\(.draft) \([.assets[].name])"'
-   ```
-4. GitHub에서 그 Release를 **publish**한다. 설치된 앱들은 이때부터 새 버전을 보게 된다.
+3. GitHub에서 그 Release를 **publish**한다. 설치된 앱들은 이때부터 새 버전을 보게 된다.
 
 `latest.yml`이 곧 업데이트 피드다. 설치 파일만 따로 올리면 아무도 업데이트되지 않는다.
 
-> **electron-builder가 같은 태그로 draft를 두 개 만드는 일이 있다.** 업로드가 병렬로 돌면서
-> 둘 다 "릴리스가 없네"라고 판단해 각자 만드는 경쟁 상태이고, 그러면 `.blockmap`만 다른
-> draft로 갈라진다 (v1.0.0에서 실제로 겪었다). 갈라졌으면 빈 쪽을 지우고 파일을 옮긴다.
+> **electron-builder는 같은 태그로 draft를 두 개 만든다.** 업로드가 병렬로 돌면서 둘 다
+> "릴리스가 없네"라고 판단해 각자 만드는 경쟁 상태이고, v1.0.0과 v1.0.1 **두 번 다** 이렇게
+> 갈렸다(매번 `.blockmap`이 혼자 떨어져 나갔다). 그래서 `npm run release`가 끝에
+> `tools/check-release.js`를 돌려 **자동으로 합치고 파일 세 개를 확인한다.** 손댈 것은 없고,
+> 뭔가 빠지면 종료 코드로 알려준다.
 >
-> ```powershell
-> gh api -X DELETE repos/holdn2/Nekan/releases/<빈 쪽 id>
-> gh api --method POST -H "Content-Type: application/octet-stream" `
->   "https://uploads.github.com/repos/holdn2/Nekan/releases/<남긴 id>/assets?name=Nekan-Setup-<ver>.exe.blockmap" `
->   --input "dist\Nekan-Setup-<ver>.exe.blockmap"
-> ```
->
-> `.blockmap`이 빠져도 업데이트 자체는 된다 — 차등 다운로드가 404로 실패하고 매번 100MB를
-> 통째로 받을 뿐이다.
+> 갈린 채로 publish하면 조용히 망가진다: `latest.yml`이 없는 쪽을 올리면 아무도 업데이트되지
+> 않고, `.blockmap`이 없는 쪽을 올리면 모두가 매번 100MB를 통째로 받는다.
 
 ## 기능
 
@@ -234,6 +225,7 @@ powershell -ExecutionPolicy Bypass -File tools\make-icon.ps1
 build/icon.ico         # exe / 작업표시줄 아이콘
 tools/make-icon.ps1    # 아이콘 생성 스크립트
 tools/seed-dev-data.js # 대량 더미 데이터 생성 (성능 확인용)
+tools/check-release.js # 릴리스 draft 검사·복구 (release 스크립트가 부름)
 src/
   main.js              # 앱 생명주기와 조립
   preload.js           # contextBridge 기반 IPC 브리지

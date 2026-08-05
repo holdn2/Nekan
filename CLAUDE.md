@@ -157,12 +157,13 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   `updater.js`는 `BrowserWindow`를 모른다. 알림은 `main.js`가 넘긴 콜백 한 개로만 나가고,
   그 콜백이 `getWindow()`를 부른다. 여기서 window를 직접 import하면 조립이 main.js 밖으로
   샌다.
-- **`npm run release`가 같은 태그로 draft를 두 개 만들 수 있다.** 업로드가 병렬로 돌면서 둘 다
-  "릴리스가 없네"라고 판단해 각자 만드는 경쟁 상태다 — v1.0.0에서 실제로 겪었고, `.blockmap`만
-  다른 draft로 갈라졌다. **publish 하기 전에 반드시 `gh api repos/holdn2/Nekan/releases`로
-  draft 개수와 asset 세 개(`*.exe`, `*.exe.blockmap`, `latest.yml`)를 확인할 것.** 복구 방법은
-  `README.md`의 릴리스 절차에 적어뒀다. `.blockmap`이 빠져도 업데이트는 되지만 차등 다운로드가
-  404로 죽어 매번 전체를 받는다.
+- **electron-builder는 같은 태그로 draft를 두 개 만든다.** 업로드가 병렬로 돌면서 둘 다
+  "릴리스가 없네"라고 판단해 각자 만드는 경쟁 상태이고, **v1.0.0과 v1.0.1 두 번 다** 같은 식으로
+  (`.blockmap`만 따로) 갈렸다 — 우연이 아니니 다음에도 갈라진다고 보면 된다. 그래서
+  `npm run release`가 끝에 `tools/check-release.js`를 돌려 자동으로 합치고 파일 세 개를
+  확인한다. **손으로 확인하지 말고 그 스크립트의 종료 코드를 볼 것.** 갈린 채로 publish하면
+  조용히 망가진다: `latest.yml`이 없는 쪽이면 아무도 업데이트되지 않고, `.blockmap`이 없는
+  쪽이면 모두가 매번 전체를 받는다.
 - **`package.json`의 `files`에 `node_modules`가 없어도 런타임 의존성은 asar에 들어간다.**
   electron-builder가 production dependency를 따로 수집하기 때문이다(확인: asar 헤더에
   `node_modules/electron-updater`가 있다). 그러니 `files`에 `node_modules/**/*`를 넣지 말 것 —

@@ -11,7 +11,7 @@
     "format:check": "prettier --check .",
     "start": "electron .",
     "dist": "electron-builder --win nsis --publish never",
-    "release": "electron-builder --win nsis --publish always"
+    "release": "electron-builder --win nsis --publish always && node tools/check-release.js"
   },
   "dependencies": {
     "electron-updater": "^6.8.9"
