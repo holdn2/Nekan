@@ -29,6 +29,11 @@
       <div class="brand">
         <img class="logo" src="../assets/icon.png" alt="" />
         <span class="title">Nekan</span>
+        <!-- Costs the bar nothing: collapsed.css drops it with the app name,
+             the way the export button goes. Only the number is here — the
+             update state and the release link are in the guide, which is where
+             someone goes to read rather than to work. -->
+        <span class="app-version" id="titleVersion"></span>
       </div>
 
       <!-- Which matrix is on screen. It sits in the title bar because it scopes
@@ -665,6 +670,23 @@
               내보내면 됩니다.
             </li>
           </ul>
+
+          <!-- The only place the running version is shown. It is not in the
+               title bar because the bar has 28px to spare and this is not
+               something anyone needs in front of them all day; it is here
+               because the guide is the tab you open to find out about the app
+               rather than to work.
+
+               The update line says what is actually known — "최신입니다" only
+               after a check came back saying so. Never claim it because a
+               check failed. -->
+          <footer class="guide-about">
+            <span class="about-app">Nekan <b id="appVersion">—</b></span>
+            <span class="about-update" id="updateState"></span>
+            <button class="about-link" id="releaseNotes" type="button">
+              릴리스 노트
+            </button>
+          </footer>
         </article>
       </div>
     </section>

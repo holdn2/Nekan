@@ -38,6 +38,15 @@
   text-overflow: ellipsis;
 }
 
+/* Faint on purpose: it should be findable, not noticeable. */
+.app-version {
+  color: var(--faint);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
 /* ---------- 업무 / 일상 switch ---------- */
 .space-switch {
   -webkit-app-region: no-drag;

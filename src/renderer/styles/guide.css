@@ -197,3 +197,45 @@
 .empty.hidden {
   display: none;
 }
+
+/* Version and update state, at the end of the document rather than in the
+   title bar — see the comment on .guide-about in index.html. Quiet on purpose:
+   it is the answer to a question, not something to notice while working. */
+.guide-about {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 36px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: var(--faint);
+  font-size: 12px;
+}
+
+.guide-about .about-app b {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Empty whenever nothing truthful can be said (see UPDATE_TEXT), and an empty
+   flex item would still leave its gap behind. */
+.about-update:empty {
+  display: none;
+}
+
+.about-link {
+  margin-left: auto;
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.about-link:hover {
+  border-color: var(--line-strong);
+  background: var(--panel-3);
+  color: var(--text);
+}

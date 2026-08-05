@@ -136,6 +136,8 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   넘쳐도 딱 맞아 보이니, 스위치 오른쪽 끝과 `.bar-summary` 왼쪽 끝 사이 간격도 같이 볼 것.
   스크린샷은 `PrintWindow`가 오른쪽 영역을 갱신 안 된 채 찍는 일이 있으니 CDP
   `Page.captureScreenshot`을 쓸 것.
+  **바에서 빠지는 자리(`.title`·`.app-version`·`#exportBtn`)에 넣으면 폭이 안 든다** — 버전
+  표시가 그렇게 들어갔고 실측 여유는 28px 그대로였다. 늘 보일 필요가 없는 것은 이쪽을 먼저 볼 것.
 - 인박스 행에는 마감일·완료·메모가 **의도적으로 없다**(`inboxItemEl`). 그래서 `selectedTask()`가
   `quadrant === INBOX`를 null로 본다 — 이걸 빼면 선택된 항목을 인박스로 끌어올렸을 때 메모
   패널이 열린 채 남는다.
