@@ -1,6 +1,6 @@
 {
   "name": "nekan",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Nekan — Eisenhower matrix desktop widget",
   "main": "src/main.js",
   "author": "makersfarm",
