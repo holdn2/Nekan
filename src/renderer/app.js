@@ -37,6 +37,7 @@ import {
   applySpace,
   applyTheme,
   applyUpdateStatus,
+  applyVersion,
   getMode,
   getTab,
   renderCounts,
@@ -193,6 +194,7 @@ async function init() {
   // the screen in step with the data.
   subscribe(render);
 
+  applyVersion(state.version);
   applyTheme(state.settings?.theme || "light", false);
   applyPinned(state.settings?.alwaysOnTop !== false);
   applyInboxOpen(state.settings?.inboxOpen === true, false);

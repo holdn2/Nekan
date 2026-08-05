@@ -136,13 +136,43 @@ export function applyPinned(on) {
 /* ----------------------------------------------------------------- update */
 
 /**
+ * Show the running version. It cannot change while the app is open.
+ *
+ * Twice: quietly beside the name where it can be read at a glance, and in the
+ * guide next to the update state. The title bar one is hidden in bar mode along
+ * with the name, so it costs the bar no width at all.
+ */
+export function applyVersion(version) {
+  $("#appVersion").textContent = version || "—";
+  $("#titleVersion").textContent = version || "";
+}
+
+/**
+ * What the guide tab says about updates, in the caller's own words.
+ *
+ * `idle` says nothing at all. It is where a *failed* check lands as well as a
+ * run that has not checked yet, and there is no sentence that is true of both
+ * without explaining more than anyone asked. Silence is the honest option; the
+ * version above it is still there.
+ */
+const UPDATE_TEXT = {
+  checking: () => "새 버전을 확인하는 중…",
+  latest: () => "최신 버전입니다.",
+  downloading: (v) => `새 버전${v ? ` ${v}` : ""}을 받는 중…`,
+  ready: (v) => `새 버전${v ? ` ${v}` : ""} 준비됨 — 앱을 닫으면 적용됩니다.`,
+};
+
+/**
  * Reflect what the main process knows about a new version.
  *
- * There is one visible state and it is the last one: a version that has already
- * been downloaded and is waiting for a restart. Checking and downloading stay
- * invisible because they need nothing from the user, and because the update is
- * applied on quit whether or not it was ever noticed — the button and the toast
- * only offer to bring that forward.
+ * The title bar still shows exactly one state: a version already downloaded and
+ * waiting for a restart. Checking and downloading stay out of it because they
+ * need nothing from the user, and a button offering a restart that cannot
+ * happen yet is a dead button.
+ *
+ * The guide tab is not held to that. It is a tab someone opened to read about
+ * the app, nothing there is clickable-but-useless, and "확인하는 중"이나
+ * "최신 버전입니다" are answers to the question that brought them.
  *
  * `announce` splits news from state, and only news is worth interrupting for. A
  * pushed status is news: something finished downloading just now. The one that
@@ -153,6 +183,10 @@ export function applyPinned(on) {
 export function applyUpdateStatus(status, { announce = false } = {}) {
   const ready = status?.state === "ready";
   $("#updateBtn").classList.toggle("hidden", !ready);
+
+  const line = UPDATE_TEXT[status?.state];
+  $("#updateState").textContent = line ? line(status.version) : "";
+
   if (!ready) return;
 
   // Both strings put the version somewhere a Korean particle never follows it:
@@ -215,6 +249,11 @@ export function wireChrome() {
   $("#themeBtn").addEventListener("click", toggleTheme);
   $("#exportBtn").addEventListener("click", exportBoard);
   $("#updateBtn").addEventListener("click", () => window.api.installUpdate());
+  // Opens in the real browser. Loading GitHub into this window would put a web
+  // page where the widget was, with no way back — there is no chrome to it.
+  $("#releaseNotes").addEventListener("click", () =>
+    window.api.openReleaseNotes(),
+  );
 
   $("#sizeBtn").addEventListener("click", toggleSize);
   $("#minBtn").addEventListener("click", () => window.api.minimize());

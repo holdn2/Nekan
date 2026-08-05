@@ -33,7 +33,8 @@ body.expanded .bar-summary .chip {
    ever gets — inbox chip showing, all five counts two digits wide, update
    button visible — and the bar widened to match rather than the contents
    squeezed further. */
-body.collapsed .title {
+body.collapsed .title,
+body.collapsed .app-version {
   display: none;
 }
 

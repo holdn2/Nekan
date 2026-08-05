@@ -10,7 +10,10 @@
  * the logic lives in those modules, not here.
  */
 
-const { app, ipcMain } = require("electron");
+const { app, ipcMain, shell } = require("electron");
+
+/** Where the guide tab's link goes. The only URL this process will open. */
+const RELEASES_URL = "https://github.com/holdn2/Nekan/releases";
 
 const { sanitizeLayout, sanitizeSpace } = require("../shared/core");
 const {
@@ -37,11 +40,17 @@ function registerIpc() {
   // `mode` and `update` ride along for the same reason: both are main's to
   // decide and both are also pushed, so a renderer that starts (or reloads)
   // after the fact still has the current answer without asking for it.
+  //
+  // `version` rides along because it would be a whole channel for one string
+  // that never changes while the app is running. It comes from app.getVersion()
+  // rather than package.json: in a packaged build that file is a copy inside
+  // the asar, and this is the number electron is actually running.
   ipcMain.handle("state:load", () => ({
     tasks: getStore().tasks,
     settings: getSettings(),
     mode: getMode(),
     update: getUpdateStatus(),
+    version: app.getVersion(),
   }));
 
   ipcMain.handle("state:save", (_e, tasks) => {
@@ -138,6 +147,11 @@ function registerIpc() {
   // Quits the app on the way through, so there is nothing useful to return
   // beyond "there was something to install".
   ipcMain.handle("update:install", () => installUpdate());
+
+  // Takes no argument on purpose. A handler that opened whatever URL the
+  // renderer passed would be a way to launch anything the moment a task's text
+  // could reach it; this one can only ever open the releases page.
+  ipcMain.handle("update:notes", () => shell.openExternal(RELEASES_URL));
 }
 
 module.exports = { registerIpc };

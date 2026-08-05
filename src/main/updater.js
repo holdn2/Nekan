@@ -22,15 +22,39 @@ const FIRST_CHECK_MS = 10 * 1000;
 /** And how often after that, for a window that may never be closed. */
 const CHECK_EVERY_MS = 6 * 60 * 60 * 1000;
 
-/** 'idle' until something is downloaded, then 'ready' with the version. */
-let status = { state: "idle", version: null };
+/**
+ * What the updater currently knows:
+ *
+ *   idle        nothing has been checked -- an unpackaged run, or the moments
+ *               before the first check. Also where a *failed* check lands.
+ *   checking    a check is in flight
+ *   latest      a check came back and there is nothing newer
+ *   downloading something newer is on its way
+ *   ready       it is downloaded and waiting for a restart
+ *
+ * `idle` and `latest` are deliberately different. They look the same from the
+ * outside -- no new version -- but only one of them means anybody actually
+ * asked. Collapsing them would let the guide tab claim "최신입니다" when the
+ * check had failed, which is the one thing a version display must not do.
+ *
+ * This does not reopen the decision in #9 that the title bar shows only
+ * `ready`. A button offering a restart that cannot happen is a dead button;
+ * a sentence in a tab someone opened on purpose is not.
+ */
+let status = { state: "idle", version: null, checkedAt: null };
 let notify = () => {};
 
 /** The last thing the updater learnt, for state:load to hand a fresh renderer. */
 const getUpdateStatus = () => status;
 
 function setStatus(state, version = null) {
-  status = { state, version };
+  status = {
+    state,
+    version,
+    // Only a state that came back from the server is evidence of a check.
+    checkedAt:
+      state === "latest" || state === "ready" ? Date.now() : status.checkedAt,
+  };
   notify(status);
 }
 
@@ -60,13 +84,31 @@ function initUpdater(onStatus) {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
 
+  // A version already downloaded outranks anything a later check says: it is on
+  // disk and installable, and a check that fails afterwards cannot take it back.
+  const unlessReady = (fn) => (info) => {
+    if (status.state !== "ready") fn(info);
+  };
+
+  autoUpdater.on(
+    "checking-for-update",
+    unlessReady(() => setStatus("checking")),
+  );
+  autoUpdater.on(
+    "update-not-available",
+    unlessReady(() => setStatus("latest")),
+  );
+  autoUpdater.on(
+    "update-available",
+    unlessReady((info) => setStatus("downloading", info.version)),
+  );
   autoUpdater.on("update-downloaded", (info) =>
     setStatus("ready", info.version),
   );
   autoUpdater.on("error", (err) => {
     console.error("update failed", err?.message || err);
-    // A download that died must not leave a button behind, but one that already
-    // finished is still installable — a later failed check cannot take it back.
+    // Back to not knowing. It must not fall through to `latest` -- that would
+    // be the app telling someone they are up to date because it failed to ask.
     if (status.state !== "ready") setStatus("idle");
   });
 
