@@ -210,6 +210,18 @@ npx electron . --user-data-dir=<임시폴더> --remote-debugging-port=9333
 (Node 22의 전역 `WebSocket`이면 의존성 없이 붙는다). 창 스크린샷은 다른 창에 가려도
 `PrintWindow(hwnd, hdc, 2)`로 찍힌다 — `CopyFromScreen`은 검게 나온다.
 
+**서버 규칙은 `npm test`가 못 덮는다.** LWW와 커서는 `supabase/migrations/0001_tasks.sql`의
+트리거 안에 있고, 트리거는 **써 봐야만** 확인된다. 마이그레이션을 고쳤으면 반드시 돌릴 것:
+
+```
+NEKAN_SUPABASE_URL=... NEKAN_SUPABASE_ANON_KEY=... node supabase/verify.js
+```
+
+두 계정으로 기기 두 대를 흉내 내 16가지를 본다 (LWW·동점·묘비·삭제 차단·RLS 격리·커서).
+**이 스크립트는 여러 번 돌려도 같은 결과가 나와야 한다** — 첫 판은 고정 타임스탬프를 써서
+딱 한 번만 통과했다. 두 번째 판부터는 앞 실행이 남긴 행이 더 새것이라 트리거가 (정확하게)
+버렸기 때문이다. **빈 테이블에서만 통과하는 검증은 검증이 아니다.**
+
 렌더러·창 동작은 여전히 `npm start`로 직접 띄워서 확인한다. 최소 확인 항목:
 할 일 추가 → 완료 → 히스토리에서 되돌리기 → 삭제 → 휴지통에서 복원 → 앱 재시작 후 유지.
 
