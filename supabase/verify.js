@@ -129,12 +129,37 @@ const pull = (token, since = 0, limit = 500) =>
     ...over,
   });
 
+  // Ask for the one row by id. Scanning a page for it worked while the table
+  // was small and would have started missing rows once the leftovers from
+  // earlier runs pushed past the page size -- tombstones are only collected
+  // after 90 days, so they pile up long before then.
   const readBack = async (rowId) =>
-    (await pull(mine.access_token, 0)).body.find((r) => r.id === rowId);
+    (
+      await api(`/rest/v1/tasks?select=*&id=eq.${rowId}`, {
+        token: mine.access_token,
+      })
+    ).body?.[0];
 
   console.log(`\n== 계정 (run ${run}) ==`);
   console.log(`  mine:  ${userId}`);
   console.log(`  other: ${other.user.id}`);
+
+  // Where this account already stood before the run wrote anything. Every check
+  // below that walks "everything" walks from here instead, so what earlier runs
+  // left behind cannot decide whether this one passes.
+  //
+  // Asked for directly rather than folded out of a page: reading a page to find
+  // the largest value is the same mistake one layer up, and it starts lying at
+  // exactly the size that makes it matter.
+  const baseline =
+    (
+      await api(
+        "/rest/v1/tasks?select=server_seq&order=server_seq.desc&limit=1",
+        {
+          token: mine.access_token,
+        },
+      )
+    ).body?.[0]?.server_seq ?? 0;
 
   console.log("\n== 첫 쓰기 ==");
   const first = await push(mine.access_token, [row()]);
@@ -236,11 +261,12 @@ const pull = (token, since = 0, limit = 500) =>
   );
 
   console.log("\n== 커서 ==");
-  const all = await pull(mine.access_token, 0);
+  // From the baseline, so this is what *this* run wrote and nothing else.
+  const all = await pull(mine.access_token, baseline);
   const seqs = all.body.map((r) => r.server_seq);
   check(
     "server_seq가 오름차순으로 온다",
-    seqs.every((s, i) => i === 0 || s > seqs[i - 1]),
+    seqs.length > 0 && seqs.every((s, i) => i === 0 || s > seqs[i - 1]),
     JSON.stringify(seqs),
   );
   check(
@@ -251,9 +277,15 @@ const pull = (token, since = 0, limit = 500) =>
   // A first sync on a new device is the only pull that can outgrow one page,
   // and it is also the one nobody notices going wrong: the missing rows are
   // old ones. Walk it at limit=1 so the paging is exercised rather than
-  // assumed.
+  // assumed. The guard comes from how many rows are actually out there --
+  // a fixed one would quietly cut the walk short as runs accumulate, and the
+  // check would then fail for a reason that has nothing to do with paging.
   const page = [];
-  for (let cursor = 0, guard = 0; guard < 50; guard += 1) {
+  for (
+    let cursor = baseline, guard = 0;
+    guard < all.body.length + 5;
+    guard += 1
+  ) {
     const res = await pull(mine.access_token, cursor, 1);
     if (!res.body.length) break;
     page.push(...res.body.map((r) => r.id));

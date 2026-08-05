@@ -58,6 +58,16 @@ test("toRow turns a missing field into null rather than dropping it", () => {
   assert.equal(row.due_date, null);
 });
 
+test("toRow never sends a null updated_at — the column refuses it", () => {
+  // Not hypothetical: the server answers 23502 and rejects the *whole* batch,
+  // so one task like this would wedge every sync behind it.
+  for (const bad of [{}, { updatedAt: null }, { updatedAt: "어제" }]) {
+    const row = toRow({ id: "t1", ...bad }, "u1");
+    assert.equal(typeof row.updated_at, "number", JSON.stringify(bad));
+  }
+  assert.equal(toRow({ id: "t1", updatedAt: 5 }, "u1").updated_at, 5);
+});
+
 test("fromRow round-trips a task", () => {
   const original = task({ completedAt: 2000, memo: "메모" });
   assert.deepEqual(fromRow(toRow(original, "u1")), original);
@@ -167,6 +177,37 @@ test("an incoming tombstone replaces the row it buries", () => {
   assert.equal(merged.purgedAt, 5000);
   assert.equal(merged.text, "");
   assert.equal(merged.memo, null);
+});
+
+test("an inbox row arriving with a space has it stripped", () => {
+  // Another device -- or an older build of this one -- can write a row that
+  // breaks the rule. Letting it in shows the task on one board only.
+  const rows = [
+    toRow(task({ id: "bad", quadrant: "inbox", space: "work" }), "u1"),
+  ];
+
+  const merged = mergeIncoming([], rows).tasks[0];
+
+  assert.equal(merged.quadrant, "inbox");
+  assert.equal(merged.space, null);
+});
+
+test("a quadrant row arriving without a space is given one", () => {
+  const rows = [toRow(task({ id: "bad", quadrant: "q1", space: null }), "u1")];
+  assert.notEqual(mergeIncoming([], rows).tasks[0].space, null);
+});
+
+test("a row with an impossible quadrant is filed somewhere real", () => {
+  const rows = [toRow(task({ id: "bad", quadrant: "q9" }), "u1")];
+  const merged = mergeIncoming([], rows).tasks[0];
+  assert.notEqual(merged.quadrant, "q9");
+});
+
+test("a row arriving without an orderKey is given one", () => {
+  const rows = [toRow(task({ id: "bad", orderKey: null }), "u1")];
+  const merged = mergeIncoming([], rows).tasks[0];
+  assert.equal(typeof merged.orderKey, "string");
+  assert.notEqual(merged.orderKey, "");
 });
 
 test("a stale edit cannot resurrect a tombstone", () => {

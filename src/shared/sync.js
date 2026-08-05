@@ -10,6 +10,8 @@
  * is why this file may be plain CommonJS unlike core.js.
  */
 
+const { normalizeTasks } = require("./core");
+
 /** Column names, in the order the row object is built. JS is camel, SQL snake. */
 const FIELDS = [
   ["text", "text"],
@@ -37,6 +39,13 @@ function toRow(task, userId) {
   for (const [key, column] of FIELDS) {
     row[column] = task[key] === undefined ? null : task[key];
   }
+  // updated_at is the one column the table refuses to take a null for, and its
+  // DEFAULT cannot save us: Postgres only applies a default when the column is
+  // *absent*, and every column is present here. A task that never went through
+  // normalizeTasks would send null, and the whole batch it travelled in would
+  // come back 23502 -- one malformed row is enough to wedge every sync after
+  // it, since the push retries the same batch forever.
+  row.updated_at = stamp(task.updatedAt);
   // server_seq is deliberately absent: the server stamps it and ignores what a
   // client claims. Sending one would only look like it worked.
   return row;
@@ -71,6 +80,13 @@ function remoteWins(local, remote) {
  * plus the ids that changed and the ids where the local copy stood its ground.
  * Local order is preserved and rows never seen before are appended; the display
  * order comes from orderKey, so array position carries no meaning here.
+ *
+ * The result is normalized before it goes back, and that is not belt and
+ * braces. These rows were written by *another* device, possibly an older build,
+ * and nothing on the way in has checked them: a row claiming quadrant 'inbox'
+ * with a non-null space would break the one rule the whole board rests on. The
+ * check belongs here rather than in a caller, because a caller that forgets is
+ * exactly how such a row would arrive.
  */
 function mergeIncoming(tasks, rows) {
   const byId = new Map((tasks || []).map((t) => [String(t.id), t]));
@@ -88,7 +104,7 @@ function mergeIncoming(tasks, rows) {
     applied.push(remote.id);
   }
 
-  return { tasks: [...byId.values()], applied, kept };
+  return { tasks: normalizeTasks([...byId.values()]), applied, kept };
 }
 
 /**
