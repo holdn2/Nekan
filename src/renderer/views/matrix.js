@@ -6,7 +6,7 @@
  * class of bug — there is no partial update that can disagree with the store.
  */
 
-import { QUADS } from "../core-bridge.js";
+import { QUADS, isCrowded } from "../core-bridge.js";
 import { $, $$, numEl } from "../dom.js";
 import { dueChip } from "../components/due-chip.js";
 import { memoMark } from "../components/memo-mark.js";
@@ -80,7 +80,14 @@ export function renderMatrix() {
     const list = $(`[data-list="${q}"]`);
     const items = activeOf(q);
     list.replaceChildren(...items.map((task, i) => itemEl(task, i)));
-    $(`[data-count="${q}"]`).textContent = String(items.length);
+    const count = $(`[data-count="${q}"]`);
+    count.textContent = String(items.length);
+    // A hint, not a limit — see isCrowded. Nothing here stops an add.
+    const crowded = isCrowded(q, items.length);
+    count.classList.toggle("crowded", crowded);
+    count.title = crowded
+      ? "이 칸이 이렇게 차 있으면 우선순위가 없는 것과 같습니다. 2분면에 시간을 먼저 잡아 두세요."
+      : "";
   });
 }
 

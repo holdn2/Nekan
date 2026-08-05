@@ -6,7 +6,7 @@
  * what the data is, which is why they live together and away from the store.
  */
 
-import { QUADS, SPACE_LABEL } from "../core-bridge.js";
+import { QUADS, SPACE_LABEL, isCrowded } from "../core-bridge.js";
 import { $, $$, labelBtn } from "../dom.js";
 import { notify } from "../render-bus.js";
 import { toast } from "../components/toast.js";
@@ -18,6 +18,7 @@ import {
   setSpace,
   trashedTasks,
 } from "../store.js";
+import { resetArchivePaging } from "../views/archive.js";
 import { applyInboxOpen } from "../views/inbox.js";
 import { clearSelectionSilently, setSelected } from "../views/memo.js";
 import { exportBoard } from "./export-ui.js";
@@ -41,7 +42,13 @@ export const getTab = () => activeTab;
  */
 export function renderCounts() {
   QUADS.forEach((q, i) => {
-    $(`#c${i + 1}`).textContent = String(activeOf(q).length);
+    const count = activeOf(q).length;
+    $(`#c${i + 1}`).textContent = String(count);
+    // The bar is the mode this widget is left in, so the hint has to survive
+    // into it — the chip is all that is on screen there.
+    $(`#c${i + 1}`)
+      .closest(".chip")
+      .classList.toggle("crowded", isCrowded(q, count));
   });
   // The bar chip stays out of the way until there is something unclassified, so
   // seeing it at all is the signal.
@@ -85,6 +92,9 @@ export function setTab(tab) {
   // The panel belongs to the matrix; leaving the tab closes it (and gives the
   // window its height back) rather than leaving it pointing at a hidden row.
   if (tab !== "matrix") setSelected(null);
+  // A list someone expanded with 더 보기 goes back to one page. Leaving it open
+  // makes every later redraw pay for a choice made once and forgotten.
+  resetArchivePaging();
   activeTab = tab;
   $$(".tab").forEach((btn) =>
     btn.classList.toggle("active", btn.dataset.tab === tab),

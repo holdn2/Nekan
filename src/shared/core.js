@@ -24,6 +24,23 @@ const PLACES = [INBOX, ...QUADS];
 const FALLBACK_QUAD = "q4";
 
 /**
+ * When a quadrant is holding more than the method it stands for can carry.
+ *
+ * Only q1 gets a number, and it is the guide's own: "1분면이 5개를 넘으면
+ * 우선순위가 없는 것과 같습니다". The others deliberately have none — q2 being
+ * full is the entire point of the exercise, and putting a ceiling on q3 or q4
+ * would be advice this app has never given anyone.
+ *
+ * It marks and never blocks. Refusing a task sends it back into somebody's
+ * head, which is the one thing 다 꺼내기 exists to prevent.
+ */
+const CROWDED = { q1: 5 };
+
+/** True when `count` is past the point that quadrant stops meaning anything. */
+const isCrowded = (quadrant, count) =>
+  Number(count) > (CROWDED[quadrant] ?? Infinity);
+
+/**
  * The two matrices the header toggle switches between. This is a property of
  * the *task*, not of the file: both boards live in one data.json, so a task
  * moving between them is one atomic save like every other change.
@@ -482,6 +499,8 @@ const emCore = {
   INBOX,
   PLACES,
   FALLBACK_QUAD,
+  CROWDED,
+  isCrowded,
   SPACES,
   DEFAULT_SPACE,
   SPACE_LABEL,

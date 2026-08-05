@@ -226,6 +226,27 @@ NEKAN_SUPABASE_URL=... NEKAN_SUPABASE_ANON_KEY=... node supabase/verify.js
 렌더러·창 동작은 여전히 `npm start`로 직접 띄워서 확인한다. 최소 확인 항목:
 할 일 추가 → 완료 → 히스토리에서 되돌리기 → 삭제 → 휴지통에서 복원 → 앱 재시작 후 유지.
 
+**목록이 커졌을 때의 동작은 손으로 못 만든다.** `tools/seed-dev-data.js`가 그 상태를 직접 쓴다:
+
+```sh
+node tools/seed-dev-data.js <임시폴더> --history 2000 --quad 500 --trash 500 --inbox 200
+npx electron . --user-data-dir=<임시폴더>
+```
+
+진짜 데이터 폴더를 가리키면 거부한다.
+
+**재기 전에 `document.body.className`부터 확인할 것.** 바 모드면 `render()`가 `renderCounts()`
+다음에 바로 빠져나가므로, 무엇을 클릭하든 1~4ms가 나오고 DOM은 그대로다. 여기에 한참을 썼다 —
+증상이 "빠르다"라서 성공처럼 보인다. 구분법: 바 칩(`#c1`)은 갱신되는데 분면 헤더
+(`[data-count=q1]`)는 멈춰 있으면 바 모드다. 그리고 **측정 대상이 실제로 다시 그려졌는지**를
+같은 측정 안에서 확인할 것(첫 행 노드가 바뀌었는지, 개수가 늘었는지). 안 그러면 아무 일도 안
+일어난 것을 "빠르다"로 읽는다.
+
+성능은 **레이아웃까지 동기로 강제해서** 재야 한다
+(`document.body.offsetHeight`) — `requestAnimationFrame`은 창이 가려지면 아예 안 돌아서
+2ms 같은 값이 나온다. 실측 기준: 히스토리 행 하나가 약 180µs, 그래서 렌더 상한이 100이다
+(`renderer/views/archive.js`의 `PAGE`). 검색은 한 글자마다 다시 그리므로 **한 번이 100ms 안**이어야 한다.
+
 **업데이트 경로는 GitHub에 릴리스를 올리지 않고도 통째로 검증할 수 있다.** 설치본이 읽는
 피드를 localhost로 돌려놓으면 된다:
 

@@ -129,6 +129,15 @@ body.resizing-both {
   font-variant-numeric: tabular-nums;
 }
 
+/* Past the point where the quadrant stops meaning anything — see isCrowded in
+   shared/core.js. Deliberately a tint and not a warning: this is the app
+   noticing, not the app objecting, and the add form right below still works. */
+.quad .count.crowded {
+  background: var(--danger-soft);
+  color: var(--danger);
+  cursor: help;
+}
+
 .quad.q1 {
   border-top: 2px solid var(--q1);
 }
