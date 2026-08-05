@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const {
+  PAGE_SIZE,
   toRow,
   fromRow,
   remoteWins,
@@ -9,6 +10,7 @@ const {
   pendingChanges,
   pushedThrough,
   nextCursor,
+  hasMore,
 } = require("../src/shared/sync");
 
 function task(over = {}) {
@@ -228,4 +230,72 @@ test("nextCursor holds still on an empty page instead of replaying", () => {
 
 test("nextCursor cannot be dragged backwards by a stale row", () => {
   assert.equal(nextCursor([{ server_seq: 3 }], 500), 500);
+});
+
+/* ------------------------------------------------------------------- pages */
+
+test("a full page means there is more behind it", () => {
+  assert.equal(hasMore(new Array(3).fill({}), 3), true);
+  assert.equal(hasMore(new Array(PAGE_SIZE).fill({})), true);
+});
+
+test("a short page is the end", () => {
+  assert.equal(hasMore(new Array(2).fill({}), 3), false);
+  assert.equal(hasMore([], 3), false);
+  assert.equal(hasMore(undefined), false);
+});
+
+test("a full first sync is walked to the end, oldest rows included", () => {
+  // Server side: ten rows, handed out three at a time in cursor order.
+  const server = Array.from({ length: 10 }, (_, i) => ({
+    id: `t${i}`,
+    updated_at: 1000 + i,
+    server_seq: (i + 1) * 7,
+  }));
+  const serve = (since, limit) =>
+    server.filter((r) => r.server_seq > since).slice(0, limit);
+
+  let cursor = 0;
+  let tasks = [];
+  let rounds = 0;
+  let rows;
+  do {
+    rows = serve(cursor, 3);
+    tasks = mergeIncoming(tasks, rows).tasks;
+    cursor = nextCursor(rows, cursor);
+    rounds += 1;
+  } while (hasMore(rows, 3) && rounds < 20);
+
+  assert.equal(tasks.length, 10);
+  // The oldest row is the one a loop that stops early silently drops.
+  assert.equal(tasks[0].id, "t0");
+  assert.equal(cursor, 70);
+  // Four rounds for ten rows: 3 + 3 + 3 + 1, the short page ending it.
+  assert.equal(rounds, 4);
+});
+
+test("a first sync whose total lands exactly on a page boundary still ends", () => {
+  const server = Array.from({ length: 6 }, (_, i) => ({
+    id: `t${i}`,
+    updated_at: 1000 + i,
+    server_seq: i + 1,
+  }));
+  const serve = (since, limit) =>
+    server.filter((r) => r.server_seq > since).slice(0, limit);
+
+  let cursor = 0;
+  let tasks = [];
+  let rounds = 0;
+  let rows;
+  do {
+    rows = serve(cursor, 3);
+    tasks = mergeIncoming(tasks, rows).tasks;
+    cursor = nextCursor(rows, cursor);
+    rounds += 1;
+  } while (hasMore(rows, 3) && rounds < 20);
+
+  assert.equal(tasks.length, 6);
+  // 3 + 3 + 0: the empty round is the cost of not being able to tell a full
+  // last page from a full middle one.
+  assert.equal(rounds, 3);
 });

@@ -96,9 +96,9 @@ const push = (token, rows) =>
     prefer: "resolution=merge-duplicates,return=representation",
   });
 
-const pull = (token, since = 0) =>
+const pull = (token, since = 0, limit = 500) =>
   api(
-    `/rest/v1/tasks?select=*&server_seq=gt.${since}&order=server_seq.asc&limit=500`,
+    `/rest/v1/tasks?select=*&server_seq=gt.${since}&order=server_seq.asc&limit=${limit}`,
     { token },
   );
 
@@ -246,6 +246,25 @@ const pull = (token, since = 0) =>
   check(
     "최신 커서 이후로는 빈 페이지",
     (await pull(mine.access_token, Math.max(...seqs))).body.length === 0,
+  );
+
+  // A first sync on a new device is the only pull that can outgrow one page,
+  // and it is also the one nobody notices going wrong: the missing rows are
+  // old ones. Walk it at limit=1 so the paging is exercised rather than
+  // assumed.
+  const page = [];
+  for (let cursor = 0, guard = 0; guard < 50; guard += 1) {
+    const res = await pull(mine.access_token, cursor, 1);
+    if (!res.body.length) break;
+    page.push(...res.body.map((r) => r.id));
+    cursor = Math.max(...res.body.map((r) => r.server_seq));
+  }
+  check(
+    "커서를 따라가면 한 페이지짜리 응답으로도 전부 받는다",
+    page.length === all.body.length &&
+      new Set(page).size === page.length &&
+      page.every((rowId, i) => rowId === all.body[i].id),
+    `${page.length} vs ${all.body.length}`,
   );
 
   // Bury this run's leftovers. They cannot be deleted -- that is the rule being

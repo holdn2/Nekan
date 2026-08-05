@@ -127,8 +127,26 @@ function nextCursor(rows, cursor) {
   );
 }
 
+/** How many rows one pull may ask for. Also what "the page was full" means. */
+const PAGE_SIZE = 500;
+
+/**
+ * Is there more waiting behind this page?
+ *
+ * A full page means "ask again", and only a short one means the client has
+ * caught up. Guessing from the row count alone is the whole trick, and getting
+ * it wrong is quiet: a first sync that stops after one page loses the *oldest*
+ * rows, which is exactly the part nobody scrolls to for months.
+ *
+ * A full last page costs one extra empty request. That is the right way round.
+ */
+function hasMore(rows, limit = PAGE_SIZE) {
+  return (rows || []).length >= limit;
+}
+
 module.exports = {
   FIELDS,
+  PAGE_SIZE,
   toRow,
   fromRow,
   remoteWins,
@@ -136,4 +154,5 @@ module.exports = {
   pendingChanges,
   pushedThrough,
   nextCursor,
+  hasMore,
 };
