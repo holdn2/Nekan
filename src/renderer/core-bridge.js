@@ -19,6 +19,7 @@ export const {
   INBOX,
   PLACES,
   FALLBACK_QUAD,
+  isCrowded,
   SPACES,
   DEFAULT_SPACE,
   SPACE_LABEL,

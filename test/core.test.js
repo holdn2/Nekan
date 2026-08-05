@@ -5,6 +5,8 @@ const {
   QUADS,
   INBOX,
   PLACES,
+  CROWDED,
+  isCrowded,
   SPACES,
   DEFAULT_SPACE,
   sanitizeSpace,
@@ -127,6 +129,20 @@ test("the inbox belongs to no board, so both matrices show it", () => {
   ]);
   assert.equal(fresh.space, null);
   assert.equal(stale.space, null);
+});
+
+test("only q1 is ever crowded — a full q2 is the point of the method", () => {
+  assert.equal(isCrowded("q1", CROWDED.q1), false);
+  assert.equal(isCrowded("q1", CROWDED.q1 + 1), true);
+  for (const q of ["q2", "q3", "q4", INBOX]) {
+    assert.equal(isCrowded(q, 9999), false, q);
+  }
+});
+
+test("isCrowded survives a count that is not a number", () => {
+  assert.equal(isCrowded("q1", undefined), false);
+  assert.equal(isCrowded("q1", "몇 개"), false);
+  assert.equal(isCrowded(undefined, 9999), false);
 });
 
 test("spaceFor is the one rule both the renderer and normalize follow", () => {

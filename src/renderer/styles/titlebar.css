@@ -102,6 +102,17 @@
   color: var(--text);
 }
 
+/* The same hint as the quadrant count, carried into the bar — where the chip
+   is the only thing left on screen. */
+.chip.crowded {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.chip.crowded b {
+  color: var(--danger);
+}
+
 .dot {
   width: 8px;
   height: 8px;

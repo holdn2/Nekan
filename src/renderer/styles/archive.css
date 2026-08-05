@@ -195,3 +195,27 @@
 .hmemo.open .hmemo-text {
   -webkit-line-clamp: unset;
 }
+
+/* The row that says the list stopped rather than ran out. It is a list item so
+   it scrolls with the rows and lands under the last one, not floating over a
+   list whose height it would then have to account for. */
+.history-list .more {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 4px;
+}
+
+.history-list .more button {
+  padding: 6px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.history-list .more button:hover {
+  border-color: var(--line-strong);
+  background: var(--panel-3);
+  color: var(--text);
+}
