@@ -21,6 +21,7 @@ const {
   pendingChanges,
   pushedThrough,
   toRow,
+  unsentChanges,
 } = require("../shared/sync");
 const { getAccessToken, getPublicSession, request } = require("./api-client");
 const { getSettings, getStore, persist, setTasks } = require("./store");
@@ -36,14 +37,58 @@ const RECONCILE_MS = 6 * 60 * 60 * 1000;
 /** A pull that has not run out of pages by here is a bug, not a big account. */
 const MAX_PAGES = 400;
 
-/** Set by initSync: how the merged list reaches the window. */
-let announce = () => {};
+/** Set by initSync: how a merged list and a status reach the window. */
+let onTasks = () => {};
+let onStatus = () => {};
 let timer = null;
 let running = false;
 let failures = 0;
 let reconciledAt = 0;
 /** A save that arrived mid-run, whose rows this run had already read past. */
 let dirty = false;
+
+/**
+ * What the chip says.
+ *
+ * Four states, and each one is something a person can act on -- the same test
+ * the update button had to pass. `off` means log in, `pending` means an edit has
+ * not left this machine yet, `offline` means the network is why, and `synced`
+ * means it is safe to close the laptop. There is deliberately no "checking":
+ * a status nobody can do anything about is decoration that moves.
+ */
+let status = { state: "off", unsent: 0, syncedAt: null, session: null };
+
+/**
+ * The session rides along with the status.
+ *
+ * Not decoration: main can end a session without being asked to, when a refresh
+ * comes back 4xx because the token was revoked or the account is gone. Nothing
+ * else would tell the window, and it would go on showing an email and a green
+ * chip for an account it is no longer talking to. This runs every cycle, so the
+ * screen is wrong for at most one heartbeat.
+ */
+function report(next) {
+  const merged = { ...status, session: getPublicSession(), ...next };
+  const same = (key) =>
+    key === "session"
+      ? (merged.session && merged.session.email) ===
+        (status.session && status.session.email)
+      : merged[key] === status[key];
+  if (["state", "unsent", "syncedAt", "session"].every(same)) return;
+  status = merged;
+  onStatus(status);
+}
+
+/** Recount what is waiting, from whatever the store holds right now. */
+function countUnsent() {
+  const state = getSettings().sync;
+  return unsentChanges(getStore().tasks, state ? state.pushedAt : 0).length;
+}
+
+/** The status the renderer gets at startup, before anything has run. */
+function getSyncStatus() {
+  return status;
+}
 
 /**
  * Cursor and push watermark, kept in settings so they survive a restart.
@@ -67,9 +112,10 @@ function syncState() {
  * pages that only land if all hundred arrive is a sync that never completes on
  * a bad connection.
  */
-async function pull(token, from) {
+async function pull(token, from, watermark) {
   let cursor = from;
   let applied = 0;
+  let overwritten = 0;
 
   for (let page = 0; page < MAX_PAGES; page += 1) {
     const res = await request(
@@ -77,15 +123,24 @@ async function pull(token, from) {
         `&order=server_seq.asc&limit=${PAGE_SIZE}`,
       { token },
     );
-    if (!res.ok) return { ok: false, cursor, applied };
+    if (!res.ok) return { ok: false, cursor, applied, overwritten };
 
     const rows = Array.isArray(res.body) ? res.body : [];
     if (rows.length) {
+      // Taken before the merge: an edit that had not left this machine yet and
+      // then lost to the server version is exactly "내가 쓴 것이 날아갔다", and
+      // it is the one sync failure a user can neither see nor undo. Network
+      // trouble stays silent because there is nothing to do about it; this
+      // does not.
+      const unsent = new Set(
+        unsentChanges(getStore().tasks, watermark).map((t) => String(t.id)),
+      );
       const merged = mergeIncoming(getStore().tasks, rows);
       if (merged.applied.length) {
         setTasks(merged.tasks);
         persist();
         applied += merged.applied.length;
+        overwritten += merged.applied.filter((id) => unsent.has(id)).length;
       }
     }
 
@@ -94,10 +149,10 @@ async function pull(token, from) {
     // impossible -- server_seq is a sequence and the filter is `gt` -- which is
     // exactly why it is worth refusing rather than trusting.
     if (!hasMore(rows) || moved <= cursor)
-      return { ok: true, cursor: moved, applied };
+      return { ok: true, cursor: moved, applied, overwritten };
     cursor = moved;
   }
-  return { ok: true, cursor, applied };
+  return { ok: true, cursor, applied, overwritten };
 }
 
 /* ------------------------------------------------------------------- push */
@@ -145,6 +200,7 @@ function schedule(ms) {
 
 function backOff() {
   failures += 1;
+  report({ state: "offline", unsent: countUnsent() });
   schedule(RETRY_MS[Math.min(failures - 1, RETRY_MS.length - 1)]);
 }
 
@@ -165,7 +221,8 @@ async function runSync() {
   if (running) return;
 
   const session = getPublicSession();
-  if (!session || !session.userId) return;
+  if (!session || !session.userId)
+    return report({ state: "off", unsent: 0, syncedAt: null });
   const token = await getAccessToken();
   // No token and a session means the renewal failed. That is the network's
   // problem, not the user's; try again on the usual schedule.
@@ -173,12 +230,17 @@ async function runSync() {
 
   running = true;
   dirty = false;
+  report({ state: "syncing" });
   try {
     useAccount(session.userId);
     const state = syncState();
     const reconcile = reconcileDue();
 
-    const pulled = await pull(token, reconcile ? 0 : state.cursor);
+    const pulled = await pull(
+      token,
+      reconcile ? 0 : state.cursor,
+      state.pushedAt,
+    );
     state.cursor = Math.max(state.cursor, pulled.cursor);
     if (!pulled.ok) {
       persist();
@@ -194,7 +256,8 @@ async function runSync() {
     failures = 0;
     // Only when rows actually landed: the window redraws from this, and a
     // heartbeat that redrew every minute would fight whatever is on screen.
-    if (pulled.applied) announce(getStore().tasks);
+    if (pulled.applied) onTasks(getStore().tasks, pulled.overwritten);
+    report({ state: "synced", unsent: countUnsent(), syncedAt: Date.now() });
     // A save during the run may have been stamped after push() read the list.
     // Waiting a whole heartbeat for it would look like the edit did not sync.
     schedule(dirty ? SOON_MS : IDLE_MS);
@@ -227,15 +290,34 @@ function useAccount(userId) {
  * `onTasks` is how merged rows reach the window; this module does not know what
  * a BrowserWindow is, for the same reason updater.js does not.
  */
-function initSync(onTasks) {
-  announce = typeof onTasks === "function" ? onTasks : () => {};
+function initSync(handlers = {}) {
+  onTasks = handlers.onTasks || (() => {});
+  onStatus = handlers.onStatus || (() => {});
+  if (getPublicSession()) report({ state: "syncing", unsent: countUnsent() });
   // Not immediately: the window is still being built, and the first thing a
   // user sees should not be a list rearranging itself.
   schedule(SOON_MS);
 }
 
+/**
+ * Hand the window the list main is holding, whatever it is.
+ *
+ * Needed when the list changed without a pull having changed it. Signing in and
+ * choosing "계정 것만" empties the store here, and the renderer -- still showing
+ * the old rows -- would put every one of them back on its next save, because
+ * mergeRendererTasks keeps what main does not have. The pull cannot be relied
+ * on to cover it: an account with nothing new applies nothing and announces
+ * nothing.
+ */
+function announceTasks() {
+  onTasks(getStore().tasks, 0);
+}
+
 /** Something changed locally. Coalesces, so calling it per keystroke is fine. */
 function syncSoon() {
+  // Counted before the run rather than after: the chip should say "대기 1" the
+  // moment something is typed, not three seconds later once a push proved it.
+  if (status.state !== "off") report({ unsent: countUnsent() });
   if (running) {
     dirty = true;
     return;
@@ -255,8 +337,19 @@ function syncSoon() {
 function syncAccount(userId) {
   useAccount(userId || null);
   failures = 0;
-  if (userId) schedule(0);
-  else clearTimeout(timer);
+  if (userId) {
+    report({ state: "syncing", unsent: countUnsent(), syncedAt: null });
+    schedule(0);
+  } else {
+    clearTimeout(timer);
+    report({ state: "off", unsent: 0, syncedAt: null });
+  }
 }
 
-module.exports = { initSync, syncSoon, syncAccount };
+module.exports = {
+  initSync,
+  getSyncStatus,
+  announceTasks,
+  syncSoon,
+  syncAccount,
+};

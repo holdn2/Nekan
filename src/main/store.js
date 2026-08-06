@@ -90,6 +90,17 @@ function mergeRendererTasks(tasks) {
   store.tasks = [...byId.values()];
 }
 
+/**
+ * Copy the whole store aside under `name`, then hand the tasks over.
+ *
+ * Used when someone signs in and chooses to keep only the account's tasks. The
+ * local ones are not deleted, because "이 컴퓨터 것은 빼주세요" and "지워주세요"
+ * are not the same sentence and only one of them is undoable.
+ */
+function backupStore(name) {
+  return writeStore(path.join(app.getPath("userData"), name), store);
+}
+
 /** Write now, through store-io's temp-file + rename. */
 function save() {
   writeStore(storePath(), store);
@@ -115,6 +126,7 @@ module.exports = {
   getSettings,
   setTasks,
   mergeRendererTasks,
+  backupStore,
   persist,
   persistNow,
 };

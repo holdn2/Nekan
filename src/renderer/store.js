@@ -104,6 +104,15 @@ export function acceptSynced(list) {
   notify();
 }
 
+/**
+ * How many tasks this machine is holding, both boards and every tab.
+ *
+ * Not filtered by `inSpace`: the question it answers is "what would go up if I
+ * signed in", and that is all of them regardless of which board is on screen.
+ * Tombstones are not tasks any more, so they do not count.
+ */
+export const activeCount = () => tasks.filter((t) => !t.purgedAt).length;
+
 /** The task with this id, in whatever state — or undefined. */
 export const findTask = (id) => tasks.find((t) => t.id === id);
 

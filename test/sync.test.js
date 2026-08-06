@@ -11,6 +11,7 @@ const {
   remoteWins,
   mergeIncoming,
   pendingChanges,
+  unsentChanges,
   pushedThrough,
   nextCursor,
   hasMore,
@@ -389,4 +390,39 @@ test("nextOffset adopts a sample that is genuinely different", () => {
 test("a missing sample keeps the offset in hand", () => {
   assert.equal(nextOffset(600_000, NaN), 600_000);
   assert.equal(nextOffset(NaN, 900), 0);
+});
+
+/* ----------------------------------------------------------------- unsent */
+
+test("unsentChanges is strict where pendingChanges is inclusive", () => {
+  // The difference is the whole point of having both. pendingChanges re-sends
+  // the boundary row to be safe; showing that row as "1개 대기" would leave the
+  // chip saying so forever after every successful sync.
+  const tasks = [task({ id: "edge", updatedAt: 200 })];
+
+  assert.equal(pendingChanges(tasks, 200).length, 1);
+  assert.equal(unsentChanges(tasks, 200).length, 0);
+});
+
+test("unsentChanges counts what really has not gone up", () => {
+  const tasks = [
+    task({ id: "sent", updatedAt: 100 }),
+    task({ id: "typing", updatedAt: 300 }),
+    task({ id: "also", updatedAt: 301 }),
+  ];
+
+  assert.deepEqual(
+    unsentChanges(tasks, 200).map((t) => t.id),
+    ["typing", "also"],
+  );
+});
+
+test("unsentChanges before a first sync is everything", () => {
+  const tasks = [task({ id: "a" }), task({ id: "b" })];
+  assert.equal(unsentChanges(tasks, 0).length, 2);
+  assert.equal(unsentChanges(tasks, undefined).length, 2);
+});
+
+test("unsentChanges survives a missing list", () => {
+  assert.deepEqual(unsentChanges(null, 0), []);
 });

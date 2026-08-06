@@ -15,6 +15,7 @@ src/main/
   api-client.js   Supabase와 말하는 유일한 곳. URL·anon key·로그인·토큰 갱신·시계 오차
   token-store.js  세션을 safeStorage로 암호화해 userData/auth.json에 (data.json 아님)
   sync.js         당기고 밀고 다시 시도하는 루프. 판정은 안 하고 일정만 잡는다
+  oauth.js        Google 로그인의 브라우저 쪽 (PKCE + loopback). 세션은 모른다
   ipc.js          ipcMain.handle 전부. 새 채널을 만들 때 첫 번째로 여는 파일
 src/preload.js    contextBridge → window.api (여기 없는 건 렌더러에서 못 씀)
 src/shared/       메인·렌더러·테스트가 공유. 여기만 테스트가 덮는다
@@ -24,16 +25,16 @@ src/shared/       메인·렌더러·테스트가 공유. 여기만 테스트가
   sync.js         동기화 판정 (LWW·행 변환·커서·시계 오차). main/sync.js가 쓴다
   auth.js         세션 모양과 만료 판정. 렌더러에 나갈 필드를 여기서 고른다
 src/renderer/     ES 모듈. 번들러 없음 — import 경로에 확장자를 반드시 쓴다
-  index.html      정적 마크업. <link> 12개와 <script>는 순서가 의미를 갖는다
+  index.html      정적 마크업. <link> 13개와 <script>는 순서가 의미를 갖는다
   app.js          진입점. render() 디스패처, 전역 단축키, init() 조립
   store.js        tasks 배열과 모든 변경. DOM을 모른다 → commit()이 저장+notify
   render-bus.js   "다시 그려라" 신호 하나. store·view → app 순환을 막는 장치
   core-bridge.js  shared/core.js의 전역을 named export로 재수출
   dom.js          $ · $$ · numEl · actionBtn · labelBtn
   components/     icons · due-chip · memo-mark · toast (task를 모르는 조각들)
-  views/          matrix · inbox · archive · memo · inline-edit
+  views/          matrix · inbox · archive · memo · inline-edit · account
   window/         chrome(타이틀바·탭·모드) · layout(분면 경계) · dnd · export-ui
-  styles/         base부터 scrollbars까지 12개. index.html의 <link> 순서가 캐스케이드
+  styles/         base부터 scrollbars까지 13개. index.html의 <link> 순서가 캐스케이드
 test/             node --test 용 단위 테스트 (shared/ 만 커버)
 ```
 
@@ -119,6 +120,20 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   세션을 유지한다** — 터널을 지났다고 로그아웃되면 안 된다.
 
 ## 알아두면 좋은 것
+
+- **비밀번호 로그인은 패키징된 빌드에 존재하지 않는다.** `main/ipc.js`가 `auth:login`을
+  `!app.isPackaged`일 때만 등록한다. 사용자에게 열린 길은 Google 하나뿐이고, 비밀번호는
+  **사람이 동의 화면을 누르지 않고도 동기화를 검증하기 위한** 개발용 통로다. 가이드의 개발용
+  폼도 `state:load`의 `devLogin`을 보고 그때만 나온다. 이 통로를 없애면 **동기화를 자동으로
+  검증할 방법이 사라진다** — 없애기 전에 대체 수단을 먼저 만들 것.
+- **Google 로그인은 시스템 브라우저로 나갔다가 loopback으로 돌아온다** (`main/oauth.js`).
+  포트는 `listen(0)`으로 OS가 고른다 — 그래서 Supabase의 Redirect URL 허용목록에
+  `http://127.0.0.1:*`가 있어야 한다. 와일드카드를 못 쓰게 되면 고쳐야 할 곳은 그 `listen(0)`
+  한 줄이다. 앱 안 webview를 쓰면 **Google이 막는다.**
+- **콜백 서버는 `/callback`이 아닌 요청을 404로 흘려보낸다.** 브라우저가 보내는 favicon 요청
+  하나에 로그인이 끝나버리면 안 되기 때문이다.
+- **브라우저 마지막 화면에 "로그인되었습니다"라고 쓰지 말 것.** 그 시점에 일어난 일은 코드가
+  돌아온 것뿐이고, 교환은 그 다음에 실패할 수 있다. 판정은 앱이 한다.
 
 - `app.setName('Nekan')`이 `main.js` 최상단에 있는 이유: `npm start`와 패키징된
   exe가 **같은** `%APPDATA%\Nekan\data.json`을 보게 하려고. 지우면 개발용/배포용
@@ -278,6 +293,23 @@ npx electron . --user-data-dir=<B> --remote-debugging-port=9334
 `%APPDATA%\EisenhowerMatrix`의 **진짜 데이터**를 끌어와 서버로 올려버린다. 한쪽에서 항목을
 추가하고 6초쯤 뒤 다른 쪽에서 **아무 항목이나 추가하면**(그게 그쪽 sync를 3초 뒤로 당긴다)
 건너온 것이 보인다 — 안 그러면 60초 하트비트를 기다려야 한다.
+
+**렌더러를 재는 곳을 헷갈리지 말 것.** `renderCounts()`가 갱신하는 것은 **바 칩**(`#c1`~`#c4`)
+이고, 분면 헤더(`[data-count=q1]`)는 `renderMatrix()` 즉 **매트릭스 탭일 때만** 다시 그려진다.
+가이드 탭을 열어 둔 채 분면 헤더를 읽으면 마지막 매트릭스 렌더의 잔상이 보이고, 그걸 "동기화가
+화면에 반영되지 않는다"로 읽게 된다. 여기에 한 번 속았다 — 바 모드 함정과 같은 종류다.
+
+**Google 로그인은 동의 화면 없이도 거의 다 검증된다.** 버튼을 누르면 loopback 서버가 뜨므로,
+그 포트를 찾아 콜백을 직접 때리면 된다:
+
+```sh
+netstat -ano | grep LISTENING          # electron PID로 포트를 찾는다
+curl "http://127.0.0.1:<포트>/callback?error=access_denied"   # 거절 경로
+curl "http://127.0.0.1:<포트>/callback?code=fake"             # 교환 실패 경로
+```
+
+`code=fake`는 Supabase가 `flow_state_not_found`로 거절하는 것이 **정상이고**, 그것이 곧
+PKCE 상태가 실제로 검사된다는 증거다. 남는 미검증 구간은 Google 동의 화면 하나뿐이다.
 
 **시계 오차는 오프셋이 0이면 아무것도 증명하지 못한다.** 개발 기기의 시계는 대개 정확해서
 `CLOCK_TOLERANCE_MS`(2초) 안에 들어오고, 그러면 배관이 끊겨 있어도 똑같이 0이 나온다.

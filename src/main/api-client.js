@@ -24,6 +24,7 @@ const {
   readSession,
   writeSession,
 } = require("./token-store");
+const { loopbackCode, pkcePair } = require("./oauth");
 
 /**
  * The project. Both values are public by design: the anon key is a JWT whose
@@ -234,6 +235,37 @@ function getClockOffset() {
   return skew;
 }
 
+/**
+ * Sign in with Google: consent in the real browser, tokens back here.
+ *
+ * This is the only way in that the shipped app offers. The password pair below
+ * still exists because sync has to be testable without a person clicking a
+ * consent screen, but ipc.js only registers it outside a packaged build.
+ */
+async function loginWithGoogle() {
+  if (!canStore()) return { ok: false, error: "no_secure_storage" };
+
+  const { verifier, challenge } = pkcePair();
+  const back = await loopbackCode(
+    (redirect) =>
+      `${SUPABASE_URL}/auth/v1/authorize?provider=google` +
+      `&redirect_to=${encodeURIComponent(redirect)}` +
+      `&code_challenge=${challenge}&code_challenge_method=s256`,
+  );
+  if (!back.ok) return { ok: false, error: back.error };
+
+  const res = await request("/auth/v1/token?grant_type=pkce", {
+    method: "POST",
+    body: { auth_code: back.code, code_verifier: verifier },
+  });
+  if (!res.ok) return { ok: false, error: errorCode(res) };
+
+  const next = sessionFromToken(res.body, Date.now());
+  if (!next) return { ok: false, error: "bad_response" };
+  remember(next);
+  return { ok: true, session: publicSession(next) };
+}
+
 async function login(email, password) {
   // Checked before the request, not after: a successful login we cannot store
   // is a login that vanishes on restart, and the user would have no idea why.
@@ -299,6 +331,7 @@ module.exports = {
   getPublicSession,
   getAccessToken,
   getClockOffset,
+  loginWithGoogle,
   login,
   signup,
   logout,

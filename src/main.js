@@ -55,11 +55,14 @@ if (!gotLock) {
     // Same arrangement, same reason: sync knows nothing about windows, and this
     // is the one wire from a finished pull to whatever is on screen. The clock
     // offset rides along because it was learned by the same request.
-    initSync((tasks) => {
+    const toWindow = (channel, ...args) => {
       const win = getWindow();
-      if (win && !win.isDestroyed()) {
-        win.webContents.send("sync:tasks", tasks, getClockOffset());
-      }
+      if (win && !win.isDestroyed()) win.webContents.send(channel, ...args);
+    };
+    initSync({
+      onTasks: (tasks, overwritten) =>
+        toWindow("sync:tasks", tasks, getClockOffset(), overwritten),
+      onStatus: (status) => toWindow("sync:status", status),
     });
 
     app.on("activate", () => {

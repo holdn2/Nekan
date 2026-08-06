@@ -121,6 +121,19 @@ function pendingChanges(tasks, since) {
   return (tasks || []).filter((t) => stamp(t.updatedAt) >= from);
 }
 
+/**
+ * What has genuinely not reached the server yet.
+ *
+ * Strictly newer than the watermark, where pendingChanges is deliberately not:
+ * the inclusive boundary there is worth a few re-sends, but shown to a user it
+ * would read "1개 대기" forever after every successful sync. Same idea, two
+ * different jobs -- one decides what to send, this one decides what to say.
+ */
+function unsentChanges(tasks, since) {
+  const from = stamp(since);
+  return (tasks || []).filter((t) => stamp(t.updatedAt) > from);
+}
+
 /** How far `pendingChanges` may be advanced once those rows are accepted. */
 function pushedThrough(pending, since) {
   return (pending || []).reduce(
@@ -211,6 +224,7 @@ module.exports = {
   remoteWins,
   mergeIncoming,
   pendingChanges,
+  unsentChanges,
   pushedThrough,
   nextCursor,
   hasMore,

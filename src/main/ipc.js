@@ -17,11 +17,13 @@ const RELEASES_URL = "https://github.com/holdn2/Nekan/releases";
 
 const { sanitizeLayout, sanitizeSpace } = require("../shared/core");
 const {
+  backupStore,
   getSettings,
   getStore,
   mergeRendererTasks,
   persist,
   persistNow,
+  setTasks,
 } = require("./store");
 const {
   collapse,
@@ -36,10 +38,19 @@ const {
   getClockOffset,
   getPublicSession,
   login,
+  loginWithGoogle,
   logout,
-  signup,
 } = require("./api-client");
-const { syncAccount, syncSoon } = require("./sync");
+const { cancelSignIn } = require("./oauth");
+const {
+  announceTasks,
+  getSyncStatus,
+  syncAccount,
+  syncSoon,
+} = require("./sync");
+
+/** Where a sign-in puts the local tasks it was asked not to merge. */
+const PRE_LOGIN_BACKUP = "data.before-login.json";
 
 /** Bind every channel. Called once, before the window is created. */
 function registerIpc() {
@@ -66,6 +77,10 @@ function registerIpc() {
     version: app.getVersion(),
     auth: getPublicSession(),
     clockOffset: getClockOffset(),
+    sync: getSyncStatus(),
+    // Whether this build offers a password field at all. The guide reads it so
+    // a development run can say so out loud instead of looking broken.
+    devLogin: !app.isPackaged,
   }));
 
   // Merged, not replaced: a pull can have landed since the renderer last drew,
@@ -173,26 +188,61 @@ function registerIpc() {
 
   /* -------------------------------------------------------------- auth */
 
-  // These three are the whole surface. There is no channel that returns a
-  // token, which is what keeps a compromised renderer from being a stolen
-  // account -- the credentials never leave this process.
-  //
-  // They resolve with `{ ok: false, error }` rather than rejecting: being
-  // offline is the normal state of a sync client, not an exception.
-  // Each of the three tells sync whose rows these now are. That is what resets
-  // the cursor, so signing in as somebody else cannot inherit the last
-  // account's idea of being up to date.
-  ipcMain.handle("auth:login", async (_e, email, password) => {
-    const result = await login(String(email || ""), String(password || ""));
-    if (result.ok && result.session) syncAccount(result.session.userId);
-    return result;
-  });
+  // No channel here returns a token, which is what keeps a compromised
+  // renderer from being a stolen account -- credentials never leave this
+  // process. They all resolve with `{ ok: false, error }` rather than
+  // rejecting: being offline is the normal state of a sync client, not an
+  // exception.
 
-  ipcMain.handle("auth:signup", async (_e, email, password) => {
-    const result = await signup(String(email || ""), String(password || ""));
-    if (result.ok && result.session) syncAccount(result.session.userId);
+  /**
+   * What a fresh sign-in does with the tasks already on this machine.
+   *
+   * "merge" is the ordinary case -- a second machine of one's own, where every
+   * local task should end up in the account. "replace" is the one that saves
+   * somebody: signing in on a borrowed computer would otherwise push a
+   * stranger's list into your account, permanently and invisibly. Even then the
+   * rows are copied aside first, because being asked to leave them out is not
+   * being asked to destroy them.
+   */
+  function adoptLocalTasks(mode) {
+    if (mode !== "replace") return;
+    backupStore(PRE_LOGIN_BACKUP);
+    setTasks([]);
+    persistNow();
+    // The window is still showing the rows that were just set aside, and its
+    // next save would merge every one of them back in. Waiting for the pull to
+    // correct it does not work: an account with nothing new applies nothing.
+    announceTasks();
+  }
+
+  function afterSignIn(result, mode) {
+    if (!result.ok || !result.session) return result;
+    adoptLocalTasks(mode);
+    // Resets the cursor, so signing in as somebody else cannot inherit the last
+    // account's idea of being up to date.
+    syncAccount(result.session.userId);
     return result;
-  });
+  }
+
+  ipcMain.handle("auth:google", async (_e, mode) =>
+    afterSignIn(await loginWithGoogle(), mode),
+  );
+
+  // The browser tab is still open and this process is still holding a port.
+  ipcMain.handle("auth:cancel", () => cancelSignIn());
+
+  // Password sign-in is a development affordance, not a feature: sync has to be
+  // testable without a person clicking a consent screen. Registering it only
+  // outside a packaged build means the shipped app has no such channel at all,
+  // so the renderer could not use it even if something in there tried.
+  if (!app.isPackaged) {
+    ipcMain.handle("auth:login", async (_e, email, password, mode) =>
+      afterSignIn(
+        await login(String(email || ""), String(password || "")),
+        mode,
+      ),
+    );
+  }
 
   // The local tasks stay exactly where they are. They were the user's before
   // there was an account, and this app has to keep working without one.
