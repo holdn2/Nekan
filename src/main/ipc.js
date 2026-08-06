@@ -19,9 +19,9 @@ const { sanitizeLayout, sanitizeSpace } = require("../shared/core");
 const {
   getSettings,
   getStore,
+  mergeRendererTasks,
   persist,
   persistNow,
-  setTasks,
 } = require("./store");
 const {
   collapse,
@@ -32,7 +32,14 @@ const {
 } = require("./window");
 const { revealExport, runExport } = require("./export-service");
 const { getUpdateStatus, installUpdate } = require("./updater");
-const { getPublicSession, login, logout, signup } = require("./api-client");
+const {
+  getClockOffset,
+  getPublicSession,
+  login,
+  logout,
+  signup,
+} = require("./api-client");
+const { syncAccount, syncSoon } = require("./sync");
 
 /** Bind every channel. Called once, before the window is created. */
 function registerIpc() {
@@ -58,11 +65,15 @@ function registerIpc() {
     update: getUpdateStatus(),
     version: app.getVersion(),
     auth: getPublicSession(),
+    clockOffset: getClockOffset(),
   }));
 
+  // Merged, not replaced: a pull can have landed since the renderer last drew,
+  // and those rows are not in the list it is sending back.
   ipcMain.handle("state:save", (_e, tasks) => {
-    setTasks(tasks);
+    mergeRendererTasks(tasks);
     persist();
+    syncSoon();
     return true;
   });
 
@@ -168,15 +179,28 @@ function registerIpc() {
   //
   // They resolve with `{ ok: false, error }` rather than rejecting: being
   // offline is the normal state of a sync client, not an exception.
-  ipcMain.handle("auth:login", (_e, email, password) =>
-    login(String(email || ""), String(password || "")),
-  );
+  // Each of the three tells sync whose rows these now are. That is what resets
+  // the cursor, so signing in as somebody else cannot inherit the last
+  // account's idea of being up to date.
+  ipcMain.handle("auth:login", async (_e, email, password) => {
+    const result = await login(String(email || ""), String(password || ""));
+    if (result.ok && result.session) syncAccount(result.session.userId);
+    return result;
+  });
 
-  ipcMain.handle("auth:signup", (_e, email, password) =>
-    signup(String(email || ""), String(password || "")),
-  );
+  ipcMain.handle("auth:signup", async (_e, email, password) => {
+    const result = await signup(String(email || ""), String(password || ""));
+    if (result.ok && result.session) syncAccount(result.session.userId);
+    return result;
+  });
 
-  ipcMain.handle("auth:logout", () => logout());
+  // The local tasks stay exactly where they are. They were the user's before
+  // there was an account, and this app has to keep working without one.
+  ipcMain.handle("auth:logout", async () => {
+    const result = await logout();
+    syncAccount(null);
+    return result;
+  });
 }
 
 module.exports = { registerIpc };

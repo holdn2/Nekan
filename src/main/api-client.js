@@ -17,6 +17,7 @@ const {
   publicSession,
   sessionFromToken,
 } = require("../shared/auth");
+const { clockOffset, nextOffset } = require("../shared/sync");
 const {
   canStore,
   clearSession,
@@ -53,6 +54,15 @@ const TIMEOUT_MS = 15_000;
 let session = null;
 /** The refresh in flight, if any. See refreshSession(). */
 let refreshing = null;
+/**
+ * How far this machine's clock is behind the server's, in ms.
+ *
+ * Read off the Date header of every reply, so it costs no request of its own.
+ * It matters because `updatedAt` is a client clock and it is what decides who
+ * wins when the same task was edited twice: a laptop ten minutes slow would
+ * lose every one of those, silently and forever.
+ */
+let skew = 0;
 
 /* ----------------------------------------------------------------- http */
 
@@ -63,18 +73,25 @@ let refreshing = null;
  * DNS failure, the timeout above. Callers treat that differently from a 400,
  * because only one of the two means the credentials are wrong.
  */
-async function request(pathname, { method = "GET", body, token } = {}) {
+async function request(pathname, { method = "GET", body, token, prefer } = {}) {
   try {
+    const headers = {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${token || SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json",
+    };
+    if (prefer) headers.Prefer = prefer;
+
     const res = await fetch(`${SUPABASE_URL}${pathname}`, {
       method,
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${token || SUPABASE_ANON_KEY}`,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
+    // Every reply carries a Date, including the failures. Reading it here means
+    // the offset is known from the first request the app ever makes, rather
+    // than after a sync has already stamped something with a wrong clock.
+    skew = nextOffset(skew, clockOffset(res.headers.get("date"), Date.now()));
     const raw = await res.text();
     let parsed = null;
     try {
@@ -207,6 +224,16 @@ function getPublicSession() {
   return publicSession(session);
 }
 
+/**
+ * Add this to Date.now() to get the server's idea of now.
+ *
+ * Zero until the first reply lands, and zero forever for anyone who never logs
+ * in -- an offline app has no second clock to disagree with.
+ */
+function getClockOffset() {
+  return skew;
+}
+
 async function login(email, password) {
   // Checked before the request, not after: a successful login we cannot store
   // is a login that vanishes on restart, and the user would have no idea why.
@@ -271,6 +298,7 @@ module.exports = {
   initAuth,
   getPublicSession,
   getAccessToken,
+  getClockOffset,
   login,
   signup,
   logout,

@@ -27,4 +27,11 @@ contextBridge.exposeInMainWorld("api", {
   onMode: (cb) => ipcRenderer.on("win:mode", (_e, mode) => cb(mode)),
   onUpdateStatus: (cb) =>
     ipcRenderer.on("update:status", (_e, status) => cb(status)),
+  // A pull applied rows. The list is the merged one, so the renderer replaces
+  // rather than merges again — and must not save it back, or every device
+  // would answer every sync with a sync.
+  onSyncTasks: (cb) =>
+    ipcRenderer.on("sync:tasks", (_e, tasks, clockOffset) =>
+      cb(tasks, clockOffset),
+    ),
 });

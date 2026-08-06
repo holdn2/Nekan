@@ -12,15 +12,16 @@ src/main/
   window.js       창 생성, expanded/collapsed 전환, 메모 패널 높이 회계
   export-service.js  PDF·HTML·MD 쓰기 (숨은 창에서 printToPDF)
   updater.js      electron-updater. 창을 모르고, main.js가 넘긴 콜백으로만 알린다
-  api-client.js   Supabase와 말하는 유일한 곳. URL·anon key·로그인·토큰 갱신
+  api-client.js   Supabase와 말하는 유일한 곳. URL·anon key·로그인·토큰 갱신·시계 오차
   token-store.js  세션을 safeStorage로 암호화해 userData/auth.json에 (data.json 아님)
+  sync.js         당기고 밀고 다시 시도하는 루프. 판정은 안 하고 일정만 잡는다
   ipc.js          ipcMain.handle 전부. 새 채널을 만들 때 첫 번째로 여는 파일
 src/preload.js    contextBridge → window.api (여기 없는 건 렌더러에서 못 씀)
 src/shared/       메인·렌더러·테스트가 공유. 여기만 테스트가 덮는다
   core.js         날짜·정규화·space 규칙·레이아웃 비율 등 순수 로직
   store-io.js     data.json 읽기/쓰기 (electron 의존 없음 — 경로는 호출자가 준다)
   export.js       내보내기 문서 생성 (마크다운·인쇄용 HTML). 메인·테스트만 require
-  sync.js         동기화 판정 (LWW·행 변환·커서). 아직 아무도 import하지 않는다
+  sync.js         동기화 판정 (LWW·행 변환·커서·시계 오차). main/sync.js가 쓴다
   auth.js         세션 모양과 만료 판정. 렌더러에 나갈 필드를 여기서 고른다
 src/renderer/     ES 모듈. 번들러 없음 — import 경로에 확장자를 반드시 쓴다
   index.html      정적 마크업. <link> 12개와 <script>는 순서가 의미를 갖는다
@@ -95,6 +96,21 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   렌더러가 알 수 있는 것은 `state:load`의 `auth`(= `{ email, userId }`)뿐이고, 그 객체는
   `shared/auth.js`의 `publicSession()`이 **필드를 골라서** 만든다 — 지우는 방식이 아니라
   고르는 방식인 이유가 있다. 세션에 필드를 추가해도 여기 이름을 적지 않는 한 새어나가지 않는다.
+- **렌더러의 `Date.now()`를 직접 쓰지 않는다.** `renderer/store.js`의 `now()`가
+  `Date.now() + clockOffset`이고, 오프셋은 메인이 서버 응답의 `Date` 헤더로 재서 넘긴다.
+  **`updatedAt`이 LWW의 기준이라, 시계가 10분 느린 기기는 그 기기의 모든 편집을 조용히 잃는다.**
+  이 파일에 타임스탬프를 새로 쓸 일이 생기면 `now()`를 쓸 것 (`uid()`만 예외 — 비교용이 아니다).
+- **`state:save`는 덮어쓰기가 아니라 병합이다** (`main/store.js`의 `mergeRendererTasks`).
+  렌더러가 마지막으로 그린 뒤 pull이 끼어들 수 있고, 그때 통째로 덮으면 방금 받은 행이 사라진다.
+  병합이 안전한 이유는 **task를 배열에서 지우는 일이 없기 때문**이다 — 삭제가 타임스탬프라
+  "정당하게 행이 빠진 저장"이란 것이 존재하지 않는다. 동점은 렌더러가 이긴다(화면에 있는 쪽).
+- **sync는 로컬 task를 절대 지우지 않는다.** 로그아웃해도 `data.json`은 그대로다. 커서와
+  푸시 워터마크(`settings.sync`)만 비운다 — 계정이 바뀌면 남의 커서 때문에 행을 통째로 건너뛴다.
+- **커서는 진실이 아니라 최적화다.** `server_seq`는 트랜잭션 안에서 발급돼서, 먼저 커밋된 행이
+  더 큰 번호를 가질 수 있다. 그 틈에 pull이 들어가면 행 하나를 영영 건너뛴다. 그래서
+  `main/sync.js`가 **시작할 때와 6시간마다 커서를 버리고 전체를 다시 읽는다**(`RECONCILE_MS`).
+  병합이 LWW라 여러 번 읽어도 값이 달라지지 않으니 대가는 요청 몇 번뿐이다. **이걸 없애면
+  아주 가끔 할 일 하나가 조용히 사라진다** — 재현이 거의 불가능한 종류의 버그다.
 - **refresh_token은 갱신할 때마다 회전한다.** 그래서 두 규칙을 깨면 안 된다:
   ① 새 쌍을 **쓰기 전에 먼저 디스크에 저장**한다(`remember()`가 그 순서다). 저장 전에 죽으면
   로그아웃된다. ② **동시에 두 번 갱신하지 않는다** — `refreshSession()`이 진행 중인 promise
@@ -250,6 +266,23 @@ NEKAN_SUPABASE_URL=... NEKAN_SUPABASE_ANON_KEY=... node supabase/verify.js
 - **죽은 토큰**: 로그인 → `auth.json` 복사 → 로그아웃(서버가 폐기) → 복사본을 되돌려놓고 실행.
   `auth.json`이 **사라지면** 4xx 경로가 맞게 돈 것이다(`forget()`은 로그아웃과 이 경로에서만
   불린다). 사라지지 않으면 네트워크 실패와 폐기를 구분하지 못하고 있는 것이다.
+
+**동기화는 기기 두 대를 띄워야 확인된다.** 프로필과 디버깅 포트를 갈라 두 번 띄우면 된다:
+
+```
+npx electron . --user-data-dir=<A> --remote-debugging-port=9333
+npx electron . --user-data-dir=<B> --remote-debugging-port=9334
+```
+
+**프로필 폴더에 빈 `data.json`을 먼저 써 둘 것.** 안 그러면 `migrateLegacyStore()`가
+`%APPDATA%\EisenhowerMatrix`의 **진짜 데이터**를 끌어와 서버로 올려버린다. 한쪽에서 항목을
+추가하고 6초쯤 뒤 다른 쪽에서 **아무 항목이나 추가하면**(그게 그쪽 sync를 3초 뒤로 당긴다)
+건너온 것이 보인다 — 안 그러면 60초 하트비트를 기다려야 한다.
+
+**시계 오차는 오프셋이 0이면 아무것도 증명하지 못한다.** 개발 기기의 시계는 대개 정확해서
+`CLOCK_TOLERANCE_MS`(2초) 안에 들어오고, 그러면 배관이 끊겨 있어도 똑같이 0이 나온다.
+`api-client.js`의 `skew = nextOffset(...)` 줄을 잠깐 `skew = 600_000`으로 바꿔 띄운 뒤
+**새로 만든 항목의 `updatedAt`이 `Date.now()`보다 600초 앞서는지** 볼 것. 끝나면 되돌린다.
 
 렌더러·창 동작은 여전히 `npm start`로 직접 띄워서 확인한다. 최소 확인 항목:
 할 일 추가 → 완료 → 히스토리에서 되돌리기 → 삭제 → 휴지통에서 복원 → 앱 재시작 후 유지.

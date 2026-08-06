@@ -13,7 +13,8 @@ const { load, persistNow } = require("./main/store");
 const { createWindow, getWindow } = require("./main/window");
 const { registerIpc } = require("./main/ipc");
 const { initUpdater } = require("./main/updater");
-const { initAuth } = require("./main/api-client");
+const { getClockOffset, initAuth } = require("./main/api-client");
+const { initSync } = require("./main/sync");
 
 // Keep the data folder identical between `npm start` and the packaged build.
 // Without it the two read different data.json files.
@@ -50,6 +51,15 @@ if (!gotLock) {
       const win = getWindow();
       if (win && !win.isDestroyed())
         win.webContents.send("update:status", status);
+    });
+    // Same arrangement, same reason: sync knows nothing about windows, and this
+    // is the one wire from a finished pull to whatever is on screen. The clock
+    // offset rides along because it was learned by the same request.
+    initSync((tasks) => {
+      const win = getWindow();
+      if (win && !win.isDestroyed()) {
+        win.webContents.send("sync:tasks", tasks, getClockOffset());
+      }
     });
 
     app.on("activate", () => {

@@ -18,7 +18,7 @@ import {
   startOfToday,
   startOfTomorrow,
 } from "./core-bridge.js";
-import { setTasks } from "./store.js";
+import { acceptSynced, setClockOffset, setTasks } from "./store.js";
 import { subscribe } from "./render-bus.js";
 import { $ } from "./dom.js";
 import { toast } from "./components/toast.js";
@@ -167,6 +167,8 @@ function wireShortcuts() {
 let pushedMode = null;
 /** Same for the update status, for the same reason. */
 let pushedUpdate = null;
+/** Same again, for a sync that finished before the load snapshot arrived. */
+let pushedTasks = null;
 
 /**
  * Load, wire, draw. The order is what matters here: the mode listener before
@@ -188,8 +190,18 @@ async function init() {
     applyUpdateStatus(next, { announce: true });
   });
 
+  // Same race as the two above, and the same fix: the first sync runs three
+  // seconds after launch and the reply below could still be in flight. Both
+  // lists come from main's one array, so the later one is the newer one.
+  window.api.onSyncTasks((tasks, offset) => {
+    setClockOffset(offset);
+    pushedTasks = tasks;
+    acceptSynced(tasks);
+  });
+
   const state = await window.api.load();
-  setTasks(normalizeTasks(state.tasks));
+  setClockOffset(state.clockOffset);
+  setTasks(normalizeTasks(pushedTasks || state.tasks));
   // Every change ends on the render bus, so this one subscription is what keeps
   // the screen in step with the data.
   subscribe(render);

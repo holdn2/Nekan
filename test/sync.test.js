@@ -2,7 +2,10 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const {
+  CLOCK_TOLERANCE_MS,
   PAGE_SIZE,
+  clockOffset,
+  nextOffset,
   toRow,
   fromRow,
   remoteWins,
@@ -339,4 +342,51 @@ test("a first sync whose total lands exactly on a page boundary still ends", () 
   // 3 + 3 + 0: the empty round is the cost of not being able to tell a full
   // last page from a full middle one.
   assert.equal(rounds, 3);
+});
+
+/* ------------------------------------------------------------------- clock */
+
+test("clockOffset reads how far this machine is behind the server", () => {
+  // A Date header is RFC 1123 and has one-second resolution. This machine
+  // thinks it is 12:00:00; the server says 12:10:00.
+  const ours = Date.parse("Thu, 06 Aug 2026 12:00:00 GMT");
+
+  assert.equal(
+    clockOffset("Thu, 06 Aug 2026 12:10:00 GMT", ours),
+    10 * 60 * 1000,
+  );
+  assert.equal(
+    clockOffset("Thu, 06 Aug 2026 11:50:00 GMT", ours),
+    -10 * 60 * 1000,
+  );
+});
+
+test("an unreadable Date leaves the clock alone", () => {
+  // Zero is not a guess at the offset -- it is a refusal to shift the clock
+  // somewhere arbitrary on the strength of a header we could not parse.
+  assert.equal(clockOffset(null, 1000), 0);
+  assert.equal(clockOffset("", 1000), 0);
+  assert.equal(clockOffset("어제쯤", 1000), 0);
+});
+
+test("nextOffset ignores samples too small to be real", () => {
+  // The header has one-second resolution and was written before the body was
+  // sent, so every sample is a little off. Adopting that jitter would make the
+  // order of two edits depend on which reply happened to arrive first.
+  assert.equal(nextOffset(0, 900), 0);
+  assert.equal(nextOffset(0, -1999), 0);
+  assert.equal(nextOffset(5000, 5500), 5000);
+});
+
+test("nextOffset adopts a sample that is genuinely different", () => {
+  assert.equal(nextOffset(0, CLOCK_TOLERANCE_MS), CLOCK_TOLERANCE_MS);
+  assert.equal(nextOffset(0, 600_000), 600_000);
+  // Including one that goes back towards zero: a clock that has just been
+  // corrected by the OS must stop being compensated for.
+  assert.equal(nextOffset(600_000, 0), 0);
+});
+
+test("a missing sample keeps the offset in hand", () => {
+  assert.equal(nextOffset(600_000, NaN), 600_000);
+  assert.equal(nextOffset(NaN, 900), 0);
 });

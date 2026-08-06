@@ -15,6 +15,7 @@ const { app } = require("electron");
 
 const { loadStore, writeStore } = require("../shared/store-io");
 const { dropExpiredTombstones } = require("../shared/core");
+const { stamp } = require("../shared/sync");
 
 let store = null;
 let saveTimer = null;
@@ -60,9 +61,33 @@ const getStore = () => store;
 /** Settings only; the half every module here actually touches. */
 const getSettings = () => store.settings;
 
-/** Replace the task list with what the renderer just sent. */
+/** Replace the task list outright. Used by sync, which merged already. */
 function setTasks(tasks) {
   store.tasks = Array.isArray(tasks) ? tasks : [];
+}
+
+/**
+ * Take the renderer's list, keeping anything sync applied underneath it.
+ *
+ * A plain replace was right while this file was the only writer. It is not any
+ * more: a pull can land between the renderer's last draw and its next save, and
+ * the save would then write a list that never had those rows in it.
+ *
+ * Merging is safe because a task is never removed from the array -- deleting is
+ * a timestamp, so there is no such thing as a save that legitimately drops a
+ * row. Ties go to the renderer: it is the copy the user is looking at.
+ */
+function mergeRendererTasks(tasks) {
+  const incoming = Array.isArray(tasks) ? tasks : [];
+  const byId = new Map(store.tasks.map((t) => [String(t.id), t]));
+  for (const task of incoming) {
+    const id = String(task.id);
+    const mine = byId.get(id);
+    if (!mine || stamp(task.updatedAt) >= stamp(mine.updatedAt)) {
+      byId.set(id, task);
+    }
+  }
+  store.tasks = [...byId.values()];
 }
 
 /** Write now, through store-io's temp-file + rename. */
@@ -89,6 +114,7 @@ module.exports = {
   getStore,
   getSettings,
   setTasks,
+  mergeRendererTasks,
   persist,
   persistNow,
 };
