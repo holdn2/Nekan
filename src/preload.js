@@ -15,6 +15,13 @@ contextBridge.exposeInMainWorld("api", {
   setSpace: (space) => ipcRenderer.invoke("settings:space", space),
   exportBoard: () => ipcRenderer.invoke("export:run"),
   revealExport: (target) => ipcRenderer.invoke("export:reveal", target),
+  // Auth. Note what is missing: there is no getToken. The renderer can start a
+  // session and end one, and can learn the email from load(), but the tokens
+  // themselves stay in the main process.
+  login: (email, password) => ipcRenderer.invoke("auth:login", email, password),
+  signup: (email, password) =>
+    ipcRenderer.invoke("auth:signup", email, password),
+  logout: () => ipcRenderer.invoke("auth:logout"),
   installUpdate: () => ipcRenderer.invoke("update:install"),
   openReleaseNotes: () => ipcRenderer.invoke("update:notes"),
   onMode: (cb) => ipcRenderer.on("win:mode", (_e, mode) => cb(mode)),

@@ -32,6 +32,7 @@ const {
 } = require("./window");
 const { revealExport, runExport } = require("./export-service");
 const { getUpdateStatus, installUpdate } = require("./updater");
+const { getPublicSession, login, logout, signup } = require("./api-client");
 
 /** Bind every channel. Called once, before the window is created. */
 function registerIpc() {
@@ -45,12 +46,18 @@ function registerIpc() {
   // that never changes while the app is running. It comes from app.getVersion()
   // rather than package.json: in a packaged build that file is a copy inside
   // the asar, and this is the number electron is actually running.
+  //
+  // `auth` is the email of whoever is logged in, or null -- never a token.
+  // It rides along for the same reason as the rest: it is main's to know, it
+  // is restored from disk before the window exists, and a renderer that
+  // reloads has to be able to find out again without a channel of its own.
   ipcMain.handle("state:load", () => ({
     tasks: getStore().tasks,
     settings: getSettings(),
     mode: getMode(),
     update: getUpdateStatus(),
     version: app.getVersion(),
+    auth: getPublicSession(),
   }));
 
   ipcMain.handle("state:save", (_e, tasks) => {
@@ -152,6 +159,24 @@ function registerIpc() {
   // renderer passed would be a way to launch anything the moment a task's text
   // could reach it; this one can only ever open the releases page.
   ipcMain.handle("update:notes", () => shell.openExternal(RELEASES_URL));
+
+  /* -------------------------------------------------------------- auth */
+
+  // These three are the whole surface. There is no channel that returns a
+  // token, which is what keeps a compromised renderer from being a stolen
+  // account -- the credentials never leave this process.
+  //
+  // They resolve with `{ ok: false, error }` rather than rejecting: being
+  // offline is the normal state of a sync client, not an exception.
+  ipcMain.handle("auth:login", (_e, email, password) =>
+    login(String(email || ""), String(password || "")),
+  );
+
+  ipcMain.handle("auth:signup", (_e, email, password) =>
+    signup(String(email || ""), String(password || "")),
+  );
+
+  ipcMain.handle("auth:logout", () => logout());
 }
 
 module.exports = { registerIpc };

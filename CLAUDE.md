@@ -12,12 +12,16 @@ src/main/
   window.js       창 생성, expanded/collapsed 전환, 메모 패널 높이 회계
   export-service.js  PDF·HTML·MD 쓰기 (숨은 창에서 printToPDF)
   updater.js      electron-updater. 창을 모르고, main.js가 넘긴 콜백으로만 알린다
+  api-client.js   Supabase와 말하는 유일한 곳. URL·anon key·로그인·토큰 갱신
+  token-store.js  세션을 safeStorage로 암호화해 userData/auth.json에 (data.json 아님)
   ipc.js          ipcMain.handle 전부. 새 채널을 만들 때 첫 번째로 여는 파일
 src/preload.js    contextBridge → window.api (여기 없는 건 렌더러에서 못 씀)
 src/shared/       메인·렌더러·테스트가 공유. 여기만 테스트가 덮는다
   core.js         날짜·정규화·space 규칙·레이아웃 비율 등 순수 로직
   store-io.js     data.json 읽기/쓰기 (electron 의존 없음 — 경로는 호출자가 준다)
   export.js       내보내기 문서 생성 (마크다운·인쇄용 HTML). 메인·테스트만 require
+  sync.js         동기화 판정 (LWW·행 변환·커서). 아직 아무도 import하지 않는다
+  auth.js         세션 모양과 만료 판정. 렌더러에 나갈 필드를 여기서 고른다
 src/renderer/     ES 모듈. 번들러 없음 — import 경로에 확장자를 반드시 쓴다
   index.html      정적 마크업. <link> 12개와 <script>는 순서가 의미를 갖는다
   app.js          진입점. render() 디스패처, 전역 단축키, init() 조립
@@ -87,6 +91,16 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   `writeFileSync`로 바꾸지 말 것 — 쓰다 끊기면 전체 할 일이 사라진다.
 - IPC를 새로 추가할 때는 **세 곳을 모두** 건드려야 한다: `main/ipc.js`의 `ipcMain.handle`,
   `preload.js`의 `exposeInMainWorld`, 렌더러의 `window.api.*` 호출.
+- **토큰은 IPC를 건너지 않는다.** `window.api`에 토큰을 돌려주는 함수가 **하나도 없어야** 한다.
+  렌더러가 알 수 있는 것은 `state:load`의 `auth`(= `{ email, userId }`)뿐이고, 그 객체는
+  `shared/auth.js`의 `publicSession()`이 **필드를 골라서** 만든다 — 지우는 방식이 아니라
+  고르는 방식인 이유가 있다. 세션에 필드를 추가해도 여기 이름을 적지 않는 한 새어나가지 않는다.
+- **refresh_token은 갱신할 때마다 회전한다.** 그래서 두 규칙을 깨면 안 된다:
+  ① 새 쌍을 **쓰기 전에 먼저 디스크에 저장**한다(`remember()`가 그 순서다). 저장 전에 죽으면
+  로그아웃된다. ② **동시에 두 번 갱신하지 않는다** — `refreshSession()`이 진행 중인 promise
+  하나를 공유하는 이유다. 나란히 도는 요청 둘이 각자 갱신하면 하나가 다른 하나를 무효화한다.
+  갱신이 4xx로 실패하면 그 토큰은 영영 죽은 것이라 세션을 버리고, **4xx가 아니면(네트워크)
+  세션을 유지한다** — 터널을 지났다고 로그아웃되면 안 된다.
 
 ## 알아두면 좋은 것
 
@@ -225,6 +239,17 @@ NEKAN_SUPABASE_URL=... NEKAN_SUPABASE_ANON_KEY=... node supabase/verify.js
 **이 스크립트는 여러 번 돌려도 같은 결과가 나와야 한다** — 첫 판은 고정 타임스탬프를 써서
 딱 한 번만 통과했다. 두 번째 판부터는 앞 실행이 남긴 행이 더 새것이라 트리거가 (정확하게)
 버렸기 때문이다. **빈 테이블에서만 통과하는 검증은 검증이 아니다.**
+
+**로그인 경로도 `npm test`가 못 덮는다** (safeStorage가 Electron 안에서만 산다). `--user-data-dir`로
+띄워 `window.api.login(...)`을 CDP로 부르고, `auth.json`에 `eyJ`가 **평문으로 없는지**와
+재시작 후 `state:load`의 `auth`가 남는지를 본다. 시간이 걸리는 두 가지는 이렇게 앞당겼다:
+
+- **갱신(회전)**: `shared/auth.js`의 `REFRESH_SKEW_MS`를 잠깐 2시간으로 올리면 **시작할 때마다**
+  갱신이 돈다. `auth.json`이 바뀌는 것이 곧 성공 신호다 — 그 파일은 `remember()`에서만 쓰이고
+  `remember()`는 로그인·갱신 성공에서만 불린다. **끝나면 60초로 되돌릴 것.**
+- **죽은 토큰**: 로그인 → `auth.json` 복사 → 로그아웃(서버가 폐기) → 복사본을 되돌려놓고 실행.
+  `auth.json`이 **사라지면** 4xx 경로가 맞게 돈 것이다(`forget()`은 로그아웃과 이 경로에서만
+  불린다). 사라지지 않으면 네트워크 실패와 폐기를 구분하지 못하고 있는 것이다.
 
 렌더러·창 동작은 여전히 `npm start`로 직접 띄워서 확인한다. 최소 확인 항목:
 할 일 추가 → 완료 → 히스토리에서 되돌리기 → 삭제 → 휴지통에서 복원 → 앱 재시작 후 유지.

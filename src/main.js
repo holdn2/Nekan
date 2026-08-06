@@ -13,6 +13,7 @@ const { load, persistNow } = require("./main/store");
 const { createWindow, getWindow } = require("./main/window");
 const { registerIpc } = require("./main/ipc");
 const { initUpdater } = require("./main/updater");
+const { initAuth } = require("./main/api-client");
 
 // Keep the data folder identical between `npm start` and the packaged build.
 // Without it the two read different data.json files.
@@ -37,6 +38,10 @@ if (!gotLock) {
     // Order matters: the window reads its bounds, theme and mode from the
     // store, and the renderer calls IPC as soon as it loads.
     load();
+    // Before the IPC, because state:load hands the renderer whoever is logged
+    // in and the answer comes off disk. safeStorage needs the app ready, which
+    // is why this cannot sit next to the store load above.
+    initAuth();
     registerIpc();
     createWindow();
     // Last, and knowing nothing about windows itself: this is the wire from the
