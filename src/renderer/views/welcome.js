@@ -126,6 +126,27 @@ async function chooseSync() {
   }
 }
 
+/**
+ * Undo a sign-in that the local choice contradicts.
+ *
+ * Answers whether the session is really gone. A logout that did not land
+ * leaves the mismatch in place, and closing the screen on it would hide the
+ * one state this whole branch exists to prevent -- so the caller stops.
+ */
+async function signOut() {
+  try {
+    await window.api.logout();
+  } catch (err) {
+    say(
+      `로그아웃하지 못했습니다. 다시 시도해 주세요. (${String((err && err.message) || err)})`,
+      true,
+    );
+    return false;
+  }
+  signedIn = false;
+  return true;
+}
+
 export function wireWelcome(done) {
   onDone = done || (() => {});
   els.root = $("#welcome");
@@ -143,6 +164,12 @@ export function wireWelcome(done) {
     els.sync.disabled = true;
     els.local.disabled = true;
     try {
+      // Reachable only through the narrow gap the retry above opened: Google
+      // succeeded, recording the choice did not, and the answer changed to
+      // local on the second try. By then main has stored a session and pointed
+      // sync at the account, so leaving it would give someone an app that
+      // syncs behind a choice that said not to.
+      if (signedIn && !(await signOut())) return;
       await finish("local");
     } finally {
       busy = false;
