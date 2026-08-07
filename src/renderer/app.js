@@ -276,12 +276,12 @@ async function init() {
   // wiring above has to be done first: this screen can sign in, and a sign-in
   // pushes tasks and a status back at us.
   wireWelcome(() => {});
-  if (needsWelcome(state.settings?.startupChoice)) {
-    showWelcome();
-    // 380px of card does not fit in a 48px bar, and the app has to be usable
-    // before it can be put away.
-    if ((pushedMode || state.mode) === "collapsed") window.api.expand();
-  }
+  // 380px of card does not fit in a 48px bar, but nothing is done about it
+  // here: main keeps the window expanded while the question is open. Asking
+  // from this side cannot work — ready-to-show, and so the collapse, lands
+  // after state:load has answered, so the mode read here still says expanded
+  // and the bar arrives as a push a moment later.
+  if (needsWelcome(state.settings?.startupChoice)) showWelcome();
 
   // No announce: this is the state as it already stood, and a reload arrives
   // here too. Whatever landed as a push above has announced itself already.

@@ -11,6 +11,7 @@
  */
 
 import { $ } from "../dom.js";
+import { needsStartupChoice } from "../core-bridge.js";
 import { activeCount } from "../store.js";
 
 /** Set by app.js: how a finished choice reaches the rest of the startup. */
@@ -49,8 +50,12 @@ function say(text, isError = false) {
   els.msg.classList.toggle("error", Boolean(text) && isError);
 }
 
-/** Is there a choice still to make? */
-export const needsWelcome = (choice) => choice !== "sync" && choice !== "local";
+/**
+ * Is there a choice still to make? The rule lives in shared/core.js because
+ * main asks it too — it is what keeps the window out of bar mode until this
+ * screen is done with it.
+ */
+export const needsWelcome = needsStartupChoice;
 
 /** Put it on screen, with the local-tasks question only if there are any. */
 export function showWelcome() {

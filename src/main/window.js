@@ -24,7 +24,11 @@ const path = require("path");
 const { BrowserWindow, screen } = require("electron");
 
 const { getSettings, persist } = require("./store");
-const { expandOrigin, collapseOrigin } = require("../shared/core");
+const {
+  expandOrigin,
+  collapseOrigin,
+  needsStartupChoice,
+} = require("../shared/core");
 
 /** Where preload.js, the renderer and the icon live, from this folder. */
 const SRC = path.join(__dirname, "..");
@@ -191,8 +195,15 @@ function createWindow() {
     win.show();
     // Quitting from bar mode has to come back as the bar, where it was left —
     // the window was just built at the expanded bounds, which is somewhere else.
-    if (settings.mode === "collapsed") collapse(savedBarPosition());
-    else switching = false;
+    //
+    // Unless the first-run question is still open. That screen needs the whole
+    // window, and this is the only place that can give it: ready-to-show lands
+    // after the renderer's state:load has already answered, so a renderer that
+    // asks to expand is asking about a bar it has not been told about yet.
+    // Anyone upgrading who left the app as a bar arrives here.
+    if (settings.mode === "collapsed" && !needsStartupChoice(settings.startupChoice)) {
+      collapse(savedBarPosition());
+    } else switching = false;
   });
 
   win.on("resize", rememberPlacement);

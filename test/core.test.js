@@ -11,6 +11,7 @@ const {
   DEFAULT_SPACE,
   sanitizeSpace,
   spaceFor,
+  needsStartupChoice,
   MAX_TEXT,
   MAX_BULK_LINES,
   splitBulkText,
@@ -151,6 +152,18 @@ test("spaceFor is the one rule both the renderer and normalize follow", () => {
   assert.equal(spaceFor("q1", undefined), DEFAULT_SPACE);
   assert.equal(sanitizeSpace("life"), "life");
   assert.equal(sanitizeSpace("nope"), DEFAULT_SPACE);
+});
+
+test("needsStartupChoice keeps main and the renderer on one answer", () => {
+  // A 1.0.2 file has no such key, and its owner has to meet the screen once.
+  assert.equal(needsStartupChoice(undefined), true);
+  assert.equal(needsStartupChoice(null), true);
+  // Anything that is not one of the two answers is not an answer. Main leans on
+  // this to decide it may not open as a bar, so a stray value has to read as
+  // unanswered rather than let a 380px card into a 48px window.
+  assert.equal(needsStartupChoice("later"), true);
+  assert.equal(needsStartupChoice("sync"), false);
+  assert.equal(needsStartupChoice("local"), false);
 });
 
 test("splitBulkText turns a pasted block into one task per line", () => {

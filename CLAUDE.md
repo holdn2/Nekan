@@ -153,6 +153,13 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   (배열은 최신순이고, 존재하는 첫 항목이 이긴다).
 - **창 크기는 expanded 모드의 것만 저장한다** (`main/window.js`의 `rememberPlacement`). 바 크기가
   저장돼버리면 다음 실행 때 600×48로 열린다. 바는 **위치만** `settings.barPosition`에 따로 남는다.
+- **`ready-to-show`는 렌더러의 `state:load`가 끝난 뒤에 온다.** 그래서 시작할 때의 접기
+  (`settings.mode === "collapsed"`)를 렌더러가 볼 방법이 없다 — `state.mode`를 읽는 시점에는
+  아직 `expanded`이고, 바는 그 뒤에 `win:mode` 푸시로 온다. **시작 모드에 조건을 걸 곳은
+  `main/window.js`의 `ready-to-show` 한 곳뿐이다.** 첫 실행 선택 화면이 실제로 그랬다:
+  렌더러에서 `window.api.expand()`를 부르는 조건이 **한 번도 참이 되지 않아**, 바 모드로
+  종료했던 사용자가 업데이트 후 380px 카드를 **640×48 바 안에서** 만났다. 판정은
+  `shared/core.js`의 `needsStartupChoice()`에 있고 메인·렌더러가 같은 함수를 부른다.
 - **모드 전환의 기준점은 창에 물어보지 않고 저장된 값을 쓴다.** `expand()`는 `barPosition`에서,
   `collapse()`는 `bounds`에서 출발한다. `win.getBounds()`로 재면 배율이 걸린 화면에서 요청값과
   1~2px 어긋난 값이 돌아오고, 그걸로 다음 전환의 기준을 잡으면 **토글할 때마다 위젯이 몇 px씩
