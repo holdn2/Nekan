@@ -121,6 +121,19 @@ function pendingChanges(tasks, since) {
   return (tasks || []).filter((t) => stamp(t.updatedAt) >= from);
 }
 
+/**
+ * What has genuinely not reached the server yet.
+ *
+ * Strictly newer than the watermark, where pendingChanges is deliberately not:
+ * the inclusive boundary there is worth a few re-sends, but shown to a user it
+ * would read "1개 대기" forever after every successful sync. Same idea, two
+ * different jobs -- one decides what to send, this one decides what to say.
+ */
+function unsentChanges(tasks, since) {
+  const from = stamp(since);
+  return (tasks || []).filter((t) => stamp(t.updatedAt) > from);
+}
+
 /** How far `pendingChanges` may be advanced once those rows are accepted. */
 function pushedThrough(pending, since) {
   return (pending || []).reduce(
@@ -160,15 +173,64 @@ function hasMore(rows, limit = PAGE_SIZE) {
   return (rows || []).length >= limit;
 }
 
+/* ------------------------------------------------------------------ clock */
+
+/**
+ * How far a fresh sample has to be from the offset in hand before it is worth
+ * believing.
+ *
+ * Two things make small samples meaningless. The Date header has one-second
+ * resolution, and it was written when the server began the reply rather than
+ * when we finished reading it, so every sample is a little low by however long
+ * the response spent on the wire. Neither matters: this correction exists to
+ * catch a clock that is minutes or hours out, not milliseconds.
+ */
+const CLOCK_TOLERANCE_MS = 2000;
+
+/**
+ * Server time minus ours, read off a response's Date header.
+ *
+ * NaN when the header is missing or unreadable, and the distinction matters:
+ * zero is a real measurement ("the clocks agree"), and returning it for "no
+ * idea" made one header-less reply -- a proxy, an error path -- look like a
+ * correction back to zero. A device that had learned it was ten minutes out
+ * would throw that away and start stamping with its own wrong clock again.
+ * nextOffset() already refuses a sample it cannot read.
+ */
+function clockOffset(dateHeader, receivedAt) {
+  if (!dateHeader) return NaN;
+  const server = Date.parse(dateHeader);
+  if (!Number.isFinite(server)) return NaN;
+  return server - receivedAt;
+}
+
+/**
+ * The offset to keep, given the one in hand and a fresh sample.
+ *
+ * Sampling noise must not move it. `updatedAt` decides who wins on two devices,
+ * so an offset that jitters by a few hundred milliseconds every request would
+ * make the order of two edits depend on which reply happened to arrive first.
+ */
+function nextOffset(current, sample, tolerance = CLOCK_TOLERANCE_MS) {
+  const now = Number.isFinite(current) ? current : 0;
+  if (!Number.isFinite(sample)) return now;
+  return Math.abs(sample - now) >= tolerance ? sample : now;
+}
+
 module.exports = {
+  CLOCK_TOLERANCE_MS,
   FIELDS,
   PAGE_SIZE,
+  stamp,
   toRow,
   fromRow,
   remoteWins,
   mergeIncoming,
   pendingChanges,
+  unsentChanges,
   pushedThrough,
   nextCursor,
   hasMore,
+  clockOffset,
+  nextOffset,
 };

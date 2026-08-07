@@ -12,23 +12,29 @@ src/main/
   window.js       창 생성, expanded/collapsed 전환, 메모 패널 높이 회계
   export-service.js  PDF·HTML·MD 쓰기 (숨은 창에서 printToPDF)
   updater.js      electron-updater. 창을 모르고, main.js가 넘긴 콜백으로만 알린다
+  api-client.js   Supabase와 말하는 유일한 곳. URL·anon key·로그인·토큰 갱신·시계 오차
+  token-store.js  세션을 safeStorage로 암호화해 userData/auth.json에 (data.json 아님)
+  sync.js         당기고 밀고 다시 시도하는 루프. 판정은 안 하고 일정만 잡는다
+  oauth.js        Google 로그인의 브라우저 쪽 (PKCE + loopback). 세션은 모른다
   ipc.js          ipcMain.handle 전부. 새 채널을 만들 때 첫 번째로 여는 파일
 src/preload.js    contextBridge → window.api (여기 없는 건 렌더러에서 못 씀)
 src/shared/       메인·렌더러·테스트가 공유. 여기만 테스트가 덮는다
   core.js         날짜·정규화·space 규칙·레이아웃 비율 등 순수 로직
   store-io.js     data.json 읽기/쓰기 (electron 의존 없음 — 경로는 호출자가 준다)
   export.js       내보내기 문서 생성 (마크다운·인쇄용 HTML). 메인·테스트만 require
+  sync.js         동기화 판정 (LWW·행 변환·커서·시계 오차). main/sync.js가 쓴다
+  auth.js         세션 모양과 만료 판정. 렌더러에 나갈 필드를 여기서 고른다
 src/renderer/     ES 모듈. 번들러 없음 — import 경로에 확장자를 반드시 쓴다
-  index.html      정적 마크업. <link> 12개와 <script>는 순서가 의미를 갖는다
+  index.html      정적 마크업. <link> 13개와 <script>는 순서가 의미를 갖는다
   app.js          진입점. render() 디스패처, 전역 단축키, init() 조립
   store.js        tasks 배열과 모든 변경. DOM을 모른다 → commit()이 저장+notify
   render-bus.js   "다시 그려라" 신호 하나. store·view → app 순환을 막는 장치
   core-bridge.js  shared/core.js의 전역을 named export로 재수출
   dom.js          $ · $$ · numEl · actionBtn · labelBtn
   components/     icons · due-chip · memo-mark · toast (task를 모르는 조각들)
-  views/          matrix · inbox · archive · memo · inline-edit
+  views/          matrix · inbox · archive · memo · inline-edit · account
   window/         chrome(타이틀바·탭·모드) · layout(분면 경계) · dnd · export-ui
-  styles/         base부터 scrollbars까지 12개. index.html의 <link> 순서가 캐스케이드
+  styles/         base부터 scrollbars까지 13개. index.html의 <link> 순서가 캐스케이드
 test/             node --test 용 단위 테스트 (shared/ 만 커버)
 ```
 
@@ -87,8 +93,54 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   `writeFileSync`로 바꾸지 말 것 — 쓰다 끊기면 전체 할 일이 사라진다.
 - IPC를 새로 추가할 때는 **세 곳을 모두** 건드려야 한다: `main/ipc.js`의 `ipcMain.handle`,
   `preload.js`의 `exposeInMainWorld`, 렌더러의 `window.api.*` 호출.
+- **토큰은 IPC를 건너지 않는다.** `window.api`에 토큰을 돌려주는 함수가 **하나도 없어야** 한다.
+  렌더러가 알 수 있는 것은 `state:load`의 `auth`(= `{ email, userId }`)뿐이고, 그 객체는
+  `shared/auth.js`의 `publicSession()`이 **필드를 골라서** 만든다 — 지우는 방식이 아니라
+  고르는 방식인 이유가 있다. 세션에 필드를 추가해도 여기 이름을 적지 않는 한 새어나가지 않는다.
+- **렌더러의 `Date.now()`를 직접 쓰지 않는다.** `renderer/store.js`의 `now()`가
+  `Date.now() + clockOffset`이고, 오프셋은 메인이 서버 응답의 `Date` 헤더로 재서 넘긴다.
+  **`updatedAt`이 LWW의 기준이라, 시계가 10분 느린 기기는 그 기기의 모든 편집을 조용히 잃는다.**
+  이 파일에 타임스탬프를 새로 쓸 일이 생기면 `now()`를 쓸 것 (`uid()`만 예외 — 비교용이 아니다).
+- **`state:save`는 덮어쓰기가 아니라 병합이다** (`main/store.js`의 `mergeRendererTasks`).
+  렌더러가 마지막으로 그린 뒤 pull이 끼어들 수 있고, 그때 통째로 덮으면 방금 받은 행이 사라진다.
+  병합이 안전한 이유는 **task를 배열에서 지우는 일이 없기 때문**이다 — 삭제가 타임스탬프라
+  "정당하게 행이 빠진 저장"이란 것이 존재하지 않는다. 동점은 렌더러가 이긴다(화면에 있는 쪽).
+- **sync는 로컬 task를 절대 지우지 않는다.** 로그아웃해도 `data.json`은 그대로다. 커서와
+  푸시 워터마크(`settings.sync`)만 비운다 — 계정이 바뀌면 남의 커서 때문에 행을 통째로 건너뛴다.
+- **커서는 진실이 아니라 최적화다.** `server_seq`는 트랜잭션 안에서 발급돼서, 먼저 커밋된 행이
+  더 큰 번호를 가질 수 있다. 그 틈에 pull이 들어가면 행 하나를 영영 건너뛴다. 그래서
+  `main/sync.js`가 **시작할 때와 6시간마다 커서를 버리고 전체를 다시 읽는다**(`RECONCILE_MS`).
+  병합이 LWW라 여러 번 읽어도 값이 달라지지 않으니 대가는 요청 몇 번뿐이다. **이걸 없애면
+  아주 가끔 할 일 하나가 조용히 사라진다** — 재현이 거의 불가능한 종류의 버그다.
+- **refresh_token은 갱신할 때마다 회전한다.** 그래서 두 규칙을 깨면 안 된다:
+  ① 새 쌍을 **쓰기 전에 먼저 디스크에 저장**한다(`remember()`가 그 순서다). 저장 전에 죽으면
+  로그아웃된다. ② **동시에 두 번 갱신하지 않는다** — `refreshSession()`이 진행 중인 promise
+  하나를 공유하는 이유다. 나란히 도는 요청 둘이 각자 갱신하면 하나가 다른 하나를 무효화한다.
+  갱신이 4xx로 실패하면 그 토큰은 영영 죽은 것이라 세션을 버리고, **4xx가 아니면(네트워크)
+  세션을 유지한다** — 터널을 지났다고 로그아웃되면 안 된다.
+  ③ **진행 중인 갱신은 자기가 시작한 세션이 아직 그대로인지 확인하고 행동한다**
+  (`runRefresh()`의 `stillOurs()`). 그 사이에 로그아웃했다 다시 로그인하면 **다른** 세션이
+  들어와 있고, 그때 성공 경로는 새 세션을 옛 토큰으로 덮고 4xx 경로는 멀쩡한 새 세션을 지운다.
+- **로그아웃은 `?scope=local`이어야 한다.** `/auth/v1/logout`의 기본값은 `global`이라 계정의
+  **모든 기기** 세션을 끊는다 — 실측으로 확인했다(기본값: 다른 기기 세션 죽음, `scope=local`:
+  살아있음). 여러 기기에서 쓰는 것이 이 앱의 목적이라 노트북에서 로그아웃했다고 폰까지
+  로그아웃되면 안 된다.
 
 ## 알아두면 좋은 것
+
+- **비밀번호 로그인은 패키징된 빌드에 존재하지 않는다.** `main/ipc.js`가 `auth:login`을
+  `!app.isPackaged`일 때만 등록한다. 사용자에게 열린 길은 Google 하나뿐이고, 비밀번호는
+  **사람이 동의 화면을 누르지 않고도 동기화를 검증하기 위한** 개발용 통로다. 가이드의 개발용
+  폼도 `state:load`의 `devLogin`을 보고 그때만 나온다. 이 통로를 없애면 **동기화를 자동으로
+  검증할 방법이 사라진다** — 없애기 전에 대체 수단을 먼저 만들 것.
+- **Google 로그인은 시스템 브라우저로 나갔다가 loopback으로 돌아온다** (`main/oauth.js`).
+  포트는 `listen(0)`으로 OS가 고른다 — 그래서 Supabase의 Redirect URL 허용목록에
+  `http://127.0.0.1:*`가 있어야 한다. 와일드카드를 못 쓰게 되면 고쳐야 할 곳은 그 `listen(0)`
+  한 줄이다. 앱 안 webview를 쓰면 **Google이 막는다.**
+- **콜백 서버는 `/callback`이 아닌 요청을 404로 흘려보낸다.** 브라우저가 보내는 favicon 요청
+  하나에 로그인이 끝나버리면 안 되기 때문이다.
+- **브라우저 마지막 화면에 "로그인되었습니다"라고 쓰지 말 것.** 그 시점에 일어난 일은 코드가
+  돌아온 것뿐이고, 교환은 그 다음에 실패할 수 있다. 판정은 앱이 한다.
 
 - `app.setName('Nekan')`이 `main.js` 최상단에 있는 이유: `npm start`와 패키징된
   exe가 **같은** `%APPDATA%\Nekan\data.json`을 보게 하려고. 지우면 개발용/배포용
@@ -136,7 +188,10 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   넘쳐도 딱 맞아 보이니, 스위치 오른쪽 끝과 `.bar-summary` 왼쪽 끝 사이 간격도 같이 볼 것.
   스크린샷은 `PrintWindow`가 오른쪽 영역을 갱신 안 된 채 찍는 일이 있으니 CDP
   `Page.captureScreenshot`을 쓸 것.
-  **바에서 빠지는 자리(`.title`·`.app-version`·`#exportBtn`)에 넣으면 폭이 안 든다** — 버전
+  **바에서 빠지는 것은 `collapsed.css`가 이름으로 적은 것뿐이다.** `.brand` 안에 넣었다고
+  따라 빠지지 않는다 — 동기화 칩이 그래서 바에 남아 있었고(실측 56px, 여유는 28px),
+  `collapsed.css`에 한 줄 더 적어서야 빠졌다. **클래스만 보지 말고 실제로 안 보이는지 볼 것.**
+  **빠지는 자리(`.title`·`.app-version`·`#exportBtn`)에 넣으면 폭이 안 든다** — 버전
   표시가 그렇게 들어갔고 실측 여유는 28px 그대로였다. 늘 보일 필요가 없는 것은 이쪽을 먼저 볼 것.
 - 인박스 행에는 마감일·완료·메모가 **의도적으로 없다**(`inboxItemEl`). 그래서 `selectedTask()`가
   `quadrant === INBOX`를 null로 본다 — 이걸 빼면 선택된 항목을 인박스로 끌어올렸을 때 메모
@@ -225,6 +280,65 @@ NEKAN_SUPABASE_URL=... NEKAN_SUPABASE_ANON_KEY=... node supabase/verify.js
 **이 스크립트는 여러 번 돌려도 같은 결과가 나와야 한다** — 첫 판은 고정 타임스탬프를 써서
 딱 한 번만 통과했다. 두 번째 판부터는 앞 실행이 남긴 행이 더 새것이라 트리거가 (정확하게)
 버렸기 때문이다. **빈 테이블에서만 통과하는 검증은 검증이 아니다.**
+
+**로그인 경로도 `npm test`가 못 덮는다** (safeStorage가 Electron 안에서만 산다). `--user-data-dir`로
+띄워 `window.api.login(...)`을 CDP로 부르고, `auth.json`에 `eyJ`가 **평문으로 없는지**와
+재시작 후 `state:load`의 `auth`가 남는지를 본다. 시간이 걸리는 두 가지는 이렇게 앞당겼다:
+
+- **갱신(회전)**: `shared/auth.js`의 `REFRESH_SKEW_MS`를 잠깐 2시간으로 올리면 **시작할 때마다**
+  갱신이 돈다. `auth.json`이 바뀌는 것이 곧 성공 신호다 — 그 파일은 `remember()`에서만 쓰이고
+  `remember()`는 로그인·갱신 성공에서만 불린다. **끝나면 60초로 되돌릴 것.**
+- **죽은 토큰**: 로그인 → `auth.json` 복사 → 로그아웃(서버가 폐기) → 복사본을 되돌려놓고 실행.
+  `auth.json`이 **사라지면** 4xx 경로가 맞게 돈 것이다(`forget()`은 로그아웃과 이 경로에서만
+  불린다). 사라지지 않으면 네트워크 실패와 폐기를 구분하지 못하고 있는 것이다.
+
+**동기화는 기기 두 대를 띄워야 확인된다.** 프로필과 디버깅 포트를 갈라 두 번 띄우면 된다:
+
+```
+npx electron . --user-data-dir=<A> --remote-debugging-port=9333
+npx electron . --user-data-dir=<B> --remote-debugging-port=9334
+```
+
+**프로필 폴더에 빈 `data.json`을 먼저 써 둘 것.** 안 그러면 `migrateLegacyStore()`가
+`%APPDATA%\EisenhowerMatrix`의 **진짜 데이터**를 끌어와 서버로 올려버린다. 한쪽에서 항목을
+추가하고 6초쯤 뒤 다른 쪽에서 **아무 항목이나 추가하면**(그게 그쪽 sync를 3초 뒤로 당긴다)
+건너온 것이 보인다 — 안 그러면 60초 하트비트를 기다려야 한다.
+
+**`.hidden`은 전역 규칙이 아니다.** 영역마다 자기 것을 선언한다(`.chip.hidden`,
+`.view.hidden`, `.memo .hidden`, `.account .hidden`). 새 스타일시트를 만들면서 이걸 빠뜨리면
+**클래스는 붙는데 아무 일도 일어나지 않는다** — `display`를 정하는 규칙이 뒤에 오면 한 클래스짜리
+`.hidden`은 항상 진다. 계정 패널이 로그인 전/후 두 쪽을 동시에 보여준 것이 이 때문이었다.
+`classList.contains('hidden')`으로 검증하면 **통과한다** — 반드시 `offsetParent`나 스크린샷으로
+볼 것.
+
+**렌더러를 재는 곳을 헷갈리지 말 것.** `renderCounts()`가 갱신하는 것은 **바 칩**(`#c1`~`#c4`)
+이고, 분면 헤더(`[data-count=q1]`)는 `renderMatrix()` 즉 **매트릭스 탭일 때만** 다시 그려진다.
+가이드 탭을 열어 둔 채 분면 헤더를 읽으면 마지막 매트릭스 렌더의 잔상이 보이고, 그걸 "동기화가
+화면에 반영되지 않는다"로 읽게 된다. 여기에 한 번 속았다 — 바 모드 함정과 같은 종류다.
+
+**Google 로그인은 동의 화면 없이도 거의 다 검증된다.** 버튼을 누르면 loopback 서버가 뜨고,
+**개발 실행에서는 콜백 URL을 터미널에 찍는다**(`oauth callback: http://127.0.0.1:.../callback/<state>`).
+그 URL을 그대로 써서 직접 때리면 된다:
+
+```sh
+curl "<찍힌 URL>?error=access_denied"   # 거절 경로
+curl "<찍힌 URL>?code=fake"             # 교환 실패 경로
+curl "http://127.0.0.1:<포트>/callback"  # state 없는 요청 — 404여야 한다
+```
+
+**경로 끝의 `<state>`를 빼면 안 된다.** 콜백 서버는 그 값이 맞을 때만 응답하고 나머지는 404로
+흘려보낸다 — 같은 기기의 다른 프로세스가 `?error=`를 먼저 때려 로그인을 취소시키는 것을 막는
+장치다. 그래서 URL을 찍어주는 것이고, 그 로그는 `app.isPackaged`가 아닐 때만 나간다.
+**state를 쿼리가 아니라 경로에 둔 이유**: Supabase가 `redirect_to`에 `?code=...`를 이어붙이는데,
+`redirect_to`에 이미 쿼리가 있으면 어떻게 합쳐지는지가 불분명하다. 경로는 모호하지 않다.
+
+`code=fake`는 Supabase가 `flow_state_not_found`로 거절하는 것이 **정상이고**, 그것이 곧
+PKCE 상태가 실제로 검사된다는 증거다. 남는 미검증 구간은 Google 동의 화면 하나뿐이다.
+
+**시계 오차는 오프셋이 0이면 아무것도 증명하지 못한다.** 개발 기기의 시계는 대개 정확해서
+`CLOCK_TOLERANCE_MS`(2초) 안에 들어오고, 그러면 배관이 끊겨 있어도 똑같이 0이 나온다.
+`api-client.js`의 `skew = nextOffset(...)` 줄을 잠깐 `skew = 600_000`으로 바꿔 띄운 뒤
+**새로 만든 항목의 `updatedAt`이 `Date.now()`보다 600초 앞서는지** 볼 것. 끝나면 되돌린다.
 
 렌더러·창 동작은 여전히 `npm start`로 직접 띄워서 확인한다. 최소 확인 항목:
 할 일 추가 → 완료 → 히스토리에서 되돌리기 → 삭제 → 휴지통에서 복원 → 앱 재시작 후 유지.

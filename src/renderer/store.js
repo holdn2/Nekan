@@ -31,19 +31,37 @@ import {
 let tasks = [];
 /** Which matrix the header toggle is on. Not a task field — a filter. */
 let activeSpace = DEFAULT_SPACE;
+/** Server time minus this machine's, measured by main from a response header. */
+let clockOffset = 0;
+
+/**
+ * Every timestamp this file writes, on the server's clock rather than this
+ * machine's.
+ *
+ * `updatedAt` decides who wins when the same task was edited on two devices, so
+ * a laptop ten minutes slow would lose all of those and a phone ten minutes
+ * fast would win all of them — quietly, and every time. The offset is zero
+ * until main has spoken to the server, which is also the right answer for an
+ * app that never signs in.
+ */
+const now = () => Date.now() + clockOffset;
+
+/** Main learned a new offset. Applies to the next write, never to old rows. */
+export function setClockOffset(ms) {
+  clockOffset = Number.isFinite(ms) ? ms : 0;
+}
 
 /**
  * Mark the rows a mutation changed.
  *
- * `updatedAt` is what decides who wins when the same task was edited on two
- * devices, so a mutation that forgets to stamp it silently loses that edit.
- * Every write goes through persist(), which is why the stamping lives here
- * rather than in each of the twenty callers.
+ * A mutation that forgets to stamp `updatedAt` silently loses that edit on
+ * another device. Every write goes through persist(), which is why the stamping
+ * lives here rather than in each of the twenty callers.
  */
 function touch(rows) {
-  const now = Date.now();
+  const at = now();
   rows.flat().forEach((task) => {
-    if (task) task.updatedAt = now;
+    if (task) task.updatedAt = at;
   });
 }
 
@@ -72,6 +90,28 @@ const uid = () =>
 export function setTasks(list) {
   tasks = list;
 }
+
+/**
+ * Take the list a sync just merged.
+ *
+ * Deliberately not commit(): main has the same list already and wrote it, so
+ * saving here would send it straight back — and the save would schedule another
+ * sync, which would answer with another list. Redraw only.
+ */
+export function acceptSynced(list) {
+  if (!Array.isArray(list)) return;
+  tasks = list;
+  notify();
+}
+
+/**
+ * How many tasks this machine is holding, both boards and every tab.
+ *
+ * Not filtered by `inSpace`: the question it answers is "what would go up if I
+ * signed in", and that is all of them regardless of which board is on screen.
+ * Tombstones are not tasks any more, so they do not count.
+ */
+export const activeCount = () => tasks.filter((t) => !t.purgedAt).length;
 
 /** The task with this id, in whatever state — or undefined. */
 export const findTask = (id) => tasks.find((t) => t.id === id);
@@ -139,7 +179,7 @@ function tailKey(quadrant) {
 
 /** A new task, filed into `quadrant` on the board that is on screen. */
 function makeTask(quadrant, text, dueDate) {
-  const now = Date.now();
+  const at = now();
   return {
     id: uid(),
     text,
@@ -152,8 +192,8 @@ function makeTask(quadrant, text, dueDate) {
     // Read after the row is in `tasks`, so this has to be computed while it is
     // still out: tailKey() looks at the rows it will sit behind.
     orderKey: tailKey(quadrant),
-    createdAt: now,
-    updatedAt: now,
+    createdAt: at,
+    updatedAt: at,
     completedAt: null,
     deletedAt: null,
     purgedAt: null,
@@ -188,7 +228,7 @@ export function addTasks(quadrant, texts) {
 export function completeTask(id) {
   const task = findTask(id);
   if (!task) return;
-  task.completedAt = Date.now();
+  task.completedAt = now();
   commit(task);
 }
 
@@ -212,7 +252,7 @@ export function setDue(id, value) {
 export function deleteTask(id) {
   const task = findTask(id);
   if (!task) return;
-  task.deletedAt = Date.now();
+  task.deletedAt = now();
   commit(task);
 }
 
@@ -233,7 +273,7 @@ export function untrashTask(id) {
  * dropExpiredTombstones() in shared/core.js is what finally removes it.
  */
 function tombstone(task) {
-  task.purgedAt = Date.now();
+  task.purgedAt = now();
   task.text = "";
   task.memo = null;
 }
@@ -317,9 +357,9 @@ export function moveTask(id, quadrant, beforeId) {
 /** "전체 휴지통으로" — soft-delete the whole history list. */
 export function trashAll(items) {
   if (!items.length) return;
-  const now = Date.now();
+  const at = now();
   items.forEach((t) => {
-    t.deletedAt = now;
+    t.deletedAt = at;
   });
   commit(items);
 }

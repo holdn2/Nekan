@@ -18,7 +18,7 @@ import {
   startOfToday,
   startOfTomorrow,
 } from "./core-bridge.js";
-import { setTasks } from "./store.js";
+import { acceptSynced, setClockOffset, setTasks } from "./store.js";
 import { subscribe } from "./render-bus.js";
 import { $ } from "./dom.js";
 import { toast } from "./components/toast.js";
@@ -30,6 +30,14 @@ import {
   wireInbox,
 } from "./views/inbox.js";
 import { renderHistory, renderTrash, wireArchive } from "./views/archive.js";
+import {
+  announceOverwritten,
+  applySession,
+  applySyncStatus,
+  renderAccount,
+  setDevLogin,
+  wireAccount,
+} from "./views/account.js";
 import { dropStaleSelection, renderMemo, wireMemo } from "./views/memo.js";
 import {
   applyMode,
@@ -60,6 +68,9 @@ import { exportBoard } from "./window/export-ui.js";
 function render() {
   dropStaleSelection();
   renderCounts();
+  // Cheap, and outside the bar-mode return below: the account block counts the
+  // tasks a sign-in would carry up, and that number moves with every change.
+  renderAccount();
   // A bar shows nothing but its chips, and renderCounts already did those.
   if (getMode() === "collapsed") return;
   const tab = getTab();
@@ -167,6 +178,10 @@ function wireShortcuts() {
 let pushedMode = null;
 /** Same for the update status, for the same reason. */
 let pushedUpdate = null;
+/** Same again, for a sync that finished before the load snapshot arrived. */
+let pushedTasks = null;
+/** And for its status, which is pushed on the same schedule. */
+let pushedSync = null;
 
 /**
  * Load, wire, draw. The order is what matters here: the mode listener before
@@ -188,8 +203,28 @@ async function init() {
     applyUpdateStatus(next, { announce: true });
   });
 
+  // Same race as the two above, and the same fix: the first sync runs three
+  // seconds after launch and the reply below could still be in flight. Both
+  // lists come from main's one array, so the later one is the newer one.
+  window.api.onSyncTasks((tasks, offset, overwritten) => {
+    setClockOffset(offset);
+    pushedTasks = normalizeTasks(tasks);
+    acceptSynced(pushedTasks);
+    announceOverwritten(overwritten);
+  });
+
+  // Carries the session as well as the state. Main can end a session on its
+  // own when a token turns out to be revoked, and this is how the guide finds
+  // out rather than going on showing an email it no longer has.
+  window.api.onSyncStatus((next) => {
+    pushedSync = next;
+    applySession(next.session);
+    applySyncStatus(next);
+  });
+
   const state = await window.api.load();
-  setTasks(normalizeTasks(state.tasks));
+  setClockOffset(state.clockOffset);
+  setTasks(normalizeTasks(pushedTasks || state.tasks));
   // Every change ends on the render bus, so this one subscription is what keeps
   // the screen in step with the data.
   subscribe(render);
@@ -200,6 +235,14 @@ async function init() {
   applyInboxOpen(state.settings?.inboxOpen === true, false);
   applySpace(state.settings?.activeSpace, false);
   setLayout(state.settings?.layout);
+
+  setDevLogin(state.devLogin);
+  wireAccount(() => setTab("guide"));
+  // The session follows the same rule as the mode and the update status: a
+  // value that was pushed while load() was in flight is the newer one, and
+  // state.auth would otherwise put a signed-out snapshot back on screen.
+  applySession(pushedSync ? pushedSync.session : state.auth);
+  applySyncStatus(pushedSync || state.sync);
 
   wireChrome();
   wireAddForms();
