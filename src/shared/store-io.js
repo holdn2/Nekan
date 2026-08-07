@@ -23,6 +23,12 @@ function defaultStore() {
       // Which matrix the header toggle is on. Only the choice lives here — the
       // tasks of both boards are in the one `tasks` array, tagged with `space`.
       activeSpace: DEFAULT_SPACE,
+      // What the first-run screen was answered with: "sync", "local", or null
+      // for "not asked yet". Null is what puts that screen on screen, so an
+      // existing 1.0.2 file — which has no such key — meets it once too. That
+      // is deliberate: sync is new and nobody goes looking for a feature they
+      // do not know exists.
+      startupChoice: null,
       // Where the bar was left, so quitting from bar mode and coming back does
       // not reopen it at the expanded window's corner. Position only — the bar
       // has one size and saving it would reopen the app 600x48.

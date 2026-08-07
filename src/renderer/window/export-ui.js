@@ -8,14 +8,22 @@
  * went — the format itself is decided by the extension in the native dialog.
  */
 
-import { $ } from "../dom.js";
 import { toast } from "../components/toast.js";
 
-/** Run one export round trip. Safe to call from the button or Ctrl+E. */
+/**
+ * Whether a save dialog is already open.
+ *
+ * This used to be the title-bar button's own `disabled` flag, which broke the
+ * moment that button moved into the settings panel: the element was gone and
+ * reading `.disabled` off null threw before the export ever started. A module
+ * flag does not care where the click came from.
+ */
+let busy = false;
+
+/** Run one export round trip. Safe to call from the panel or Ctrl+E. */
 export async function exportBoard() {
-  const btn = $("#exportBtn");
-  if (btn.disabled) return;
-  btn.disabled = true;
+  if (busy) return;
+  busy = true;
   try {
     const res = await window.api.exportBoard();
     if (res?.ok) {
@@ -38,6 +46,6 @@ export async function exportBoard() {
     console.error("export failed", err);
     toast("저장하지 못했습니다.", { error: true, ms: 6000 });
   } finally {
-    btn.disabled = false;
+    busy = false;
   }
 }

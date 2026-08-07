@@ -39,6 +39,8 @@ import {
   wireAccount,
 } from "./views/account.js";
 import { dropStaleSelection, renderMemo, wireMemo } from "./views/memo.js";
+import { closeSettings, wireSettings } from "./views/settings.js";
+import { needsWelcome, showWelcome, wireWelcome } from "./views/welcome.js";
 import {
   applyMode,
   applyPinned,
@@ -138,8 +140,10 @@ function wireShortcuts() {
     }
     if (e.key.toLowerCase() === "e") {
       e.preventDefault();
-      // Bar mode hides the button; keep the shortcut in step with it.
+      // Nothing on screen to export from a bar, and the save dialog would open
+      // over a window with no board behind it.
       if (getMode() === "collapsed") return;
+      closeSettings();
       exportBoard();
       return;
     }
@@ -174,6 +178,20 @@ function wireShortcuts() {
 
 /* ------------------------------------------------------------------- init */
 
+/**
+ * applyMode, plus the one thing that must not survive a trip into the bar.
+ *
+ * collapsed.css hides the settings popover, but hiding is not closing:
+ * views/settings.js would still believe it is open, and the first gear press
+ * in the bar would spend itself closing something nobody can see. It lives
+ * here rather than inside applyMode() because chrome.js must not import
+ * settings.js -- that direction is already taken.
+ */
+function enterMode(next) {
+  if (next === "collapsed") closeSettings();
+  applyMode(next);
+}
+
 /** Last mode pushed by the main process, which outranks the load snapshot. */
 let pushedMode = null;
 /** Same for the update status, for the same reason. */
@@ -193,7 +211,7 @@ async function init() {
   // ready-to-show, and a listener attached later would miss it silently.
   window.api.onMode((next) => {
     pushedMode = next;
-    applyMode(next);
+    enterMode(next);
   });
 
   // Same race, longer odds: the first update check is seconds away, and the
@@ -237,7 +255,8 @@ async function init() {
   setLayout(state.settings?.layout);
 
   setDevLogin(state.devLogin);
-  wireAccount(() => setTab("guide"));
+  wireSettings();
+  wireAccount();
   // The session follows the same rule as the mode and the update status: a
   // value that was pushed while load() was in flight is the newer one, and
   // state.auth would otherwise put a signed-out snapshot back on screen.
@@ -253,12 +272,23 @@ async function init() {
   wireDragAndDrop();
   wireQuadEdges();
 
+  // Before the first render, so nobody sees a matrix flash behind it. The
+  // wiring above has to be done first: this screen can sign in, and a sign-in
+  // pushes tasks and a status back at us.
+  wireWelcome(() => {});
+  if (needsWelcome(state.settings?.startupChoice)) {
+    showWelcome();
+    // 380px of card does not fit in a 48px bar, and the app has to be usable
+    // before it can be put away.
+    if ((pushedMode || state.mode) === "collapsed") window.api.expand();
+  }
+
   // No announce: this is the state as it already stood, and a reload arrives
   // here too. Whatever landed as a push above has announced itself already.
   applyUpdateStatus(pushedUpdate || state.update);
   // state.mode is a snapshot from before ready-to-show, so a mode that was
   // pushed in the meantime is the newer truth. This is also the first render.
-  applyMode(pushedMode || state.mode || "expanded");
+  enterMode(pushedMode || state.mode || "expanded");
   scheduleDayRollover();
 }
 

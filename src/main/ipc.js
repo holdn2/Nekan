@@ -170,6 +170,20 @@ function registerIpc() {
     return settings.activeSpace;
   });
 
+  // "sync" or "local", answered once on the first run. Anything else is
+  // treated as still-unanswered so a bad value cannot lock the screen away.
+  ipcMain.handle("settings:startup", (_e, choice) => {
+    const settings = getSettings();
+    settings.startupChoice =
+      choice === "sync" || choice === "local" ? choice : null;
+    // Written now rather than on the debounce, and the write's own answer is
+    // returned: the welcome screen holds itself open until this says the
+    // choice is on disk, because a screen that closes on an unsaved answer
+    // comes back on the next launch having apparently forgotten it.
+    const saved = persistNow();
+    return saved ? settings.startupChoice : null;
+  });
+
   /* ------------------------------------------------------------ export */
 
   ipcMain.handle("export:run", () => runExport(getWindow()));
