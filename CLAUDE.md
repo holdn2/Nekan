@@ -254,12 +254,15 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   `gh release edit v<버전> --notes-file <파일> --draft=false --latest`로 노트를 넣고 공개한다.
   릴리스 노트는 **사용자가 주는 문구를 그대로** 쓴다.
 - **electron-builder는 같은 태그로 draft를 두 개 만든다.** 업로드가 병렬로 돌면서 둘 다
-  "릴리스가 없네"라고 판단해 각자 만드는 경쟁 상태이고, **v1.0.0부터 v1.0.3까지 네 번 다** 같은 식으로
+  "릴리스가 없네"라고 판단해 각자 만드는 경쟁 상태이고, **v1.0.0부터 v1.0.4까지 다섯 번 다** 같은 식으로
   (`.blockmap`만 따로) 갈렸다 — 우연이 아니니 다음에도 갈라진다고 보면 된다. 그래서
   `npm run release`가 끝에 `tools/check-release.js`를 돌려 자동으로 합치고 파일 세 개를
   확인한다. **손으로 확인하지 말고 그 스크립트의 종료 코드를 볼 것.** 갈린 채로 publish하면
   조용히 망가진다: `latest.yml`이 없는 쪽이면 아무도 업데이트되지 않고, `.blockmap`이 없는
   쪽이면 모두가 매번 전체를 받는다.
+- **`electron-builder`를 두 개 동시에 돌리지 않는다.** `npm run dist`·`npm run release`가 같은
+  `dist/`를 지우고 다시 만들기 때문에, 나란히 돌면 Windows에서 `win-unpacked`가 잠겨 `EBUSY`로
+  죽는다. 워크트리를 갈라도 `dist/`는 저장소마다 하나뿐이니 소용없다.
 - **`package.json`의 `files`에 `node_modules`가 없어도 런타임 의존성은 asar에 들어간다.**
   electron-builder가 production dependency를 따로 수집하기 때문이다(확인: asar 헤더에
   `node_modules/electron-updater`가 있다). 그러니 `files`에 `node_modules/**/*`를 넣지 말 것 —
