@@ -34,13 +34,15 @@ body.expanded .bar-summary .chip {
    button visible — and the bar widened to match rather than the contents
    squeezed further. */
 body.collapsed .title,
-body.collapsed .app-version,
-/* The sync chip goes with them, for the measured reason above rather than a
-   tidiness one: "동기화됨" measures 56px and the widest the row ever gets has
-   28px to spare, so keeping it would mean widening the bar. It is also the
-   least urgent thing here — nothing in the bar is actionable, and the states
-   worth acting on are still there when the window is opened. */
-body.collapsed .sync-chip {
+body.collapsed .app-version {
+  display: none;
+}
+
+/* The settings panel is 320px wide and the bar is 48px tall, so the gear opens
+   the window first (see views/settings.js). If one is somehow left open on the
+   way into a bar, it goes with the window it belonged to. */
+body.collapsed .settings,
+body.collapsed .settings-backdrop {
   display: none;
 }
 

@@ -170,6 +170,16 @@ function registerIpc() {
     return settings.activeSpace;
   });
 
+  // "sync" or "local", answered once on the first run. Anything else is
+  // treated as still-unanswered so a bad value cannot lock the screen away.
+  ipcMain.handle("settings:startup", (_e, choice) => {
+    const settings = getSettings();
+    settings.startupChoice =
+      choice === "sync" || choice === "local" ? choice : null;
+    persistNow();
+    return settings.startupChoice;
+  });
+
   /* ------------------------------------------------------------ export */
 
   ipcMain.handle("export:run", () => runExport(getWindow()));

@@ -39,6 +39,8 @@ import {
   wireAccount,
 } from "./views/account.js";
 import { dropStaleSelection, renderMemo, wireMemo } from "./views/memo.js";
+import { closeSettings, wireSettings } from "./views/settings.js";
+import { needsWelcome, showWelcome, wireWelcome } from "./views/welcome.js";
 import {
   applyMode,
   applyPinned,
@@ -138,8 +140,10 @@ function wireShortcuts() {
     }
     if (e.key.toLowerCase() === "e") {
       e.preventDefault();
-      // Bar mode hides the button; keep the shortcut in step with it.
+      // Nothing on screen to export from a bar, and the save dialog would open
+      // over a window with no board behind it.
       if (getMode() === "collapsed") return;
+      closeSettings();
       exportBoard();
       return;
     }
@@ -237,7 +241,8 @@ async function init() {
   setLayout(state.settings?.layout);
 
   setDevLogin(state.devLogin);
-  wireAccount(() => setTab("guide"));
+  wireSettings();
+  wireAccount();
   // The session follows the same rule as the mode and the update status: a
   // value that was pushed while load() was in flight is the newer one, and
   // state.auth would otherwise put a signed-out snapshot back on screen.
@@ -252,6 +257,17 @@ async function init() {
   wireShortcuts();
   wireDragAndDrop();
   wireQuadEdges();
+
+  // Before the first render, so nobody sees a matrix flash behind it. The
+  // wiring above has to be done first: this screen can sign in, and a sign-in
+  // pushes tasks and a status back at us.
+  wireWelcome(() => {});
+  if (needsWelcome(state.settings?.startupChoice)) {
+    showWelcome();
+    // 380px of card does not fit in a 48px bar, and the app has to be usable
+    // before it can be put away.
+    if ((pushedMode || state.mode) === "collapsed") window.api.expand();
+  }
 
   // No announce: this is the state as it already stood, and a reload arrives
   // here too. Whatever landed as a push above has announced itself already.

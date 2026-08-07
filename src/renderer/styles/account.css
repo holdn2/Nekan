@@ -54,14 +54,21 @@
   cursor: default;
 }
 
+/* Not a flex row. The text around the count would each become their own flex
+   item, and at the settings panel's 320px that breaks the sentence into three
+   stacked pieces. */
 .account-adopt {
-  display: flex;
-  align-items: center;
-  gap: 7px;
+  display: block;
   flex-basis: 100%;
   font-size: 12.5px;
+  line-height: 1.5;
   color: var(--muted);
   cursor: pointer;
+}
+
+.account-adopt input {
+  margin-right: 6px;
+  vertical-align: -1px;
 }
 
 .account-hint {
@@ -71,16 +78,30 @@
   color: var(--muted);
 }
 
+/* Wraps, because this block now lives in a 320px panel rather than the width
+   of the guide. */
 .account-dev {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   flex-basis: 100%;
   padding-top: 10px;
   border-top: 1px dashed var(--line);
 }
 
+.account-dev button {
+  flex-basis: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
 .account-dev input {
-  flex: 1;
+  flex: 1 1 120px;
   min-width: 0;
   padding: 5px 8px;
   border: 1px solid var(--line);
@@ -124,32 +145,4 @@
 
 .account-msg.error {
   color: var(--danger);
-}
-
-/* ------------------------------------------------------------------- chip */
-
-.sync-chip {
-  margin-left: 8px;
-  padding: 2px 7px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--panel-3);
-  color: var(--muted);
-  font-size: 10.5px;
-  line-height: 1.5;
-  letter-spacing: 0.01em;
-  cursor: pointer;
-  -webkit-app-region: no-drag;
-}
-
-.sync-chip:hover {
-  color: var(--text);
-}
-
-/* Only two of the four states are worth colouring: one says an edit has not
-   left this machine, the other says why. "동기화됨" stays quiet on purpose —
-   the normal state should not be asking for attention. */
-.sync-chip[data-state="pending"],
-.sync-chip[data-state="offline"] {
-  color: var(--accent);
 }

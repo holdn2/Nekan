@@ -1,11 +1,11 @@
 /**
- * The account block in the guide, and the sync chip in the title bar.
+ * The account block inside the settings panel, and the dot on the gear.
  *
  * Signing in is the only thing in this app that reaches the network on purpose,
  * so the two rules here are about honesty rather than layout: never say
  * "동기화됨" unless a sync came back saying so, and never let a failure pass
- * without a sentence. The states the chip can show are the ones a person can
- * act on -- the same test the update button had to pass.
+ * without a sentence. The dot only lights for the two states a person can act
+ * on -- the same test the update button had to pass.
  */
 
 import { $ } from "../dom.js";
@@ -14,8 +14,6 @@ import { activeCount } from "../store.js";
 
 /** Whether this build has the development password channel at all. */
 let devLogin = false;
-/** Set by app.js: how a click on the chip reaches the guide tab. */
-let openGuide = () => {};
 /** Guards a second press while the browser is still open. */
 let signingIn = false;
 
@@ -26,12 +24,12 @@ const els = {};
  * they look the elements up on first use rather than assuming the wiring ran.
  */
 function ready() {
-  if (!els.chip) cache();
+  if (!els.out) cache();
   return els;
 }
 
 function cache() {
-  els.chip = $("#syncChip");
+  els.gear = $("#settingsBtn");
   els.out = $("#accountOut");
   els.in = $("#accountIn");
   els.google = $("#googleBtn");
@@ -81,9 +79,9 @@ function say(text, isError = false) {
   els.msg.classList.toggle("error", Boolean(text) && isError);
 }
 
-/* -------------------------------------------------------------------- chip */
+/* ------------------------------------------------------------------ status */
 
-/** What the four states are called, and what the guide line says under them. */
+/** What the four states are called, in the settings panel. */
 const LABELS = {
   off: null,
   syncing: "동기화 중",
@@ -97,27 +95,35 @@ const LABELS = {
  * waiting. Deciding it here keeps main's status to facts and leaves the
  * wording in one place.
  */
-function chipState(status) {
+function displayState(status) {
   if (!status || status.state === "off") return "off";
   if (status.state === "synced" && status.unsent > 0) return "pending";
   return status.state;
 }
 
+/**
+ * The words go in the panel; the title bar gets a dot.
+ *
+ * The chip that used to live up there measured 56px against the 28px the
+ * widest bar row has to spare, so it was dropped in bar mode -- which is the
+ * mode this widget is usually left in, and therefore the one where "아직 안
+ * 올라갔다" most needed saying. A dot costs no width, so it can stay.
+ */
 export function applySyncStatus(status) {
   ready();
-  const state = chipState(status);
+  const state = displayState(status);
   const label = LABELS[state];
 
-  els.chip.hidden = !label;
-  if (label) {
-    els.chip.dataset.state = state;
-    els.chip.textContent = label.replace("%n", status.unsent);
-    els.chip.title =
-      state === "offline"
-        ? "서버에 닿지 못했습니다. 변경은 이 컴퓨터에 저장되어 있고, 연결되면 올라갑니다."
-        : "계정 설정 열기";
-  }
   els.state.textContent = label ? label.replace("%n", status.unsent) : "";
+  // Only `pending` and `offline` colour the dot; settings.css hides it for the
+  // rest, because a widget that is fine should not be asking for attention.
+  els.gear.dataset.sync = state;
+  els.gear.title =
+    state === "offline"
+      ? "설정 — 서버에 닿지 못했습니다. 변경은 이 컴퓨터에 저장되어 있습니다."
+      : label
+        ? `설정 — ${label.replace("%n", status.unsent)}`
+        : "설정";
 }
 
 /* ----------------------------------------------------------------- session */
@@ -198,11 +204,8 @@ async function finish(promise) {
   }
 }
 
-export function wireAccount(onOpenGuide) {
+export function wireAccount() {
   cache();
-  openGuide = onOpenGuide || (() => {});
-
-  els.chip.addEventListener("click", openGuide);
 
   els.google.addEventListener("click", () => {
     if (signingIn) return;

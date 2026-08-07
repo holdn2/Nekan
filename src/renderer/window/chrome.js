@@ -21,7 +21,6 @@ import {
 import { resetArchivePaging } from "../views/archive.js";
 import { applyInboxOpen } from "../views/inbox.js";
 import { clearSelectionSilently, setSelected } from "../views/memo.js";
-import { exportBoard } from "./export-ui.js";
 
 let mode = "expanded";
 let activeTab = "matrix";
@@ -115,14 +114,18 @@ export function setTab(tab) {
 export function applyTheme(next, persist = true) {
   theme = next === "dark" ? "dark" : "light";
   document.documentElement.dataset.theme = theme;
-  labelBtn(
-    "#themeBtn",
-    theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환",
-  );
+  // The control moved into the settings panel, but reflecting it stays here:
+  // views/settings.js already imports this file, and importing back would
+  // close a cycle the renderer graph does not have anywhere else.
+  $$("#themeSeg .seg-btn").forEach((btn) => {
+    const on = btn.dataset.theme === theme;
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-pressed", String(on));
+  });
   if (persist) window.api.setTheme(theme);
 }
 
-/** Ctrl+D and the title-bar button both come through here. */
+/** Ctrl+D and the settings panel both come through here. */
 export function toggleTheme() {
   applyTheme(theme === "dark" ? "light" : "dark");
 }
@@ -246,8 +249,6 @@ export function wireChrome() {
     notify();
   });
 
-  $("#themeBtn").addEventListener("click", toggleTheme);
-  $("#exportBtn").addEventListener("click", exportBoard);
   $("#updateBtn").addEventListener("click", () => window.api.installUpdate());
   // Opens in the real browser. Loading GitHub into this window would put a web
   // page where the widget was, with no way back — there is no chrome to it.

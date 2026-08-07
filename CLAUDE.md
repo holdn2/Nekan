@@ -25,16 +25,16 @@ src/shared/       메인·렌더러·테스트가 공유. 여기만 테스트가
   sync.js         동기화 판정 (LWW·행 변환·커서·시계 오차). main/sync.js가 쓴다
   auth.js         세션 모양과 만료 판정. 렌더러에 나갈 필드를 여기서 고른다
 src/renderer/     ES 모듈. 번들러 없음 — import 경로에 확장자를 반드시 쓴다
-  index.html      정적 마크업. <link> 13개와 <script>는 순서가 의미를 갖는다
+  index.html      정적 마크업. <link> 14개와 <script>는 순서가 의미를 갖는다
   app.js          진입점. render() 디스패처, 전역 단축키, init() 조립
   store.js        tasks 배열과 모든 변경. DOM을 모른다 → commit()이 저장+notify
   render-bus.js   "다시 그려라" 신호 하나. store·view → app 순환을 막는 장치
   core-bridge.js  shared/core.js의 전역을 named export로 재수출
   dom.js          $ · $$ · numEl · actionBtn · labelBtn
   components/     icons · due-chip · memo-mark · toast (task를 모르는 조각들)
-  views/          matrix · inbox · archive · memo · inline-edit · account
+  views/          matrix · inbox · archive · memo · inline-edit · account · settings · welcome
   window/         chrome(타이틀바·탭·모드) · layout(분면 경계) · dnd · export-ui
-  styles/         base부터 scrollbars까지 13개. index.html의 <link> 순서가 캐스케이드
+  styles/         base부터 scrollbars까지 14개. index.html의 <link> 순서가 캐스케이드
 test/             node --test 용 단위 테스트 (shared/ 만 커버)
 ```
 
@@ -188,11 +188,20 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   넘쳐도 딱 맞아 보이니, 스위치 오른쪽 끝과 `.bar-summary` 왼쪽 끝 사이 간격도 같이 볼 것.
   스크린샷은 `PrintWindow`가 오른쪽 영역을 갱신 안 된 채 찍는 일이 있으니 CDP
   `Page.captureScreenshot`을 쓸 것.
+  **테마·내보내기가 설정 패널로 들어가면서 바 버튼이 하나 줄고 톱니바퀴가 하나 늘어 순증은
+  0이다** — 실측 여유는 28px 그대로다(2026-08-07). 동기화 상태는 56px 칩 대신 톱니바퀴의 점이라
+  **폭을 쓰지 않고 바에서도 보인다.**
   **바에서 빠지는 것은 `collapsed.css`가 이름으로 적은 것뿐이다.** `.brand` 안에 넣었다고
   따라 빠지지 않는다 — 동기화 칩이 그래서 바에 남아 있었고(실측 56px, 여유는 28px),
   `collapsed.css`에 한 줄 더 적어서야 빠졌다. **클래스만 보지 말고 실제로 안 보이는지 볼 것.**
   **빠지는 자리(`.title`·`.app-version`·`#exportBtn`)에 넣으면 폭이 안 든다** — 버전
   표시가 그렇게 들어갔고 실측 여유는 28px 그대로였다. 늘 보일 필요가 없는 것은 이쪽을 먼저 볼 것.
+- **`views/settings.js`는 `window/chrome.js`를 import하지만 그 반대는 안 된다.** 테마 세그먼트
+  컨트롤을 반영하는 코드가 `applyTheme()` 안에 있는 이유다 — settings에 두면 순환이 된다.
+  렌더러 그래프에 순환은 여기 말고 한 군데도 없다.
+- **`.primary`는 `memo.css`가 이미 쓰고 있다.** 새 버튼에 그 이름을 붙이면 앱 강조색으로
+  칠해진다. 첫 실행 화면의 Google 버튼이 그렇게 칠해졌었다 — Google은 버튼 크롬을 중립으로
+  두라고 요구하므로 `.recommended`로 갈랐다.
 - 인박스 행에는 마감일·완료·메모가 **의도적으로 없다**(`inboxItemEl`). 그래서 `selectedTask()`가
   `quadrant === INBOX`를 null로 본다 — 이걸 빼면 선택된 항목을 인박스로 끌어올렸을 때 메모
   패널이 열린 채 남는다.

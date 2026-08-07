@@ -1,0 +1,300 @@
+/* The settings popover and the first-run screen.
+
+   Loaded after account.css so the account block keeps its own look inside the
+   panel, and before collapsed.css so bar mode can still hide what it must. */
+
+/* This project has no global `.hidden` — every area declares its own, because
+   a bare one-class rule loses to any later rule that sets display, and every
+   block below sets one. */
+.settings.hidden,
+.settings-backdrop.hidden,
+.welcome.hidden,
+.settings .hidden,
+.welcome .hidden {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- popover */
+
+/* Catches the click that closes the panel. Transparent on purpose: this is a
+   widget, and dimming the board behind a settings sheet would read as modal
+   in a window that is 900px wide. */
+.settings-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+.settings {
+  position: fixed;
+  top: 42px;
+  right: 10px;
+  z-index: 41;
+  width: 320px;
+  max-width: calc(100vw - 20px);
+  max-height: calc(100vh - 56px);
+  overflow-y: auto;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow:
+    0 10px 30px #00000022,
+    0 2px 6px #00000014;
+}
+
+.settings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.settings-head h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.settings-close {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.settings-close:hover {
+  color: var(--text);
+  background: var(--panel-2);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--line);
+}
+
+.settings-block {
+  padding: 9px 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.settings-label {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* Two states, both visible: a switch would hide which one is current behind a
+   position nobody reads. */
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.seg-btn {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+.seg-btn.active {
+  background: var(--panel-3);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.settings-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.settings-action:hover {
+  border-color: var(--muted);
+}
+
+.settings-action kbd {
+  font-family: inherit;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* The account block came from the guide, where it had a card of its own. In
+   here the panel is the card. */
+.settings .account {
+  margin: 8px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+/* --------------------------------------------------------------- the dot */
+
+/* What the 56px sync chip used to say, in something the bar can afford. Only
+   the two states worth acting on get a colour; "동기화됨" shows nothing,
+   because a widget that is fine should not be asking for attention. */
+.sync-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: none;
+}
+
+#settingsBtn {
+  position: relative;
+}
+
+#settingsBtn[data-sync="pending"] .sync-dot,
+#settingsBtn[data-sync="offline"] .sync-dot {
+  display: block;
+}
+
+#settingsBtn[data-sync="offline"] .sync-dot {
+  background: var(--danger);
+}
+
+/* --------------------------------------------------------------- welcome */
+
+.welcome {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: var(--bg);
+}
+
+.welcome-card {
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+}
+
+.welcome-logo {
+  width: 36px;
+  height: 36px;
+}
+
+.welcome-card h1 {
+  margin: 8px 0 2px;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+}
+
+.welcome-lede {
+  margin: 0 0 18px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.welcome-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.welcome-choice:hover {
+  border-color: var(--muted);
+}
+
+/* Emphasis without a fill. `.primary` was the obvious class name and the wrong
+   one twice over: memo.css already owns it and would have painted this in the
+   app's accent, and Google asks that its button keep neutral chrome so the
+   wordmark colours stay the only colour on it. */
+.welcome-choice.recommended {
+  border-color: var(--line-strong);
+  box-shadow: 0 1px 2px #00000010;
+}
+
+.welcome-choice.recommended b::after {
+  content: "추천";
+  margin-left: 7px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 10.5px;
+  font-weight: 600;
+  vertical-align: 1px;
+}
+
+.welcome-choice:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.welcome-choice-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.welcome-choice-text b {
+  font-size: 13.5px;
+}
+
+.welcome-choice-text small {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.welcome-adopt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.welcome-msg {
+  margin: 10px 0 0;
+  min-height: 1.2em;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.welcome-msg.error {
+  color: var(--danger);
+}
+
+.welcome-foot {
+  margin: 14px 0 0;
+  font-size: 11.5px;
+  color: var(--faint);
+}

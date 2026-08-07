@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld("api", {
   setMemoPanel: (open, height) => ipcRenderer.invoke("win:memo", open, height),
   setInboxOpen: (open) => ipcRenderer.invoke("settings:inbox", open),
   setSpace: (space) => ipcRenderer.invoke("settings:space", space),
+  setStartupChoice: (choice) => ipcRenderer.invoke("settings:startup", choice),
   exportBoard: () => ipcRenderer.invoke("export:run"),
   revealExport: (target) => ipcRenderer.invoke("export:reveal", target),
   // Auth. Note what is missing: there is no getToken. The renderer can start a
