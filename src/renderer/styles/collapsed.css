@@ -8,7 +8,6 @@ body.collapsed .tabs,
 body.collapsed .view,
 body.collapsed section.inbox,
 body.collapsed .memo,
-body.collapsed #exportBtn,
 body.collapsed .toast {
   display: none !important;
 }
