@@ -190,14 +190,17 @@ const CLOCK_TOLERANCE_MS = 2000;
 /**
  * Server time minus ours, read off a response's Date header.
  *
- * Zero for a missing or unparseable header, which is also the right answer for
- * "we have no idea" -- an unknown offset must leave the clock alone rather than
- * shift it somewhere arbitrary.
+ * NaN when the header is missing or unreadable, and the distinction matters:
+ * zero is a real measurement ("the clocks agree"), and returning it for "no
+ * idea" made one header-less reply -- a proxy, an error path -- look like a
+ * correction back to zero. A device that had learned it was ten minutes out
+ * would throw that away and start stamping with its own wrong clock again.
+ * nextOffset() already refuses a sample it cannot read.
  */
 function clockOffset(dateHeader, receivedAt) {
-  if (!dateHeader) return 0;
+  if (!dateHeader) return NaN;
   const server = Date.parse(dateHeader);
-  if (!Number.isFinite(server)) return 0;
+  if (!Number.isFinite(server)) return NaN;
   return server - receivedAt;
 }
 

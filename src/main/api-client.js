@@ -311,16 +311,43 @@ async function signup(email, password) {
 }
 
 /**
+ * Ask the server to end a session we have already thrown away locally.
+ *
+ * Renews first when the access token is spent, because /auth/v1/logout answers
+ * a stale one with a 401 and does nothing -- which would leave the refresh
+ * token alive on the server after a logout, and anyone holding a copy of
+ * auth.json still inside the account. The renewal is deliberately a plain
+ * request rather than refreshSession(): that path stores what it gets, and
+ * this session is on its way out.
+ */
+async function revoke(previous) {
+  let token = previous.accessToken;
+
+  if (needsRefresh(previous, Date.now())) {
+    const res = await request("/auth/v1/token?grant_type=refresh_token", {
+      method: "POST",
+      body: { refresh_token: previous.refreshToken },
+    });
+    const renewed = res.ok ? sessionFromToken(res.body, Date.now()) : null;
+    token = renewed ? renewed.accessToken : null;
+  }
+
+  if (token) await request("/auth/v1/logout", { method: "POST", token });
+}
+
+/**
  * Log out here first, then ask the server to revoke.
  *
  * That order is the point: logging out is something a user has decided, and it
- * cannot be allowed to fail because the network did. The revoke is best effort
- * -- if it does not land, the refresh token simply expires on its own.
+ * cannot be allowed to fail because the network did. The revoke is not awaited
+ * for the same reason -- offline it would sit on the request timeout while the
+ * user watches a button that has already done its job. If it never lands, the
+ * refresh token expires on its own.
  */
 async function logout() {
-  const token = session ? session.accessToken : null;
+  const previous = session;
   forget();
-  if (token) await request("/auth/v1/logout", { method: "POST", token });
+  if (previous) revoke(previous).catch(() => {});
   return { ok: true };
 }
 

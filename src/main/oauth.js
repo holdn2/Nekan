@@ -17,7 +17,7 @@
 
 const crypto = require("crypto");
 const http = require("http");
-const { shell } = require("electron");
+const { app, shell } = require("electron");
 
 /** Long enough that a user can read a consent screen, short enough to give up. */
 const WINDOW_MS = 5 * 60 * 1000;
@@ -66,6 +66,12 @@ p{margin:0}</style></head><body><p>${message}</p></body></html>`;
 function loopbackCode(buildUrl) {
   if (pending) pending.abandon("replaced");
 
+  // Proof that a callback is answering *our* request. Without it, anything
+  // else on this machine that can reach loopback -- another program, a browser
+  // extension -- can cancel a sign-in by hitting /callback?error= first. The
+  // verification procedure in CLAUDE.md does exactly that on purpose.
+  const state = base64url(crypto.randomBytes(16));
+
   return new Promise((resolve) => {
     let settled = false;
     let timer = null;
@@ -80,10 +86,16 @@ function loopbackCode(buildUrl) {
     };
 
     const server = http.createServer((req, res) => {
-      // Anything that is not the redirect -- a favicon request, a stray probe --
-      // must not end the flow.
       const url = new URL(req.url, "http://127.0.0.1");
-      if (url.pathname !== "/callback") {
+      // A favicon request, a stray probe, or a callback we did not start --
+      // none of them may end the flow.
+      //
+      // The state is a path segment rather than a query parameter because
+      // Supabase appends `?code=...` to whatever `redirect_to` it was given,
+      // and a redirect_to that already carried a query string would depend on
+      // how it joins the two. A path cannot be ambiguous. (Both shapes pass
+      // the redirect allow-list -- that part was checked.)
+      if (url.pathname !== `/callback/${state}`) {
         res.writeHead(404).end();
         return;
       }
@@ -118,15 +130,25 @@ function loopbackCode(buildUrl) {
     // Port 0: the OS picks a free one. Supabase's redirect allow-list has to
     // accept the wildcard `http://127.0.0.1:*` for this; if it ever does not,
     // this is the one line that has to become a fixed number.
+    // Claimed before listen(), not inside its callback: binding a port is
+    // asynchronous, and a second press arriving in that window would find
+    // `pending` still null, leave this attempt unreplaced, and hold two
+    // servers open until the five-minute timeout closed the first.
+    pending = { abandon: (why) => finish({ ok: false, error: why }) };
+
     server.listen(0, "127.0.0.1", () => {
       const { port } = server.address();
-      pending = { abandon: (why) => finish({ ok: false, error: why }) };
       timer = setTimeout(
         () => finish({ ok: false, error: "timeout" }),
         WINDOW_MS,
       );
+      const redirect = `http://127.0.0.1:${port}/callback/${state}`;
+      // Only outside a packaged build, and only so the flow stays testable:
+      // the callback can be driven by hand to check the refusal paths, and
+      // guessing the state is the one thing a tester cannot do.
+      if (!app.isPackaged) console.log("oauth callback:", redirect);
       shell
-        .openExternal(buildUrl(`http://127.0.0.1:${port}/callback`))
+        .openExternal(buildUrl(redirect))
         .catch(() => finish({ ok: false, error: "no_browser" }));
     });
   });

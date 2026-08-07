@@ -362,12 +362,21 @@ test("clockOffset reads how far this machine is behind the server", () => {
   );
 });
 
-test("an unreadable Date leaves the clock alone", () => {
-  // Zero is not a guess at the offset -- it is a refusal to shift the clock
-  // somewhere arbitrary on the strength of a header we could not parse.
-  assert.equal(clockOffset(null, 1000), 0);
-  assert.equal(clockOffset("", 1000), 0);
-  assert.equal(clockOffset("어제쯤", 1000), 0);
+test("an unreadable Date is NaN, not zero", () => {
+  // The difference is load-bearing. Zero is a real measurement -- the clocks
+  // agree -- so returning it for "no idea" made a header-less reply look like
+  // a correction back to zero.
+  assert.equal(Number.isNaN(clockOffset(null, 1000)), true);
+  assert.equal(Number.isNaN(clockOffset("", 1000)), true);
+  assert.equal(Number.isNaN(clockOffset("어제쯤", 1000)), true);
+});
+
+test("a header-less reply cannot wipe an offset already learned", () => {
+  // The whole point of the NaN above: a device ten minutes out must not throw
+  // that away because one proxy or error path answered without a Date.
+  const learned = nextOffset(0, 600_000);
+  assert.equal(learned, 600_000);
+  assert.equal(nextOffset(learned, clockOffset(null, Date.now())), 600_000);
 });
 
 test("nextOffset ignores samples too small to be real", () => {

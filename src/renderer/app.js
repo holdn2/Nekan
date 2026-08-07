@@ -208,8 +208,8 @@ async function init() {
   // lists come from main's one array, so the later one is the newer one.
   window.api.onSyncTasks((tasks, offset, overwritten) => {
     setClockOffset(offset);
-    pushedTasks = tasks;
-    acceptSynced(tasks);
+    pushedTasks = normalizeTasks(tasks);
+    acceptSynced(pushedTasks);
     announceOverwritten(overwritten);
   });
 
@@ -238,7 +238,10 @@ async function init() {
 
   setDevLogin(state.devLogin);
   wireAccount(() => setTab("guide"));
-  applySession(state.auth);
+  // The session follows the same rule as the mode and the update status: a
+  // value that was pushed while load() was in flight is the newer one, and
+  // state.auth would otherwise put a signed-out snapshot back on screen.
+  applySession(pushedSync ? pushedSync.session : state.auth);
   applySyncStatus(pushedSync || state.sync);
 
   wireChrome();

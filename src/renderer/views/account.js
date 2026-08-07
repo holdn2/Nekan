@@ -169,7 +169,14 @@ async function finish(promise) {
   els.google.disabled = true;
   say("브라우저에서 로그인을 마쳐 주세요.");
   try {
-    const result = await promise;
+    // Rejects, rather than resolving with { ok: false }, when the channel is
+    // not registered at all -- devLogin in a packaged build -- or when the
+    // main handler throws. Uncaught it would be an unhandled rejection and the
+    // panel would sit on "브라우저에서 로그인을 마쳐 주세요" forever.
+    const result = await promise.catch((err) => ({
+      ok: false,
+      error: String((err && err.message) || err),
+    }));
     if (result && result.ok) {
       applySession(result.session);
       say(
@@ -215,7 +222,18 @@ export function wireAccount(onOpenGuide) {
   });
 
   els.logout.addEventListener("click", async () => {
-    await window.api.logout();
+    try {
+      await window.api.logout();
+    } catch (err) {
+      // The session is main's to end, so a failure here means it did not. Said
+      // out loud rather than swallowed: the screen would otherwise show a
+      // logout that never happened.
+      say(
+        `로그아웃하지 못했습니다. (${String((err && err.message) || err)})`,
+        true,
+      );
+      return;
+    }
     applySession(null);
     applySyncStatus({ state: "off", unsent: 0 });
     say("로그아웃했습니다. 이 컴퓨터의 할 일은 그대로 있습니다.");

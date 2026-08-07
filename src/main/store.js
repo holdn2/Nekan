@@ -10,6 +10,7 @@
  * Anything that must not be lost (quit, close) calls persistNow() instead.
  */
 
+const fs = require("fs");
 const path = require("path");
 const { app } = require("electron");
 
@@ -90,15 +91,41 @@ function mergeRendererTasks(tasks) {
   store.tasks = [...byId.values()];
 }
 
+/** How many times one backup name may be reused before giving up. */
+const BACKUP_LIMIT = 20;
+
 /**
- * Copy the whole store aside under `name`, then hand the tasks over.
+ * Copy the whole store aside, next to the live one, without ever overwriting.
  *
  * Used when someone signs in and chooses to keep only the account's tasks. The
  * local ones are not deleted, because "이 컴퓨터 것은 빼주세요" and "지워주세요"
  * are not the same sentence and only one of them is undoable.
+ *
+ * Which is exactly why the name has to be free. Signing in this way twice --
+ * sign in, log out, sign in again -- would otherwise have the second backup
+ * land on the first, and the first list would be gone for good under a
+ * function whose whole job is not losing it. `-2`, `-3` and so on are appended
+ * until a free name turns up.
+ *
+ * Returns the path written, or null. Null means the caller must not delete
+ * anything: a backup that did not happen is not a backup.
  */
 function backupStore(name) {
-  return writeStore(path.join(app.getPath("userData"), name), store);
+  const dir = app.getPath("userData");
+  const dot = name.lastIndexOf(".");
+  const stem = dot === -1 ? name : name.slice(0, dot);
+  const ext = dot === -1 ? "" : name.slice(dot);
+
+  for (let n = 1; n <= BACKUP_LIMIT; n += 1) {
+    const target = path.join(dir, n === 1 ? name : `${stem}-${n}${ext}`);
+    try {
+      if (fs.existsSync(target)) continue;
+    } catch {
+      return null;
+    }
+    return writeStore(target, store) ? target : null;
+  }
+  return null;
 }
 
 /** Write now, through store-io's temp-file + rename. */

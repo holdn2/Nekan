@@ -152,6 +152,13 @@ async function pull(token, from, watermark) {
       return { ok: true, cursor: moved, applied, overwritten };
     cursor = moved;
   }
+  // Falling out of the loop means the page cap was hit. The cursor has moved,
+  // so the next run picks up where this one stopped and nothing is lost -- but
+  // reaching 400 pages at all says something is wrong, and silence would hide
+  // it behind a sync that merely looks slow.
+  console.error(
+    `sync: pull stopped at the ${MAX_PAGES} page cap, resuming from ${cursor}`,
+  );
   return { ok: true, cursor, applied, overwritten };
 }
 
@@ -223,15 +230,22 @@ async function runSync() {
   const session = getPublicSession();
   if (!session || !session.userId)
     return report({ state: "off", unsent: 0, syncedAt: null });
-  const token = await getAccessToken();
-  // No token and a session means the renewal failed. That is the network's
-  // problem, not the user's; try again on the usual schedule.
-  if (!token) return backOff();
 
+  // Claimed before the first await, not after. getAccessToken() can spend a
+  // network round trip renewing, and a second call arriving in that window
+  // would have found `running` still false -- two runs then overwrite each
+  // other's cursor and watermark, push the same rows twice, and each clear
+  // `dirty`, losing a save that arrived mid-flight. syncAccount()'s
+  // schedule(0) landing on a live SOON_MS timer is the real path there.
   running = true;
   dirty = false;
   report({ state: "syncing" });
   try {
+    const token = await getAccessToken();
+    // No token and a session means the renewal failed. That is the network's
+    // problem, not the user's; try again on the usual schedule.
+    if (!token) return backOff();
+
     useAccount(session.userId);
     const state = syncState();
     const reconcile = reconcileDue();
@@ -261,6 +275,13 @@ async function runSync() {
     // A save during the run may have been stamped after push() read the list.
     // Waiting a whole heartbeat for it would look like the edit did not sync.
     schedule(dirty ? SOON_MS : IDLE_MS);
+  } catch (err) {
+    // Without this the loop stops for good: an exception skips the schedule()
+    // above, no timer is left armed, and nothing restarts it until the user
+    // happens to make an edit. The chip would sit on "동기화 중" forever and
+    // say nothing was wrong.
+    console.error("sync failed", err);
+    return backOff();
   } finally {
     running = false;
   }

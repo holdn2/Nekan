@@ -309,14 +309,21 @@ npx electron . --user-data-dir=<B> --remote-debugging-port=9334
 가이드 탭을 열어 둔 채 분면 헤더를 읽으면 마지막 매트릭스 렌더의 잔상이 보이고, 그걸 "동기화가
 화면에 반영되지 않는다"로 읽게 된다. 여기에 한 번 속았다 — 바 모드 함정과 같은 종류다.
 
-**Google 로그인은 동의 화면 없이도 거의 다 검증된다.** 버튼을 누르면 loopback 서버가 뜨므로,
-그 포트를 찾아 콜백을 직접 때리면 된다:
+**Google 로그인은 동의 화면 없이도 거의 다 검증된다.** 버튼을 누르면 loopback 서버가 뜨고,
+**개발 실행에서는 콜백 URL을 터미널에 찍는다**(`oauth callback: http://127.0.0.1:.../callback/<state>`).
+그 URL을 그대로 써서 직접 때리면 된다:
 
 ```sh
-netstat -ano | grep LISTENING          # electron PID로 포트를 찾는다
-curl "http://127.0.0.1:<포트>/callback?error=access_denied"   # 거절 경로
-curl "http://127.0.0.1:<포트>/callback?code=fake"             # 교환 실패 경로
+curl "<찍힌 URL>?error=access_denied"   # 거절 경로
+curl "<찍힌 URL>?code=fake"             # 교환 실패 경로
+curl "http://127.0.0.1:<포트>/callback"  # state 없는 요청 — 404여야 한다
 ```
+
+**경로 끝의 `<state>`를 빼면 안 된다.** 콜백 서버는 그 값이 맞을 때만 응답하고 나머지는 404로
+흘려보낸다 — 같은 기기의 다른 프로세스가 `?error=`를 먼저 때려 로그인을 취소시키는 것을 막는
+장치다. 그래서 URL을 찍어주는 것이고, 그 로그는 `app.isPackaged`가 아닐 때만 나간다.
+**state를 쿼리가 아니라 경로에 둔 이유**: Supabase가 `redirect_to`에 `?code=...`를 이어붙이는데,
+`redirect_to`에 이미 쿼리가 있으면 어떻게 합쳐지는지가 불분명하다. 경로는 모호하지 않다.
 
 `code=fake`는 Supabase가 `flow_state_not_found`로 거절하는 것이 **정상이고**, 그것이 곧
 PKCE 상태가 실제로 검사된다는 증거다. 남는 미검증 구간은 Google 동의 화면 하나뿐이다.

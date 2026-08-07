@@ -206,7 +206,15 @@ function registerIpc() {
    */
   function adoptLocalTasks(mode) {
     if (mode !== "replace") return;
-    backupStore(PRE_LOGIN_BACKUP);
+    // Nothing is cleared unless the copy is actually on disk. writeStore can
+    // fail -- a full disk, a locked file -- and clearing anyway would destroy
+    // the very list this branch exists to preserve. Falling back to a merge
+    // sends the tasks up instead, which is not what was asked for but is the
+    // only other answer that keeps them.
+    if (!backupStore(PRE_LOGIN_BACKUP)) {
+      console.error("pre-login backup failed; keeping the local tasks");
+      return;
+    }
     setTasks([]);
     persistNow();
     // The window is still showing the rows that were just set aside, and its
@@ -217,6 +225,11 @@ function registerIpc() {
 
   function afterSignIn(result, mode) {
     if (!result.ok || !result.session) return result;
+    // No user id, nothing to scope a sync to -- and syncAccount(null) would
+    // quietly turn syncing off, leaving a signed-in app whose tasks never go
+    // anywhere. Worse in "replace" mode, where the local list is already
+    // aside. Reported as a failed sign-in instead, before anything is moved.
+    if (!result.session.userId) return { ok: false, error: "bad_response" };
     adoptLocalTasks(mode);
     // Resets the cursor, so signing in as somebody else cannot inherit the last
     // account's idea of being up to date.
