@@ -91,29 +91,9 @@
   color: var(--muted);
 }
 
-/* Two states, both visible: a switch would hide which one is current behind a
-   position nobody reads. */
-.seg {
-  display: inline-flex;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.seg-btn {
-  border: 0;
-  background: none;
-  color: var(--muted);
-  font-size: 12px;
-  padding: 4px 12px;
-  cursor: pointer;
-}
-
-.seg-btn.active {
-  background: var(--panel-3);
-  color: var(--text);
-  font-weight: 600;
-}
+/* The theme toggle is the shared `.switch` (switch.css) — the same control as
+   업무/일상 in the title bar, because it is the same question. Nothing is needed
+   here: the row already places it. */
 
 .settings-action {
   display: inline-flex;

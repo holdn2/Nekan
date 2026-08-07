@@ -69,7 +69,7 @@ export function renderCounts() {
  * "show me this one" and never "flip to the other".
  */
 function syncSpaceSwitch() {
-  $$(".space-btn").forEach((btn) => {
+  $$("#spaceSwitch .switch-btn").forEach((btn) => {
     const on = btn.dataset.space === getSpace();
     btn.classList.toggle("active", on);
     btn.setAttribute("aria-pressed", String(on));
@@ -117,7 +117,7 @@ export function applyTheme(next, persist = true) {
   // The control moved into the settings panel, but reflecting it stays here:
   // views/settings.js already imports this file, and importing back would
   // close a cycle the renderer graph does not have anywhere else.
-  $$("#themeSeg .seg-btn").forEach((btn) => {
+  $$("#themeSeg .switch-btn").forEach((btn) => {
     const on = btn.dataset.theme === theme;
     btn.classList.toggle("active", on);
     btn.setAttribute("aria-pressed", String(on));
@@ -243,7 +243,7 @@ export function wireChrome() {
   );
 
   $("#spaceSwitch").addEventListener("click", (e) => {
-    const btn = e.target.closest(".space-btn");
+    const btn = e.target.closest(".switch-btn");
     if (!btn || btn.dataset.space === getSpace()) return;
     applySpace(btn.dataset.space);
     notify();

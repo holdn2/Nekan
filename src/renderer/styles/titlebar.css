@@ -48,37 +48,12 @@
 }
 
 /* ---------- 업무 / 일상 switch ---------- */
+
+/* The switch itself is in switch.css, shared with the theme toggle in the
+   settings panel. All that is left here is the one thing that is about being in
+   a title bar: the row is a drag handle, and a switch inside it must not be. */
 .space-switch {
   -webkit-app-region: no-drag;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex: 0 0 auto;
-  padding: 2px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--panel-2);
-}
-
-.space-btn {
-  padding: 3px 12px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.space-btn:hover {
-  color: var(--text);
-}
-
-.space-btn.active {
-  background: var(--panel);
-  color: var(--text);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
 }
 
 .bar-summary {
