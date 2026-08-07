@@ -176,8 +176,12 @@ function registerIpc() {
     const settings = getSettings();
     settings.startupChoice =
       choice === "sync" || choice === "local" ? choice : null;
-    persistNow();
-    return settings.startupChoice;
+    // Written now rather than on the debounce, and the write's own answer is
+    // returned: the welcome screen holds itself open until this says the
+    // choice is on disk, because a screen that closes on an unsaved answer
+    // comes back on the next launch having apparently forgotten it.
+    const saved = persistNow();
+    return saved ? settings.startupChoice : null;
   });
 
   /* ------------------------------------------------------------ export */

@@ -16,6 +16,14 @@ import { activeCount } from "../store.js";
 /** Set by app.js: how a finished choice reaches the rest of the startup. */
 let onDone = () => {};
 let busy = false;
+/**
+ * Whether the Google half already succeeded.
+ *
+ * Only matters when the sign-in worked but recording the choice did not: the
+ * screen stays up so the answer can be retried, and pressing the button again
+ * must not send someone through a consent screen they have already passed.
+ */
+let signedIn = false;
 const els = {};
 
 /**
@@ -52,11 +60,22 @@ export function showWelcome() {
   els.root.classList.remove("hidden");
 }
 
-function finish(choice) {
+/**
+ * Record the answer, and only then take the screen down.
+ *
+ * The order is the point. Hiding first and writing afterwards means a failed
+ * write leaves someone who has plainly answered the question being asked it
+ * again on the next launch -- and, if they chose Google, asked it while
+ * already signed in. Main returns the stored value, so a null is a write that
+ * did not land.
+ */
+async function finish(choice) {
+  const saved = await window.api.setStartupChoice(choice).catch(() => null);
+  if (saved !== choice) {
+    say("설정을 저장하지 못했습니다. 다시 시도해 주세요.", true);
+    return;
+  }
   els.root.classList.add("hidden");
-  // Recorded before anything else so a crash on the way out cannot bring this
-  // screen back to somebody who has already answered it.
-  window.api.setStartupChoice(choice).catch(() => {});
   onDone(choice);
 }
 
@@ -71,8 +90,16 @@ async function chooseSync() {
   busy = true;
   els.sync.disabled = true;
   els.local.disabled = true;
-  say("브라우저에서 로그인을 마쳐 주세요.");
   try {
+    // Already through the consent screen, and only the write failed. Retry
+    // that alone -- sending someone back to Google would be asking them to
+    // approve something they just approved.
+    if (signedIn) {
+      await finish("sync");
+      return;
+    }
+
+    say("브라우저에서 로그인을 마쳐 주세요.");
     const result = await window.api
       .signInWithGoogle(adoptMode())
       .catch((err) => ({
@@ -81,7 +108,8 @@ async function chooseSync() {
       }));
 
     if (result && result.ok) {
-      finish("sync");
+      signedIn = true;
+      await finish("sync");
       return;
     }
     // The screen stays up. A failed sign-in has not answered the question, and
@@ -109,8 +137,17 @@ export function wireWelcome(done) {
   els.msg = $("#welcomeMsg");
 
   els.sync.addEventListener("click", chooseSync);
-  els.local.addEventListener("click", () => {
+  els.local.addEventListener("click", async () => {
     if (busy) return;
-    finish("local");
+    busy = true;
+    els.sync.disabled = true;
+    els.local.disabled = true;
+    try {
+      await finish("local");
+    } finally {
+      busy = false;
+      els.sync.disabled = false;
+      els.local.disabled = false;
+    }
   });
 }

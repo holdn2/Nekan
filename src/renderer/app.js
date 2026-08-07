@@ -178,6 +178,20 @@ function wireShortcuts() {
 
 /* ------------------------------------------------------------------- init */
 
+/**
+ * applyMode, plus the one thing that must not survive a trip into the bar.
+ *
+ * collapsed.css hides the settings popover, but hiding is not closing:
+ * views/settings.js would still believe it is open, and the first gear press
+ * in the bar would spend itself closing something nobody can see. It lives
+ * here rather than inside applyMode() because chrome.js must not import
+ * settings.js -- that direction is already taken.
+ */
+function enterMode(next) {
+  if (next === "collapsed") closeSettings();
+  applyMode(next);
+}
+
 /** Last mode pushed by the main process, which outranks the load snapshot. */
 let pushedMode = null;
 /** Same for the update status, for the same reason. */
@@ -197,7 +211,7 @@ async function init() {
   // ready-to-show, and a listener attached later would miss it silently.
   window.api.onMode((next) => {
     pushedMode = next;
-    applyMode(next);
+    enterMode(next);
   });
 
   // Same race, longer odds: the first update check is seconds away, and the
@@ -274,7 +288,7 @@ async function init() {
   applyUpdateStatus(pushedUpdate || state.update);
   // state.mode is a snapshot from before ready-to-show, so a mode that was
   // pushed in the meantime is the newer truth. This is also the first render.
-  applyMode(pushedMode || state.mode || "expanded");
+  enterMode(pushedMode || state.mode || "expanded");
   scheduleDayRollover();
 }
 

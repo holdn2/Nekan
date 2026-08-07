@@ -128,9 +128,9 @@ function backupStore(name) {
   return null;
 }
 
-/** Write now, through store-io's temp-file + rename. */
+/** Write now, through store-io's temp-file + rename. Answers whether it landed. */
 function save() {
-  writeStore(storePath(), store);
+  return writeStore(storePath(), store);
 }
 
 /** Write soon — coalesces a burst of changes into one file write. */
@@ -142,7 +142,7 @@ function persist() {
 /** Write immediately, cancelling any pending debounce. For quit paths. */
 function persistNow() {
   clearTimeout(saveTimer);
-  save();
+  return save();
 }
 
 module.exports = {
