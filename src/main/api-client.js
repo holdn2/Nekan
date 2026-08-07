@@ -135,9 +135,21 @@ function remember(next) {
   return next;
 }
 
+/**
+ * How many times the session has been thrown away.
+ *
+ * A renewal in flight captures this and refuses to store its result if the
+ * number moved while it was waiting. Without that, logging out during a
+ * renewal is undone a second later: runRefresh() would call remember() with
+ * the pair it just fetched, putting auth.json back and signing the user in
+ * again after they asked to leave.
+ */
+let epoch = 0;
+
 /** Drop the session from memory and disk. Used by logout and by a dead token. */
 function forget() {
   session = null;
+  epoch += 1;
   clearSession();
 }
 
@@ -160,6 +172,7 @@ function refreshSession() {
 
 async function runRefresh() {
   const current = session;
+  const startedAt = epoch;
   if (!current || !current.refreshToken) return null;
 
   const res = await request("/auth/v1/token?grant_type=refresh_token", {
@@ -180,6 +193,9 @@ async function runRefresh() {
     forget();
     return null;
   }
+  // A logout landed while this was in flight. The session is already gone from
+  // memory and disk, and storing now would bring it back.
+  if (epoch !== startedAt) return null;
   // A refresh does not always carry the user object. Identity is not what was
   // being renewed, so keep what we already knew.
   return remember({

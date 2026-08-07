@@ -223,13 +223,20 @@ function registerIpc() {
     announceTasks();
   }
 
-  function afterSignIn(result, mode) {
+  async function afterSignIn(result, mode) {
     if (!result.ok || !result.session) return result;
     // No user id, nothing to scope a sync to -- and syncAccount(null) would
     // quietly turn syncing off, leaving a signed-in app whose tasks never go
     // anywhere. Worse in "replace" mode, where the local list is already
     // aside. Reported as a failed sign-in instead, before anything is moved.
-    if (!result.session.userId) return { ok: false, error: "bad_response" };
+    //
+    // The session is dropped too. api-client has already stored it, and saying
+    // "로그인하지 못했습니다" while state:load hands the renderer an email is a
+    // worse state than either answer on its own.
+    if (!result.session.userId) {
+      await logout();
+      return { ok: false, error: "bad_response" };
+    }
     adoptLocalTasks(mode);
     // Resets the cursor, so signing in as somebody else cannot inherit the last
     // account's idea of being up to date.
