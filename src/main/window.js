@@ -133,27 +133,41 @@ function setMemoPanel(open, height) {
   if (!win || win.isDestroyed() || mode !== "expanded") return memoOpen;
   if (open === memoOpen) return memoOpen;
 
-  const before = win.getBounds();
+  // The store, not the window — the same rule the mode switch follows, and for
+  // the same reason. setBounds and getBounds do not round-trip on a scaled
+  // display, so measuring the window and then building the next resize on that
+  // measurement compounds: at 125% this grew the window 4px wider and ~1px
+  // taller per open/close pair, wrote the result to disk, and never stopped.
+  // `bounds` is by definition the window without the panel, which is the base
+  // both branches want.
+  const base = sanitizeBounds(getSettings().bounds) || win.getBounds();
+  // Written by both branches, so a resize raised mid-switch cannot save a size
+  // that is halfway through this.
+  const keepBase = () => {
+    getSettings().bounds = base;
+  };
+
   if (open) {
     const want = Math.min(MEMO_MAX, Math.max(0, Math.round(height) || 0));
-    win.setBounds(sanitizeBounds({ ...before, height: before.height + want }));
-    memoDelta = win.getBounds().height - before.height;
+    // What the display had room for, taken from the request rather than from
+    // the window afterwards.
+    const grown = sanitizeBounds({ ...base, height: base.height + want });
+    memoDelta = grown.height - base.height;
     memoOpen = true;
+    placeWindow(grown, keepBase);
     win.setMinimumSize(EXPANDED.minWidth, EXPANDED.minHeight + memoDelta);
   } else {
     win.setMinimumSize(EXPANDED.minWidth, EXPANDED.minHeight);
-    win.setBounds({
-      ...before,
-      height: Math.max(EXPANDED.minHeight, before.height - memoDelta),
-    });
     memoOpen = false;
     memoDelta = 0;
+    placeWindow(
+      sanitizeBounds({
+        ...base,
+        height: Math.max(EXPANDED.minHeight, base.height),
+      }),
+      keepBase,
+    );
   }
-
-  // The resize above ran rememberPlacement while memoDelta was mid-update, so
-  // the corrected value has to be written after the fact.
-  getSettings().bounds = boundsWithoutMemo();
-  persist();
   return memoOpen;
 }
 
@@ -196,14 +210,14 @@ function createWindow() {
     // Quitting from bar mode has to come back as the bar, where it was left —
     // the window was just built at the expanded bounds, which is somewhere else.
     //
-    // Unless the first-run question is still open. That screen needs the whole
-    // window, and this is the only place that can give it: ready-to-show lands
-    // after the renderer's state:load has already answered, so a renderer that
-    // asks to expand is asking about a bar it has not been told about yet.
+    // Unless the first-run question is still open, which collapse() refuses.
+    // That screen needs the whole window, and only main can give it to it: the
+    // renderer's state:load has already been answered by the time this runs, so
+    // a renderer asking to expand is asking about a bar nobody told it about.
     // Anyone upgrading who left the app as a bar arrives here.
-    if (settings.mode === "collapsed" && !needsStartupChoice(settings.startupChoice)) {
-      collapse(savedBarPosition());
-    } else switching = false;
+    if (settings.mode !== "collapsed" || !collapse(savedBarPosition())) {
+      switching = false;
+    }
   });
 
   win.on("resize", rememberPlacement);
@@ -220,10 +234,19 @@ function createWindow() {
  * Shrink to the always-on-top bar, on whichever side of the display the window
  * is standing (see collapseOrigin). `at` overrides that for the one caller who
  * knows better: startup, restoring where the bar was left.
+ *
+ * Answers whether the window is now a bar, which ready-to-show needs: a refusal
+ * leaves `switching` for that caller to clear.
  */
 function collapse(at) {
-  if (!win || mode === "collapsed") return;
+  if (!win || mode === "collapsed") return false;
   const settings = getSettings();
+  // Not while the first-run question is up. That screen covers the window, so a
+  // bar shows nothing but the icon -- and it covers the title bar with it, so
+  // there is no button left to undo this with. Ctrl+M reached here even though
+  // the overlay had the button underneath it; refusing is what closes every
+  // route at once, rather than guessing which ones exist.
+  if (needsStartupChoice(settings.startupChoice)) return false;
   // The store, not the OS, says where the window is. Every user move and resize
   // wrote `bounds`, and expand() wrote what it asked for; asking the window
   // instead returns what the display rounded that to, and folding from a
@@ -247,6 +270,7 @@ function collapse(at) {
     },
   );
   win.webContents.send("win:mode", mode);
+  return true;
 }
 
 /**
