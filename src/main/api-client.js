@@ -180,22 +180,30 @@ async function runRefresh() {
     body: { refresh_token: current.refreshToken },
   });
 
+  // Is the session this renewal set out to renew still the one in hand?
+  //
+  // It may not be. Logging out and back in while this was in flight leaves a
+  // *different* session in place, and the branches below would then act on it:
+  // the 4xx path would delete a session that is perfectly good, and the
+  // success path would overwrite it with tokens from the account that just
+  // left. The epoch catches a logout, the identity check catches a sign-in
+  // that replaced the session without one.
+  const stillOurs = () => epoch === startedAt && session === current;
+
   if (!res.ok) {
     // A 4xx is the server saying this token will never work again -- rotated
     // past, revoked, account gone. Anything else is the network, and a session
     // must survive a tunnel: keep it and try again next time.
-    if (res.status >= 400 && res.status < 500) forget();
+    if (res.status >= 400 && res.status < 500 && stillOurs()) forget();
     return null;
   }
 
   const next = sessionFromToken(res.body, Date.now());
   if (!next) {
-    forget();
+    if (stillOurs()) forget();
     return null;
   }
-  // A logout landed while this was in flight. The session is already gone from
-  // memory and disk, and storing now would bring it back.
-  if (epoch !== startedAt) return null;
+  if (!stillOurs()) return null;
   // A refresh does not always carry the user object. Identity is not what was
   // being renewed, so keep what we already knew.
   return remember({
@@ -261,6 +269,11 @@ function getClockOffset() {
 async function loginWithGoogle() {
   if (!canStore()) return { ok: false, error: "no_secure_storage" };
 
+  // A logout that lands while the browser is still open ends this attempt too:
+  // the user's last word on being signed in was "log out", and storing a
+  // session afterwards would quietly undo it.
+  const startedAt = epoch;
+
   const { verifier, challenge } = pkcePair();
   const back = await loopbackCode(
     (redirect) =>
@@ -278,6 +291,7 @@ async function loginWithGoogle() {
 
   const next = sessionFromToken(res.body, Date.now());
   if (!next) return { ok: false, error: "bad_response" };
+  if (epoch !== startedAt) return { ok: false, error: "cancelled" };
   remember(next);
   return { ok: true, session: publicSession(next) };
 }
@@ -286,6 +300,7 @@ async function login(email, password) {
   // Checked before the request, not after: a successful login we cannot store
   // is a login that vanishes on restart, and the user would have no idea why.
   if (!canStore()) return { ok: false, error: "no_secure_storage" };
+  const startedAt = epoch;
 
   const res = await request("/auth/v1/token?grant_type=password", {
     method: "POST",
@@ -295,6 +310,7 @@ async function login(email, password) {
 
   const next = sessionFromToken(res.body, Date.now());
   if (!next) return { ok: false, error: "bad_response" };
+  if (epoch !== startedAt) return { ok: false, error: "cancelled" };
   remember(next);
   return { ok: true, session: publicSession(next) };
 }
@@ -336,9 +352,19 @@ async function signup(email, password) {
  * request rather than refreshSession(): that path stores what it gets, and
  * this session is on its way out.
  */
-async function revoke(previous) {
-  let token = previous.accessToken;
+async function revoke(previous, inFlight) {
+  // A renewal that was already running holds this same refresh token, and
+  // rotation means a second exchange would invalidate one of the two -- the
+  // race refreshSession()'s single flight exists to prevent. Rather than
+  // start one, stand down: the token it fetched is already orphaned by the
+  // logout and expires on its own, which is the same outcome as revoking
+  // while offline.
+  if (inFlight) {
+    await inFlight.catch(() => {});
+    return;
+  }
 
+  let token = previous.accessToken;
   if (needsRefresh(previous, Date.now())) {
     const res = await request("/auth/v1/token?grant_type=refresh_token", {
       method: "POST",
@@ -348,7 +374,13 @@ async function revoke(previous) {
     token = renewed ? renewed.accessToken : null;
   }
 
-  if (token) await request("/auth/v1/logout", { method: "POST", token });
+  // `scope=local` ends this session and no other. The default is `global`,
+  // which revokes every refresh token the account has -- so logging out on the
+  // laptop would sign the phone out too. On an app whose whole point is being
+  // signed in on more than one machine, that is the wrong default.
+  if (token) {
+    await request("/auth/v1/logout?scope=local", { method: "POST", token });
+  }
 }
 
 /**
@@ -362,8 +394,10 @@ async function revoke(previous) {
  */
 async function logout() {
   const previous = session;
+  // Captured before forget(), which does not stop a renewal already running.
+  const inFlight = refreshing;
   forget();
-  if (previous) revoke(previous).catch(() => {});
+  if (previous) revoke(previous, inFlight).catch(() => {});
   return { ok: true };
 }
 
