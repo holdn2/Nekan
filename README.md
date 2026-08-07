@@ -96,7 +96,7 @@ npm test      # 저장·정규화·날짜 로직 단위 테스트 (선택)
 
 ```powershell
 npm run dist      # dist\Nekan-Setup-1.0.0.exe — 로컬 확인용, 업로드하지 않음
-npm run release   # 빌드 + GitHub Release에 업로드 (GH_TOKEN 필요)
+npm run release   # 빌드 + GitHub Release에 업로드 (아래 GH_TOKEN 참고)
 ```
 
 **릴리스 절차**

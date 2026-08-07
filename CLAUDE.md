@@ -223,8 +223,14 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   `updater.js`는 `BrowserWindow`를 모른다. 알림은 `main.js`가 넘긴 콜백 한 개로만 나가고,
   그 콜백이 `getWindow()`를 부른다. 여기서 window를 직접 import하면 조립이 main.js 밖으로
   샌다.
+- **`npm run release`에는 `GH_TOKEN`이 필요하다.** 없으면 빌드는 끝나고 업로드에서만 죽는다
+  (`GitHub Personal Access Token is not set`). `gh`가 로그인돼 있으면 따로 만들 것 없이
+  `GH_TOKEN="$(gh auth token)" npm run release`로 넘기면 된다. **토큰을 로그나 파일에 찍지 말 것.**
+- **electron-builder가 만드는 것은 draft다.** 업로드가 끝나도 공개되지 않는다 —
+  `gh release edit v<버전> --notes-file <파일> --draft=false --latest`로 노트를 넣고 공개한다.
+  릴리스 노트는 **사용자가 주는 문구를 그대로** 쓴다.
 - **electron-builder는 같은 태그로 draft를 두 개 만든다.** 업로드가 병렬로 돌면서 둘 다
-  "릴리스가 없네"라고 판단해 각자 만드는 경쟁 상태이고, **v1.0.0과 v1.0.1 두 번 다** 같은 식으로
+  "릴리스가 없네"라고 판단해 각자 만드는 경쟁 상태이고, **v1.0.0부터 v1.0.3까지 네 번 다** 같은 식으로
   (`.blockmap`만 따로) 갈렸다 — 우연이 아니니 다음에도 갈라진다고 보면 된다. 그래서
   `npm run release`가 끝에 `tools/check-release.js`를 돌려 자동으로 합치고 파일 세 개를
   확인한다. **손으로 확인하지 말고 그 스크립트의 종료 코드를 볼 것.** 갈린 채로 publish하면
