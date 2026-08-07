@@ -312,6 +312,6 @@ src/
     components/        # 아이콘, 마감일 칩, 메모 표시, 토스트
     views/             # 4분면 · 다 꺼내기 · 히스토리/휴지통 · 메모 패널
     window/            # 타이틀바·탭 · 분면 경계 드래그 · 드래그앤드롭 · 내보내기
-    styles/            # 영역별 12개 (라이트/다크 팔레트는 base.css)
+    styles/            # 영역별 15개 (라이트/다크 팔레트는 base.css, 공용 토글은 switch.css)
 test/                  # node --test 단위 테스트
 ```

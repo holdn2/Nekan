@@ -71,7 +71,7 @@ export function wireSettings() {
   });
 
   $("#themeSeg").addEventListener("click", (e) => {
-    const btn = e.target.closest(".seg-btn");
+    const btn = e.target.closest(".switch-btn");
     // Both halves are always on screen, so a click means "make it this one"
     // rather than "flip" -- pressing the active one is not a request.
     if (!btn || btn.classList.contains("active")) return;

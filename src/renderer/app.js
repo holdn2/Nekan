@@ -290,6 +290,25 @@ async function init() {
   // pushed in the meantime is the newer truth. This is also the first render.
   enterMode(pushedMode || state.mode || "expanded");
   scheduleDayRollover();
+  releaseSwitches();
+}
+
+/**
+ * Let the two switches animate, now that they are where they belong.
+ *
+ * The saved board and theme are applied well after the first paint -- the load
+ * is an IPC round trip -- so without this the pill would visibly slide in from
+ * the left on every launch that did not end on the left-hand choice.
+ *
+ * Reading a layout property first is the whole trick: it forces the applied
+ * state to be computed while transitions are still off, so dropping the class
+ * afterwards cannot be batched into the same recalculation as the change it is
+ * meant to hide. A requestAnimationFrame would not be enough -- its callback
+ * runs before the frame's style pass, so both could still land together.
+ */
+function releaseSwitches() {
+  void document.body.offsetHeight;
+  document.body.classList.remove("booting");
 }
 
 // A rejected state:load would otherwise skip every step after it and leave the

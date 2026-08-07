@@ -25,7 +25,7 @@ src/shared/       메인·렌더러·테스트가 공유. 여기만 테스트가
   sync.js         동기화 판정 (LWW·행 변환·커서·시계 오차). main/sync.js가 쓴다
   auth.js         세션 모양과 만료 판정. 렌더러에 나갈 필드를 여기서 고른다
 src/renderer/     ES 모듈. 번들러 없음 — import 경로에 확장자를 반드시 쓴다
-  index.html      정적 마크업. <link> 14개와 <script>는 순서가 의미를 갖는다
+  index.html      정적 마크업. <link> 15개와 <script>는 순서가 의미를 갖는다
   app.js          진입점. render() 디스패처, 전역 단축키, init() 조립
   store.js        tasks 배열과 모든 변경. DOM을 모른다 → commit()이 저장+notify
   render-bus.js   "다시 그려라" 신호 하나. store·view → app 순환을 막는 장치
@@ -34,7 +34,8 @@ src/renderer/     ES 모듈. 번들러 없음 — import 경로에 확장자를 
   components/     icons · due-chip · memo-mark · toast (task를 모르는 조각들)
   views/          matrix · inbox · archive · memo · inline-edit · account · settings · welcome
   window/         chrome(타이틀바·탭·모드) · layout(분면 경계) · dnd · export-ui
-  styles/         base부터 scrollbars까지 14개. index.html의 <link> 순서가 캐스케이드
+  styles/         base부터 scrollbars까지 15개. index.html의 <link> 순서가 캐스케이드
+                  switch.css만 영역이 아니라 부품이다 — 두 곳이 쓰므로 base 바로 뒤
 test/             node --test 용 단위 테스트 (shared/ 만 커버)
 ```
 
@@ -184,22 +185,37 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   톱니바퀴·업데이트 버튼·창 버튼은 전부 남는다). **바에 뭔가를 더 넣으면 줄이지 말고 `BAR.width`를 키우고,
   반드시 실측**할 것: 개수를 전부 두 자리로 바꾸고 인박스 칩과 `#updateBtn`을 보이게 한 뒤
   `.titlebar`의 `scrollWidth`와 `#closeBtn`의 `right`를 `window.innerWidth`와 비교한다
-  (현재 최악의 경우 여유 28px). `.bar-summary`가 `margin-left:auto`라 `scrollWidth`만 보면
-  넘쳐도 딱 맞아 보이니, 스위치 오른쪽 끝과 `.bar-summary` 왼쪽 끝 사이 간격도 같이 볼 것.
+  (현재 최악의 경우 여유 **30px**). `.bar-summary`가 `margin-left:auto`라 `scrollWidth`만 보면
+  넘쳐도 딱 맞아 보이니, 스위치 오른쪽 끝과 `.bar-summary` 왼쪽 끝 사이 간격도 같이 볼 것 —
+  **그 간격이 곧 여유다.** 오래 28px이었는데, 스위치가 알약 하나를 미끄러뜨리게 되면서
+  두 버튼 사이 `gap: 2px`가 없어져 **30px이 됐다**(2026-08-07 실측: `scrollWidth` 640 =
+  `innerWidth` 640, 넘침 0).
   스크린샷은 `PrintWindow`가 오른쪽 영역을 갱신 안 된 채 찍는 일이 있으니 CDP
   `Page.captureScreenshot`을 쓸 것.
   **테마·내보내기가 설정 패널로 들어가면서 바 버튼이 하나 줄고 톱니바퀴가 하나 늘어 순증은
-  0이다** — 실측 여유는 28px 그대로다(2026-08-07). 동기화 상태는 56px 칩 대신 톱니바퀴의 점이라
+  0이다** — 그때까지 실측 여유는 28px이었다(2026-08-07). 동기화 상태는 56px 칩 대신 톱니바퀴의 점이라
   **폭을 쓰지 않고 바에서도 보인다.**
   **바에서 빠지는 것은 `collapsed.css`가 이름으로 적은 것뿐이다.** `.brand` 안에 넣었다고
   따라 빠지지 않는다 — 동기화 칩이 그래서 바에 남아 있었고(실측 56px, 여유는 28px),
   `collapsed.css`에 한 줄 더 적어서야 빠졌다. **클래스만 보지 말고 실제로 안 보이는지 볼 것.**
   **빠지는 자리(`.title`·`.app-version`)에 넣으면 폭이 안 든다** — `#exportBtn`은 설정
   패널로 옮겨가면서 **DOM에서 아예 사라졌으니** 그 자리를 세지 말 것(2026-08-07 확인). 버전
-  표시가 그렇게 들어갔고 실측 여유는 28px 그대로였다. 늘 보일 필요가 없는 것은 이쪽을 먼저 볼 것.
+  표시가 그렇게 들어갔고 그때도 실측 여유는 그대로였다. 늘 보일 필요가 없는 것은 이쪽을 먼저 볼 것.
 - **`views/settings.js`는 `window/chrome.js`를 import하지만 그 반대는 안 된다.** 테마 세그먼트
   컨트롤을 반영하는 코드가 `applyTheme()` 안에 있는 이유다 — settings에 두면 순환이 된다.
   렌더러 그래프에 순환은 여기 말고 한 군데도 없다.
+- **`.switch`(`styles/switch.css`)는 업무/일상과 테마가 함께 쓴다.** 미끄러지는 알약은 컨테이너의
+  `::before` 하나이고, 어느 쪽에 설지는 CSS `:has(> .switch-btn:last-child.active)`가 정한다 —
+  **위치를 JS가 따로 알려주지 않으므로** 버튼에 `.active`를 붙이는 코드만 고치면 된다.
+  세 가지가 서로 묶여 있다:
+  ① **두 버튼 사이에 `gap`을 넣으면 알약이 어긋난다.** 폭이 `calc(50% - 2px)`이고 이동이
+  `translateX(100%)`라, 간격이 0이어야 두 번째 버튼 자리에 정확히 떨어진다.
+  ② **버튼에 `position: relative; z-index: 1`이 없으면 라벨이 알약에 덮인다** — 알약은 절대
+  배치라 배치되지 않은 형제보다 늦게 그려진다.
+  ③ **`<body class="booting">`은 `app.js`의 `releaseSwitches()`가 뗀다.** 저장된 보드·테마는
+  IPC 왕복 뒤에 적용돼서, 이게 없으면 켤 때마다 알약이 왼쪽에서 미끄러져 들어온다. 떼기 전에
+  `offsetHeight`를 한 번 읽는 것이 핵심이다 — `requestAnimationFrame`은 콜백이 그 프레임의
+  스타일 계산 **앞**에서 돌아 변화와 해제가 같이 묶일 수 있다.
 - **`.primary`는 `memo.css`가 이미 쓰고 있다.** 새 버튼에 그 이름을 붙이면 앱 강조색으로
   칠해진다. 첫 실행 화면의 Google 버튼이 그렇게 칠해졌었다 — Google은 버튼 크롬을 중립으로
   두라고 요구하므로 `.recommended`로 갈랐다.

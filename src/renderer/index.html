@@ -12,6 +12,8 @@
          @import is deliberately not used: it serialises the loads and gives the
          cascade one more thing to depend on. -->
     <link rel="stylesheet" href="styles/base.css" />
+    <!-- Shared by two areas, so it goes before both of them. -->
+    <link rel="stylesheet" href="styles/switch.css" />
     <link rel="stylesheet" href="styles/titlebar.css" />
     <link rel="stylesheet" href="styles/tabs.css" />
     <link rel="stylesheet" href="styles/inbox.css" />
@@ -26,7 +28,9 @@
     <link rel="stylesheet" href="styles/collapsed.css" />
     <link rel="stylesheet" href="styles/scrollbars.css" />
   </head>
-  <body class="expanded">
+  <!-- `booting` holds the switch pills still until the saved board and theme
+       have been applied; app.js drops it at the end of init(). -->
+  <body class="expanded booting">
     <header class="titlebar">
       <div class="brand">
         <img class="logo" src="../assets/icon.png" alt="" />
@@ -43,15 +47,15 @@
            export all follow it. The one thing it does NOT scope is the inbox
            below, which is why that panel says so on its own header. -->
       <div
-        class="space-switch"
+        class="switch space-switch"
         id="spaceSwitch"
         role="group"
         aria-label="매트릭스 선택"
       >
-        <button class="space-btn active" data-space="work" aria-pressed="true">
+        <button class="switch-btn active" data-space="work" aria-pressed="true">
           업무
         </button>
-        <button class="space-btn" data-space="life" aria-pressed="false">
+        <button class="switch-btn" data-space="life" aria-pressed="false">
           일상
         </button>
       </div>
@@ -734,11 +738,11 @@
 
       <div class="settings-row">
         <span class="settings-label">테마</span>
-        <div class="seg" id="themeSeg" role="group" aria-label="테마 선택">
-          <button class="seg-btn" data-theme="light" aria-pressed="false">
+        <div class="switch" id="themeSeg" role="group" aria-label="테마 선택">
+          <button class="switch-btn" data-theme="light" aria-pressed="false">
             일반
           </button>
-          <button class="seg-btn" data-theme="dark" aria-pressed="false">
+          <button class="switch-btn" data-theme="dark" aria-pressed="false">
             다크
           </button>
         </div>
