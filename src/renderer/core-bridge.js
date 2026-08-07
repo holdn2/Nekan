@@ -25,6 +25,7 @@ export const {
   SPACE_LABEL,
   sanitizeSpace,
   spaceFor,
+  needsStartupChoice,
   MAX_TEXT,
   MAX_MEMO,
   MAX_BULK_LINES,

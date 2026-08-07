@@ -68,6 +68,17 @@ function spaceFor(quadrant, space) {
   return sanitizeSpace(space);
 }
 
+/**
+ * Is the first-run question still unanswered?
+ *
+ * Shared because two processes act on the same answer and must not disagree:
+ * the renderer decides whether to put the screen up, and main decides whether
+ * it may return to bar mode at all. A 640x48 bar cannot hold a 380px card, and
+ * main is the only side that can keep the window out of it in the first place —
+ * by the time the renderer hears about the mode, it has already collapsed.
+ */
+const needsStartupChoice = (choice) => choice !== "sync" && choice !== "local";
+
 /** Must match the add form's maxlength in index.html. */
 const MAX_TEXT = 200;
 /** Memos are free-form and multi-line, so they get a much looser cap. */
@@ -506,6 +517,7 @@ const emCore = {
   SPACE_LABEL,
   sanitizeSpace,
   spaceFor,
+  needsStartupChoice,
   MAX_TEXT,
   MAX_MEMO,
   MAX_BULK_LINES,
