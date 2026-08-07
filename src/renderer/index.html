@@ -35,11 +35,11 @@
              update state and the release link are in the guide, which is where
              someone goes to read rather than to work. -->
         <span class="app-version" id="titleVersion"></span>
-        <!-- Costs the bar nothing for the same reason the version does not:
-             collapsed.css drops the whole brand text. Hidden until there is a
-             session, because "로그인하세요" is not news to someone who has
-             decided not to. Clicking it goes to the guide, where the account
-             lives. -->
+        <!-- Costs the bar nothing, but only because collapsed.css drops it by
+             name — it is not part of `.title`, and left in it would want 56px
+             the bar does not have. Hidden until there is a session, because
+             "로그인하세요" is not news to someone who has decided not to.
+             Clicking it opens the guide, where the account lives. -->
         <button class="sync-chip" id="syncChip" type="button" hidden></button>
       </div>
 

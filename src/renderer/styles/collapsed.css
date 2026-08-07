@@ -34,7 +34,13 @@ body.expanded .bar-summary .chip {
    button visible — and the bar widened to match rather than the contents
    squeezed further. */
 body.collapsed .title,
-body.collapsed .app-version {
+body.collapsed .app-version,
+/* The sync chip goes with them, for the measured reason above rather than a
+   tidiness one: "동기화됨" measures 56px and the widest the row ever gets has
+   28px to spare, so keeping it would mean widening the bar. It is also the
+   least urgent thing here — nothing in the bar is actionable, and the states
+   worth acting on are still there when the window is opened. */
+body.collapsed .sync-chip {
   display: none;
 }
 

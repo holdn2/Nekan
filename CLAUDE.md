@@ -181,7 +181,10 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   넘쳐도 딱 맞아 보이니, 스위치 오른쪽 끝과 `.bar-summary` 왼쪽 끝 사이 간격도 같이 볼 것.
   스크린샷은 `PrintWindow`가 오른쪽 영역을 갱신 안 된 채 찍는 일이 있으니 CDP
   `Page.captureScreenshot`을 쓸 것.
-  **바에서 빠지는 자리(`.title`·`.app-version`·`#exportBtn`)에 넣으면 폭이 안 든다** — 버전
+  **바에서 빠지는 것은 `collapsed.css`가 이름으로 적은 것뿐이다.** `.brand` 안에 넣었다고
+  따라 빠지지 않는다 — 동기화 칩이 그래서 바에 남아 있었고(실측 56px, 여유는 28px),
+  `collapsed.css`에 한 줄 더 적어서야 빠졌다. **클래스만 보지 말고 실제로 안 보이는지 볼 것.**
+  **빠지는 자리(`.title`·`.app-version`·`#exportBtn`)에 넣으면 폭이 안 든다** — 버전
   표시가 그렇게 들어갔고 실측 여유는 28px 그대로였다. 늘 보일 필요가 없는 것은 이쪽을 먼저 볼 것.
 - 인박스 행에는 마감일·완료·메모가 **의도적으로 없다**(`inboxItemEl`). 그래서 `selectedTask()`가
   `quadrant === INBOX`를 null로 본다 — 이걸 빼면 선택된 항목을 인박스로 끌어올렸을 때 메모
@@ -293,6 +296,13 @@ npx electron . --user-data-dir=<B> --remote-debugging-port=9334
 `%APPDATA%\EisenhowerMatrix`의 **진짜 데이터**를 끌어와 서버로 올려버린다. 한쪽에서 항목을
 추가하고 6초쯤 뒤 다른 쪽에서 **아무 항목이나 추가하면**(그게 그쪽 sync를 3초 뒤로 당긴다)
 건너온 것이 보인다 — 안 그러면 60초 하트비트를 기다려야 한다.
+
+**`.hidden`은 전역 규칙이 아니다.** 영역마다 자기 것을 선언한다(`.chip.hidden`,
+`.view.hidden`, `.memo .hidden`, `.account .hidden`). 새 스타일시트를 만들면서 이걸 빠뜨리면
+**클래스는 붙는데 아무 일도 일어나지 않는다** — `display`를 정하는 규칙이 뒤에 오면 한 클래스짜리
+`.hidden`은 항상 진다. 계정 패널이 로그인 전/후 두 쪽을 동시에 보여준 것이 이 때문이었다.
+`classList.contains('hidden')`으로 검증하면 **통과한다** — 반드시 `offsetParent`나 스크린샷으로
+볼 것.
 
 **렌더러를 재는 곳을 헷갈리지 말 것.** `renderCounts()`가 갱신하는 것은 **바 칩**(`#c1`~`#c4`)
 이고, 분면 헤더(`[data-count=q1]`)는 `renderMatrix()` 즉 **매트릭스 탭일 때만** 다시 그려진다.
