@@ -346,7 +346,7 @@ const pull = (token, since = 0, limit = 500) =>
   let leaving = null;
   if (!LEAVING) {
     skip(
-      "계정 삭제 3가지 — 지워도 되는 계정이 없다",
+      "계정 삭제 4가지 — 지워도 되는 계정이 없다",
       "NEKAN_VERIFY_LEAVING=<이메일>:<비밀번호> 로 넘기면 돈다 (대시보드에서 Auto Confirm으로 만든 일회용 계정). 그 계정은 이 검사로 사라진다.",
     );
   } else {
@@ -363,7 +363,7 @@ const pull = (token, since = 0, limit = 500) =>
       leaving = { ...got.body, email: leavingEmail, password: leavingPassword };
     } else {
       skip(
-        "계정 삭제 3가지 — 넘겨준 계정으로 로그인하지 못했다",
+        "계정 삭제 4가지 — 넘겨준 계정으로 로그인하지 못했다",
         `${leavingEmail}: ${JSON.stringify(got.body).slice(0, 160)}`,
       );
     }
@@ -390,10 +390,22 @@ const pull = (token, since = 0, limit = 500) =>
     );
 
     const after = await pull(leaving.access_token, 0);
+    // Two claims, kept apart, because together they said more than the answer
+    // supports. A 401 proves the token died with the account -- it is not
+    // evidence that the rows went with it, and a delete_account() that dropped
+    // the user but left tasks behind would have passed the combined version.
+    //
+    // The cascade itself cannot be shown from here: proving it means counting
+    // another user's rows, and the only credential that can do that is
+    // service_role, which this project deliberately does not hold -- it
+    // bypasses the RLS that every other check in this file depends on. The
+    // constraint is declared in 0001_tasks.sql; what is checked here is that
+    // the account is unreachable afterwards.
+    check("지우기 전에 그 계정에 할 일이 있었다", hadRow, `had=${hadRow}`);
     check(
-      "계정과 함께 할 일도 사라진다",
-      hadRow && (after.status === 401 || after.body.length === 0),
-      `had=${hadRow} status=${after.status} ${JSON.stringify(after.body).slice(0, 120)}`,
+      "지운 계정의 토큰으로는 아무것도 읽히지 않는다",
+      after.status === 401 || after.body.length === 0,
+      `status=${after.status} ${JSON.stringify(after.body).slice(0, 120)}`,
     );
 
     const relogin = await api("/auth/v1/token?grant_type=password", {

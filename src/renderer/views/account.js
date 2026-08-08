@@ -153,16 +153,21 @@ export function renderAccount() {
 /** Show the signed-in half or the signed-out half, and the local-tasks offer. */
 export function applySession(next) {
   ready();
+  // Who this block was showing a moment ago. renderAccount() re-applies the
+  // same session on every draw, so "changed" has to mean the identity moved,
+  // not merely that this ran again.
+  const was = session && session.userId;
   session = next;
+  const changed = was !== (session && session.userId);
   const inside = Boolean(session && session.email);
   els.in.classList.toggle("hidden", !inside);
   els.out.classList.toggle("hidden", inside);
   els.dev.classList.toggle("hidden", inside || !devLogin);
   els.danger.classList.toggle("hidden", !inside);
-  // Folded away again whenever the session changes. Leaving it open across a
-  // sign-out and the next sign-in would put "계정 삭제" in front of somebody who
-  // never asked for it -- and renderAccount() re-applies this on every draw.
-  if (!inside) closeConfirm();
+  // Folded away whenever the account changes, not only when it goes away.
+  // Signing out and straight back in as somebody else would otherwise hand the
+  // new account an open "계정 삭제" that nobody there asked for.
+  if (!inside || changed) closeConfirm();
 
   if (inside) {
     els.email.textContent = session.email;
@@ -298,6 +303,15 @@ export function wireAccount() {
         say(reason, true);
         els.leaveGo.disabled = false;
         els.leaveCancel.disabled = false;
+        return;
+      }
+      // The delete landed, but the session it was for may not be the one on
+      // screen any more: logging out and back in as somebody else while the
+      // request was in flight leaves main holding a different session, which it
+      // refuses to end. Showing "삭제했습니다" then would be telling the new
+      // account its own account is gone.
+      if (!result.signedOut) {
+        say("");
         return;
       }
       applySession(null);
