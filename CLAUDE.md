@@ -94,6 +94,12 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   `writeFileSync`로 바꾸지 말 것 — 쓰다 끊기면 전체 할 일이 사라진다.
 - IPC를 새로 추가할 때는 **세 곳을 모두** 건드려야 한다: `main/ipc.js`의 `ipcMain.handle`,
   `preload.js`의 `exposeInMainWorld`, 렌더러의 `window.api.*` 호출.
+- **`preload.js`는 샌드박스라 로컬 파일을 `require`할 수 없다.** `require`가 주는 것은
+  Electron 내장 모듈 몇 개뿐이고, `require("./shared/...")`를 넣는 순간 **preload가 통째로
+  죽는다.** 증상은 `window.api`가 **undefined** — 잘못된 import처럼 보이지 않고 앱이 망가진
+  것처럼 보인다(2026-08-08 실측). 메인이 아는 값을 렌더러에 **첫 페인트 전에** 넘겨야 하면
+  `webPreferences.additionalArguments`로 보내고 preload가 `process.argv`에서 읽는다 —
+  언어(`--nekan-lang`)와 지원 목록(`--nekan-langs`)이 그 방식이다.
 - **토큰은 IPC를 건너지 않는다.** `window.api`에 토큰을 돌려주는 함수가 **하나도 없어야** 한다.
   렌더러가 알 수 있는 것은 `state:load`의 `auth`(= `{ email, userId }`)뿐이고, 그 객체는
   `shared/auth.js`의 `publicSession()`이 **필드를 골라서** 만든다 — 지우는 방식이 아니라
@@ -329,6 +335,30 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
 - 기능을 바꾸면 `README.md`의 해당 섹션도 같이 고친다.
 - 되돌리기 어려운 결정을 내렸으면 `docs/DECISIONS.md`에 한 줄 남긴다.
 - **작업을 마칠 때마다 커밋한다.** 컨텍스트가 날아가도 커밋 로그가 남으면 복구된다.
+
+## 다국어 (진행 중, #27)
+
+- **문자열은 `src/shared/i18n/{ko,en}.json`에 있고 화면에는 `t("key")`로만 나간다.**
+  용어 대응은 `src/shared/i18n/GLOSSARY.md`에 있다 — **새 문자열을 넣기 전에 거기부터 본다.**
+  같은 한국어가 파일마다 다른 영어로 나가는 것을 막는 유일한 장치다.
+- **진행률은 기억이 아니라 `node tools/find-untranslated.js`의 숫자다.** 파일별로 남은 한글
+  줄 수를 센다(주석 제외). `index.html` 한글의 절반이 `title`·`aria-label`이라 **눈으로는
+  끝났는지 알 수 없다** — 다 된 것처럼 보이는데 스크린 리더는 한국어를 읽는다.
+- **i18next는 `node_modules`에서 직접 import한다** (`../../node_modules/i18next/dist/esm/i18next.js`).
+  JSON 카탈로그도 `with { type: "json" }`으로 직접 import한다. **둘 다 패키징된 asar에서
+  확인했다** — `npm start`는 `node_modules`가 그 자리에 있어서 아무것도 증명하지 못한다.
+- **언어는 첫 페인트 전에 정해져 있어야 한다.** `state:load`는 IPC 왕복이라 늦는다(저장된
+  테마가 늦게 와서 스위치 알약이 미끄러지던 것과 같은 함정). 메인이 창을 만들기 전에 정하고
+  `additionalArguments`로 넘긴다. 위 preload 항목 참고.
+- **전환은 재시작 없이 된다.** 다만 **메인의 푸시로만 쓰이는 값은 다시 그려지지 않는다** —
+  동기화 문구와 톱니바퀴 툴팁이 옛 언어로 남아 있었다. 뷰가 마지막 상태를 들고 있다가
+  `renderAccount()`에서 다시 적용한다. **캐시해 두고 푸시로만 갱신하는 값이 있으면 같은 처리가
+  필요하다.**
+- 언어 선택은 `.switch`가 아니라 `<select>`다. 알약이 `calc(50% - 2px)` + `translateX(100%)`라
+  **정확히 두 칸일 때만 맞는다** — 세 번째 언어를 넣는 날 깨진다.
+- **아직 안 된 것**: `index.html` 210줄(그중 119가 가이드 탭 = #29) · `shared/core.js`의
+  `dueInfo()`(계산과 표현을 갈라야 함 — 유일하게 단순 치환이 아니다) · `shared/export.js` ·
+  `window/chrome.js` 외. 문서 027 참고.
 
 ## 검증
 
