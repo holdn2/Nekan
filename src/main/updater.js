@@ -61,6 +61,8 @@ let notify = () => {};
  * every wake-up ask again. Throttling has to count attempts.
  */
 let askedAt = 0;
+/** The next scheduled ask, so that any earlier ask can move it. */
+let timer = null;
 
 /** The last thing the updater learnt, for state:load to hand a fresh renderer. */
 const getUpdateStatus = () => status;
@@ -83,6 +85,13 @@ function setStatus(state, version = null) {
  */
 function check() {
   askedAt = Date.now();
+  // Asking restarts the clock, which is what makes CHECK_EVERY_MS an actual
+  // ceiling. A fixed interval keeps the schedule it was created with: a focus
+  // check landing shortly before a tick gets that tick thrown away by the
+  // throttle, and the next one is a further six hours out — up to six and a
+  // half hours between asks, from a change whose whole point was to shorten it.
+  clearTimeout(timer);
+  timer = setTimeout(checkIfDue, CHECK_EVERY_MS);
   autoUpdater.checkForUpdates().catch(() => {});
 }
 
@@ -96,6 +105,8 @@ function check() {
  * only one.
  */
 function checkIfDue() {
+  // Nothing left to schedule either: a downloaded version is the end of the
+  // line until the app restarts, so letting the chain stop here is the point.
   if (status.state === "ready") return;
   if (Date.now() - askedAt < MIN_GAP_MS) return;
   check();
@@ -151,8 +162,10 @@ function initUpdater(onStatus) {
   // FIRST_CHECK_MS. That timer calls check() directly and is unaffected.
   askedAt = Date.now();
 
-  setTimeout(check, FIRST_CHECK_MS);
-  setInterval(checkIfDue, CHECK_EVERY_MS);
+  // The only scheduling done here: check() lays the next one every time, so the
+  // first ask is what starts the chain rather than something a separate
+  // interval has to keep in step with.
+  timer = setTimeout(check, FIRST_CHECK_MS);
 
   // A widget that is never closed used to learn about a release up to six hours
   // late, while quitting and reopening told it in ten seconds. These are the two
@@ -163,9 +176,9 @@ function initUpdater(onStatus) {
   // BrowserWindow, and 'browser-window-focus' fires for whichever window exists
   // without anyone having to hand one over.
   app.on("browser-window-focus", checkIfDue);
-  // setInterval does not run while the machine is asleep and does not catch up
-  // afterwards, so a laptop closed overnight comes back with its timer still
-  // hours from firing.
+  // Timers do not run while the machine is asleep and do not catch up
+  // afterwards, so a laptop closed overnight comes back with its next check
+  // still hours away.
   //
   // Required here rather than at the top of the file: powerMonitor is documented
   // as unusable before the app is ready, and this file is required from main.js
