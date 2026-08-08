@@ -128,6 +128,11 @@ export function renderMemo() {
   if (!task) {
     panel.classList.add("hidden");
     panel.dataset.key = "";
+    // Nobody can see it, but it is the last thing this panel wrote and it is in
+    // whatever language was on screen then. Left behind, it is a Korean string
+    // sitting in an English document -- invisible to a user and a false hit for
+    // the sweep that looks for exactly that. Reopening rewrites it either way.
+    $("#memoHint").textContent = "";
     return;
   }
   panel.classList.remove("hidden");
