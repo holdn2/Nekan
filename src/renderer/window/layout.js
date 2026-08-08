@@ -39,6 +39,8 @@ const HIT = GUTTER / 2 + EDGE_REACH;
 
 let layout = { ...DEFAULT_LAYOUT };
 let layoutTimer = null;
+/** The grid's own padding, measured once — applyLayout runs on every drag move. */
+let gridPadY = null;
 
 /**
  * Ratios become grid tracks. The px floor in each minmax() is the same constant
@@ -53,6 +55,25 @@ function applyLayout() {
   const grid = $("#matrixView");
   grid.style.gridTemplateColumns = track(layout.cols, MIN_COL_PX);
   grid.style.gridTemplateRows = track(layout.rows, MIN_ROW_PX);
+  // Say out loud what those row floors add up to. Without it the grid is a
+  // flex item that shrinks below its own contents and lets them run off the
+  // bottom of the window -- which is what the inbox did to the lower two
+  // quadrants at the minimum window size. Stated here rather than in CSS
+  // because the floors are already known here, and two copies of 110 would
+  // drift the first time one of them changed.
+  //
+  // The padding has to be in the number: box-sizing is border-box, so a
+  // min-height of just the tracks leaves the grid 20px short of what it
+  // promised and the bottom row runs over anyway. Measured rather than
+  // written down, and only once -- this runs on every pointermove of an edge
+  // drag, and getComputedStyle there would force a layout each time.
+  if (gridPadY === null) {
+    const cs = getComputedStyle(grid);
+    gridPadY =
+      (Number.parseFloat(cs.paddingTop) || 0) +
+      (Number.parseFloat(cs.paddingBottom) || 0);
+  }
+  grid.style.minHeight = `${2 * MIN_ROW_PX + GUTTER + gridPadY}px`;
 }
 
 /**
