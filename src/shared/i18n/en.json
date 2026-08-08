@@ -1,0 +1,16 @@
+{
+  "settings": {
+    "title": "Settings",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "export": "Export",
+    "sync": "Sync across devices",
+    "language": "Language",
+    "close": "Close"
+  },
+  "language": {
+    "ko": "한국어",
+    "en": "English"
+  }
+}

@@ -14,7 +14,8 @@
     "release": "electron-builder --win nsis --publish always && node tools/check-release.js"
   },
   "dependencies": {
-    "electron-updater": "^6.8.9"
+    "electron-updater": "^6.8.9",
+    "i18next": "^26.3.6"
   },
   "devDependencies": {
     "electron": "^43.2.0",

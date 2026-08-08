@@ -34,6 +34,8 @@ const {
 } = require("./window");
 const { revealExport, runExport } = require("./export-service");
 const { getUpdateStatus, installUpdate } = require("./updater");
+const { setMainLanguage } = require("./i18n");
+const { storedLanguage } = require("../shared/i18n/locales");
 const {
   deleteAccount,
   getClockOffset,
@@ -130,6 +132,17 @@ function registerIpc() {
   });
 
   /* ---------------------------------------------------------- settings */
+
+  // Persisted, and main's own copy follows. No restart and no window rebuild:
+  // the argv hand-off exists for the first paint only, and after that i18next
+  // can swap catalogues in place on both sides.
+  ipcMain.handle("settings:language", (_e, next) => {
+    const settings = getSettings();
+    settings.language = storedLanguage(next) || settings.language;
+    setMainLanguage(settings.language);
+    persist();
+    return settings.language;
+  });
 
   ipcMain.handle("settings:theme", (_e, theme) => {
     const settings = getSettings();

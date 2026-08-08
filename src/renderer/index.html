@@ -736,8 +736,17 @@
         </button>
       </header>
 
+      <!-- A select, not the .switch the theme row uses. That pill is
+           `width: calc(50% - 2px)` and `translateX(100%)`, so it is only ever
+           right for exactly two options — reusing it here would break on the
+           day a third language lands, which is the whole point of this row. -->
       <div class="settings-row">
-        <span class="settings-label">테마</span>
+        <span class="settings-label" data-i18n="settings.language">언어</span>
+        <select class="settings-select" id="languageSelect"></select>
+      </div>
+
+      <div class="settings-row">
+        <span class="settings-label" data-i18n="settings.theme">테마</span>
         <div class="switch" id="themeSeg" role="group" aria-label="테마 선택">
           <button class="switch-btn" data-theme="light" aria-pressed="false">
             일반

@@ -20,6 +20,7 @@ import {
 } from "./core-bridge.js";
 import { acceptSynced, setClockOffset, setTasks } from "./store.js";
 import { subscribe } from "./render-bus.js";
+import { applyStaticStrings, currentLanguage } from "./i18n.js";
 import { $ } from "./dom.js";
 import { toast } from "./components/toast.js";
 import { renderMatrix, wireAddForms } from "./views/matrix.js";
@@ -207,6 +208,12 @@ let pushedSync = null;
  * the render that applyMode() triggers at the end.
  */
 async function init() {
+  // Before the first await, and before anything is drawn. The language came in
+  // on argv precisely so this does not have to wait for state:load — putting it
+  // after would show one language for a frame and then swap it.
+  document.documentElement.lang = currentLanguage();
+  applyStaticStrings();
+
   // Registered before the first await: the main process sends 'win:mode' from
   // ready-to-show, and a listener attached later would miss it silently.
   window.api.onMode((next) => {

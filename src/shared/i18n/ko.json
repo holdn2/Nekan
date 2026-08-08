@@ -1,0 +1,16 @@
+{
+  "settings": {
+    "title": "설정",
+    "theme": "테마",
+    "themeLight": "일반",
+    "themeDark": "다크",
+    "export": "내보내기",
+    "sync": "기기 간 동기화",
+    "language": "언어",
+    "close": "닫기"
+  },
+  "language": {
+    "ko": "한국어",
+    "en": "English"
+  }
+}

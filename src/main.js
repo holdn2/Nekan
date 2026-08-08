@@ -9,7 +9,9 @@
 
 const { BrowserWindow, app } = require("electron");
 
-const { load, persistNow } = require("./main/store");
+const { getSettings, load, persistNow } = require("./main/store");
+const { initI18n } = require("./main/i18n");
+const { pickLanguage, storedLanguage } = require("./shared/i18n/locales");
 const { createWindow, getWindow } = require("./main/window");
 const { registerIpc } = require("./main/ipc");
 const { initUpdater } = require("./main/updater");
@@ -39,6 +41,15 @@ if (!gotLock) {
     // Order matters: the window reads its bounds, theme and mode from the
     // store, and the renderer calls IPC as soon as it loads.
     load();
+    // Before the window, which hands the language to preload on the command
+    // line -- the only channel that arrives before the first paint. A machine
+    // that has never chosen gets Korean if the OS is Korean and English
+    // otherwise, and the answer is written down so the OS cannot change it
+    // under a user who has since picked for themselves.
+    const settings = getSettings();
+    settings.language =
+      storedLanguage(settings.language) || pickLanguage(app.getLocale());
+    initI18n(settings.language);
     // Before the IPC, because state:load hands the renderer whoever is logged
     // in and the answer comes off disk. safeStorage needs the app ready, which
     // is why this cannot sit next to the store load above.

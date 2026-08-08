@@ -112,6 +112,31 @@
   border-color: var(--muted);
 }
 
+/* Matches .settings-action so the row reads as one kind of control, but it is a
+   real <select>: the list grows with every language and the OS knows how to
+   present a long one better than anything drawn here would. */
+.settings-select {
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.settings-select:hover {
+  border-color: var(--muted);
+}
+
+/* The popup is drawn by the OS, which does not inherit the transparent
+   background above -- on the dark theme that left dark text on dark. */
+.settings-select option {
+  background: var(--panel);
+  color: var(--text);
+}
+
 .settings-action kbd {
   font-family: inherit;
   font-size: 11px;

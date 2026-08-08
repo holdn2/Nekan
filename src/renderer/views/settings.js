@@ -10,6 +10,7 @@
  */
 
 import { $ } from "../dom.js";
+import { currentLanguage, setLanguage, t } from "../i18n.js";
 import { getMode, toggleTheme } from "../window/chrome.js";
 import { exportBoard } from "../window/export-ui.js";
 
@@ -68,6 +69,24 @@ export function wireSettings() {
   // because that one only listens for Ctrl combinations.
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && open) closeSettings();
+  });
+
+  // Built here rather than written into index.html: the list comes from
+  // preload, so adding a language means adding a catalogue and nothing else.
+  // Each language is named in its own language — somebody looking for their own
+  // is looking for a word they recognise, not for its name in a script they
+  // cannot read, which is the state they are in when they come here.
+  const select = $("#languageSelect");
+  (window.api.languages || []).forEach((code) => {
+    const option = document.createElement("option");
+    option.value = code;
+    option.textContent = t(`language.${code}`);
+    select.append(option);
+  });
+  select.value = currentLanguage();
+  select.addEventListener("change", () => {
+    setLanguage(select.value);
+    window.api.setLanguage(select.value);
   });
 
   $("#themeSeg").addEventListener("click", (e) => {
