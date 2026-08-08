@@ -1,7 +1,101 @@
 {
+  "common": {
+    "add": "Add",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete"
+  },
+  "space": {
+    "work": "Work",
+    "life": "Life",
+    "view": "Show the {{space}} matrix"
+  },
+  "titlebar": {
+    "boards": "Choose a matrix",
+    "countInbox": "Tasks not sorted yet",
+    "countQ1": "Urgent & Important, remaining",
+    "countQ2": "Important & Not Urgent, remaining",
+    "countQ3": "Urgent & Not Important, remaining",
+    "countQ4": "Not Urgent & Not Important, remaining",
+    "updateReady": "Update ready",
+    "pin": "Always on top",
+    "unpin": "Stop staying on top",
+    "collapse": "Shrink to the bar",
+    "expand": "Expand",
+    "minimize": "Minimise to the taskbar",
+    "close": "Quit"
+  },
+  "tabs": {
+    "matrix": "Matrix",
+    "history": "History",
+    "trash": "Trash",
+    "guide": "Guide",
+    "hint": "Click a task to open its note, double-click to edit the text"
+  },
+  "quad": {
+    "q1": { "title": "Urgent & Important", "action": "Do it now" },
+    "q2": { "title": "Important & Not Urgent", "action": "Plan it" },
+    "q3": { "title": "Urgent & Not Important", "action": "Delegate it" },
+    "q4": { "title": "Not Urgent & Not Important", "action": "Drop it" }
+  },
+  "matrix": {
+    "addPlaceholder": "Add a task…",
+    "crowded": "A quadrant this full is the same as having no priorities at all. Block out time in quadrant 2 first."
+  },
+  "item": {
+    "complete": "Complete (moves to the history)",
+    "completeLabel": "Complete: {{text}}",
+    "delete": "Delete (moves to the trash)",
+    "deleteLabel": "Delete: {{text}}",
+    "hint": "Click for the note · double-click to edit",
+    "hintInbox": "Double-click to edit · drag into a quadrant to sort it"
+  },
+  "inbox": {
+    "title": "Brain dump",
+    "shared": "Shared",
+    "sharedTitle": "One list, used by both the Work and Life matrices",
+    "hint": "Write everything down first, Work or Life alike, then drag each one where it belongs",
+    "placeholder": "Write anything (paste several lines to add one task per line)"
+  },
+  "due": {
+    "field": "Due date",
+    "clear": "Clear the date",
+    "clearLabel": "Clear the due date",
+    "set": "Set a due date",
+    "chip": "Due {{date}} · {{hint}}",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "overdue_one": "{{count}} day overdue",
+    "overdue_other": "{{count}} days overdue",
+    "remaining_one": "{{count}} day left",
+    "remaining_other": "{{count}} days left"
+  },
+  "memo": {
+    "panel": "Note",
+    "close": "Close the note",
+    "edit": "Double-click to edit",
+    "editing": "Ctrl+Enter to save · Esc to cancel",
+    "placeholder": "Write a note…",
+    "field": "Note text",
+    "confirmDelete": "Delete this note? This cannot be undone.",
+    "mark": "Note: {{memo}}",
+    "markLabel": "Has a note",
+    "collapse": "Collapse",
+    "expand": "Show all"
+  },
+  "history": {
+    "search": "Search completed tasks…",
+    "clearAll": "Move all to the trash"
+  },
+  "trash": {
+    "search": "Search deleted tasks…",
+    "restoreAll": "Restore all",
+    "empty": "Empty the trash"
+  },
   "settings": {
     "title": "Settings",
     "theme": "Theme",
+    "themeChoose": "Choose a theme",
     "themeLight": "Light",
     "themeDark": "Dark",
     "export": "Export",
@@ -12,6 +106,32 @@
   "language": {
     "ko": "한국어",
     "en": "English"
+  },
+  "update": {
+    "checking": "Checking for a new version…",
+    "latest": "This is the latest version.",
+    "downloading": "Downloading the new version{{version}}…",
+    "ready": "The new version{{version}} is ready — it is applied when you close the app.",
+    "button": "The new version{{version}} is ready — restart now to apply it",
+    "toast": "A new version has been downloaded.{{version}}",
+    "restart": "Restart now",
+    "releaseNotes": "Release notes"
+  },
+  "export": {
+    "title": "Export the {{space}} matrix",
+    "filterPdf": "PDF document",
+    "filterHtml": "HTML document",
+    "filterMarkdown": "Markdown",
+    "inboxAction": "Written down before sorting",
+    "sectionEmpty": "Empty",
+    "meta": "Exported: {{stamp}} · {{count}} item(s)",
+    "metaShort": "{{stamp}} · {{count}} item(s)",
+    "due": "due {{date}} ({{hint}})",
+    "saved": "Saved · {{name}}",
+    "openFolder": "Open the folder",
+    "nothing": "There is nothing to export.",
+    "failedWith": "Could not save that: {{message}}",
+    "failed": "Could not save that."
   },
   "account": {
     "error": {
@@ -36,6 +156,17 @@
     },
     "gearOffline": "Settings — could not reach the server. Your changes are saved on this computer.",
     "gearState": "Settings — {{state}}",
+    "google": "Sign in with Google",
+    "adopt": "Also merge the <b>{{count}}</b> task(s) on this computer into the account",
+    "adoptHint": "Turn it off and only what is in the account remains. Nothing here is deleted — it is moved to <code>data.before-login.json</code>.",
+    "devEmail": "Development email",
+    "devPassword": "Password",
+    "devSignIn": "Development sign-in",
+    "signOut": "Sign out",
+    "leave": "Delete account",
+    "confirmLede": "This deletes the account and <b>the copy on the server</b>. Syncing with your other devices stops. <b>This cannot be undone.</b>",
+    "confirmKeep": "<b>The tasks on this computer stay.</b> You can go on using the app without an account.",
+    "confirmGo": "Delete my account",
     "finishInBrowser": "Finish signing in from your browser.",
     "signedIn": "Signed in as {{email}}.",
     "signInFailed": "Could not sign in. ({{code}})",
@@ -47,6 +178,13 @@
     "overwritten": "{{count}} item(s) were overwritten by changes from another device."
   },
   "welcome": {
+    "lede": "Where should your tasks live?",
+    "syncTitle": "Sign in with Google and sync",
+    "syncSub": "The same list on every device",
+    "localTitle": "Keep them on this computer",
+    "localSub": "Start right now, no account",
+    "adopt": "Also merge the <b>{{count}}</b> task(s) on this computer into the account",
+    "foot": "You can change this later in Settings.",
     "saveFailed": "Could not save that choice. Please try again.",
     "signOutFailed": "Could not sign out. Please try again. ({{code}})"
   },
@@ -64,5 +202,12 @@
     "purge": "Delete forever",
     "confirmTrashAll": "Move {{count}} completed task(s) to the trash?",
     "confirmPurgeAll": "Delete {{count}} task(s) in the trash forever? This cannot be undone."
+  },
+  "oauth": {
+    "done": "Got it. You can close this tab and go back to the app.",
+    "failed": "Sign-in did not go through. You can close this tab."
+  },
+  "app": {
+    "startFailed": "Could not start. Please launch the app again."
   }
 }

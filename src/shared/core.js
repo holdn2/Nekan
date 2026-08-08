@@ -52,7 +52,6 @@ const isCrowded = (quadrant, count) =>
 const SPACES = ["work", "life"];
 /** Where tasks saved before the split — and any unknown value — land. */
 const DEFAULT_SPACE = "work";
-const SPACE_LABEL = { work: "업무", life: "일상" };
 
 /** Any unknown value — including undefined — reads as the default board. */
 const sanitizeSpace = (v) => (SPACES.includes(v) ? v : DEFAULT_SPACE);
@@ -85,7 +84,6 @@ const MAX_TEXT = 200;
 const MAX_MEMO = 2000;
 
 const DAY_MS = 86400000;
-const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
 
 /* ------------------------------------------------------------------ dates */
 
@@ -117,37 +115,73 @@ function parseDue(value) {
 }
 
 /**
- * Label + urgency state for a due date, relative to `now`. Time-dependent, so
- * anything rendered from it has to be refreshed when the day changes.
+ * What a due date *is*, relative to `now` — no words in it.
+ *
+ * This file is loaded twice, once by `require` and once as a classic script the
+ * renderer runs ahead of its module graph, so it can hold neither a catalogue
+ * nor the code to read one. That is why the split exists at all: the counting
+ * lives here and the wording lives in `formatDue()` below, which is handed a
+ * `t` rather than reaching for one.
+ *
+ * `state` stays on this side even though it looks like presentation. It is what
+ * the stylesheets colour the chip by, and moving it across would tie the CSS to
+ * whichever language is on screen.
+ *
+ * Time-dependent, so anything rendered from it has to be redrawn when the day
+ * changes — see scheduleDayRollover in renderer/app.js.
  */
 function dueInfo(value, now = new Date()) {
   const date = parseDue(value);
   if (!date) return null;
   const days = Math.round((date - startOfToday(now)) / DAY_MS);
 
-  let text = `${date.getMonth() + 1}/${date.getDate()}(${WEEKDAY[date.getDay()]})`;
-  if (date.getFullYear() !== now.getFullYear()) {
-    text = `${String(date.getFullYear()).slice(2)}/${text}`;
-  }
-
   let state = "far";
+  if (days < 0) state = "overdue";
+  else if (days === 0) state = "today";
+  else if (days <= 3) state = "soon";
+
+  // Comparing years needs `now`, which formatDue() does not get. A date in
+  // another year is written differently, so the comparison belongs here with
+  // everything else that had to look at the clock.
+  return {
+    date,
+    days,
+    state,
+    otherYear: date.getFullYear() !== now.getFullYear(),
+  };
+}
+
+/**
+ * The two strings a due date shows: the date itself and how far away it is.
+ *
+ * `t` is passed in rather than imported — see dueInfo above for why this file
+ * cannot hold a catalogue. Both the renderer and the export call this, so the
+ * chip on screen and the chip in a printed PDF can never word the same date
+ * differently.
+ *
+ * The weekday comes from `Intl` instead of the catalogue: it is the one part
+ * every locale already knows, and a hand-written list would be seven more
+ * strings per language to get wrong. The rest of the shape is deliberately not
+ * `Intl`'s — a full Korean date formats as "8. 3. (월)", which is wider than the
+ * chip and reads nothing like the "8/3" it has always shown.
+ */
+function formatDue(info, t, locale) {
+  if (!info) return null;
+  const { date, days, otherYear } = info;
+
+  const weekday = new Intl.DateTimeFormat(locale, { weekday: "short" }).format(
+    date,
+  );
+  let text = `${date.getMonth() + 1}/${date.getDate()}(${weekday})`;
+  if (otherYear) text = `${String(date.getFullYear()).slice(2)}/${text}`;
+
   let hint;
-  if (days < 0) {
-    state = "overdue";
-    hint = `${-days}일 지남`;
-  } else if (days === 0) {
-    state = "today";
-    hint = "오늘";
-  } else if (days === 1) {
-    state = "soon";
-    hint = "내일";
-  } else if (days <= 3) {
-    state = "soon";
-    hint = `${days}일 남음`;
-  } else {
-    hint = `${days}일 남음`;
-  }
-  return { text, state, hint };
+  if (days < 0) hint = t("due.overdue", { count: -days });
+  else if (days === 0) hint = t("due.today");
+  else if (days === 1) hint = t("due.tomorrow");
+  else hint = t("due.remaining", { count: days });
+
+  return { text, hint };
 }
 
 /* ------------------------------------------------------------------ tasks */
@@ -556,7 +590,6 @@ const emCore = {
   isCrowded,
   SPACES,
   DEFAULT_SPACE,
-  SPACE_LABEL,
   sanitizeSpace,
   spaceFor,
   needsStartupChoice,
@@ -564,11 +597,11 @@ const emCore = {
   MAX_MEMO,
   MAX_BULK_LINES,
   DAY_MS,
-  WEEKDAY,
   startOfToday,
   startOfTomorrow,
   parseDue,
   dueInfo,
+  formatDue,
   clampText,
   clampMemo,
   splitBulkText,

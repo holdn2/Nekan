@@ -19,6 +19,7 @@ const {
   startOfTomorrow,
   parseDue,
   dueInfo,
+  formatDue,
   MAX_MEMO,
   clampText,
   clampMemo,
@@ -44,9 +45,11 @@ const SCREEN = { x: 0, y: 0, width: 1920, height: 1080 };
 const BAR = { width: 600, height: 48 };
 const WIN = { width: 1000, height: 700 };
 
-/** Local 'YYYY-MM-DD' for a day offset from today, the way the UI writes it. */
-function dayString(offset) {
-  const d = startOfToday();
+const { initI18n, setMainLanguage, t } = require("../src/main/i18n");
+
+/** Local 'YYYY-MM-DD' for a day offset from a base day, the way the UI writes it. */
+function dayString(offset, base) {
+  const d = startOfToday(base);
   d.setDate(d.getDate() + offset);
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -254,10 +257,13 @@ test("parseDue accepts only real YYYY-MM-DD days", () => {
 });
 
 test("dueInfo classifies days relative to today", () => {
+  // No strings in here on purpose: dueInfo counts days and names the state the
+  // stylesheet colours by, and the words are formatDue's problem below.
   assert.equal(dueInfo(dayString(-2)).state, "overdue");
-  assert.equal(dueInfo(dayString(-2)).hint, "2일 지남");
+  assert.equal(dueInfo(dayString(-2)).days, -2);
   assert.equal(dueInfo(dayString(0)).state, "today");
-  assert.equal(dueInfo(dayString(1)).hint, "내일");
+  assert.equal(dueInfo(dayString(1)).days, 1);
+  assert.equal(dueInfo(dayString(1)).state, "soon");
   assert.equal(dueInfo(dayString(3)).state, "soon");
   assert.equal(dueInfo(dayString(4)).state, "far");
   assert.equal(dueInfo(null), null);
@@ -268,15 +274,56 @@ test("dueInfo is relative to the day it is asked about, not the parse", () => {
   const before = new Date(2026, 2, 9, 23, 59, 59);
   const after = new Date(2026, 2, 10, 0, 0, 1);
   assert.equal(dueInfo(due, before).state, "soon");
-  assert.equal(dueInfo(due, before).hint, "내일");
+  assert.equal(dueInfo(due, before).days, 1);
   // Same task, one second later: the label must move on its own.
   assert.equal(dueInfo(due, after).state, "today");
 });
 
-test("dueInfo prefixes the year only when it differs from now", () => {
+test("dueInfo flags a date in another year, because now is only here", () => {
   const now = new Date(2026, 5, 1);
-  assert.equal(dueInfo("2026-06-10", now).text.startsWith("6/10"), true);
-  assert.equal(dueInfo("2027-06-10", now).text.startsWith("27/"), true);
+  assert.equal(dueInfo("2026-06-10", now).otherYear, false);
+  assert.equal(dueInfo("2027-06-10", now).otherYear, true);
+});
+
+test("formatDue words the same date in whichever language it is given", () => {
+  const now = new Date(2026, 5, 1);
+  const at = (value) => dueInfo(value, now);
+
+  initI18n("ko");
+  assert.equal(formatDue(at(dayString(1, now)), t, "ko").hint, "내일");
+  assert.equal(formatDue(at(dayString(0, now)), t, "ko").hint, "오늘");
+  assert.equal(formatDue(at(dayString(-2, now)), t, "ko").hint, "2일 지남");
+  assert.equal(formatDue(at(dayString(5, now)), t, "ko").hint, "5일 남음");
+
+  setMainLanguage("en");
+  assert.equal(formatDue(at(dayString(1, now)), t, "en").hint, "Tomorrow");
+  // The plural comes from i18next's own rules, never from appending an "s".
+  assert.equal(
+    formatDue(at(dayString(-1, now)), t, "en").hint,
+    "1 day overdue",
+  );
+  assert.equal(
+    formatDue(at(dayString(-2, now)), t, "en").hint,
+    "2 days overdue",
+  );
+  assert.equal(formatDue(at(dayString(5, now)), t, "en").hint, "5 days left");
+  setMainLanguage("ko");
+});
+
+test("formatDue writes the year only when it differs from now", () => {
+  const now = new Date(2026, 5, 1);
+  initI18n("ko");
+  assert.equal(formatDue(dueInfo("2026-06-10", now), t, "ko").text, "6/10(수)");
+  assert.equal(
+    formatDue(dueInfo("2027-06-10", now), t, "ko").text.startsWith("27/"),
+    true,
+  );
+  // The weekday is the one part Intl already knows in every language.
+  assert.equal(
+    formatDue(dueInfo("2026-06-10", now), t, "en").text,
+    "6/10(Wed)",
+  );
+  assert.equal(formatDue(null, t, "ko"), null);
 });
 
 test("startOfTomorrow lands on the next local midnight", () => {

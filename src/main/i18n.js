@@ -21,9 +21,9 @@ const { FALLBACK } = require("../shared/i18n/locales");
 let ready = false;
 
 /** Called once from main.js, after the language has been settled. */
-function initI18n(language) {
+function initI18n(lng) {
   i18next.init({
-    lng: language || FALLBACK,
+    lng: lng || FALLBACK,
     fallbackLng: FALLBACK,
     resources: { ko: { translation: ko }, en: { translation: en } },
     interpolation: { escapeValue: false },
@@ -42,6 +42,28 @@ function setMainLanguage(language) {
   if (ready) i18next.changeLanguage(language);
 }
 
-const t = (key, params) => i18next.t(key, params);
+/**
+ * An un-initialised i18next answers with the key itself, so a caller that ran
+ * before main.js got to `initI18n` would put "export.filterPdf" in front of
+ * somebody. The tests are the real case: they require shared/export.js on its
+ * own, with no app around it to have set a language.
+ */
+function ensure() {
+  if (!ready) initI18n(FALLBACK);
+}
 
-module.exports = { initI18n, setMainLanguage, t };
+const t = (key, params) => {
+  ensure();
+  return i18next.t(key, params);
+};
+
+/**
+ * Which language main is writing in. `shared/core.js` formats dates through
+ * `Intl`, which wants the tag rather than the catalogue.
+ */
+function language() {
+  ensure();
+  return i18next.language;
+}
+
+module.exports = { initI18n, setMainLanguage, t, language };

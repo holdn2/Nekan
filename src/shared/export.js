@@ -7,7 +7,13 @@
  * that is easy to get wrong — which tasks are in, how an empty quadrant reads,
  * how text with `<` or `|` in it is escaped — is testable without the app.
  *
- * Only what is on screen is exported: one matrix (업무 or 일상) — its inbox plus
+ * There is no catalogue in here either, for the same reason. `buildSnapshot`
+ * takes a `t` and resolves *every* string it will ever need into the snapshot;
+ * `toMarkdown` and `toHtml` then read words out of that object rather than
+ * asking for them. It is the same trick the due dates already used — a printed
+ * page cannot recompute anything — extended to the rest of the document.
+ *
+ * Only what is on screen is exported: one matrix (Work or Life) — its inbox plus
  * its four quadrants. Completed and trashed tasks belong to the history and
  * trash tabs, and the other matrix belongs to its own export.
  */
@@ -15,22 +21,12 @@
 const {
   QUADS,
   INBOX,
-  SPACE_LABEL,
   compareOrder,
   dueInfo,
+  formatDue,
   normalizeTasks,
   sanitizeSpace,
 } = require("./core");
-
-/** Mirrors the quadrant headers in renderer/index.html. */
-const QUAD_TITLES = {
-  q1: { title: "Urgent & Important", action: "Do 진행하기" },
-  q2: { title: "Important & Not Urgent", action: "Plan 계획하기" },
-  q3: { title: "Urgent & Not Important", action: "Delegate 위임하기" },
-  q4: { title: "Not Urgent & Not Important", action: "Delete 제거하기" },
-};
-
-const INBOX_TITLE = "다 꺼내기";
 
 /** Print colours, matching the light palette in styles.css. */
 const QUAD_COLOR = {
@@ -59,21 +55,31 @@ function stampLabel(now = new Date()) {
  * name is in there because the two matrices export separately — without it the
  * second file would be offered the name of the first.
  */
-function defaultFileName(now = new Date(), ext = "pdf", space) {
-  return `Nekan ${SPACE_LABEL[sanitizeSpace(space)]} ${isoDay(now)}.${ext}`;
+function defaultFileName(now = new Date(), ext = "pdf", space, t) {
+  return `Nekan ${t(`space.${sanitizeSpace(space)}`)} ${isoDay(now)}.${ext}`;
 }
 
 /**
  * One task, reduced to what a document needs. The live urgency is resolved
  * here because a printed page cannot recompute it later.
  */
-function exportItem(task, now) {
-  const due = dueInfo(task.dueDate, now);
+function exportItem(task, now, { t, locale }) {
+  const info = dueInfo(task.dueDate, now);
+  const due = formatDue(info, t, locale);
   return {
     text: task.text,
-    // Both parts are kept: the date survives printing, the hint ("3일 남음")
+    // Both parts are kept: the date survives printing, the hint ("3 days left")
     // is what makes it readable at a glance on the day it was exported.
-    due: due ? { text: due.text, hint: due.hint, state: due.state } : null,
+    due: due
+      ? {
+          text: due.text,
+          hint: due.hint,
+          state: info.state,
+          // Markdown runs the two into a sentence, HTML sets them side by side.
+          // Only the first needs words of its own.
+          line: t("export.due", { date: due.text, hint: due.hint }),
+        }
+      : null,
     memo: task.memo || null,
   };
 }
@@ -86,7 +92,8 @@ function exportItem(task, now) {
  * It is also what puts every pre-split task on a board, and guarantees inbox
  * tasks have no space — which is why they survive the filter on both boards.
  */
-function buildSnapshot(tasks, now = new Date(), space) {
+function buildSnapshot(tasks, now = new Date(), space, i18n) {
+  const { t, locale } = i18n;
   const board = sanitizeSpace(space);
   const list = normalizeTasks(tasks).filter(
     (t) =>
@@ -102,26 +109,37 @@ function buildSnapshot(tasks, now = new Date(), space) {
   const sections = [
     {
       key: INBOX,
-      title: INBOX_TITLE,
-      action: "분류하기 전에 적어둔 것",
-      items: inList(INBOX).map((t) => exportItem(t, now)),
+      title: t("inbox.title"),
+      action: t("export.inboxAction"),
+      items: inList(INBOX).map((task) => exportItem(task, now, i18n)),
     },
     ...QUADS.map((q) => ({
       key: q,
-      title: QUAD_TITLES[q].title,
-      action: QUAD_TITLES[q].action,
-      items: inList(q).map((t) => exportItem(t, now)),
+      title: t(`quad.${q}.title`),
+      action: t(`quad.${q}.action`),
+      items: inList(q).map((task) => exportItem(task, now, i18n)),
     })),
   ];
 
+  const stamp = stampLabel(now);
+  const total = sections.reduce((sum, s) => sum + s.items.length, 0);
+
   return {
-    stamp: stampLabel(now),
+    stamp,
     space: board,
-    spaceLabel: SPACE_LABEL[board],
-    total: sections.reduce((sum, s) => sum + s.items.length, 0),
+    spaceLabel: t(`space.${board}`),
+    total,
     inbox: sections[0],
     quads: sections.slice(1),
     sections,
+    // Everything the two formatters below would otherwise have to ask for. They
+    // are handed the finished document, not a catalogue.
+    lang: locale,
+    labels: {
+      meta: t("export.meta", { stamp, count: total }),
+      metaShort: t("export.metaShort", { stamp, count: total }),
+      empty: t("export.sectionEmpty"),
+    },
   };
 }
 
@@ -132,14 +150,14 @@ const mdCell = (text) =>
   String(text).replace(/\|/g, "\\|").replace(/\s+/g, " ");
 
 /** One quadrant as a numbered markdown list, memos quoted underneath. */
-function markdownSection(section) {
+function markdownSection(section, labels) {
   const lines = [`## ${section.title}`, "", `_${section.action}_`, ""];
   if (!section.items.length) {
-    lines.push("_(비어 있음)_", "");
+    lines.push(`_(${labels.empty})_`, "");
     return lines;
   }
   section.items.forEach((item, i) => {
-    const due = item.due ? ` — 마감 ${item.due.text} (${item.due.hint})` : "";
+    const due = item.due ? ` — ${item.due.line}` : "";
     lines.push(`${i + 1}. ${mdCell(item.text)}${due}`);
     // Memo lines are indented so they stay inside the numbered item.
     if (item.memo) {
@@ -157,10 +175,12 @@ function toMarkdown(snapshot) {
   const lines = [
     `# Nekan — ${snapshot.spaceLabel}`,
     "",
-    `내보낸 시각: ${snapshot.stamp} · 항목 ${snapshot.total}개`,
+    snapshot.labels.meta,
     "",
   ];
-  snapshot.sections.forEach((s) => lines.push(...markdownSection(s)));
+  snapshot.sections.forEach((s) =>
+    lines.push(...markdownSection(s, snapshot.labels)),
+  );
   return `${lines.join("\n").trimEnd()}\n`;
 }
 
@@ -188,11 +208,11 @@ function htmlItem(item) {
   return `<li><div class="row">${parts.join("")}</div>${memo}</li>`;
 }
 
-/** One quadrant card: coloured header, count, and the list (or "비어 있음"). */
-function htmlSection(section, tag) {
+/** One quadrant card: coloured header, count, and the list (or "Empty"). */
+function htmlSection(section, tag, labels) {
   const body = section.items.length
     ? `<ol>${section.items.map(htmlItem).join("")}</ol>`
-    : '<p class="empty">비어 있음</p>';
+    : `<p class="empty">${escapeHtml(labels.empty)}</p>`;
   return (
     `<section class="${tag} ${section.key}">` +
     "<header>" +
@@ -217,7 +237,7 @@ function toHtml(snapshot) {
     .join("");
 
   return `<!doctype html>
-<html lang="ko">
+<html lang="${escapeHtml(snapshot.lang)}">
 <head>
 <meta charset="UTF-8">
 <title>Nekan ${escapeHtml(snapshot.spaceLabel)} ${escapeHtml(snapshot.stamp)}</title>
@@ -269,18 +289,18 @@ function toHtml(snapshot) {
 <div class="head">
   <h1>Nekan</h1>
   <span class="board">${escapeHtml(snapshot.spaceLabel)}</span>
-  <span class="meta">${escapeHtml(snapshot.stamp)} · 항목 ${snapshot.total}개</span>
+  <span class="meta">${escapeHtml(snapshot.labels.metaShort)}</span>
 </div>
-${htmlSection(snapshot.inbox, "inbox")}
-<div class="grid">${snapshot.quads.map((q) => htmlSection(q, "quad")).join("")}</div>
+${htmlSection(snapshot.inbox, "inbox", snapshot.labels)}
+<div class="grid">${snapshot.quads
+    .map((q) => htmlSection(q, "quad", snapshot.labels))
+    .join("")}</div>
 </body>
 </html>
 `;
 }
 
 module.exports = {
-  QUAD_TITLES,
-  INBOX_TITLE,
   isoDay,
   stampLabel,
   defaultFileName,

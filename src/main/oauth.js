@@ -19,6 +19,8 @@ const crypto = require("crypto");
 const http = require("http");
 const { app, shell } = require("electron");
 
+const { language, t } = require("./i18n");
+
 /** Long enough that a user can read a consent screen, short enough to give up. */
 const WINDOW_MS = 5 * 60 * 1000;
 
@@ -49,7 +51,7 @@ function pkcePair() {
 
 /** What the browser tab says once it has done its job. */
 function donePage(message) {
-  return `<!doctype html><html lang="ko"><head><meta charset="utf-8">
+  return `<!doctype html><html lang="${language()}"><head><meta charset="utf-8">
 <title>Nekan</title><style>
 body{margin:0;height:100vh;display:grid;place-items:center;background:#f7f5ef;
 color:#23211d;font:16px/1.6 "Malgun Gothic","Segoe UI",system-ui,sans-serif}
@@ -102,22 +104,18 @@ function loopbackCode(buildUrl) {
 
       const code = url.searchParams.get("code");
       // The code first, the description second. `access_denied` is something
-      // the UI can turn into a Korean sentence; "User denied the request" is
-      // English prose from a service the user never heard of.
+      // the UI has a sentence for in the user's own language; "User denied the
+      // request" is prose from a service they never heard of.
       const error =
         url.searchParams.get("error") ||
         url.searchParams.get("error_description");
 
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       res.end(
-        // Not "로그인되었습니다": all that has happened is that a code came
+        // Never "you are signed in": all that has happened is that a code came
         // back, and it can still be refused a moment later. The app is where
         // the answer is, so this page's job is to send the user there.
-        donePage(
-          code
-            ? "확인했습니다. 이 창을 닫고 앱으로 돌아가 주세요."
-            : "로그인하지 못했습니다. 이 창은 닫으셔도 됩니다.",
-        ),
+        donePage(t(code ? "oauth.done" : "oauth.failed")),
       );
 
       finish(

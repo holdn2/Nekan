@@ -2,13 +2,18 @@
  * The due-date chip in its two forms: editable on the matrix, read-only in the
  * history and trash lists.
  *
- * All the urgency wording ("오늘", "3일 남음") and the state class that colours
- * it come from `dueInfo()` in shared/core.js, so this file only decides what the
- * chip looks like — never what a date means.
+ * What a date *means* is not decided here. `dueInfo()` in shared/core.js counts
+ * the days and names the state that colours the chip, and `formatDue()` turns
+ * that into the two strings on screen — the same pair the export prints, so a
+ * chip and a PDF can never word one date two ways.
  */
 
-import { dueInfo } from "../core-bridge.js";
+import { dueInfo, formatDue } from "../core-bridge.js";
+import { currentLanguage, t } from "../i18n.js";
 import { calendarIcon } from "./icons.js";
+
+/** The words for a due date, in whatever language is on screen right now. */
+const words = (info) => formatDue(info, t, currentLanguage());
 
 /**
  * Editable chip: a native date input stretched invisibly over a compact face,
@@ -26,7 +31,6 @@ export function dueChip(value, onChange) {
 
   const input = document.createElement("input");
   input.type = "date";
-  input.setAttribute("aria-label", "마감일");
 
   const face = document.createElement("span");
   face.className = "face";
@@ -36,24 +40,34 @@ export function dueChip(value, onChange) {
   clear.type = "button";
   clear.className = "due-clear";
   clear.textContent = "×";
-  clear.title = "날짜 지우기";
-  clear.setAttribute("aria-label", "마감일 지우기");
 
   box.append(chip, clear);
   box.draggable = false;
 
-  /** Repaint the face for `next`; an empty date falls back to the icon. */
+  /**
+   * Repaint the face for `next`; an empty date falls back to the icon.
+   *
+   * The three fixed labels are rewritten here rather than once at construction,
+   * which makes repainting and relabelling the same call. A row's chip is
+   * rebuilt on every redraw so it would not have mattered there — but the chip
+   * in an add form is built once by wireAddForms() and lives for the run, and
+   * with the labels set above it kept saying "마감일 지정" in an English window.
+   */
   const apply = (next) => {
     input.value = next || "";
+    input.setAttribute("aria-label", t("due.field"));
+    clear.title = t("due.clear");
+    clear.setAttribute("aria-label", t("due.clearLabel"));
     const info = dueInfo(next);
     box.className = info ? `duebox set ${info.state}` : "duebox";
     face.replaceChildren();
     if (info) {
-      face.textContent = info.text;
-      chip.title = `마감 ${info.text} · ${info.hint}`;
+      const { text, hint } = words(info);
+      face.textContent = text;
+      chip.title = t("due.chip", { date: text, hint });
     } else {
       face.append(calendarIcon());
-      chip.title = "마감일 지정";
+      chip.title = t("due.set");
     }
   };
 
@@ -82,14 +96,15 @@ export function dueChip(value, onChange) {
 export function dueBadge(value) {
   const info = dueInfo(value);
   if (!info) return null;
+  const { text, hint } = words(info);
   const box = document.createElement("span");
   box.className = `duebox set ${info.state} static`;
   const chip = document.createElement("span");
   chip.className = "due";
-  chip.title = `마감 ${info.text} · ${info.hint}`;
+  chip.title = t("due.chip", { date: text, hint });
   const face = document.createElement("span");
   face.className = "face";
-  face.textContent = info.text;
+  face.textContent = text;
   chip.append(face);
   box.append(chip);
   return box;
