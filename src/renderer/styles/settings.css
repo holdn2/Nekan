@@ -168,6 +168,22 @@
   background: var(--bg);
 }
 
+/* The window has no OS frame, so these two buttons are the only way out of the
+   app from inside it. Covering the title bar is the point of this screen —
+   everything on it configures a board the answer has not chosen yet — but
+   covering the close button turns an unanswered question into a window someone
+   cannot leave. Alt+F4 and the taskbar still worked; needing to know that is
+   not an answer.
+
+   #sizeBtn deliberately stays underneath. main refuses to collapse while the
+   question is open, so lifting it would only produce a button that does
+   nothing, which reads as broken rather than disallowed. */
+body:has(#welcome:not(.hidden)) #minBtn,
+body:has(#welcome:not(.hidden)) #closeBtn {
+  position: relative;
+  z-index: 61;
+}
+
 .welcome-card {
   width: 100%;
   max-width: 380px;
