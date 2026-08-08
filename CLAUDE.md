@@ -153,7 +153,7 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   또 이름을 바꾼다면: 새 이름을 `setName()`에 넣고, **직전 이름을 배열 맨 앞에** 넣는다
   (배열은 최신순이고, 존재하는 첫 항목이 이긴다).
 - **창 크기는 expanded 모드의 것만 저장한다** (`main/window.js`의 `rememberPlacement`). 바 크기가
-  저장돼버리면 다음 실행 때 600×48로 열린다. 바는 **위치만** `settings.barPosition`에 따로 남는다.
+  저장돼버리면 다음 실행 때 640×48로 열린다. 바는 **위치만** `settings.barPosition`에 따로 남는다.
 - **`ready-to-show`는 렌더러의 `state:load`가 끝난 뒤에 온다.** 그래서 시작할 때의 접기
   (`settings.mode === "collapsed"`)를 렌더러가 볼 방법이 없다 — `state.mode`를 읽는 시점에는
   아직 `expanded`이고, 바는 그 뒤에 `win:mode` 푸시로 온다. **시작 모드에 조건을 걸 곳은
@@ -270,7 +270,24 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   일이 있는지** 먼저 물을 것.
   `updater.js`는 `BrowserWindow`를 모른다. 알림은 `main.js`가 넘긴 콜백 한 개로만 나가고,
   그 콜백이 `getWindow()`를 부른다. 여기서 window를 직접 import하면 조립이 main.js 밖으로
-  샌다.
+  샌다. **포커스로 확인을 거는 것도 `app.on("browser-window-focus")`라 이 규칙을 안 깬다** —
+  창을 건네받지 않아도 되는 유일한 형태다.
+- **확인 시점은 셋이고 전부 `checkIfDue()`를 지난다** (첫 확인만 `check()` 직행):
+  포커스 획득 · `powerMonitor`의 `resume` · 6시간 타이머.
+  **그 타이머는 `setInterval`이 아니라 `check()`가 매번 다시 거는 일회성 `setTimeout`이다.**
+  `setInterval`은 만들어진 시각 기준 고정 스케줄이라, 포커스 확인이 발화 직전 30분 안에
+  들어오면 그 슬롯이 스로틀에 막혀 통째로 버려지고 다음은 6시간 뒤다 — **간격을 줄이려던
+  변경이 최악의 간격을 6시간 30분으로 늘린다.** 지금은 물어본 순간 타이머를 다시 걸어서
+  6시간이 정확한 상한이다(실측: 강제 포커스로 예정 슬롯 하나가 사라지고 다음 확인이
+  마지막 요청 기준으로 다시 잡혔다). **`CHECK_EVERY_MS`를 `setInterval`로 되돌리지 말 것.** **`MIN_GAP_MS`(30분) 스로틀이
+  없으면 안 된다** — 최소화했다 복원하면 `browser-window-focus`가 **30ms 안에 두 번** 온다
+  (2026-08-08 실측). 스로틀 기준은 `status.checkedAt`이 아니라 **마지막으로 물어본 시각
+  (`askedAt`)**이다. 전자는 답이 와야 움직여서, 연속 실패 중에는 매번 다시 묻게 된다.
+  `initUpdater()`가 `askedAt`을 **지금으로 초기화하는 이유**도 같은 실측이다: 창을 처음
+  띄우는 것 자체가 포커스 이벤트라, 초기화가 없으면 시작 0.7초 만에 확인이 나가
+  `FIRST_CHECK_MS`(10초)가 무의미해진다.
+  `powerMonitor`는 **app ready 전에는 쓸 수 없어서** 파일 최상단이 아니라 `initUpdater()`
+  안에서 `require`한다. `main.js`는 이 파일을 `whenReady()`보다 훨씬 먼저 부른다.
 - **`npm run release`에는 `GH_TOKEN`이 필요하다.** 없으면 빌드는 끝나고 업로드에서만 죽는다
   (`GitHub Personal Access Token is not set`). `gh`가 로그인돼 있으면 따로 만들 것 없이
   `GH_TOKEN="$(gh auth token)" npm run release`로 넘기면 된다. **토큰을 로그나 파일에 찍지 말 것.**

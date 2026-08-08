@@ -8,6 +8,11 @@
  * That is also why there is no "downloading" state on screen: a button that
  * appears mid-download would promise a restart it cannot yet deliver.
  *
+ * When it asks is a policy in itself: shortly after launch, whenever the user
+ * comes back to the app or the machine wakes, and every six hours regardless.
+ * The first two are what stop a widget left running for a week from being the
+ * last to hear; the last is the floor under them.
+ *
  * Failures are swallowed on purpose. No network, no release published yet, a
  * rate-limited API — none of those are the user's problem, and a window that is
  * always on top complaining about them every six hours is worse than one that
@@ -19,8 +24,15 @@ const { autoUpdater } = require("electron-updater");
 
 /** Long enough after startup that the first paint has the machine to itself. */
 const FIRST_CHECK_MS = 10 * 1000;
-/** And how often after that, for a window that may never be closed. */
+/** The floor: however quiet the machine is, no longer than this between asks. */
 const CHECK_EVERY_MS = 6 * 60 * 60 * 1000;
+/**
+ * And the ceiling on the other side: coming back to the app asks, but never
+ * more often than this. Focus arrives every time the widget is clicked, which
+ * for something that sits on screen all day is far too many requests to send
+ * GitHub for an answer that changes every few weeks.
+ */
+const MIN_GAP_MS = 30 * 60 * 1000;
 
 /**
  * What the updater currently knows:
@@ -43,6 +55,14 @@ const CHECK_EVERY_MS = 6 * 60 * 60 * 1000;
  */
 let status = { state: "idle", version: null, checkedAt: null };
 let notify = () => {};
+/**
+ * When we last *asked*, which is not `status.checkedAt` — that only moves when
+ * an answer comes back, so a run of failed checks would leave it still and let
+ * every wake-up ask again. Throttling has to count attempts.
+ */
+let askedAt = 0;
+/** The next scheduled ask, so that any earlier ask can move it. */
+let timer = null;
 
 /** The last thing the updater learnt, for state:load to hand a fresh renderer. */
 const getUpdateStatus = () => status;
@@ -64,7 +84,32 @@ function setStatus(state, version = null) {
  * about not leaving an unhandled rejection behind, not about reporting.
  */
 function check() {
+  askedAt = Date.now();
+  // Asking restarts the clock, which is what makes CHECK_EVERY_MS an actual
+  // ceiling. A fixed interval keeps the schedule it was created with: a focus
+  // check landing shortly before a tick gets that tick thrown away by the
+  // throttle, and the next one is a further six hours out — up to six and a
+  // half hours between asks, from a change whose whole point was to shorten it.
+  clearTimeout(timer);
+  timer = setTimeout(checkIfDue, CHECK_EVERY_MS);
   autoUpdater.checkForUpdates().catch(() => {});
+}
+
+/**
+ * Ask, unless we just did — or unless there is already a version on disk, which
+ * no answer can improve on.
+ *
+ * Everything after the first check comes through here, the six-hour timer
+ * included: a timer firing a minute after the user came back from lunch has
+ * nothing new to learn. That makes six hours the longest gap rather than the
+ * only one.
+ */
+function checkIfDue() {
+  // Nothing left to schedule either: a downloaded version is the end of the
+  // line until the app restarts, so letting the chain stop here is the point.
+  if (status.state === "ready") return;
+  if (Date.now() - askedAt < MIN_GAP_MS) return;
+  check();
 }
 
 /**
@@ -112,8 +157,33 @@ function initUpdater(onStatus) {
     if (status.state !== "ready") setStatus("idle");
   });
 
-  setTimeout(check, FIRST_CHECK_MS);
-  setInterval(check, CHECK_EVERY_MS);
+  // Startup counts as having just asked, so that showing the window — which
+  // raises a focus event of its own — cannot pull the first check in front of
+  // FIRST_CHECK_MS. That timer calls check() directly and is unaffected.
+  askedAt = Date.now();
+
+  // The only scheduling done here: check() lays the next one every time, so the
+  // first ask is what starts the chain rather than something a separate
+  // interval has to keep in step with.
+  timer = setTimeout(check, FIRST_CHECK_MS);
+
+  // A widget that is never closed used to learn about a release up to six hours
+  // late, while quitting and reopening told it in ten seconds. These are the two
+  // moments where someone is plausibly *coming back* to the app, and they cost
+  // nothing while it sits idle.
+  //
+  // Both hang off `app`, not off a window: this file still knows nothing about
+  // BrowserWindow, and 'browser-window-focus' fires for whichever window exists
+  // without anyone having to hand one over.
+  app.on("browser-window-focus", checkIfDue);
+  // Timers do not run while the machine is asleep and do not catch up
+  // afterwards, so a laptop closed overnight comes back with its next check
+  // still hours away.
+  //
+  // Required here rather than at the top of the file: powerMonitor is documented
+  // as unusable before the app is ready, and this file is required from main.js
+  // well before that.
+  require("electron").powerMonitor.on("resume", checkIfDue);
 }
 
 /**
