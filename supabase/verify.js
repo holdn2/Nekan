@@ -34,8 +34,31 @@ const ACCOUNTS = {
   other: ["nekan-other@example.com", "nekan-other-7d1m4"],
 };
 
+/**
+ * EMAIL:PASSWORD of an account this run is allowed to delete, or unset.
+ *
+ * Optional because it cannot be automated any more -- see the account-deletion
+ * section for why -- and because getting it wrong deletes something real.
+ * Nothing here ever falls back to ACCOUNTS: those two are rebuilt by hand.
+ */
+const LEAVING = process.env.NEKAN_VERIFY_LEAVING;
+
 let passed = 0;
 let failed = 0;
+let skipped = 0;
+
+/**
+ * A check that could not be run, which is not the same as one that passed.
+ *
+ * Kept out of the exit code on purpose: the reasons are about the project's
+ * quotas rather than about the schema, and failing the run for them would train
+ * everyone to ignore the exit code. Loud in the output instead, and counted in
+ * the summary so "22 passed" cannot quietly become "19 passed" unnoticed.
+ */
+function skip(name, why) {
+  skipped += 1;
+  console.log(`  SKIP ${name}${why ? "\n       " + why : ""}`);
+}
 
 function check(name, ok, detail) {
   if (ok) {
@@ -300,51 +323,92 @@ const pull = (token, since = 0, limit = 500) =>
   );
 
   console.log("\n== 계정 삭제 ==");
-  // On a throwaway account made for this check alone. Deleting one of the two
-  // above would work exactly once and take the rest of the run with it.
-  const leaving = await session([
-    `nekan-leaving-${run}@example.com`,
-    `leaving-${run}`,
-  ]);
-  await push(leaving.access_token, [
-    {
-      ...row({ id: id("leaving") }),
-      user_id: leaving.user.id,
-    },
-  ]);
-  const hadRow = (await pull(leaving.access_token, 0)).body.length === 1;
+  // On a throwaway account, and only on one handed in from outside. Deleting
+  // either account above would work exactly once and take every later run with
+  // it -- which is not hypothetical: nekan-dev was deleted that way on
+  // 2026-08-08 and had to be rebuilt from the dashboard.
+  //
+  // This used to sign one up per run, and that stopped working when the project
+  // turned on email confirmation. A signup now answers with a user and *no*
+  // session, the password login that follows answers email_not_confirmed, and
+  // the confirmation mail goes to an @example.com address nobody can read. The
+  // 429 seen first is only the send quota; even with quota to spare there is no
+  // way through. So these three checks were quietly dead, and worse than dead:
+  // the throw ended the run at this line, so the anon-permission check below
+  // and the whole tombstone section never ran and no summary printed.
+  //
+  // To run them: make a user in the dashboard (Authentication -> Users -> Add
+  // user, Auto Confirm on) and pass it in. It is consumed -- the point of the
+  // check is that the account is gone afterwards -- so a new one is needed each
+  // time, which is why this is opt-in rather than the default.
+  //
+  //   NEKAN_VERIFY_LEAVING=someone@example.com:password node supabase/verify.js
+  let leaving = null;
+  if (!LEAVING) {
+    skip(
+      "계정 삭제 3가지 — 지워도 되는 계정이 없다",
+      "NEKAN_VERIFY_LEAVING=<이메일>:<비밀번호> 로 넘기면 돈다 (대시보드에서 Auto Confirm으로 만든 일회용 계정). 그 계정은 이 검사로 사라진다.",
+    );
+  } else {
+    const cut = LEAVING.indexOf(":");
+    const leavingEmail = cut < 0 ? LEAVING : LEAVING.slice(0, cut);
+    const leavingPassword = cut < 0 ? "" : LEAVING.slice(cut + 1);
+    // Never a signup: this account is made by hand, and an accidental signup
+    // here would burn the send quota for the run that actually needs it.
+    const got = await api("/auth/v1/token?grant_type=password", {
+      method: "POST",
+      body: { email: leavingEmail, password: leavingPassword },
+    });
+    if (got.body?.access_token) {
+      leaving = { ...got.body, email: leavingEmail, password: leavingPassword };
+    } else {
+      skip(
+        "계정 삭제 3가지 — 넘겨준 계정으로 로그인하지 못했다",
+        `${leavingEmail}: ${JSON.stringify(got.body).slice(0, 160)}`,
+      );
+    }
+  }
 
-  const gone = await api("/rest/v1/rpc/delete_account", {
-    token: leaving.access_token,
-    method: "POST",
-    body: {},
-  });
-  check(
-    "본인 계정을 지울 수 있다",
-    gone.status === 200 || gone.status === 204,
-    `status ${gone.status} ${JSON.stringify(gone.body).slice(0, 160)}`,
-  );
+  if (leaving) {
+    await push(leaving.access_token, [
+      {
+        ...row({ id: id("leaving") }),
+        user_id: leaving.user.id,
+      },
+    ]);
+    const hadRow = (await pull(leaving.access_token, 0)).body.length === 1;
 
-  const after = await pull(leaving.access_token, 0);
-  check(
-    "계정과 함께 할 일도 사라진다",
-    hadRow && (after.status === 401 || after.body.length === 0),
-    `had=${hadRow} status=${after.status} ${JSON.stringify(after.body).slice(0, 120)}`,
-  );
+    const gone = await api("/rest/v1/rpc/delete_account", {
+      token: leaving.access_token,
+      method: "POST",
+      body: {},
+    });
+    check(
+      "본인 계정을 지울 수 있다",
+      gone.status === 200 || gone.status === 204,
+      `status ${gone.status} ${JSON.stringify(gone.body).slice(0, 160)}`,
+    );
 
-  const relogin = await api("/auth/v1/token?grant_type=password", {
-    method: "POST",
-    body: {
-      email: `nekan-leaving-${run}@example.com`,
-      password: `leaving-${run}`,
-    },
-  });
-  check(
-    "지운 계정으로는 다시 로그인되지 않는다",
-    !relogin.body?.access_token,
-    JSON.stringify(relogin.body).slice(0, 160),
-  );
+    const after = await pull(leaving.access_token, 0);
+    check(
+      "계정과 함께 할 일도 사라진다",
+      hadRow && (after.status === 401 || after.body.length === 0),
+      `had=${hadRow} status=${after.status} ${JSON.stringify(after.body).slice(0, 120)}`,
+    );
 
+    const relogin = await api("/auth/v1/token?grant_type=password", {
+      method: "POST",
+      body: { email: leaving.email, password: leaving.password },
+    });
+    check(
+      "지운 계정으로는 다시 로그인되지 않는다",
+      !relogin.body?.access_token,
+      JSON.stringify(relogin.body).slice(0, 160),
+    );
+  }
+
+  // Not inside the branch above: this one needs no account at all, and it is
+  // the check that says the RPC is not open to the world.
   const anonRpc = await api("/rest/v1/rpc/delete_account", {
     method: "POST",
     body: {},
@@ -382,7 +446,9 @@ const pull = (token, since = 0, limit = 500) =>
     ),
   );
 
-  console.log(`\n${passed} passed, ${failed} failed\n`);
+  console.log(
+    `\n${passed} passed, ${failed} failed${skipped ? `, ${skipped} skipped` : ""}\n`,
+  );
   process.exit(failed ? 1 : 0);
 })().catch((err) => {
   console.error("\nverification blew up:", err.message);

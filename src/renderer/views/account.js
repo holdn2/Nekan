@@ -41,6 +41,11 @@ function cache() {
   els.email = $("#accountEmail");
   els.state = $("#accountState");
   els.logout = $("#logoutBtn");
+  els.danger = $("#accountDanger");
+  els.leave = $("#leaveBtn");
+  els.leaveConfirm = $("#leaveConfirm");
+  els.leaveCancel = $("#leaveCancel");
+  els.leaveGo = $("#leaveGo");
   els.msg = $("#accountMsg");
 }
 
@@ -71,6 +76,9 @@ const REASONS = {
     "이 컴퓨터에서는 로그인 정보를 안전하게 저장할 수 없어 로그인하지 않습니다.",
   invalid_credentials: "이메일 또는 비밀번호가 맞지 않습니다.",
   bad_response: "서버 응답을 이해하지 못했습니다.",
+  // Only reachable from the delete path: the session went while the panel was
+  // open. Nothing was deleted, and the account may or may not still exist.
+  no_session: "로그인이 풀렸습니다. 다시 로그인한 뒤 시도해 주세요.",
 };
 
 function say(text, isError = false) {
@@ -150,6 +158,11 @@ export function applySession(next) {
   els.in.classList.toggle("hidden", !inside);
   els.out.classList.toggle("hidden", inside);
   els.dev.classList.toggle("hidden", inside || !devLogin);
+  els.danger.classList.toggle("hidden", !inside);
+  // Folded away again whenever the session changes. Leaving it open across a
+  // sign-out and the next sign-in would put "계정 삭제" in front of somebody who
+  // never asked for it -- and renderAccount() re-applies this on every draw.
+  if (!inside) closeConfirm();
 
   if (inside) {
     els.email.textContent = session.email;
@@ -162,6 +175,17 @@ export function applySession(next) {
   els.adoptCount.textContent = count;
   els.adopt.classList.toggle("hidden", count === 0);
   els.adoptHint.classList.toggle("hidden", count === 0);
+}
+
+/** Guards a second press while the delete request is out. */
+let deleting = false;
+
+/** Back to just the quiet link, and the buttons usable again. */
+function closeConfirm() {
+  els.leaveConfirm.classList.add("hidden");
+  els.leave.classList.remove("hidden");
+  els.leaveGo.disabled = false;
+  els.leaveCancel.disabled = false;
 }
 
 /** "합치기" unless the box was offered and turned off. */
@@ -240,6 +264,48 @@ export function wireAccount() {
     applySession(null);
     applySyncStatus({ state: "off", unsent: 0 });
     say("로그아웃했습니다. 이 컴퓨터의 할 일은 그대로 있습니다.");
+  });
+
+  els.leave.addEventListener("click", () => {
+    els.leave.classList.add("hidden");
+    els.leaveConfirm.classList.remove("hidden");
+    say("");
+  });
+
+  els.leaveCancel.addEventListener("click", () => {
+    if (deleting) return;
+    closeConfirm();
+  });
+
+  els.leaveGo.addEventListener("click", async () => {
+    if (deleting) return;
+    deleting = true;
+    els.leaveGo.disabled = true;
+    els.leaveCancel.disabled = true;
+    say("계정을 지우는 중…");
+    try {
+      // Unlike logout, this one is the server's to do, so a failure means the
+      // account is still there. Saying nothing would leave a panel that looks
+      // signed in with no explanation of what happened.
+      const result = await window.api.deleteAccount().catch((err) => ({
+        ok: false,
+        error: String((err && err.message) || err),
+      }));
+      if (!result || !result.ok) {
+        const code = (result && result.error) || "unknown";
+        const reason =
+          code in REASONS ? REASONS[code] : `계정을 지우지 못했습니다. (${code})`;
+        say(reason, true);
+        els.leaveGo.disabled = false;
+        els.leaveCancel.disabled = false;
+        return;
+      }
+      applySession(null);
+      applySyncStatus({ state: "off", unsent: 0 });
+      say("계정을 삭제했습니다. 이 컴퓨터의 할 일은 그대로 있습니다.");
+    } finally {
+      deleting = false;
+    }
   });
 }
 

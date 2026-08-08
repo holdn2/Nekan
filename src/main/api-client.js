@@ -401,6 +401,37 @@ async function logout() {
   return { ok: true };
 }
 
+/**
+ * Delete the account on the server, then sign out here.
+ *
+ * The opposite order from logout(), and for the opposite reason. Logging out is
+ * a local decision the network is not allowed to veto; deleting an account is
+ * something only the server can do, so there is nothing to report until it has
+ * said yes. Signing out first would leave the user with no session to retry
+ * from and an account still standing.
+ *
+ * `delete_account()` takes no argument -- it reads auth.uid() -- so there is no
+ * way to name somebody else's account, and the rows go with it through the
+ * foreign key. No /auth/v1/logout afterwards: the user row is gone and every
+ * session on it with it, so there is nothing left to revoke.
+ */
+async function deleteAccount() {
+  const token = await getAccessToken();
+  // Includes a refresh that failed with a 4xx, which has already thrown the
+  // session away. Either way there is no account here to delete.
+  if (!token) return { ok: false, error: "no_session" };
+
+  const res = await request("/rest/v1/rpc/delete_account", {
+    method: "POST",
+    token,
+    body: {},
+  });
+  if (!res.ok) return { ok: false, error: errorCode(res) };
+
+  forget();
+  return { ok: true };
+}
+
 module.exports = {
   SUPABASE_URL,
   request,
@@ -412,4 +443,5 @@ module.exports = {
   login,
   signup,
   logout,
+  deleteAccount,
 };

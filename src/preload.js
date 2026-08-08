@@ -28,6 +28,9 @@ contextBridge.exposeInMainWorld("api", {
   devLogin: (email, password, mode) =>
     ipcRenderer.invoke("auth:login", email, password, mode),
   logout: () => ipcRenderer.invoke("auth:logout"),
+  // Deletes the account on the server. The tasks on this computer are not part
+  // of it — see the account panel, which says so before offering the button.
+  deleteAccount: () => ipcRenderer.invoke("account:delete"),
   installUpdate: () => ipcRenderer.invoke("update:install"),
   openReleaseNotes: () => ipcRenderer.invoke("update:notes"),
   onMode: (cb) => ipcRenderer.on("win:mode", (_e, mode) => cb(mode)),
