@@ -1,9 +1,12 @@
 /**
  * The four quadrants: the rows in them and the add form under each one.
  *
- * Rendering is a full replaceChildren() per quadrant on every change. The lists
- * are short enough that rebuilding them costs nothing, and it removes a whole
- * class of bug — there is no partial update that can disagree with the store.
+ * Rendering is a full replaceChildren() of whichever quadrant changed. Nothing
+ * is patched in place, so there is no partial update that can disagree with the
+ * store; the only thing kept between renders is a string saying what was drawn
+ * last, and a quadrant whose string is unchanged is left alone. That matters
+ * because every change redraws the matrix, and most changes belong to one
+ * quadrant — see rowsKey.
  */
 
 import { QUADS, isCrowded } from "../core-bridge.js";
@@ -74,12 +77,48 @@ export function itemEl(task, index) {
   return li;
 }
 
+/**
+ * Everything a quadrant's rows are drawn from, in order.
+ *
+ * Only what itemEl() actually reads, and *all* of it — `selected` is a class
+ * on the row, so leaving it out of here would mean clicking a task highlighted
+ * nothing until something else forced a redraw. `updatedAt` would be one field
+ * instead of five, but stamping it is the caller's job (see store.js touch), so
+ * a mutation that forgot would stop redrawing as well as stop syncing: one bug
+ * becoming two. Position comes for free — the list is joined in order, and the
+ * "1." in front of each row is its index.
+ *
+ * The separators are escapes, never raw bytes. A 0x00 in a source file makes
+ * ripgrep call the file binary and refuse to search it, and they have to be
+ * characters task text cannot hold, or two rows could run together and a
+ * redraw that was needed would be skipped.
+ */
+const rowsKey = (items) =>
+  items
+    .map(
+      (t) =>
+        `${t.id}\u0000${t.text}\u0000${t.dueDate || ""}` +
+        `\u0000${t.memo ? 1 : 0}\u0000${isSelected(t.id) ? 1 : 0}`,
+    )
+    .join("\u0001");
+
+/** The last rowsKey drawn into each quadrant. */
+const drawn = new Map();
+
 /** Redraw all four quadrants and the count in each header. */
 export function renderMatrix() {
   QUADS.forEach((q) => {
     const list = $(`[data-list="${q}"]`);
     const items = activeOf(q);
-    list.replaceChildren(...items.map((task, i) => itemEl(task, i)));
+    // Every change redraws the whole matrix, and most changes belong to one
+    // quadrant: adding a task to q1 was throwing away and rebuilding every row
+    // in q2, q3 and q4 as well. Cheap while the lists are short, and it is what
+    // made an add cost 256ms once there were 400 rows in each.
+    const key = rowsKey(items);
+    if (drawn.get(q) !== key) {
+      list.replaceChildren(...items.map((task, i) => itemEl(task, i)));
+      drawn.set(q, key);
+    }
     const count = $(`[data-count="${q}"]`);
     count.textContent = String(items.length);
     // A hint, not a limit — see isCrowded. Nothing here stops an add.
