@@ -398,6 +398,46 @@ test("appending stays ordered over a long run", () => {
   assert.deepEqual(keys, [...keys].sort());
 });
 
+test("appending does not grow the key without bound", () => {
+  // Halving the distance to the end of the list gave five appends per
+  // character: a thousand rows carried 200-character keys, and every one of
+  // them went to the server on each sync. Stepping a digit instead is what
+  // keeps this flat, so the bound is the point of the test.
+  let last = null;
+  for (let i = 0; i < 1000; i += 1) last = orderKeyBetween(last, null);
+  assert.ok(last.length <= 20, `1000 appends produced ${last.length} chars`);
+  assert.ok(isOrderKey(last), `got ${last}`);
+});
+
+test("new keys sort after the ones the old midpoint scheme wrote", () => {
+  // No migration: a quadrant filled before this change keeps its keys, and
+  // rows added afterwards land in the same list. 'zzzz' is where the old
+  // scheme ended up after a few hundred appends, and it is the shape most
+  // likely to trip a stepping rule — every digit is already the last one.
+  const existing = ["V", "n", "z", "zV", "zn", "zz", "zzV", "zzz"];
+  const keys = [...existing];
+  let last = existing[existing.length - 1];
+  for (let i = 0; i < 100; i += 1) {
+    last = orderKeyBetween(last, null);
+    keys.push(last);
+  }
+  assert.deepEqual(keys, [...keys].sort());
+  assert.ok(keys.every(isOrderKey));
+});
+
+test("a drop between two neighbours still lands between them", () => {
+  // Stepping leaves consecutive keys adjacent, so this is the case that pays
+  // for the shorter appends. It has to keep working, and repeatedly.
+  let a = orderKeyBetween(null, null);
+  let b = orderKeyBetween(a, null);
+  for (let i = 0; i < 50; i += 1) {
+    const mid = orderKeyBetween(a, b);
+    assert.ok(a < mid && mid < b, `${a} < ${mid} < ${b} failed at ${i}`);
+    assert.ok(isOrderKey(mid), `got ${mid}`);
+    b = mid;
+  }
+});
+
 test("prepending stays ordered over a long run", () => {
   const keys = [];
   let first = null;

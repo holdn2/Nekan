@@ -208,28 +208,70 @@ const ORDER_DIGITS =
 const ORDER_BASE = ORDER_DIGITS.length;
 
 /**
+ * The next key after `a`, for a row going on the end of a list.
+ *
+ * Stepping one digit rather than halving the distance to the end. Both are
+ * correct — appending only needs *some* key greater than `a` — but halving
+ * runs out fast: from the middle there are five steps before the digit is
+ * exhausted (31, 47, 55, 59, 61), so a list grew a character every five rows.
+ * A thousand of them carried 200-character keys and orderKey was a quarter of
+ * data.json, all of it also going over the wire on every sync. Stepping gets
+ * 61 rows per character.
+ *
+ * The cost is real but the right way round: consecutive keys are now adjacent,
+ * so a drop between two of them has to add a character where before there was
+ * room to split. Appending happens on every new task; inserting happens on a
+ * drag.
+ *
+ * The empty case keeps the old midpoint, and deliberately: that is the first
+ * key in a quadrant, and starting it in the middle is what leaves room to
+ * drop a row *above* it later. Deeper positions start at 1 instead — nothing
+ * is ever inserted before them, because they only exist as the tail of a key
+ * that already sorts after everything.
+ */
+function orderKeyAfter(a) {
+  if (!a) return ORDER_DIGITS[Math.round(ORDER_BASE / 2)];
+
+  // Walk past the digits with nothing left to give. Anything before the first
+  // one that can still step is dropped, which keeps the key as short as the
+  // ordering allows: after "Vz" the next key is "W", not "Vz1".
+  let at = 0;
+  while (at < a.length && ORDER_DIGITS.indexOf(a[at]) === ORDER_BASE - 1) {
+    at += 1;
+  }
+  // Every digit was the last one. One more place, at its lowest usable digit —
+  // never 0, which isOrderKey rejects for having no room in front of it.
+  if (at === a.length) return a + ORDER_DIGITS[1];
+  return a.slice(0, at) + ORDER_DIGITS[ORDER_DIGITS.indexOf(a[at]) + 1];
+}
+
+/**
  * A key strictly between `a` and `b`, where '' is the start of the list and
  * null is the end. Walks past the common prefix first, then splits the first
  * digit that differs; when those digits are neighbours there is no room at this
- * position, so it keeps `a`'s digit and recurses one place deeper.
+ * position, so it keeps `a`'s digit and goes one place deeper.
  */
 function orderMidpoint(a, b) {
-  if (b !== null) {
-    let n = 0;
-    while ((a[n] || "0") === b[n]) n += 1;
-    if (n > 0) return b.slice(0, n) + orderMidpoint(a.slice(n), b.slice(n));
-  }
+  // No `b` is not a midpoint at all — see orderKeyAfter for why the two cases
+  // want different arithmetic.
+  if (b === null) return orderKeyAfter(a);
+
+  let n = 0;
+  while ((a[n] || "0") === b[n]) n += 1;
+  if (n > 0) return b.slice(0, n) + orderMidpoint(a.slice(n), b.slice(n));
 
   const digitA = a ? ORDER_DIGITS.indexOf(a[0]) : 0;
-  const digitB = b !== null ? ORDER_DIGITS.indexOf(b[0]) : ORDER_BASE;
+  const digitB = ORDER_DIGITS.indexOf(b[0]);
 
   if (digitB - digitA > 1) {
     return ORDER_DIGITS[Math.round(0.5 * (digitA + digitB))];
   }
   // The digits are adjacent. `b` has more to give if it is longer than one
-  // digit; otherwise the room has to come from extending `a`.
-  if (b !== null && b.length > 1) return b.slice(0, 1);
-  return ORDER_DIGITS[digitA] + orderMidpoint(a.slice(1), null);
+  // digit; otherwise the room has to come from extending `a`. Anything after
+  // `a` that keeps a's leading digit is still before `b`, so the tail is the
+  // same "next key" problem.
+  if (b.length > 1) return b.slice(0, 1);
+  return ORDER_DIGITS[digitA] + orderKeyAfter(a.slice(1));
 }
 
 /**
