@@ -20,6 +20,13 @@
 | 설정 | Settings | |
 | 회원탈퇴 | Delete account | `Withdraw`·`Unsubscribe`가 아니다 |
 | 로그인 / 로그아웃 | Sign in / Sign out | `Log in`이 아니다 — Google 버튼 문구와 맞춘다 |
+| 매트릭스 / 가이드 | Matrix / Guide | 탭 이름 |
+| 공유 | Shared | 다 꺼내기가 두 매트릭스의 공유 영역이라는 표시 |
+| Do 진행하기 … Delete 제거하기 | Do it now / Plan it / Delegate it / Drop it | 한국어는 영어 단어 뒤에 뜻을 덧붙이지만 영어에서 그러면 `Do Do`가 된다. 네 개의 D를 살린 명령형으로 쓴다 |
+| 오늘 / 내일 / N일 남음 / N일 지남 | Today / Tomorrow / N days left / N days overdue | 마감 칩. 요일은 카탈로그가 아니라 `Intl`이 만든다 |
+| 완료 | Complete | 히스토리로 보내는 동작. `Done`이 아니다 |
+| 되돌리기 / 복원 | Restore | 히스토리에서 되살리기와 휴지통에서 되살리기가 영어로는 같은 낱말이다 |
+| 영구 삭제 | Delete forever | 묘비를 남기는 그 동작 |
 
 ## 문장 규칙
 
@@ -32,5 +39,19 @@
 ## 키 이름 규칙
 
 화면의 영역을 앞에 둔다 — `account.*`, `settings.*`, `matrix.*`, `inbox.*`, `archive.*`,
-`memo.*`, `titlebar.*`, `welcome.*`, `export.*`, `due.*`. 영어 문장을 키로 쓰지 않는다:
-문구를 다듬을 때마다 키가 바뀐다.
+`memo.*`, `titlebar.*`, `welcome.*`, `export.*`, `due.*`, `quad.*`, `tabs.*`, `history.*`,
+`trash.*`, `update.*`, `oauth.*`. 영어 문장을 키로 쓰지 않는다: 문구를 다듬을 때마다 키가
+바뀐다.
+
+예외가 둘이다. **`common.*`**(추가·취소·저장·삭제)은 다섯 군데 이상이 같은 낱말을 쓰는
+버튼 라벨이고, **`item.*`**(행의 완료·삭제 버튼과 안내 툴팁)은 4분면과 다 꺼내기가 같은 행
+컨트롤을 공유해서 어느 한쪽 이름을 붙일 수 없다. **영역이 갈리지 않는 것만 여기 넣는다** —
+"짧으니까"는 이유가 아니다.
+
+## 마크업이 들어가는 문자열
+
+카탈로그 값에는 `<b>`와 `<code>` **둘만** 쓸 수 있고, `renderer/i18n.js`의 `tNodes()`가
+그것만 실제 요소로 만든다(`innerHTML`이 아니라 파서다 — 문자열이 다른 태그나 속성을
+들여올 방법이 없다). 문장 가운데가 굵어지는데 그 자리가 언어마다 다르면
+(`계정과 <b>서버에 있는 사본</b>을 지웁니다`) 앞뒤를 두 키로 자르지 말고 통째로 한 키에
+둔다. 조각난 문장은 번역할 수 없다.

@@ -17,6 +17,7 @@ src/main/
   sync.js         당기고 밀고 다시 시도하는 루프. 판정은 안 하고 일정만 잡는다
   oauth.js        Google 로그인의 브라우저 쪽 (PKCE + loopback). 세션은 모른다
   ipc.js          ipcMain.handle 전부. 새 채널을 만들 때 첫 번째로 여는 파일
+  i18n.js         메인 쪽 i18next. 렌더러와 따로 산다 (프로세스가 다르다)
 src/preload.js    contextBridge → window.api (여기 없는 건 렌더러에서 못 씀)
 src/shared/       메인·렌더러·테스트가 공유. 여기만 테스트가 덮는다
   core.js         날짜·정규화·space 규칙·레이아웃 비율 등 순수 로직
@@ -24,9 +25,11 @@ src/shared/       메인·렌더러·테스트가 공유. 여기만 테스트가
   export.js       내보내기 문서 생성 (마크다운·인쇄용 HTML). 메인·테스트만 require
   sync.js         동기화 판정 (LWW·행 변환·커서·시계 오차). main/sync.js가 쓴다
   auth.js         세션 모양과 만료 판정. 렌더러에 나갈 필드를 여기서 고른다
+  i18n/           ko.json · en.json · GLOSSARY.md · locales.js (지원 목록과 기본값)
 src/renderer/     ES 모듈. 번들러 없음 — import 경로에 확장자를 반드시 쓴다
   index.html      정적 마크업. <link> 15개와 <script>는 순서가 의미를 갖는다
   app.js          진입점. render() 디스패처, 전역 단축키, init() 조립
+  i18n.js         렌더러 쪽 i18next. t · tNodes · applyStaticStrings · setLanguage
   store.js        tasks 배열과 모든 변경. DOM을 모른다 → commit()이 저장+notify
   render-bus.js   "다시 그려라" 신호 하나. store·view → app 순환을 막는 장치
   core-bridge.js  shared/core.js의 전역을 named export로 재수출
@@ -227,6 +230,11 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   **그 30px은 개수가 두 자리일 때의 값이다.** 세 자리가 되면 **8px**로 떨어지고, 네 자리면
   `scrollWidth` 669로 **29px 넘친다**(2026-08-08 실측). 분면 하나에 1000개는 비현실적이지만,
   바에 뭔가를 더 넣을 때 기준으로 삼을 값은 30이 아니라 **세 자리 기준 8px**이다.
+  **여유는 언어에 따라 달라진다** — 스위치가 `업무/일상`에서 `Work/Life`가 되면서 두 자리
+  기준 30 → **27px**이 됐다(세 자리는 양쪽 다 8px, 넘침 0. 2026-08-09 실측). 세 번째 언어를
+  넣을 때는 이 두 낱말이 제일 긴 언어로 다시 재야 한다.
+  **개수를 CDP로 바꿔 잴 때는 접은 *다음에* 바꿀 것** — `collapse()`가 `notify()`를 부르고
+  `renderCounts()`가 진짜 개수로 되돌려서, 먼저 바꾸면 여유가 100px처럼 보인다.
   스크린샷은 `PrintWindow`가 오른쪽 영역을 갱신 안 된 채 찍는 일이 있으니 CDP
   `Page.captureScreenshot`을 쓸 것.
   **테마·내보내기가 설정 패널로 들어가면서 바 버튼이 하나 줄고 톱니바퀴가 하나 늘어 순증은
@@ -350,15 +358,34 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
 - **언어는 첫 페인트 전에 정해져 있어야 한다.** `state:load`는 IPC 왕복이라 늦는다(저장된
   테마가 늦게 와서 스위치 알약이 미끄러지던 것과 같은 함정). 메인이 창을 만들기 전에 정하고
   `additionalArguments`로 넘긴다. 위 preload 항목 참고.
-- **전환은 재시작 없이 된다.** 다만 **메인의 푸시로만 쓰이는 값은 다시 그려지지 않는다** —
-  동기화 문구와 톱니바퀴 툴팁이 옛 언어로 남아 있었다. 뷰가 마지막 상태를 들고 있다가
-  `renderAccount()`에서 다시 적용한다. **캐시해 두고 푸시로만 갱신하는 값이 있으면 같은 처리가
-  필요하다.**
+- **전환은 재시작 없이 된다. 다만 "한 번 만들고 두는 것"은 전부 옛 언어로 남는다.** 재렌더가
+  버리고 다시 만드는 것만 저절로 따라온다. 지금까지 걸린 셋은 성격이 다 다르다:
+  ① **메인의 푸시로만 쓰이는 값** — 동기화 문구·톱니바퀴 툴팁, 그리고 핀·모드·업데이트 상태.
+  뷰가 마지막 값을 들고 있다가 `renderAccount()`·`relabelChrome()`에서 다시 적용한다.
+  ② **캐시로 렌더를 건너뛰는 곳** — `renderMatrix()`의 `rowsKey`는 task 필드만 보고 있어서
+  언어가 바뀌어도 "달라진 게 없다"고 판단했다. 그래서 키 맨 앞이 `currentLanguage()`다.
+  ③ **시작할 때 한 번 만들고 사는 DOM** — 4분면 add 폼의 마감 칩이 그렇다(행의 칩은 매번
+  다시 만들어져서 멀쩡했다). `dueChip`의 고정 라벨을 생성이 아니라 `apply()` 안에 두고,
+  `renderMatrix()`가 끝에서 네 개를 다시 칠한다.
+  **새 문자열을 넣을 때 "이건 언제 다시 그려지지?"를 먼저 물을 것.**
+- **검수는 눈이 아니라 DOM 훑기로 한다.** 영어로 바꾼 뒤 `document.querySelectorAll('*')`를
+  돌며 텍스트 노드와 **모든 속성값**에서 한글을 찾는다(`#guideView`와 task 텍스트는 제외).
+  위 세 가지가 전부 이렇게 나왔다 — 화면만 보면 다 번역된 것처럼 보인다.
 - 언어 선택은 `.switch`가 아니라 `<select>`다. 알약이 `calc(50% - 2px)` + `translateX(100%)`라
   **정확히 두 칸일 때만 맞는다** — 세 번째 언어를 넣는 날 깨진다.
-- **아직 안 된 것**: `index.html` 210줄(그중 119가 가이드 탭 = #29) · `shared/core.js`의
-  `dueInfo()`(계산과 표현을 갈라야 함 — 유일하게 단순 치환이 아니다) · `shared/export.js` ·
-  `window/chrome.js` 외. 문서 027 참고.
+- **`dueInfo()`는 계산만 한다** — `{ date, days, state, otherYear }`. 문자열은
+  `formatDue(info, t, locale)`가 만들고, **`t`를 인자로 받는다**: `core.js`는 고전 `<script>`로도
+  로드돼서 카탈로그를 가질 수 없다. `state`는 CSS가 쓰는 값이라 계산 쪽에 남는다. 요일은
+  카탈로그가 아니라 `Intl`이 만든다(언어마다 일곱 개를 손으로 적을 이유가 없다) — 나머지
+  모양은 `Intl`이 아니다. 한국어 전체 형식은 `8. 3. (월)`이라 칩보다 넓고 원래 `8/3`과 다르다.
+- **`shared/export.js`에는 카탈로그도 `t`도 없다.** `buildSnapshot(tasks, now, space, {t, locale})`이
+  **쓸 문자열을 전부 스냅샷 안에 박아** 넘기고, `toMarkdown`·`toHtml`은 그 객체만 읽는다.
+  마감일이 이미 그랬던 것(인쇄물은 나중에 다시 계산할 수 없다)을 문서 전체로 넓힌 것이다.
+  그래서 `shared/`가 `main/`을 require하지 않는다.
+- **마크업이 들어가는 문자열**은 `<b>`·`<code>` 둘만 되고 `tNodes()`가 파싱한다. `innerHTML`이
+  아니다. `data-i18n-attr`는 `title` 또는 `title=다른.키` 형태를 받는다.
+- **아직 안 된 것**: 가이드 탭 **117줄**(#29)뿐이다. 그 밖의 사용자 문자열은 전부 카탈로그로
+  나갔다. 문서 027·028 참고.
 
 ## 검증
 
