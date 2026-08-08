@@ -11,7 +11,7 @@
 import { $ } from "../dom.js";
 import { toast } from "../components/toast.js";
 import { activeCount } from "../store.js";
-import { t } from "../i18n.js";
+import { t, tNodes } from "../i18n.js";
 
 /** Whether this build has the development password channel at all. */
 let devLogin = false;
@@ -36,7 +36,7 @@ function cache() {
   els.google = $("#googleBtn");
   els.adopt = $("#accountAdopt");
   els.adoptBox = $("#adoptLocal");
-  els.adoptCount = $("#adoptCount");
+  els.adoptText = $("#adoptText");
   els.adoptHint = $("#adoptHint");
   els.dev = $("#devLogin");
   els.email = $("#accountEmail");
@@ -200,7 +200,10 @@ export function applySession(next) {
   // Only offered when there is something to lose. A fresh machine has no
   // decision to make and should not be handed one.
   const count = activeCount();
-  els.adoptCount.textContent = count;
+  // The whole sentence, not just the number: the count is bold and the words
+  // around it swap sides between languages, so there is no fixed "before" and
+  // "after" to leave sitting in the markup.
+  els.adoptText.replaceChildren(...tNodes("account.adopt", { count }));
   els.adopt.classList.toggle("hidden", count === 0);
   els.adoptHint.classList.toggle("hidden", count === 0);
 }

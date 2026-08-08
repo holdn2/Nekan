@@ -13,7 +13,7 @@
 import { $ } from "../dom.js";
 import { needsStartupChoice } from "../core-bridge.js";
 import { activeCount } from "../store.js";
-import { t } from "../i18n.js";
+import { t, tNodes } from "../i18n.js";
 
 /** Set by app.js: how a finished choice reaches the rest of the startup. */
 let onDone = () => {};
@@ -60,7 +60,9 @@ export const needsWelcome = needsStartupChoice;
 /** Put it on screen, with the local-tasks question only if there are any. */
 export function showWelcome() {
   const count = activeCount();
-  els.count.textContent = count;
+  // Written whole rather than as a number dropped into fixed markup — see the
+  // same label in views/account.js.
+  els.adoptText.replaceChildren(...tNodes("welcome.adopt", { count }));
   els.adopt.classList.toggle("hidden", count === 0);
   els.root.classList.remove("hidden");
 }
@@ -161,7 +163,7 @@ export function wireWelcome(done) {
   els.local = $("#welcomeLocal");
   els.adopt = $("#welcomeAdopt");
   els.adoptBox = $("#welcomeAdoptBox");
-  els.count = $("#welcomeCount");
+  els.adoptText = $("#welcomeAdoptText");
   els.msg = $("#welcomeMsg");
 
   els.sync.addEventListener("click", chooseSync);

@@ -275,11 +275,7 @@ export function wireArchive() {
   $("#emptyTrash").addEventListener("click", () => {
     const items = trashedTasks();
     if (!items.length) return;
-    if (
-      !window.confirm(
-        t("archive.confirmPurgeAll", { count: items.length }),
-      )
-    )
+    if (!window.confirm(t("archive.confirmPurgeAll", { count: items.length })))
       return;
     purgeAll(items);
   });
