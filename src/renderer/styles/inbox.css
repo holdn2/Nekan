@@ -13,7 +13,19 @@
    those 8px dots as if they were this panel — margins, box shadow and all —
    and `body.collapsed .inbox` would delete the dot out of the bar chip. */
 section.inbox {
-  flex: 0 0 auto;
+  /* Shrinkable, but never growing. `0 0 auto` took its content height and
+     refused to give any of it back, which is fine until the matrix hits the
+     px floor under its grid rows — past that the quadrants simply ran off the
+     bottom of the window. Yielding here is what the 26vh cap alone cannot do,
+     because that cap is a share of the window and not of what is left over. */
+  flex: 0 1 auto;
+  /* Both needed for the shrink to reach the list: a flex item defaults to
+     min-height:auto (its content) and a block child would keep its own height
+     while the box around it shrank -- the panel would overlap the matrix
+     instead of making room, and body's overflow:hidden would hide that. */
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   margin: 8px 12px 0;
   background: var(--panel);
   border: 1px solid var(--line);
@@ -34,6 +46,7 @@ section.inbox.drop {
 
 .inbox-head {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 10px;
   padding: 0 12px 0 0;
@@ -98,15 +111,31 @@ section.inbox.open .chev {
 }
 
 section.inbox.open .inbox-body {
-  display: block;
+  /* A column so the shrink lands on the list and not on the add form: the
+     input is the whole point of the panel and must not be the part that gets
+     squeezed out. */
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
 }
 
 .inbox-list {
   list-style: none;
   margin: 0;
   padding: 6px;
+  /* The cap in normal use. When the window is too short for the matrix's own
+     floor, flex shrinks the list below this and it scrolls -- min-height:0 is
+     what lets it, since a flex item otherwise refuses to go under its
+     content. */
+  flex: 0 1 auto;
+  min-height: 0;
   max-height: min(var(--inbox-max-h), 26vh);
   overflow-y: auto;
+}
+
+.inbox-add {
+  flex: 0 0 auto;
 }
 
 .inbox-list:empty::after {

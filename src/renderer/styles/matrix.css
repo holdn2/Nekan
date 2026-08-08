@@ -14,6 +14,20 @@
   display: none !important;
 }
 
+/* Take what is left, rather than asking for content height and growing from
+   there. With a basis of `auto` the grid's own content — four quadrants' worth
+   of rows — is its base size, which over-subscribes the column even at the
+   default window size. That was invisible while the matrix was the only thing
+   in the column that could shrink; it absorbed the whole squeeze. The moment
+   the inbox became shrinkable too they split it proportionally and the inbox
+   lost 10px it did not need to give. A zero basis makes "the matrix fills the
+   rest" literally true, so nothing is over-subscribed until the window really
+   is too short — and then the min-height applyLayout() sets is what stops the
+   matrix and hands the shortfall to the inbox. */
+.view.matrix {
+  flex-basis: 0;
+}
+
 /* A 2×2 grid whose two track ratios are set from JS. The gutters are wide
    enough to grab, and the hit zone reaches a few px into each quadrant so the
    edges themselves are the handle — there is no separate splitter element. */
