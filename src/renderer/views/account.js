@@ -11,6 +11,7 @@
 import { $ } from "../dom.js";
 import { toast } from "../components/toast.js";
 import { activeCount } from "../store.js";
+import { t } from "../i18n.js";
 
 /** Whether this build has the development password channel at all. */
 let devLogin = false;
@@ -56,30 +57,38 @@ function cache() {
  * 오류": a code on screen is something a user can quote and I can search for.
  */
 const REASONS = {
-  offline: "인터넷에 연결되어 있지 않습니다.",
-  timeout: "시간이 초과됐습니다. 다시 시도해 주세요.",
-  denied: "로그인이 취소되었습니다.",
-  access_denied: "로그인이 취소되었습니다.",
-  cancelled: "로그인이 취소되었습니다.",
+  offline: "account.error.offline",
+  timeout: "account.error.timeout",
+  denied: "account.error.cancelled",
+  access_denied: "account.error.cancelled",
+  cancelled: "account.error.cancelled",
   // Google is configured but Supabase does not know about it, or the other way
   // round. Not a user's problem to solve, but saying so beats a bare code.
-  provider_disabled: "아직 Google 로그인을 쓸 수 없습니다.",
-  validation_failed: "로그인 설정이 아직 끝나지 않았습니다.",
+  provider_disabled: "account.error.providerDisabled",
+  validation_failed: "account.error.validationFailed",
   // The code was already used, or too old. Pressing the button again is the
   // whole fix.
-  flow_state_not_found: "로그인이 만료되었습니다. 다시 시도해 주세요.",
-  flow_state_expired: "로그인이 만료되었습니다. 다시 시도해 주세요.",
+  flow_state_not_found: "account.error.expired",
+  flow_state_expired: "account.error.expired",
+  // An empty key, not a missing one: "replaced" means the user pressed the
+  // button again and the second attempt owns the message now.
   replaced: "",
-  no_browser: "브라우저를 열지 못했습니다.",
-  no_loopback: "로그인 창을 여는 데 실패했습니다. 방화벽 설정을 확인해 주세요.",
-  no_secure_storage:
-    "이 컴퓨터에서는 로그인 정보를 안전하게 저장할 수 없어 로그인하지 않습니다.",
-  invalid_credentials: "이메일 또는 비밀번호가 맞지 않습니다.",
-  bad_response: "서버 응답을 이해하지 못했습니다.",
+  no_browser: "account.error.noBrowser",
+  no_loopback: "account.error.noLoopback",
+  no_secure_storage: "account.error.noSecureStorage",
+  invalid_credentials: "account.error.invalidCredentials",
+  bad_response: "account.error.badResponse",
   // Only reachable from the delete path: the session went while the panel was
   // open. Nothing was deleted, and the account may or may not still exist.
-  no_session: "로그인이 풀렸습니다. 다시 로그인한 뒤 시도해 주세요.",
+  no_session: "account.error.noSession",
 };
+
+/** A failure code as a sentence. Unknown codes are shown as themselves — a code
+ *  on screen is something a user can quote and I can search for. */
+function reasonFor(code, fallbackKey) {
+  if (code in REASONS) return REASONS[code] ? t(REASONS[code]) : "";
+  return t(fallbackKey, { code });
+}
 
 function say(text, isError = false) {
   ready();
@@ -89,13 +98,16 @@ function say(text, isError = false) {
 
 /* ------------------------------------------------------------------ status */
 
+/** The last status main pushed, so a redraw can say it again in a new language. */
+let lastStatus = null;
+
 /** What the four states are called, in the settings panel. */
 const LABELS = {
   off: null,
-  syncing: "동기화 중",
-  synced: "동기화됨",
-  pending: "대기 %n개",
-  offline: "오프라인",
+  syncing: "account.state.syncing",
+  synced: "account.state.synced",
+  pending: "account.state.pending",
+  offline: "account.state.offline",
 };
 
 /**
@@ -119,19 +131,25 @@ function displayState(status) {
  */
 export function applySyncStatus(status) {
   ready();
+  lastStatus = status;
   const state = displayState(status);
   const label = LABELS[state];
 
-  els.state.textContent = label ? label.replace("%n", status.unsent) : "";
+  // `count` rather than the old %n placeholder: it is the name i18next reserves
+  // for the number a sentence is about, so a language that needs a plural form
+  // can grow one in the catalogue without this line changing.
+  const words = label ? t(label, { count: status.unsent }) : "";
+
+  els.state.textContent = words;
   // Only `pending` and `offline` colour the dot; settings.css hides it for the
   // rest, because a widget that is fine should not be asking for attention.
   els.gear.dataset.sync = state;
   els.gear.title =
     state === "offline"
-      ? "설정 — 서버에 닿지 못했습니다. 변경은 이 컴퓨터에 저장되어 있습니다."
-      : label
-        ? `설정 — ${label.replace("%n", status.unsent)}`
-        : "설정";
+      ? t("account.gearOffline")
+      : words
+        ? t("account.gearState", { state: words })
+        : t("settings.title");
 }
 
 /* ----------------------------------------------------------------- session */
@@ -148,6 +166,11 @@ let session = null;
  */
 export function renderAccount() {
   applySession(session);
+  // Not only the session. The sync words and the gear's tooltip are written by
+  // a push from main and by nothing else, so after a language change they sat
+  // in the old language until the next sync happened to arrive — measured, not
+  // guessed. Anything this view caches has to be re-applied from the redraw.
+  applySyncStatus(lastStatus);
 }
 
 /** Show the signed-in half or the signed-out half, and the local-tasks offer. */
@@ -202,7 +225,7 @@ const adoptMode = () =>
 async function finish(promise) {
   signingIn = true;
   els.google.disabled = true;
-  say("브라우저에서 로그인을 마쳐 주세요.");
+  say(t("account.finishInBrowser"));
   try {
     // Rejects, rather than resolving with { ok: false }, when the channel is
     // not registered at all -- devLogin in a packaged build -- or when the
@@ -216,17 +239,13 @@ async function finish(promise) {
       applySession(result.session);
       say(
         result.session
-          ? `${result.session.email} 계정으로 로그인했습니다.`
+          ? t("account.signedIn", { email: result.session.email })
           : "",
       );
       return;
     }
     const code = (result && result.error) || "unknown";
-    // An empty reason is a deliberate silence: "replaced" means the user
-    // pressed the button again, and the second attempt owns the message now.
-    const reason =
-      code in REASONS ? REASONS[code] : `로그인하지 못했습니다. (${code})`;
-    say(reason, true);
+    say(reasonFor(code, "account.signInFailed"), true);
   } finally {
     signingIn = false;
     els.google.disabled = false;
@@ -261,14 +280,16 @@ export function wireAccount() {
       // out loud rather than swallowed: the screen would otherwise show a
       // logout that never happened.
       say(
-        `로그아웃하지 못했습니다. (${String((err && err.message) || err)})`,
+        t("account.signOutFailed", {
+          code: String((err && err.message) || err),
+        }),
         true,
       );
       return;
     }
     applySession(null);
     applySyncStatus({ state: "off", unsent: 0 });
-    say("로그아웃했습니다. 이 컴퓨터의 할 일은 그대로 있습니다.");
+    say(t("account.signedOut"));
   });
 
   els.leave.addEventListener("click", () => {
@@ -287,7 +308,7 @@ export function wireAccount() {
     deleting = true;
     els.leaveGo.disabled = true;
     els.leaveCancel.disabled = true;
-    say("계정을 지우는 중…");
+    say(t("account.deleting"));
     try {
       // Unlike logout, this one is the server's to do, so a failure means the
       // account is still there. Saying nothing would leave a panel that looks
@@ -298,9 +319,7 @@ export function wireAccount() {
       }));
       if (!result || !result.ok) {
         const code = (result && result.error) || "unknown";
-        const reason =
-          code in REASONS ? REASONS[code] : `계정을 지우지 못했습니다. (${code})`;
-        say(reason, true);
+        say(reasonFor(code, "account.deleteFailed"), true);
         els.leaveGo.disabled = false;
         els.leaveCancel.disabled = false;
         return;
@@ -316,7 +335,7 @@ export function wireAccount() {
       }
       applySession(null);
       applySyncStatus({ state: "off", unsent: 0 });
-      say("계정을 삭제했습니다. 이 컴퓨터의 할 일은 그대로 있습니다.");
+      say(t("account.deleted"));
     } finally {
       deleting = false;
     }
@@ -337,5 +356,5 @@ export function setDevLogin(enabled) {
  */
 export function announceOverwritten(count) {
   if (!count) return;
-  toast(`다른 기기에서 바꾼 내용으로 ${count}개를 덮어썼습니다.`, { ms: 8000 });
+  toast(t("account.overwritten", { count }), { ms: 8000 });
 }

@@ -12,5 +12,38 @@
   "language": {
     "ko": "한국어",
     "en": "English"
+  },
+  "account": {
+    "error": {
+      "offline": "인터넷에 연결되어 있지 않습니다.",
+      "timeout": "시간이 초과됐습니다. 다시 시도해 주세요.",
+      "cancelled": "로그인이 취소되었습니다.",
+      "providerDisabled": "아직 Google 로그인을 쓸 수 없습니다.",
+      "validationFailed": "로그인 설정이 아직 끝나지 않았습니다.",
+      "expired": "로그인이 만료되었습니다. 다시 시도해 주세요.",
+      "noBrowser": "브라우저를 열지 못했습니다.",
+      "noLoopback": "로그인 창을 여는 데 실패했습니다. 방화벽 설정을 확인해 주세요.",
+      "noSecureStorage": "이 컴퓨터에서는 로그인 정보를 안전하게 저장할 수 없어 로그인하지 않습니다.",
+      "invalidCredentials": "이메일 또는 비밀번호가 맞지 않습니다.",
+      "badResponse": "서버 응답을 이해하지 못했습니다.",
+      "noSession": "로그인이 풀렸습니다. 다시 로그인한 뒤 시도해 주세요."
+    },
+    "state": {
+      "syncing": "동기화 중",
+      "synced": "동기화됨",
+      "pending": "대기 {{count}}개",
+      "offline": "오프라인"
+    },
+    "gearOffline": "설정 — 서버에 닿지 못했습니다. 변경은 이 컴퓨터에 저장되어 있습니다.",
+    "gearState": "설정 — {{state}}",
+    "finishInBrowser": "브라우저에서 로그인을 마쳐 주세요.",
+    "signedIn": "{{email}} 계정으로 로그인했습니다.",
+    "signInFailed": "로그인하지 못했습니다. ({{code}})",
+    "signOutFailed": "로그아웃하지 못했습니다. ({{code}})",
+    "signedOut": "로그아웃했습니다. 이 컴퓨터의 할 일은 그대로 있습니다.",
+    "deleting": "계정을 지우는 중…",
+    "deleteFailed": "계정을 지우지 못했습니다. ({{code}})",
+    "deleted": "계정을 삭제했습니다. 이 컴퓨터의 할 일은 그대로 있습니다.",
+    "overwritten": "다른 기기에서 바꾼 내용으로 {{count}}개를 덮어썼습니다."
   }
 }

@@ -12,5 +12,38 @@
   "language": {
     "ko": "한국어",
     "en": "English"
+  },
+  "account": {
+    "error": {
+      "offline": "You are not connected to the internet.",
+      "timeout": "That timed out. Please try again.",
+      "cancelled": "Sign-in was cancelled.",
+      "providerDisabled": "Google sign-in is not available yet.",
+      "validationFailed": "Sign-in is not finished being set up.",
+      "expired": "That sign-in expired. Please try again.",
+      "noBrowser": "Could not open a browser.",
+      "noLoopback": "Could not open the sign-in window. Check your firewall settings.",
+      "noSecureStorage": "This computer cannot store sign-in details securely, so signing in is disabled.",
+      "invalidCredentials": "That email or password does not match.",
+      "badResponse": "The server sent something this app could not read.",
+      "noSession": "Your sign-in has lapsed. Sign in again and retry."
+    },
+    "state": {
+      "syncing": "Syncing",
+      "synced": "Synced",
+      "pending": "{{count}} waiting",
+      "offline": "Offline"
+    },
+    "gearOffline": "Settings — could not reach the server. Your changes are saved on this computer.",
+    "gearState": "Settings — {{state}}",
+    "finishInBrowser": "Finish signing in from your browser.",
+    "signedIn": "Signed in as {{email}}.",
+    "signInFailed": "Could not sign in. ({{code}})",
+    "signOutFailed": "Could not sign out. ({{code}})",
+    "signedOut": "Signed out. The tasks on this computer are untouched.",
+    "deleting": "Deleting your account…",
+    "deleteFailed": "Could not delete the account. ({{code}})",
+    "deleted": "Account deleted. The tasks on this computer are untouched.",
+    "overwritten": "{{count}} item(s) were overwritten by changes from another device."
   }
 }
