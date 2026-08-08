@@ -816,6 +816,39 @@
             </button>
           </div>
 
+          <!-- Only shown while signed in. Two steps on purpose: the first press
+               opens the explanation, the second one acts. "탈퇴" reads as
+               "everything goes", so what stays has to be said before the
+               irreversible button is on screen -- not in a toast afterwards. -->
+          <div class="account-danger hidden" id="accountDanger">
+            <button class="account-leave-btn" id="leaveBtn" type="button">
+              회원탈퇴
+            </button>
+
+            <div class="account-confirm hidden" id="leaveConfirm">
+              <p class="account-confirm-lede">
+                계정과 <b>서버에 있는 사본</b>을 지웁니다. 다른 기기와의 동기화도
+                끊깁니다. <b>되돌릴 수 없습니다.</b>
+              </p>
+              <p class="account-confirm-keep">
+                <b>이 컴퓨터의 할 일은 그대로 남습니다.</b> 계정 없이 계속 쓸 수
+                있습니다.
+              </p>
+              <div class="account-confirm-row">
+                <button
+                  class="account-confirm-cancel"
+                  id="leaveCancel"
+                  type="button"
+                >
+                  취소
+                </button>
+                <button class="account-confirm-go" id="leaveGo" type="button">
+                  계정 삭제
+                </button>
+              </div>
+            </div>
+          </div>
+
           <p class="account-msg" id="accountMsg" role="status"></p>
         </section>
       </div>

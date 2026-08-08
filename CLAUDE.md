@@ -358,11 +358,28 @@ npx electron . --user-data-dir=<임시폴더> --remote-debugging-port=9333
 NEKAN_SUPABASE_URL=... NEKAN_SUPABASE_ANON_KEY=... node supabase/verify.js
 ```
 
-두 계정으로 기기 두 대를 흉내 내 22가지를 본다
-(LWW·동점·묘비·삭제 차단·RLS 격리·커서·페이지 넘기기·계정 삭제·RPC 권한).
+두 계정으로 기기 두 대를 흉내 내 19가지를 본다
+(LWW·동점·묘비·삭제 차단·RLS 격리·커서·페이지 넘기기·RPC 권한).
 **이 스크립트는 여러 번 돌려도 같은 결과가 나와야 한다** — 첫 판은 고정 타임스탬프를 써서
 딱 한 번만 통과했다. 두 번째 판부터는 앞 실행이 남긴 행이 더 새것이라 트리거가 (정확하게)
 버렸기 때문이다. **빈 테이블에서만 통과하는 검증은 검증이 아니다.**
+
+**계정 삭제 4가지는 기본으로 안 돈다(SKIP).** 자동화가 불가능해졌기 때문이다: 프로젝트가
+확인 메일을 켜면서 `signup`이 세션 없이 사용자만 만들고, 이어지는 로그인은
+`email_not_confirmed`로 막히며, 그 메일은 `@example.com`으로 가서 아무도 못 읽는다.
+먼저 보이는 429(발송 쿼터)는 표면일 뿐 쿼터가 남아도 길이 없다. 돌리려면 **대시보드
+Authentication → Users → Add user에서 Auto Confirm으로 일회용 계정을 만들어** 넘긴다:
+
+```sh
+NEKAN_VERIFY_LEAVING=<이메일>:<비밀번호> node supabase/verify.js
+```
+
+**그 계정은 검사로 사라진다** — 검사의 내용이 그것이라서, 돌릴 때마다 새로 만들어야 한다.
+그래서 옵트인이다. **`nekan-dev`·`nekan-other`를 넘기지 말 것.** 2026-08-08에 `nekan-dev`가
+실제로 지워져 대시보드에서 다시 만들어야 했다 — 그 계정이 없으면 위 19가지가 통째로 안 돈다.
+**SKIP도 요약에 세어진다**(`19 passed, 0 failed, 1 skipped`). 예전에는 일회용 계정 생성이
+실패하면 **거기서 예외로 죽어** 뒤의 RPC 권한·묘비 청소 검사가 안 돌고 요약도 안 나왔다 —
+마이그레이션이 진짜로 깨졌을 때와 화면이 똑같았다.
 
 **로그인 경로도 `npm test`가 못 덮는다** (safeStorage가 Electron 안에서만 산다). `--user-data-dir`로
 띄워 `window.api.login(...)`을 CDP로 부르고, `auth.json`에 `eyJ`가 **평문으로 없는지**와

@@ -401,6 +401,52 @@ async function logout() {
   return { ok: true };
 }
 
+/**
+ * Delete the account on the server, then sign out here.
+ *
+ * The opposite order from logout(), and for the opposite reason. Logging out is
+ * a local decision the network is not allowed to veto; deleting an account is
+ * something only the server can do, so there is nothing to report until it has
+ * said yes. Signing out first would leave the user with no session to retry
+ * from and an account still standing.
+ *
+ * `delete_account()` takes no argument -- it reads auth.uid() -- so there is no
+ * way to name somebody else's account, and the rows go with it through the
+ * foreign key. No /auth/v1/logout afterwards: the user row is gone and every
+ * session on it with it, so there is nothing left to revoke.
+ */
+async function deleteAccount() {
+  const token = await getAccessToken();
+  if (!token) {
+    // Two very different states arrive here, and telling them apart is the
+    // difference between a true sentence and a false one. A renewal that failed
+    // on the network leaves the session in place by design -- the user is still
+    // signed in, and answering "no_session" sends them off to log in again over
+    // what is really a dead connection. Only a 4xx renewal actually throws the
+    // session away, and that is the one that has no account to delete.
+    return { ok: false, error: session ? "offline" : "no_session" };
+  }
+
+  // The same guard runRefresh() takes, for the same reason. Logging out and
+  // back in while this request is in flight leaves a *different* session here,
+  // and forgetting that one would sign somebody out of an account that was
+  // never deleted. `signedOut` is what it comes to: the delete happened either
+  // way, but only the caller that still owns the session may act on it.
+  const startedAt = epoch;
+  const current = session;
+
+  const res = await request("/rest/v1/rpc/delete_account", {
+    method: "POST",
+    token,
+    body: {},
+  });
+  if (!res.ok) return { ok: false, error: errorCode(res) };
+
+  const stillOurs = epoch === startedAt && session === current;
+  if (stillOurs) forget();
+  return { ok: true, signedOut: stillOurs };
+}
+
 module.exports = {
   SUPABASE_URL,
   request,
@@ -412,4 +458,5 @@ module.exports = {
   login,
   signup,
   logout,
+  deleteAccount,
 };

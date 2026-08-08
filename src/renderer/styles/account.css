@@ -136,6 +136,89 @@
   border-color: var(--muted);
 }
 
+/* Deliberately the quietest thing in the panel. It has to be findable -- an
+   account you cannot leave is the complaint this exists to answer -- without
+   sitting next to 로그아웃 as an equal choice. */
+.account-danger {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.account-leave-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.account-leave-btn:hover {
+  color: var(--danger);
+}
+
+.account-confirm {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  background: var(--danger-soft);
+}
+
+.account-confirm p {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  /* The panel is narrow enough to split 되돌릴 수 없습니다 across two lines in
+     the middle of the word. Fine for a task somebody typed; not for the one
+     sentence in the app that has to be read before an irreversible button. */
+  word-break: keep-all;
+}
+
+.account-confirm-keep {
+  color: var(--muted);
+}
+
+.account-confirm-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.account-confirm-cancel,
+.account-confirm-go {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.account-confirm-cancel {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+}
+
+.account-confirm-go {
+  border: 1px solid var(--danger);
+  background: var(--danger);
+  /* Not #fff. --danger is a deep red on the light theme but a light salmon on
+     the dark one, and white on salmon is barely there -- measured on screen.
+     The page background is the opposite of the theme's fill in both, so it is
+     the one token that stays legible on this button either way. */
+  color: var(--bg);
+}
+
+.account-confirm-go:disabled,
+.account-confirm-cancel:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 .account-msg {
   margin: 10px 0 0;
   font-size: 12.5px;

@@ -35,6 +35,7 @@ const {
 const { revealExport, runExport } = require("./export-service");
 const { getUpdateStatus, installUpdate } = require("./updater");
 const {
+  deleteAccount,
   getClockOffset,
   getPublicSession,
   login,
@@ -283,6 +284,22 @@ function registerIpc() {
   ipcMain.handle("auth:logout", async () => {
     const result = await logout();
     syncAccount(null);
+    return result;
+  });
+
+  // Same promise as logout, and for the same reason: the list on this computer
+  // was the user's before there was an account to put it in. Deleting the
+  // account is about the copy on the server -- this one stays, and the panel
+  // says so before the button is pressed.
+  //
+  // syncAccount(null) only when the local session was actually ended, which is
+  // narrower than "the delete succeeded". It clears the cursor and the push
+  // watermark: after a failed delete that would leave a signed-in app that has
+  // forgotten how far it had got, and after a delete whose session was replaced
+  // mid-flight it would clear those for whoever is signed in *now*.
+  ipcMain.handle("account:delete", async () => {
+    const result = await deleteAccount();
+    if (result.ok && result.signedOut) syncAccount(null);
     return result;
   });
 }
