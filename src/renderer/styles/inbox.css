@@ -134,10 +134,6 @@ section.inbox.open .inbox-body {
   overflow-y: auto;
 }
 
-.inbox-add {
-  flex: 0 0 auto;
-}
-
 .inbox-list:empty::after {
   content: "떠오르는 대로 전부 적어두세요";
   display: block;
@@ -145,6 +141,13 @@ section.inbox.open .inbox-body {
   color: var(--faint);
   font-size: 11px;
   text-align: center;
+}
+
+/* The one part of the panel that never gives up height. When the window is too
+   short the list above shrinks and scrolls; the input has to stay, because a
+   panel you cannot type into is not a smaller panel, it is a broken one. */
+.inbox-add {
+  flex: 0 0 auto;
 }
 
 /* No due chip, no check, no memo mark — the inbox is for getting it out of your
