@@ -45,5 +45,24 @@
     "deleteFailed": "Could not delete the account. ({{code}})",
     "deleted": "Account deleted. The tasks on this computer are untouched.",
     "overwritten": "{{count}} item(s) were overwritten by changes from another device."
+  },
+  "welcome": {
+    "saveFailed": "Could not save that choice. Please try again.",
+    "signOutFailed": "Could not sign out. Please try again. ({{code}})"
+  },
+  "archive": {
+    "quadInbox": "Unsorted",
+    "quadOther": "Neither",
+    "more": "Show more ({{count}} left)",
+    "expand": "Show all",
+    "noResults": "Nothing matches that search.",
+    "historyEmpty": "Nothing completed yet.",
+    "trashEmpty": "The trash is empty.",
+    "restore": "Restore",
+    "delete": "Delete",
+    "untrash": "Restore",
+    "purge": "Delete forever",
+    "confirmTrashAll": "Move {{count}} completed task(s) to the trash?",
+    "confirmPurgeAll": "Delete {{count}} task(s) in the trash forever? This cannot be undone."
   }
 }

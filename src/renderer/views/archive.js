@@ -8,6 +8,7 @@
  */
 
 import { $, $$, actionBtn, numEl } from "../dom.js";
+import { currentLanguage, t } from "../i18n.js";
 import { dueBadge } from "../components/due-chip.js";
 import { memoLine } from "../components/memo-mark.js";
 import {
@@ -48,16 +49,16 @@ let trashShown = PAGE;
 
 /** Tooltip on the coloured dot — where the task was when it left the matrix. */
 const QUAD_LABEL = {
-  inbox: "미분류",
-  q1: "Urgent·Important",
-  q2: "Important",
-  q3: "Urgent",
-  q4: "기타",
+  inbox: () => t("archive.quadInbox"),
+  q1: () => "Urgent·Important",
+  q2: () => "Important",
+  q3: () => "Urgent",
+  q4: () => t("archive.quadOther"),
 };
 
-/** Day header: "2026년 8월 2일 (일)". */
+/** Day header, in whatever the interface language says it looks like. */
 const dayLabel = (ts) =>
-  new Date(ts).toLocaleDateString("ko-KR", {
+  new Date(ts).toLocaleDateString(currentLanguage(), {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -66,7 +67,7 @@ const dayLabel = (ts) =>
 
 /** Time column on a row, to the minute. */
 const timeLabel = (ts) =>
-  new Date(ts).toLocaleTimeString("ko-KR", {
+  new Date(ts).toLocaleTimeString(currentLanguage(), {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -90,7 +91,7 @@ function renderArchive({
   items,
   query,
   stamp,
-  emptyText,
+  emptyKey,
   actions,
   shown,
   showMore,
@@ -117,7 +118,7 @@ function renderArchive({
 
     const dot = document.createElement("span");
     dot.className = `dot ${task.quadrant}`;
-    dot.title = QUAD_LABEL[task.quadrant] || "";
+    dot.title = QUAD_LABEL[task.quadrant]?.() || "";
 
     const text = document.createElement("span");
     text.className = "text";
@@ -156,7 +157,7 @@ function renderArchive({
     li.className = "more";
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.textContent = `더 보기 (${remaining.toLocaleString("ko-KR")}개 남음)`;
+    btn.textContent = t("archive.more", { count: remaining });
     btn.addEventListener("click", showMore);
     li.append(btn);
     list.append(li);
@@ -168,11 +169,11 @@ function renderArchive({
     const text = $(".hmemo-text", box);
     const clamped = text.scrollHeight > text.clientHeight + 1;
     box.classList.toggle("clamped", clamped);
-    if (clamped) box.title = "전체 보기";
+    if (clamped) box.title = t("archive.expand");
   });
 
   empty.classList.toggle("hidden", items.length > 0);
-  empty.textContent = query.trim() ? "검색 결과가 없습니다." : emptyText;
+  empty.textContent = query.trim() ? t("archive.noResults") : t(emptyKey);
 }
 
 /**
@@ -187,18 +188,18 @@ export function renderHistory() {
   renderArchive({
     list: $("#historyList"),
     empty: $("#historyEmpty"),
-    items: doneTasks().filter((t) => matches(t, historyQuery)),
+    items: doneTasks().filter((task) => matches(task, historyQuery)),
     query: historyQuery,
-    stamp: (t) => t.completedAt,
-    emptyText: "완료한 항목이 아직 없습니다.",
+    stamp: (task) => task.completedAt,
+    emptyKey: "archive.historyEmpty",
     shown: historyShown,
     showMore: () => {
       historyShown += PAGE;
       renderHistory();
     },
     actions: (task) => [
-      actionBtn("되돌리기", () => restoreTask(task.id)),
-      actionBtn("삭제", () => deleteTask(task.id), true),
+      actionBtn(t("archive.restore"), () => restoreTask(task.id)),
+      actionBtn(t("archive.delete"), () => deleteTask(task.id), true),
     ],
   });
 }
@@ -208,18 +209,18 @@ export function renderTrash() {
   renderArchive({
     list: $("#trashList"),
     empty: $("#trashEmpty"),
-    items: trashedTasks().filter((t) => matches(t, trashQuery)),
+    items: trashedTasks().filter((task) => matches(task, trashQuery)),
     query: trashQuery,
-    stamp: (t) => t.deletedAt,
-    emptyText: "휴지통이 비어 있습니다.",
+    stamp: (task) => task.deletedAt,
+    emptyKey: "archive.trashEmpty",
     shown: trashShown,
     showMore: () => {
       trashShown += PAGE;
       renderTrash();
     },
     actions: (task) => [
-      actionBtn("복원", () => untrashTask(task.id)),
-      actionBtn("영구 삭제", () => purgeTask(task.id), true),
+      actionBtn(t("archive.untrash"), () => untrashTask(task.id)),
+      actionBtn(t("archive.purge"), () => purgeTask(task.id), true),
     ],
   });
 }
@@ -262,7 +263,7 @@ export function wireArchive() {
   $("#clearHistory").addEventListener("click", () => {
     const items = doneTasks();
     if (!items.length) return;
-    if (!window.confirm(`완료한 항목 ${items.length}개를 휴지통으로 옮길까요?`))
+    if (!window.confirm(t("archive.confirmTrashAll", { count: items.length })))
       return;
     trashAll(items);
   });
@@ -276,7 +277,7 @@ export function wireArchive() {
     if (!items.length) return;
     if (
       !window.confirm(
-        `휴지통의 ${items.length}개 항목을 영구 삭제할까요? 되돌릴 수 없습니다.`,
+        t("archive.confirmPurgeAll", { count: items.length }),
       )
     )
       return;

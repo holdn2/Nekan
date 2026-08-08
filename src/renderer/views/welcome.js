@@ -13,6 +13,7 @@
 import { $ } from "../dom.js";
 import { needsStartupChoice } from "../core-bridge.js";
 import { activeCount } from "../store.js";
+import { t } from "../i18n.js";
 
 /** Set by app.js: how a finished choice reaches the rest of the startup. */
 let onDone = () => {};
@@ -32,17 +33,16 @@ const els = {};
  * something a user can quote back and I can search for.
  */
 const REASONS = {
-  offline: "인터넷에 연결되어 있지 않습니다.",
-  timeout: "시간이 초과됐습니다. 다시 시도해 주세요.",
-  denied: "로그인이 취소되었습니다.",
-  access_denied: "로그인이 취소되었습니다.",
-  cancelled: "로그인이 취소되었습니다.",
-  no_browser: "브라우저를 열지 못했습니다.",
-  no_loopback: "로그인 창을 여는 데 실패했습니다. 방화벽 설정을 확인해 주세요.",
-  no_secure_storage:
-    "이 컴퓨터에서는 로그인 정보를 안전하게 저장할 수 없어 로그인하지 않습니다.",
-  flow_state_not_found: "로그인이 만료되었습니다. 다시 시도해 주세요.",
-  bad_response: "서버 응답을 이해하지 못했습니다.",
+  offline: "account.error.offline",
+  timeout: "account.error.timeout",
+  denied: "account.error.cancelled",
+  access_denied: "account.error.cancelled",
+  cancelled: "account.error.cancelled",
+  no_browser: "account.error.noBrowser",
+  no_loopback: "account.error.noLoopback",
+  no_secure_storage: "account.error.noSecureStorage",
+  flow_state_not_found: "account.error.expired",
+  bad_response: "account.error.badResponse",
 };
 
 function say(text, isError = false) {
@@ -77,7 +77,7 @@ export function showWelcome() {
 async function finish(choice) {
   const saved = await window.api.setStartupChoice(choice).catch(() => null);
   if (saved !== choice) {
-    say("설정을 저장하지 못했습니다. 다시 시도해 주세요.", true);
+    say(t("welcome.saveFailed"), true);
     return;
   }
   els.root.classList.add("hidden");
@@ -104,7 +104,7 @@ async function chooseSync() {
       return;
     }
 
-    say("브라우저에서 로그인을 마쳐 주세요.");
+    say(t("account.finishInBrowser"));
     const result = await window.api
       .signInWithGoogle(adoptMode())
       .catch((err) => ({
@@ -121,7 +121,7 @@ async function chooseSync() {
     // dropping someone onto an empty matrix would look like it worked.
     const code = (result && result.error) || "unknown";
     say(
-      code in REASONS ? REASONS[code] : `로그인하지 못했습니다. (${code})`,
+      code in REASONS ? t(REASONS[code]) : t("account.signInFailed", { code }),
       true,
     );
   } finally {
@@ -143,7 +143,9 @@ async function signOut() {
     await window.api.logout();
   } catch (err) {
     say(
-      `로그아웃하지 못했습니다. 다시 시도해 주세요. (${String((err && err.message) || err)})`,
+      t("welcome.signOutFailed", {
+        code: String((err && err.message) || err),
+      }),
       true,
     );
     return false;

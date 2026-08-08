@@ -45,5 +45,24 @@
     "deleteFailed": "계정을 지우지 못했습니다. ({{code}})",
     "deleted": "계정을 삭제했습니다. 이 컴퓨터의 할 일은 그대로 있습니다.",
     "overwritten": "다른 기기에서 바꾼 내용으로 {{count}}개를 덮어썼습니다."
+  },
+  "welcome": {
+    "saveFailed": "설정을 저장하지 못했습니다. 다시 시도해 주세요.",
+    "signOutFailed": "로그아웃하지 못했습니다. 다시 시도해 주세요. ({{code}})"
+  },
+  "archive": {
+    "quadInbox": "미분류",
+    "quadOther": "기타",
+    "more": "더 보기 ({{count}}개 남음)",
+    "expand": "전체 보기",
+    "noResults": "검색 결과가 없습니다.",
+    "historyEmpty": "완료한 항목이 아직 없습니다.",
+    "trashEmpty": "휴지통이 비어 있습니다.",
+    "restore": "되돌리기",
+    "delete": "삭제",
+    "untrash": "복원",
+    "purge": "영구 삭제",
+    "confirmTrashAll": "완료한 항목 {{count}}개를 휴지통으로 옮길까요?",
+    "confirmPurgeAll": "휴지통의 {{count}}개 항목을 영구 삭제할까요? 되돌릴 수 없습니다."
   }
 }
