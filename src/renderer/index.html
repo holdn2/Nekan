@@ -544,251 +544,138 @@
       </div>
     </section>
 
+    <!-- Prose, not labels. Every paragraph is one key: a language breaks a
+         thought into sentences differently, so cutting one up would hand a
+         translator fragments. A list item is a paragraph here too, and the <b>
+         and <em> inside travel with the sentence -- see tNodes() in i18n.js.
+
+         The paragraphs are empty here on purpose, unlike the short labels
+         elsewhere in this file. Forty-odd paragraphs written twice is forty
+         chances for the markup and the catalogue to disagree, and the copy in
+         the markup would never be the one on screen anyway. Nobody sees the
+         gap: applyStaticStrings() runs before the first await in init(), and
+         this tab starts hidden regardless. -->
     <section id="guideView" class="view guide hidden">
       <div class="guide-scroll">
         <article class="guide-doc">
-          <h1>아이젠하워 매트릭스란?</h1>
-          <p class="lead">
-            할 일을 <b>중요도</b>와 <b>긴급도</b> 두 축으로 나눠 네 칸에
-            배치하고, 칸마다 다른 방식으로 처리하는 우선순위 결정법입니다.
-            목록이 길어질수록 <em>“무엇부터 할까”</em>가 아니라
-            <em>“무엇을 하지 않을까”</em>를 먼저 정해주는 것이 이 프레임워크의
-            핵심입니다.
-          </p>
+          <h1 data-i18n="guide.title">What is the Eisenhower matrix?</h1>
+          <p class="lead" data-i18n="guide.lead"></p>
 
+          <!-- The quotation is wrapped because the attribution below it is a
+               separate string; a bare text node would be replaced along with
+               it. -->
           <blockquote>
-            “나에게는 두 종류의 문제가 있다. 긴급한 것과 중요한 것. 긴급한 것은
-            중요하지 않고, 중요한 것은 결코 긴급하지 않다.”
-            <cite>— 드와이트 D. 아이젠하워가 즐겨 인용한 말</cite>
+            <span data-i18n="guide.quote"></span>
+            <cite data-i18n="guide.quoteCite"></cite>
           </blockquote>
 
-          <p>
-            미국 34대 대통령이자 2차 대전 연합군 총사령관이었던 아이젠하워의
-            일화에서 이름을 따왔고, 스티븐 코비가 『성공하는 사람들의 7가지
-            습관』에서 소개하며 널리 알려졌습니다.
-          </p>
+          <p data-i18n="guide.origin"></p>
 
-          <h2>두 개의 축</h2>
+          <h2 data-i18n="guide.axesTitle">The two axes</h2>
           <div class="guide-axes">
             <div class="axis">
-              <h3>중요도</h3>
-              <p>
-                내 <b>목표와 결과</b>에 기여하는가? 하지 않으면 장기적으로
-                손해가 생기는 일인가? 판단 기준은 <b>나</b>에게 있습니다.
-              </p>
+              <h3 data-i18n="guide.importanceTitle">Importance</h3>
+              <p data-i18n="guide.importance"></p>
             </div>
             <div class="axis">
-              <h3>긴급도</h3>
-              <p>
-                지금 <b>당장 반응</b>해야 하는가? 마감이 임박했는가? 기준이
-                <b>외부</b>(마감·타인의 요청)에 있는 경우가 많습니다.
-              </p>
+              <h3 data-i18n="guide.urgencyTitle">Urgency</h3>
+              <p data-i18n="guide.urgency"></p>
             </div>
           </div>
-          <p class="note">
-            둘은 자주 혼동되지만 완전히 다른 축입니다. 울리는 알림은 긴급하지만
-            대개 중요하지 않고, 건강·공부·관계처럼 정말 중요한 일은 좀처럼
-            긴급해지지 않습니다.
-          </p>
+          <p class="note" data-i18n="guide.axesNote"></p>
 
-          <h2>네 개의 분면</h2>
+          <h2 data-i18n="guide.quadsTitle">The four quadrants</h2>
           <div class="guide-quads">
             <section class="guide-quad q1">
               <header>
                 <span class="dot q1"></span>
-                <h3>Urgent &amp; Important</h3>
-                <span class="tag">Do · 지금 한다</span>
+                <h3 data-i18n="quad.q1.title">Urgent &amp; Important</h3>
+                <span class="tag" data-i18n="guide.q1.tag">Do · right now</span>
               </header>
-              <p>
-                마감이 코앞인 일, 사고·장애 대응, 오늘까지 회신해야 하는 요청.
-              </p>
-              <p class="ex">예: 내일 발표 자료, 서버 장애, 마감 당일 서류</p>
-              <p class="tip">
-                이 칸이 늘 가득 차 있다면 위기 대응만 반복하고 있다는
-                신호입니다. 원인은 대개 아래 칸을 미뤄둔 데 있습니다.
-              </p>
+              <p data-i18n="guide.q1.body"></p>
+              <p class="ex" data-i18n="guide.q1.example"></p>
+              <p class="tip" data-i18n="guide.q1.tip"></p>
             </section>
 
             <section class="guide-quad q2">
               <header>
                 <span class="dot q2"></span>
-                <h3>Important &amp; Not Urgent</h3>
-                <span class="tag">Plan · 일정을 잡는다</span>
+                <h3 data-i18n="quad.q2.title">Important &amp; Not Urgent</h3>
+                <span class="tag" data-i18n="guide.q2.tag"
+                  >Plan · book the time</span
+                >
               </header>
-              <p>지금 안 해도 아무도 뭐라 하지 않지만, 성과를 만드는 일들.</p>
-              <p class="ex">예: 공부·운동, 설계와 리팩터링, 회고, 관계 관리</p>
-              <p class="tip">
-                <b>여기가 이 매트릭스의 핵심입니다.</b> 시간을 미리 확보해두지
-                않으면 영원히 밀리고, 결국 긴급해진 뒤에야 1분면에서 처리하게
-                됩니다.
-              </p>
+              <p data-i18n="guide.q2.body"></p>
+              <p class="ex" data-i18n="guide.q2.example"></p>
+              <p class="tip" data-i18n="guide.q2.tip"></p>
             </section>
 
             <section class="guide-quad q3">
               <header>
                 <span class="dot q3"></span>
-                <h3>Urgent &amp; Not Important</h3>
-                <span class="tag">Delegate · 넘기거나 줄인다</span>
+                <h3 data-i18n="quad.q3.title">Urgent &amp; Not Important</h3>
+                <span class="tag" data-i18n="guide.q3.tag"
+                  >Delegate · hand off or cut down</span
+                >
               </header>
-              <p>
-                급해 보이지만 대부분 <b>남의 우선순위</b>가 나에게 넘어온 일.
-              </p>
-              <p class="ex">
-                예: 즉답을 요구하는 알림, 대신 해줄 수 있는 잡무, 참석 안 해도
-                되는 회의
-              </p>
-              <p class="tip">
-                넘길 사람이 없다면 “줄이기”가 답입니다. 처리 시간을 정해 몰아서
-                끝내거나, 알림을 꺼서 애초에 들어오지 않게 만드세요.
-              </p>
+              <p data-i18n="guide.q3.body"></p>
+              <p class="ex" data-i18n="guide.q3.example"></p>
+              <p class="tip" data-i18n="guide.q3.tip"></p>
             </section>
 
             <section class="guide-quad q4">
               <header>
                 <span class="dot q4"></span>
-                <h3>Not Urgent &amp; Not Important</h3>
-                <span class="tag">Delete · 지운다</span>
+                <h3 data-i18n="quad.q4.title">
+                  Not Urgent &amp; Not Important
+                </h3>
+                <span class="tag" data-i18n="guide.q4.tag"
+                  >Delete · get rid of it</span
+                >
               </header>
-              <p>습관적으로 하지만 남는 게 없는 일. 목록만 무겁게 만듭니다.</p>
-              <p class="ex">
-                예: 목적 없는 피드 스크롤, 의미 없이 반복하는 확인
-              </p>
-              <p class="tip">
-                지우는 것도 결정입니다. 아깝다면 “언젠가 할 일” 목록으로 빼두고
-                매트릭스에서는 치우세요.
-              </p>
+              <p data-i18n="guide.q4.body"></p>
+              <p class="ex" data-i18n="guide.q4.example"></p>
+              <p class="tip" data-i18n="guide.q4.tip"></p>
             </section>
           </div>
 
-          <h2>쓰는 순서</h2>
+          <h2 data-i18n="guide.stepsTitle">How to use it</h2>
           <ol class="guide-steps">
-            <li>
-              <b>다 꺼내기</b> — 머릿속에 있는 할 일을 일단 전부 적습니다.
-              매트릭스 위의 <b>다 꺼내기</b> 목록이 이 단계를 위한 자리입니다.
-              분류는 나중에 하고, 여기서는 떠오르는 대로만 적으세요. 이 목록은
-              <b>업무·일상 양쪽이 함께 쓰므로</b>, 어느 쪽 일인지도 아직 고르지
-              않아도 됩니다.
-            </li>
-            <li>
-              <b>업무인가 일상인가</b> — 위쪽 <b>업무 / 일상</b> 토글로
-              매트릭스를 두 벌 나눠 씁니다. 다 꺼내기에서 분면으로 끌어내리는
-              순간 그쪽 소속이 되고, 다시 위로 올리면 소속이 풀립니다.
-            </li>
-            <li>
-              <b>중요도부터</b> — “안 해도 되는가?”를 먼저 묻습니다. 목표에
-              기여하지 않으면 아래 두 칸입니다.
-            </li>
-            <li>
-              <b>긴급도 판단</b> — 마감이 있는지, 지금 반응해야 하는지 봅니다.
-            </li>
-            <li>
-              <b>분면에 배치</b> — 애매하면 덜 중요한 쪽에 두세요. 나중에 옮기면
-              됩니다.
-            </li>
-            <li>
-              <b>2분면에 시간 확보</b> — 일정에 미리 자리를 잡아둡니다. 이게
-              빠지면 매트릭스는 그냥 목록이 됩니다.
-            </li>
-            <li>
-              <b>주기적으로 다시 보기</b> — 하루 끝이나 주말에 분면을
-              재배치합니다. 긴급도는 시간이 지나면 바뀝니다.
-            </li>
+            <li data-i18n="guide.steps.dump"></li>
+            <li data-i18n="guide.steps.board"></li>
+            <li data-i18n="guide.steps.importance"></li>
+            <li data-i18n="guide.steps.urgency"></li>
+            <li data-i18n="guide.steps.place"></li>
+            <li data-i18n="guide.steps.reserve"></li>
+            <li data-i18n="guide.steps.review"></li>
           </ol>
 
-          <h2>기억할 것</h2>
+          <h2 data-i18n="guide.pointsTitle">Worth remembering</h2>
           <ul class="guide-points">
-            <li>
-              <b>긴급함은 중요함이 아닙니다.</b> 소리가 큰 일이 값진 일은
-              아닙니다.
-            </li>
-            <li>
-              <b>1분면이 많으면 2분면이 부족한 것입니다.</b> 미리 한 일이 급한
-              일을 줄입니다.
-            </li>
-            <li>
-              <b>한 칸에 너무 많이 넣지 마세요.</b> 1분면이 5개를 넘으면
-              우선순위가 없는 것과 같습니다. 넘치면 <b>개수가 붉게</b> 바뀌는데,
-              그때 할 일은 칸을 늘리는 게 아니라 <b>덜어내는 것</b>입니다 —
-              3·4분면으로 내리거나, 2분면으로 미루거나, 아예 지우세요.
-            </li>
-            <li>
-              <b>버리는 것이 목적입니다.</b> 네 칸에 나누는 이유는 3·4분면을
-              덜어내기 위해서입니다.
-            </li>
+            <li data-i18n="guide.points.notTheSame"></li>
+            <li data-i18n="guide.points.quadOne"></li>
+            <li data-i18n="guide.points.tooMany"></li>
+            <li data-i18n="guide.points.dropping"></li>
           </ul>
 
-          <h2>이 앱에서는</h2>
+          <h2 data-i18n="guide.appTitle">In this app</h2>
           <ul class="guide-points app">
-            <li>
-              <b>다 꺼내기</b>에 먼저 쏟아내고 나중에 분류하세요. 적을 때마다
-              "이건 몇 분면이지"를 묻지 않아도 되니 훨씬 빨리 비워집니다. 다
-              적은 뒤에 하나씩 분면으로 끌어내리면 그때가 2·3번 단계입니다.
-            </li>
-            <li>
-              <b>네 칸은 오래 쌓아두는 곳이 아닙니다.</b> 지금 판단해야 할 일만
-              올려두고, 나머지는 <b>다 꺼내기</b>에 두거나 완료·삭제로
-              내보내세요. 한 칸에 수십 개가 남아 있다면 그건 우선순위를 정한 게
-              아니라 목록을 옮겨 적은 것입니다.
-              <b>붉은 표시는 1분면에만 있으니</b> 나머지 세 칸은 스스로 덜어내야
-              합니다. 그리고 <b>앱이 막지는 않습니다</b> — 적는 것을 막으면 그
-              일이 다시 머릿속으로 들어가니까요. 판단은 사람이 합니다.
-            </li>
-            <li>
-              <b>업무 / 일상 토글</b>(맨 위)은 매트릭스만이 아니라 화면 전체를
-              가릅니다. 분면·개수·히스토리·휴지통·내보내기가 모두 고른 쪽만
-              보여주고, <b>다 꺼내기만 양쪽이 함께</b> 씁니다. 퇴근한 뒤 회사
-              일이 눈에 밟히지 않게 하는 용도입니다.
-            </li>
-            <li>
-              <b>드래그</b>로 분면을 옮길 수 있습니다. 상황이 바뀌면 칸도
-              바뀝니다. 다 꺼내기로 끌어올렸다가 반대쪽에서 내려받으면
-              <b>업무 ↔ 일상</b>으로도 옮겨집니다.
-            </li>
-            <li>
-              <b>마감일</b>을 지정하면 남은 기간에 따라 색이 바뀌어 긴급도가
-              눈에 보입니다.
-            </li>
-            <li>
-              <b>항목을 클릭</b>하면 아래에 메모가 열립니다. 왜 이 칸에 뒀는지,
-              다음에 무엇을 할지 적어두면 다시 볼 때 판단이 빨라집니다.
-            </li>
-            <li>
-              <b>체크</b>하면 히스토리에 날짜별로 쌓입니다. 적어둔 메모도 함께
-              남아, 그때 무슨 생각이었는지 다시 읽어볼 수
-              있습니다(히스토리·휴지통에서는 읽기 전용).
-            </li>
-            <li>
-              <b>삭제</b>는 휴지통으로 갑니다. 4분면을 과감히 비워도 되돌릴 수
-              있습니다.
-            </li>
-            <li>
-              <b>사분면 경계를 드래그</b>하면 칸 크기가 바뀝니다. 가운데
-              교차점을 잡으면 가로·세로를 한 번에, 더블클릭하면 반반으로
-              돌아갑니다.
-            </li>
-            <li>
-              <b>내보내기</b>(설정 ⚙ 또는 <b>Ctrl+E</b>)로 지금의 다
-              꺼내기·4분면을 PDF·HTML·Markdown으로 저장할 수 있습니다. 주간
-              회고나 공유용으로 그 시점의 판을 남겨두기 좋습니다. 지금 고른
-              쪽(업무 또는 일상)만 나가니, 둘 다 필요하면 토글을 바꿔 한 번 더
-              내보내면 됩니다.
-            </li>
+            <li data-i18n="guide.app.dumpFirst"></li>
+            <li data-i18n="guide.app.notStorage"></li>
+            <li data-i18n="guide.app.boards"></li>
+            <li data-i18n="guide.app.drag"></li>
+            <li data-i18n="guide.app.due"></li>
+            <li data-i18n="guide.app.note"></li>
+            <li data-i18n="guide.app.check"></li>
+            <li data-i18n="guide.app.delete"></li>
+            <li data-i18n="guide.app.resize"></li>
+            <li data-i18n="guide.app.export"></li>
           </ul>
 
-          <h2>기기 간 동기화</h2>
-          <p>
-            로그인하면 이 컴퓨터의 할 일이 다른 기기와 같아집니다. 인터넷이
-            끊겨도 앱은 평소대로 쓸 수 있고, 연결되면 그동안의 변경이 알아서
-            올라갑니다.
-          </p>
-          <p class="guide-note">
-            <b>로그아웃해도 이 컴퓨터의 할 일은 지워지지 않습니다.</b> 서버가
-            멈춰도 마찬가지입니다 — 할 일은 언제나 이 컴퓨터에도 있습니다.
-          </p>
-          <p>
-            로그인과 동기화 상태는 <b>타이틀바의 톱니바퀴(⚙)</b>에 있습니다.
-            읽는 곳과 설정하는 곳을 나눠 두었습니다.
-          </p>
+          <h2 data-i18n="guide.syncTitle">Sync across devices</h2>
+          <p data-i18n="guide.sync"></p>
+          <p class="guide-note" data-i18n="guide.syncNote"></p>
+          <p data-i18n="guide.syncGear"></p>
 
           <!-- The only place the running version is shown. It is not in the
                title bar because the bar has 28px to spare and this is not
@@ -796,9 +683,9 @@
                because the guide is the tab you open to find out about the app
                rather than to work.
 
-               The update line says what is actually known — "최신입니다" only
-               after a check came back saying so. Never claim it because a
-               check failed. -->
+               The update line says what is actually known -- "this is the
+               latest version" only after a check came back saying so. Never
+               claim it because a check failed. -->
           <footer class="guide-about">
             <span class="about-app">Nekan <b id="appVersion">—</b></span>
             <span class="about-update" id="updateState"></span>

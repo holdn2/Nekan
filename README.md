@@ -5,6 +5,8 @@ Claude 계열의 밝은 베이지 테마 + 다크 테마를 지원합니다.
 
 이름은 네 칸(4분면)에서 왔습니다. 앱 안팎에서 표기는 `Nekan` 하나로 통일합니다.
 
+> The English version of this document is at [README.en.md](README.en.md).
+
 ## 설치
 
 [Releases](https://github.com/holdn2/Nekan/releases)에서 최신 `Nekan-Setup-x.y.z.exe`를 받아 실행하면 됩니다.
@@ -62,7 +64,7 @@ Claude 계열의 밝은 베이지 테마 + 다크 테마를 지원합니다.
 **언어는 처음 켤 때 컴퓨터 설정을 따라 정해집니다** — 한국어 환경이면 한국어, 그 밖에는
 영어입니다. 한 번 고르면 그 선택이 저장되고, 나중에 컴퓨터 언어가 바뀌어도 덮어쓰지 않습니다.
 바꾸면 앱을 다시 켤 필요 없이 그 자리에서 반영되고, 내보낸 문서도 고른 언어로 나갑니다.
-(가이드 탭 본문은 아직 한국어입니다.)
+가이드 탭 본문도 함께 바뀝니다.
 
 ## 기기 간 동기화
 
@@ -209,7 +211,7 @@ npm run release   # 빌드 + GitHub Release에 업로드 (아래 GH_TOKEN 참고
 - 메모가 없는 항목은 바로 입력 상태로 열립니다. `Ctrl` + `Enter` 저장, `Esc` 취소.
 - 저장된 메모는 **더블클릭**하면 다시 수정할 수 있고, `삭제` 로 메모만 지웁니다(할 일은 그대로).
 - 메모가 있는 항목에는 **메모 아이콘**이 붙고, 아이콘에 마우스를 올리면 내용이 미리 보입니다.
-- 히스토리·휴지통에서는 메모가 항목 아래에 **읽기 전용**으로 함께 보입니다. 길면 두 줄까지만 보이고, **클릭하면 전체가 펼쳐집니다**(다시 클릭하면 접힘). 이 두 탭에서는 메모를 고치거나 지울 수 없고, 휴지통에서 복원하면 메모도 그대로 돌아옵니다.
+- 히스토리·휴지통에서는 메모가 항목 아래에 **읽기 전용**으로 함께 보입니다. 길면 세 줄까지만 보이고, **클릭하면 전체가 펼쳐집니다**(다시 클릭하면 접힘). 이 두 탭에서는 메모를 고치거나 지울 수 없고, 휴지통에서 복원하면 메모도 그대로 돌아옵니다.
 - 다시 클릭하거나 `✕`, 다른 탭으로 이동, 바 모드 전환 시 패널이 닫히며 늘어났던 높이를 되돌려 줍니다.
 - 최대 2000자까지 저장되며, 내용은 할 일과 함께 `data.json`에 남습니다.
 
@@ -254,7 +256,7 @@ npm run release   # 빌드 + GitHub Release에 업로드 (아래 GH_TOKEN 참고
 - 아이젠하워 매트릭스 프레임워크 설명 (중요도·긴급도 두 축, 네 분면의 의미와 예시)
 - 쓰는 순서, 기억할 원칙, 이 앱의 기능과 연결되는 팁까지 정리된 읽기 전용 문서
 - **맨 아래에 실행 중인 버전과 업데이트 상태**, 릴리스 노트 링크가 있습니다 (링크는 기본 브라우저로 열립니다)
-- 내용은 `src/renderer/index.html` 의 `#guideView` 에 정적 마크업으로 들어 있습니다
+- 본문은 `src/shared/i18n/{ko,en}.json` 의 `guide.*` 에 있고, `src/renderer/index.html` 의 `#guideView` 는 그 문단들이 들어갈 자리입니다
 
 ### 단축키
 
@@ -302,6 +304,7 @@ build/icon.ico         # exe / 작업표시줄 아이콘
 tools/make-icon.ps1    # 아이콘 생성 스크립트
 tools/seed-dev-data.js # 대량 더미 데이터 생성 (성능 확인용)
 tools/check-release.js # 릴리스 draft 검사·복구 (release 스크립트가 부름)
+tools/find-untranslated.js # 소스에 남은 한글 줄 수를 셈
 src/
   main.js              # 앱 생명주기와 조립
   preload.js           # contextBridge 기반 IPC 브리지
@@ -311,20 +314,29 @@ src/
     window.js          # 창 생성, 확장/바 모드, 메모 패널 높이 회계
     export-service.js  # PDF·HTML·MD 쓰기
     updater.js         # GitHub Releases 확인 · 백그라운드 다운로드
+    api-client.js      # Supabase와 말하는 유일한 곳
+    token-store.js     # 세션을 암호화해 auth.json에 보관
+    sync.js            # 당기고 밀고 다시 시도하는 루프
+    oauth.js           # Google 로그인의 브라우저 쪽 (PKCE + loopback)
+    i18n.js            # 메인 프로세스의 문자열
     ipc.js             # ipcMain 핸들러 전부
   shared/
     core.js            # 날짜·정규화·레이아웃 비율·업무/일상 규칙 (메인·렌더러·테스트 공용)
     store-io.js        # data.json 읽기/쓰기 (temp write + rename)
     export.js          # 내보내기 문서 생성 (Markdown / 인쇄용 HTML → PDF)
+    sync.js            # 동기화 판정 (LWW·행 변환·커서·시계 오차)
+    auth.js            # 세션 모양과 만료 판정
+    i18n/              # ko.json · en.json · GLOSSARY.md · locales.js
   renderer/            # ES 모듈 (번들러 없음)
     index.html
     app.js             # 진입점: 렌더 디스패처, 단축키, 초기화
     store.js           # 할 일 배열과 모든 변경 (DOM을 모름)
     render-bus.js      # "다시 그려라" 신호
     core-bridge.js     # shared/core.js를 named export로
+    i18n.js            # 렌더러의 문자열
     dom.js             # 공통 DOM 헬퍼
     components/        # 아이콘, 마감일 칩, 메모 표시, 토스트
-    views/             # 4분면 · 다 꺼내기 · 히스토리/휴지통 · 메모 패널
+    views/             # 4분면 · 다 꺼내기 · 히스토리/휴지통 · 메모 패널 · 계정 · 설정 · 첫 실행
     window/            # 타이틀바·탭 · 분면 경계 드래그 · 드래그앤드롭 · 내보내기
     styles/            # 영역별 15개 (라이트/다크 팔레트는 base.css, 공용 토글은 switch.css)
 test/                  # node --test 단위 테스트

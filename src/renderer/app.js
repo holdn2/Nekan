@@ -23,7 +23,7 @@ import { subscribe } from "./render-bus.js";
 import { applyStaticStrings, currentLanguage, t } from "./i18n.js";
 import { $ } from "./dom.js";
 import { toast } from "./components/toast.js";
-import { renderMatrix, wireAddForms } from "./views/matrix.js";
+import { relabelAddForms, renderMatrix, wireAddForms } from "./views/matrix.js";
 import {
   applyInboxOpen,
   focusInbox,
@@ -76,6 +76,10 @@ function render() {
   // everything relabelChrome() rewrites was last set by a push that will not
   // come again just because the language changed.
   relabelChrome();
+  // Same reason, one tab further in: the add forms' due chips are built once and
+  // never rebuilt, so they would keep the old language until the matrix tab
+  // happened to redraw.
+  relabelAddForms();
   // Cheap, and outside the bar-mode return below: the account block counts the
   // tasks a sign-in would carry up, and that number moves with every change.
   renderAccount();
