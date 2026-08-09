@@ -51,13 +51,13 @@ export const currentLanguage = () => i18next.language;
  * translating a sentence fragment. The whole sentence stays one string and the
  * markup travels with it.
  *
- * Two tags, and only two. Anything else in a catalogue value stays text, which
- * is the point: this parses rather than assigns to innerHTML, so a string can
- * never introduce an element or an attribute that is not on this list.
+ * Three tags, and only three. Anything else in a catalogue value stays text,
+ * which is the point: this parses rather than assigns to innerHTML, so a string
+ * can never introduce an element or an attribute that is not on this list.
  */
-const INLINE = /<(b|code)>([\s\S]*?)<\/\1>/g;
+const INLINE = /<(b|em|code)>([\s\S]*?)<\/\1>/g;
 
-/** A translated string as DOM nodes, with its <b> / <code> spans made real. */
+/** A translated string as DOM nodes, with its <b> / <em> / <code> made real. */
 export function tNodes(key, params) {
   const text = t(key, params);
   const out = [];

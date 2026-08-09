@@ -114,8 +114,26 @@ const rowsKey = (items) =>
 /** The last rowsKey drawn into each quadrant. */
 const drawn = new Map();
 
-/** The four add-form chips, kept so renderMatrix can relabel them. */
+/** The four add-form chips, kept so their labels can be rewritten. */
 const addChips = [];
+
+/**
+ * Repaint the add forms' due chips.
+ *
+ * They are built once by wireAddForms() and live for the whole run, so unlike a
+ * row -- which is thrown away and rebuilt -- nothing gives them a new language
+ * on its own. Re-applying the date they already hold is what does it, because
+ * dueChip.apply() writes its fixed labels as well as its face.
+ *
+ * Called from the render dispatcher rather than from renderMatrix() below: the
+ * matrix only redraws on its own tab, and a language switched while the guide
+ * was open would leave four Korean tooltips in the document until somebody came
+ * back. Nobody could see them there, which is exactly what makes it the kind of
+ * thing to fix rather than to remember.
+ */
+export function relabelAddForms() {
+  addChips.forEach((chip) => chip.apply(chip.input.value));
+}
 
 /** Redraw all four quadrants and the count in each header. */
 export function renderMatrix() {
@@ -138,10 +156,6 @@ export function renderMatrix() {
     count.classList.toggle("crowded", crowded);
     count.title = crowded ? t("matrix.crowded") : "";
   });
-  // The rows above are thrown away and rebuilt, so they pick up a new language
-  // on their own. These four are built once at startup and live for the run —
-  // re-applying the date they already hold is what repaints their labels.
-  addChips.forEach((chip) => chip.apply(chip.input.value));
 }
 
 /**

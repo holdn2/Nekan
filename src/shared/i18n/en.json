@@ -50,6 +50,78 @@
       "action": "Delete it"
     }
   },
+  "guide": {
+    "title": "What is the Eisenhower matrix?",
+    "lead": "A way of deciding what to work on: split every task along two axes, <b>importance</b> and <b>urgency</b>, into four boxes, and handle each box differently. The longer the list gets, the clearer the point of it becomes — it settles <em>“what not to do”</em> before <em>“what to do first”</em>.",
+    "quote": "“I have two kinds of problems, the urgent and the important. The urgent are not important, and the important are never urgent.”",
+    "quoteCite": "— a line Dwight D. Eisenhower liked to quote",
+    "origin": "It takes its name from an anecdote about Eisenhower, the 34th President of the United States and Supreme Commander of the Allied forces in the Second World War, and became widely known when Stephen Covey wrote about it in <em>The 7 Habits of Highly Effective People</em>.",
+    "axesTitle": "The two axes",
+    "importanceTitle": "Importance",
+    "importance": "Does it move <b>your goals and results</b> forward? Would skipping it cost you something in the long run? The measure is <b>yours</b>.",
+    "urgencyTitle": "Urgency",
+    "urgency": "Does it need <b>a response right now</b>? Is a deadline close? The measure usually sits <b>outside</b> you — a deadline, somebody else's request.",
+    "axesNote": "The two get confused constantly, and they are completely different axes. A notification going off is urgent and rarely important, while the things that matter most — health, learning, the people around you — hardly ever become urgent on their own.",
+    "quadsTitle": "The four quadrants",
+    "q1": {
+      "tag": "Do · right now",
+      "body": "Deadlines about to land, incidents and outages, requests that need an answer today.",
+      "example": "e.g. tomorrow's presentation, a server outage, paperwork due today",
+      "tip": "A box that is always full means you are doing nothing but firefighting. The cause is usually the box below it, left too long."
+    },
+    "q2": {
+      "tag": "Plan · book the time",
+      "body": "Nobody will say a word if you skip these today, and they are the ones that produce results.",
+      "example": "e.g. study and exercise, design and refactoring, retrospectives, keeping in touch",
+      "tip": "<b>This is the box the whole matrix exists for.</b> Without time set aside in advance it slips forever, and you end up doing it in quadrant 1 once it has turned urgent."
+    },
+    "q3": {
+      "tag": "Delegate · hand off or cut down",
+      "body": "It looks urgent, but mostly this is <b>somebody else's priority</b> arriving on your desk.",
+      "example": "e.g. notifications demanding an instant reply, errands somebody else could run, meetings you do not need to attend",
+      "tip": "With nobody to hand it to, cutting it down is the answer. Batch it into one fixed slot, or turn the notifications off so it never arrives in the first place."
+    },
+    "q4": {
+      "tag": "Delete · get rid of it",
+      "body": "Things you do out of habit that leave nothing behind. All they do is weigh the list down.",
+      "example": "e.g. scrolling a feed with no purpose, checking something again for no reason",
+      "tip": "Deleting is a decision too. If it feels wasteful, move it to a “someday” list and get it off the matrix."
+    },
+    "stepsTitle": "How to use it",
+    "steps": {
+      "dump": "<b>Brain dump</b> — write down everything in your head first. The <b>Brain dump</b> list above the matrix is the place for this step. Sorting comes later; here, just write things as they occur to you. <b>Both the Work and Life matrices share this list</b>, so you do not have to decide which side a task belongs to yet.",
+      "board": "<b>Work or Life</b> — the <b>Work / Life</b> toggle at the top gives you two matrices instead of one. A task joins one of them the moment you drag it down from the brain dump into a quadrant, and leaves again when you drag it back up.",
+      "importance": "<b>Importance first</b> — ask “could I skip this?” before anything else. If it does not serve your goals, it belongs in the bottom two boxes.",
+      "urgency": "<b>Then urgency</b> — is there a deadline, does it need a response right now?",
+      "place": "<b>Put it in a quadrant</b> — when it could go either way, pick the less important one. You can move it later.",
+      "reserve": "<b>Book time for quadrant 2</b> — claim a slot in your calendar in advance. Leave this step out and the matrix is just a list.",
+      "review": "<b>Come back to it regularly</b> — rearrange the quadrants at the end of a day or a week. Urgency changes as time passes."
+    },
+    "pointsTitle": "Worth remembering",
+    "points": {
+      "notTheSame": "<b>Urgent is not important.</b> The loudest thing is not the valuable one.",
+      "quadOne": "<b>A crowded quadrant 1 means a neglected quadrant 2.</b> Work done early is work that never becomes urgent.",
+      "tooMany": "<b>Do not pile one box high.</b> More than five in quadrant 1 is the same as having no priorities at all. When it overflows <b>the count turns red</b>, and the answer is not a bigger box but <b>a shorter list</b> — move things down to 3 and 4, push them out to 2, or delete them outright.",
+      "dropping": "<b>Dropping things is the point.</b> The reason for splitting the list four ways is to clear out 3 and 4."
+    },
+    "appTitle": "In this app",
+    "app": {
+      "dumpFirst": "Pour everything into the <b>Brain dump</b> first and sort it afterwards. Your head empties far faster when you are not asking “which quadrant is this?” after every line. Once it is all written down, dragging them into quadrants one by one is steps 2 and 3.",
+      "notStorage": "<b>The four boxes are not storage.</b> Keep only what you have to decide about now; leave the rest in the <b>Brain dump</b>, or send it out by completing or deleting it. Dozens of rows in one box is not a set of priorities, it is the same list copied somewhere else. <b>Only quadrant 1 turns red</b>, so the other three are yours to thin out. And <b>the app will not stop you</b> — blocking what you write only puts it back in your head. Deciding is a person's job.",
+      "boards": "<b>The Work / Life toggle</b> at the top scopes the whole window, not just the matrix. The quadrants, the counts, the history, the trash and the export all show the side you picked, and <b>only the Brain dump is shared</b>. It is there so work stops being in front of you once the day is over.",
+      "drag": "<b>Drag</b> a task into another quadrant. When the situation changes, so does the box. Drag it up into the Brain dump and back down on the other board to move it <b>between Work and Life</b>.",
+      "due": "Set a <b>due date</b> and the chip changes colour as the day gets closer, so urgency is something you can see.",
+      "note": "<b>Click a task</b> and its note opens underneath. Writing down why it is in this box, and what comes next, makes the decision quicker the next time you look.",
+      "check": "<b>Check it off</b> and it stacks up in the history by date. The note goes with it, so you can read back what you were thinking at the time (read-only in the history and the trash).",
+      "delete": "<b>Delete</b> sends a task to the trash. Empty quadrant 4 as boldly as you like — it can all come back.",
+      "resize": "<b>Drag the lines between quadrants</b> to resize them. Grab the crossing point in the middle to move both at once, or double-click to go back to even halves.",
+      "export": "<b>Export</b> (settings ⚙ or <b>Ctrl+E</b>) saves the Brain dump and the four quadrants as they stand, to PDF, HTML or Markdown. It is a good way to keep the board as it was for a weekly review or to share it. Only the side you have selected goes out, so flip the toggle and export once more if you need both."
+    },
+    "syncTitle": "Sync across devices",
+    "sync": "Sign in and the tasks on this computer match your other devices. The app works as usual with no internet, and everything you changed in the meantime goes up on its own once you are connected again.",
+    "syncNote": "<b>Signing out does not delete the tasks on this computer.</b> Neither does the server going down — your tasks are always here as well.",
+    "syncGear": "Signing in and the sync status are behind <b>the gear (⚙) in the title bar</b>. Reading about it and setting it up are deliberately in different places."
+  },
   "matrix": {
     "addPlaceholder": "Add a task…",
     "crowded": "A quadrant this full is the same as having no priorities at all. Block out time in quadrant 2 first."
