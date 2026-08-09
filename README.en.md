@@ -289,7 +289,7 @@ powershell -ExecutionPolicy Bypass -File tools\make-icon.ps1
 
 ## Where the data lives
 
-```
+```text
 %APPDATA%\Nekan\data.json
 ```
 
@@ -307,7 +307,7 @@ copying `data.json` does not carry your account with it.
 
 ## Layout
 
-```
+```text
 build/icon.ico         # exe / taskbar icon
 tools/make-icon.ps1    # icon generator
 tools/seed-dev-data.js # bulk dummy data (for performance checks)

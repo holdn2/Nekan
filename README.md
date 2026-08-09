@@ -282,7 +282,7 @@ powershell -ExecutionPolicy Bypass -File tools\make-icon.ps1
 
 ## 데이터 저장 위치
 
-```
+```text
 %APPDATA%\Nekan\data.json
 ```
 
@@ -299,7 +299,7 @@ powershell -ExecutionPolicy Bypass -File tools\make-icon.ps1
 
 ## 구조
 
-```
+```text
 build/icon.ico         # exe / 작업표시줄 아이콘
 tools/make-icon.ps1    # 아이콘 생성 스크립트
 tools/seed-dev-data.js # 대량 더미 데이터 생성 (성능 확인용)
