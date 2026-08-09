@@ -13,6 +13,12 @@
  * Comments are skipped: this repo writes them in English, except in index.html
  * where they are Korean and are not shipped to anybody. The catalogues are
  * skipped too, for the obvious reason.
+ *
+ * Only whole-line `//` comments are stripped, not trailing ones -- a Korean
+ * comment after code counts as a hit. That is deliberate. Stripping every `//`
+ * would eat the one inside `https://` in a string, and a real lexical scanner
+ * is a lot of machinery for a progress meter. The failure direction is the safe
+ * one: it over-reports work left, never under-reports it.
  */
 
 const fs = require("fs");
@@ -66,7 +72,9 @@ for (const row of rows) {
   console.log(`${String(row.hits.length).padStart(4)}  ${row.file}`);
   if (list) {
     for (const hit of row.hits) {
-      console.log(`      ${String(hit.n).padStart(4)}: ${hit.text.slice(0, 100)}`);
+      console.log(
+        `      ${String(hit.n).padStart(4)}: ${hit.text.slice(0, 100)}`,
+      );
     }
   }
 }

@@ -90,10 +90,29 @@ function reasonFor(code, fallbackKey) {
   return t(fallbackKey, { code });
 }
 
-function say(text, isError = false) {
+/**
+ * The message on screen, as the call that produced it rather than as text.
+ *
+ * Same reason `lastStatus` below is kept: the language can change while this
+ * message is up, and both the sign-in result and the language picker live in
+ * this one panel -- so "sign-in failed" would sit there in the old language
+ * while everything around it moved. A thunk carries the interpolated bits (an
+ * email, an error code) along without this file having to store them.
+ */
+let lastMessage = null;
+
+/** `render` is a function returning the sentence, or null to clear the line. */
+function say(render, isError = false) {
   ready();
-  els.msg.textContent = text || "";
-  els.msg.classList.toggle("error", Boolean(text) && isError);
+  lastMessage = render ? { render, isError } : null;
+  paintMessage();
+}
+
+/** Ask the last message for its words again, in whatever language is on now. */
+function paintMessage() {
+  const text = lastMessage ? lastMessage.render() : "";
+  els.msg.textContent = text;
+  els.msg.classList.toggle("error", Boolean(text) && lastMessage?.isError);
 }
 
 /* ------------------------------------------------------------------ status */
@@ -171,6 +190,9 @@ export function renderAccount() {
   // in the old language until the next sync happened to arrive — measured, not
   // guessed. Anything this view caches has to be re-applied from the redraw.
   applySyncStatus(lastStatus);
+  // And the message line, for the same reason -- the language picker is in this
+  // very panel, so a sign-in result can be on screen when the language changes.
+  paintMessage();
 }
 
 /** Show the signed-in half or the signed-out half, and the local-tasks offer. */
@@ -228,7 +250,7 @@ const adoptMode = () =>
 async function finish(promise) {
   signingIn = true;
   els.google.disabled = true;
-  say(t("account.finishInBrowser"));
+  say(() => t("account.finishInBrowser"));
   try {
     // Rejects, rather than resolving with { ok: false }, when the channel is
     // not registered at all -- devLogin in a packaged build -- or when the
@@ -242,13 +264,13 @@ async function finish(promise) {
       applySession(result.session);
       say(
         result.session
-          ? t("account.signedIn", { email: result.session.email })
-          : "",
+          ? () => t("account.signedIn", { email: result.session.email })
+          : null,
       );
       return;
     }
     const code = (result && result.error) || "unknown";
-    say(reasonFor(code, "account.signInFailed"), true);
+    say(() => reasonFor(code, "account.signInFailed"), true);
   } finally {
     signingIn = false;
     els.google.disabled = false;
@@ -282,23 +304,19 @@ export function wireAccount() {
       // The session is main's to end, so a failure here means it did not. Said
       // out loud rather than swallowed: the screen would otherwise show a
       // logout that never happened.
-      say(
-        t("account.signOutFailed", {
-          code: String((err && err.message) || err),
-        }),
-        true,
-      );
+      const code = String((err && err.message) || err);
+      say(() => t("account.signOutFailed", { code }), true);
       return;
     }
     applySession(null);
     applySyncStatus({ state: "off", unsent: 0 });
-    say(t("account.signedOut"));
+    say(() => t("account.signedOut"));
   });
 
   els.leave.addEventListener("click", () => {
     els.leave.classList.add("hidden");
     els.leaveConfirm.classList.remove("hidden");
-    say("");
+    say(null);
   });
 
   els.leaveCancel.addEventListener("click", () => {
@@ -311,7 +329,7 @@ export function wireAccount() {
     deleting = true;
     els.leaveGo.disabled = true;
     els.leaveCancel.disabled = true;
-    say(t("account.deleting"));
+    say(() => t("account.deleting"));
     try {
       // Unlike logout, this one is the server's to do, so a failure means the
       // account is still there. Saying nothing would leave a panel that looks
@@ -322,7 +340,7 @@ export function wireAccount() {
       }));
       if (!result || !result.ok) {
         const code = (result && result.error) || "unknown";
-        say(reasonFor(code, "account.deleteFailed"), true);
+        say(() => reasonFor(code, "account.deleteFailed"), true);
         els.leaveGo.disabled = false;
         els.leaveCancel.disabled = false;
         return;
@@ -333,12 +351,12 @@ export function wireAccount() {
       // refuses to end. Showing "삭제했습니다" then would be telling the new
       // account its own account is gone.
       if (!result.signedOut) {
-        say("");
+        say(null);
         return;
       }
       applySession(null);
       applySyncStatus({ state: "off", unsent: 0 });
-      say(t("account.deleted"));
+      say(() => t("account.deleted"));
     } finally {
       deleting = false;
     }

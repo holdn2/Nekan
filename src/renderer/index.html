@@ -920,8 +920,14 @@
            right for exactly two options — reusing it here would break on the
            day a third language lands, which is the whole point of this row. -->
       <div class="settings-row">
-        <span class="settings-label" data-i18n="settings.language"
-          >Language</span
+        <!-- A real <label>, not the <span> the other rows use: those sit beside
+             a group that carries its own aria-label, but a bare <select> next to
+             a <span> has no accessible name at all. -->
+        <label
+          class="settings-label"
+          for="languageSelect"
+          data-i18n="settings.language"
+          >Language</label
         >
         <select class="settings-select" id="languageSelect"></select>
       </div>
