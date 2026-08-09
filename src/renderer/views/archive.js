@@ -47,12 +47,19 @@ let trashQuery = "";
 let historyShown = PAGE;
 let trashShown = PAGE;
 
-/** Tooltip on the coloured dot — where the task was when it left the matrix. */
+/**
+ * Tooltip on the coloured dot — where the task was when it left the matrix.
+ *
+ * All five go through the catalogue even though three of them read the same in
+ * both languages today. Two being catalogued and three being literals is an
+ * arbitrary line, and it is the literals that would be missed the day a
+ * language wants its own word for them.
+ */
 const QUAD_LABEL = {
   inbox: () => t("archive.quadInbox"),
-  q1: () => "Urgent·Important",
-  q2: () => "Important",
-  q3: () => "Urgent",
+  q1: () => t("archive.quadQ1"),
+  q2: () => t("archive.quadQ2"),
+  q3: () => t("archive.quadQ3"),
   q4: () => t("archive.quadOther"),
 };
 

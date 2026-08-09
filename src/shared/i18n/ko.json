@@ -272,6 +272,9 @@
   },
   "archive": {
     "quadInbox": "미분류",
+    "quadQ1": "Urgent·Important",
+    "quadQ2": "Important",
+    "quadQ3": "Urgent",
     "quadOther": "기타",
     "more": "더 보기 ({{count}}개 남음)",
     "expand": "전체 보기",

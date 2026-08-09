@@ -364,3 +364,43 @@ OAuth를 하는 안은 **Google이 막는다.** 커스텀 프로토콜(`nekan://
 
 **대가** `main/window.js`가 `settings.startupChoice`를 알게 됐다 — 창 모듈이 첫 실행 흐름을
 한 가지 아는 셈이다. 그 대신 렌더러에는 조건이 하나도 남지 않았다.
+
+## 2026-08-09 — 언어는 창보다 먼저 정하고 커맨드라인으로 넘긴다
+
+**결정** 메인이 `app.whenReady()` 안에서, **창을 만들기 전에** `settings.language`(없으면
+`app.getLocale()`)로 언어를 정하고 `webPreferences.additionalArguments`의 `--nekan-lang`으로
+넘긴다. `preload.js`가 `process.argv`에서 동기로 읽어 `window.api.language`로 노출하고,
+렌더러의 i18next는 그 값으로 초기화한다. 지원 언어 목록(`--nekan-langs`)도 같은 길로 간다.
+
+**왜** `state:load`는 IPC 왕복이라 **첫 페인트보다 늦다.** 저장된 테마가 늦게 와서 스위치
+알약이 켤 때마다 미끄러져 들어오던 것과 같은 자리인데, 테마는 `<body class="booting">`으로
+감출 수 있었지만 **언어는 감출 수가 없다** — 한 프레임 한국어가 보였다가 영어로 바뀐다.
+
+**대안** preload에서 `require("./shared/i18n/locales")`로 목록을 읽으려 했다가 **preload가
+통째로 죽었다.** 샌드박스된 preload의 `require`는 Electron 내장 모듈만 준다. 증상이
+`window.api === undefined`라 잘못된 import가 아니라 앱이 망가진 것처럼 보인다. 그래서 목록도
+argv로 넘긴다.
+
+**대가** 언어를 바꾸려면 메인·렌더러 양쪽 i18next를 각각 갱신해야 한다(`settings:language`
+IPC가 둘 다 한다). 그리고 **`location.reload()`는 저장된 언어가 아니라 argv의 시작 언어로
+돌아온다** — 사용자 경로는 아니지만 디버깅할 때 헷갈린다.
+
+## 2026-08-09 — i18next와 카탈로그를 `node_modules`에서 직접 import한다
+
+**결정** 렌더러가 `../../node_modules/i18next/dist/esm/i18next.js`를 직접 import하고, JSON
+카탈로그도 `with { type: "json" }`으로 직접 import한다. `src/renderer/vendor/`에 사본을 두지
+않고, `package.json`의 `build.files`에 `node_modules/**/*`를 넣지도 않는다.
+
+**왜** 이 저장소에는 **번들러가 없다.** 그래서 "어디서 읽을지"가 첫 결정이었고, **패키징된
+asar 안에서 확인하기 전까지는 정해지지 않은 것으로** 봤다 — `npm start`는 `node_modules`가 그
+자리에 있어서 무조건 통과하므로 증거가 되지 않는다. asar에서 셋 다 확인했다: import 경로,
+CSP(`script-src 'self'`) 통과, asar 헤더에 `node_modules/i18next/dist/esm/` 존재.
+
+**대안** vendor 사본은 서드파티 파일을 저장소에 두고 버전을 손으로 올려야 한다 — 1번이
+되므로 필요 없다. `build.files`에 `node_modules/**/*`를 넣는 것은 **안 된다**:
+electron-builder가 production dependency만 골라 넣으며 하던 정리(README·테스트 제외)를
+직접 해야 한다.
+
+**대가** electron-builder의 의존성 수집에 기대고 있다. 그 동작이 바뀌면 렌더러가 조용히
+깨지고, **`npm start`에서는 재현되지 않는다.** i18next를 올릴 때는 `npm run dist`로 만든
+설치본에서 한 번 열어볼 것.

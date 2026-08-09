@@ -208,10 +208,10 @@
     "filterMarkdown": "Markdown",
     "inboxAction": "Written down before sorting",
     "sectionEmpty": "Empty",
-    "meta_one": "Exported: {{stamp}} · {{count}} item",
-    "meta_other": "Exported: {{stamp}} · {{count}} items",
-    "metaShort_one": "{{stamp}} · {{count}} item",
-    "metaShort_other": "{{stamp}} · {{count}} items",
+    "meta_one": "Exported: {{stamp}} · {{count}} task",
+    "meta_other": "Exported: {{stamp}} · {{count}} tasks",
+    "metaShort_one": "{{stamp}} · {{count}} task",
+    "metaShort_other": "{{stamp}} · {{count}} tasks",
     "due": "due {{date}} ({{hint}})",
     "saved": "Saved · {{name}}",
     "openFolder": "Open the folder",
@@ -262,8 +262,8 @@
     "deleting": "Deleting your account…",
     "deleteFailed": "Could not delete the account. ({{code}})",
     "deleted": "Account deleted. The tasks on this computer are untouched.",
-    "overwritten_one": "{{count}} item was overwritten by changes from another device.",
-    "overwritten_other": "{{count}} items were overwritten by changes from another device."
+    "overwritten_one": "{{count}} task was overwritten by changes from another device.",
+    "overwritten_other": "{{count}} tasks were overwritten by changes from another device."
   },
   "welcome": {
     "lede": "Where should your tasks live?",
@@ -279,6 +279,9 @@
   },
   "archive": {
     "quadInbox": "Unsorted",
+    "quadQ1": "Urgent·Important",
+    "quadQ2": "Important",
+    "quadQ3": "Urgent",
     "quadOther": "Neither",
     "more": "Show more ({{count}} left)",
     "expand": "Show all",
