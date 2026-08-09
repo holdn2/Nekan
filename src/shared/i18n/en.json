@@ -13,13 +13,13 @@
   "titlebar": {
     "boards": "Choose a matrix",
     "countInbox": "Tasks not sorted yet",
-    "countQ1": "Urgent & Important, remaining",
-    "countQ2": "Important & Not Urgent, remaining",
-    "countQ3": "Urgent & Not Important, remaining",
-    "countQ4": "Not Urgent & Not Important, remaining",
+    "countQ1": "Tasks remaining in Urgent & Important",
+    "countQ2": "Tasks remaining in Important & Not Urgent",
+    "countQ3": "Tasks remaining in Urgent & Not Important",
+    "countQ4": "Tasks remaining in Not Urgent & Not Important",
     "updateReady": "Update ready",
     "pin": "Always on top",
-    "unpin": "Stop staying on top",
+    "unpin": "Turn off always on top",
     "collapse": "Shrink to the bar",
     "expand": "Expand",
     "minimize": "Minimise to the taskbar",
@@ -33,10 +33,22 @@
     "hint": "Click a task to open its note, double-click to edit the text"
   },
   "quad": {
-    "q1": { "title": "Urgent & Important", "action": "Do it now" },
-    "q2": { "title": "Important & Not Urgent", "action": "Plan it" },
-    "q3": { "title": "Urgent & Not Important", "action": "Delegate it" },
-    "q4": { "title": "Not Urgent & Not Important", "action": "Drop it" }
+    "q1": {
+      "title": "Urgent & Important",
+      "action": "Do it now"
+    },
+    "q2": {
+      "title": "Important & Not Urgent",
+      "action": "Plan it"
+    },
+    "q3": {
+      "title": "Urgent & Not Important",
+      "action": "Delegate it"
+    },
+    "q4": {
+      "title": "Not Urgent & Not Important",
+      "action": "Delete it"
+    }
   },
   "matrix": {
     "addPlaceholder": "Add a task…",
@@ -124,8 +136,10 @@
     "filterMarkdown": "Markdown",
     "inboxAction": "Written down before sorting",
     "sectionEmpty": "Empty",
-    "meta": "Exported: {{stamp}} · {{count}} item(s)",
-    "metaShort": "{{stamp}} · {{count}} item(s)",
+    "meta_one": "Exported: {{stamp}} · {{count}} item",
+    "meta_other": "Exported: {{stamp}} · {{count}} items",
+    "metaShort_one": "{{stamp}} · {{count}} item",
+    "metaShort_other": "{{stamp}} · {{count}} items",
     "due": "due {{date}} ({{hint}})",
     "saved": "Saved · {{name}}",
     "openFolder": "Open the folder",
@@ -139,7 +153,7 @@
       "timeout": "That timed out. Please try again.",
       "cancelled": "Sign-in was cancelled.",
       "providerDisabled": "Google sign-in is not available yet.",
-      "validationFailed": "Sign-in is not finished being set up.",
+      "validationFailed": "Sign-in has not been fully set up yet.",
       "expired": "That sign-in expired. Please try again.",
       "noBrowser": "Could not open a browser.",
       "noLoopback": "Could not open the sign-in window. Check your firewall settings.",
@@ -157,7 +171,8 @@
     "gearOffline": "Settings — could not reach the server. Your changes are saved on this computer.",
     "gearState": "Settings — {{state}}",
     "google": "Sign in with Google",
-    "adopt": "Also merge the <b>{{count}}</b> task(s) on this computer into the account",
+    "adopt_one": "Also merge the <b>{{count}}</b> task on this computer into the account",
+    "adopt_other": "Also merge the <b>{{count}}</b> tasks on this computer into the account",
     "adoptHint": "Turn it off and only what is in the account remains. Nothing here is deleted — it is moved to <code>data.before-login.json</code>.",
     "devEmail": "Development email",
     "devPassword": "Password",
@@ -175,7 +190,8 @@
     "deleting": "Deleting your account…",
     "deleteFailed": "Could not delete the account. ({{code}})",
     "deleted": "Account deleted. The tasks on this computer are untouched.",
-    "overwritten": "{{count}} item(s) were overwritten by changes from another device."
+    "overwritten_one": "{{count}} item was overwritten by changes from another device.",
+    "overwritten_other": "{{count}} items were overwritten by changes from another device."
   },
   "welcome": {
     "lede": "Where should your tasks live?",
@@ -183,7 +199,8 @@
     "syncSub": "The same list on every device",
     "localTitle": "Keep them on this computer",
     "localSub": "Start right now, no account",
-    "adopt": "Also merge the <b>{{count}}</b> task(s) on this computer into the account",
+    "adopt_one": "Also merge the <b>{{count}}</b> task on this computer into the account",
+    "adopt_other": "Also merge the <b>{{count}}</b> tasks on this computer into the account",
     "foot": "You can change this later in Settings.",
     "saveFailed": "Could not save that choice. Please try again.",
     "signOutFailed": "Could not sign out. Please try again. ({{code}})"
@@ -200,8 +217,10 @@
     "delete": "Delete",
     "untrash": "Restore",
     "purge": "Delete forever",
-    "confirmTrashAll": "Move {{count}} completed task(s) to the trash?",
-    "confirmPurgeAll": "Delete {{count}} task(s) in the trash forever? This cannot be undone."
+    "confirmTrashAll_one": "Move {{count}} completed task to the trash?",
+    "confirmTrashAll_other": "Move {{count}} completed tasks to the trash?",
+    "confirmPurgeAll_one": "Delete {{count}} task in the trash forever? This cannot be undone.",
+    "confirmPurgeAll_other": "Delete {{count}} tasks in the trash forever? This cannot be undone."
   },
   "oauth": {
     "done": "Got it. You can close this tab and go back to the app.",

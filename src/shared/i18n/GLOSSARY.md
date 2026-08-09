@@ -3,30 +3,30 @@
 같은 한국어가 파일마다 다른 영어로 나가는 것을 막기 위한 표다. **새 문자열을 넣기 전에
 여기부터 본다.** 여기 없는 용어를 새로 정하면 이 표에 한 줄 추가한다.
 
-| 한국어 | English | 메모 |
-| --- | --- | --- |
-| 할 일 | task | `to-do`로 쓰지 않는다 |
-| 다 꺼내기 | Brain dump | 인박스가 아니다. 코드의 `INBOX`는 내부 이름일 뿐이고, 화면에 보이는 이름은 "일단 전부 쏟아낸다"는 뜻을 살린다 |
-| 분면 | quadrant | |
-| 업무 / 일상 | Work / Life | 타이틀바 토글 |
-| 히스토리 | History | 완료된 할 일 |
-| 휴지통 | Trash | |
-| 메모 | note | `memo`는 코드에서만 |
-| 마감일 | due date | 칩 안에서는 `Due` |
-| 바 모드 / 확장 모드 | bar mode / expanded mode | |
-| 항상 위에 고정 | Always on top | |
-| 기기 간 동기화 | Sync across devices | 짧게 쓸 자리에서는 `Sync` |
-| 내보내기 | Export | |
-| 설정 | Settings | |
-| 회원탈퇴 | Delete account | `Withdraw`·`Unsubscribe`가 아니다 |
-| 로그인 / 로그아웃 | Sign in / Sign out | `Log in`이 아니다 — Google 버튼 문구와 맞춘다 |
-| 매트릭스 / 가이드 | Matrix / Guide | 탭 이름 |
-| 공유 | Shared | 다 꺼내기가 두 매트릭스의 공유 영역이라는 표시 |
-| Do 진행하기 … Delete 제거하기 | Do it now / Plan it / Delegate it / Drop it | 한국어는 영어 단어 뒤에 뜻을 덧붙이지만 영어에서 그러면 `Do Do`가 된다. 네 개의 D를 살린 명령형으로 쓴다 |
-| 오늘 / 내일 / N일 남음 / N일 지남 | Today / Tomorrow / N days left / N days overdue | 마감 칩. 요일은 카탈로그가 아니라 `Intl`이 만든다 |
-| 완료 | Complete | 히스토리로 보내는 동작. `Done`이 아니다 |
-| 되돌리기 / 복원 | Restore | 히스토리에서 되살리기와 휴지통에서 되살리기가 영어로는 같은 낱말이다 |
-| 영구 삭제 | Delete forever | 묘비를 남기는 그 동작 |
+| 한국어                            | English                                         | 메모                                                                                                                                                |
+| --------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 할 일                             | task                                            | `to-do`로 쓰지 않는다                                                                                                                               |
+| 다 꺼내기                         | Brain dump                                      | 인박스가 아니다. 코드의 `INBOX`는 내부 이름일 뿐이고, 화면에 보이는 이름은 "일단 전부 쏟아낸다"는 뜻을 살린다                                       |
+| 분면                              | quadrant                                        |                                                                                                                                                     |
+| 업무 / 일상                       | Work / Life                                     | 타이틀바 토글                                                                                                                                       |
+| 히스토리                          | History                                         | 완료된 할 일                                                                                                                                        |
+| 휴지통                            | Trash                                           |                                                                                                                                                     |
+| 메모                              | note                                            | `memo`는 코드에서만                                                                                                                                 |
+| 마감일                            | due date                                        | 칩 안에서는 `Due`                                                                                                                                   |
+| 바 모드 / 확장 모드               | bar mode / expanded mode                        |                                                                                                                                                     |
+| 항상 위에 고정                    | Always on top                                   |                                                                                                                                                     |
+| 기기 간 동기화                    | Sync across devices                             | 짧게 쓸 자리에서는 `Sync`                                                                                                                           |
+| 내보내기                          | Export                                          |                                                                                                                                                     |
+| 설정                              | Settings                                        |                                                                                                                                                     |
+| 회원탈퇴                          | Delete account                                  | `Withdraw`·`Unsubscribe`가 아니다                                                                                                                   |
+| 로그인 / 로그아웃                 | Sign in / Sign out                              | `Log in`이 아니다 — Google 버튼 문구와 맞춘다                                                                                                       |
+| 매트릭스 / 가이드                 | Matrix / Guide                                  | 탭 이름                                                                                                                                             |
+| 공유                              | Shared                                          | 다 꺼내기가 두 매트릭스의 공유 영역이라는 표시                                                                                                      |
+| Do 진행하기 … Delete 제거하기     | Do it now / Plan it / Delegate it / Delete it   | 한국어는 영어 단어 뒤에 뜻을 덧붙이지만 영어에서 그러면 `Do Do`가 된다. **네 개의 D를 그대로 살린다** — 하나만 다른 낱말로 바꾸면 기억장치가 깨진다 |
+| 오늘 / 내일 / N일 남음 / N일 지남 | Today / Tomorrow / N days left / N days overdue | 마감 칩. 요일은 카탈로그가 아니라 `Intl`이 만든다                                                                                                   |
+| 완료                              | Complete                                        | 히스토리로 보내는 동작. `Done`이 아니다                                                                                                             |
+| 되돌리기 / 복원                   | Restore                                         | 히스토리에서 되살리기와 휴지통에서 되살리기가 영어로는 같은 낱말이다                                                                                |
+| 영구 삭제                         | Delete forever                                  | 묘비를 남기는 그 동작                                                                                                                               |
 
 ## 문장 규칙
 

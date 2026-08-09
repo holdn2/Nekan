@@ -33,10 +33,22 @@
     "hint": "할 일을 클릭하면 메모, 더블클릭하면 내용을 수정할 수 있어요"
   },
   "quad": {
-    "q1": { "title": "Urgent & Important", "action": "Do 진행하기" },
-    "q2": { "title": "Important & Not Urgent", "action": "Plan 계획하기" },
-    "q3": { "title": "Urgent & Not Important", "action": "Delegate 위임하기" },
-    "q4": { "title": "Not Urgent & Not Important", "action": "Delete 제거하기" }
+    "q1": {
+      "title": "Urgent & Important",
+      "action": "Do 진행하기"
+    },
+    "q2": {
+      "title": "Important & Not Urgent",
+      "action": "Plan 계획하기"
+    },
+    "q3": {
+      "title": "Urgent & Not Important",
+      "action": "Delegate 위임하기"
+    },
+    "q4": {
+      "title": "Not Urgent & Not Important",
+      "action": "Delete 제거하기"
+    }
   },
   "matrix": {
     "addPlaceholder": "할 일 추가…",
@@ -122,8 +134,8 @@
     "filterMarkdown": "마크다운",
     "inboxAction": "분류하기 전에 적어둔 것",
     "sectionEmpty": "비어 있음",
-    "meta": "내보낸 시각: {{stamp}} · 항목 {{count}}개",
-    "metaShort": "{{stamp}} · 항목 {{count}}개",
+    "meta_other": "내보낸 시각: {{stamp}} · 항목 {{count}}개",
+    "metaShort_other": "{{stamp}} · 항목 {{count}}개",
     "due": "마감 {{date}} ({{hint}})",
     "saved": "저장했습니다 · {{name}}",
     "openFolder": "폴더 열기",
@@ -155,7 +167,7 @@
     "gearOffline": "설정 — 서버에 닿지 못했습니다. 변경은 이 컴퓨터에 저장되어 있습니다.",
     "gearState": "설정 — {{state}}",
     "google": "Google로 로그인",
-    "adopt": "이 컴퓨터에 있는 할 일 <b>{{count}}</b>개도 계정에 합치기",
+    "adopt_other": "이 컴퓨터에 있는 할 일 <b>{{count}}</b>개도 계정에 합치기",
     "adoptHint": "끄면 계정에 있는 것만 남습니다. 지금 있는 할 일은 지워지지 않고 <code>data.before-login.json</code>으로 옮겨 둡니다.",
     "devEmail": "개발용 이메일",
     "devPassword": "비밀번호",
@@ -173,7 +185,7 @@
     "deleting": "계정을 지우는 중…",
     "deleteFailed": "계정을 지우지 못했습니다. ({{code}})",
     "deleted": "계정을 삭제했습니다. 이 컴퓨터의 할 일은 그대로 있습니다.",
-    "overwritten": "다른 기기에서 바꾼 내용으로 {{count}}개를 덮어썼습니다."
+    "overwritten_other": "다른 기기에서 바꾼 내용으로 {{count}}개를 덮어썼습니다."
   },
   "welcome": {
     "lede": "할 일을 어디에 둘까요?",
@@ -181,7 +193,7 @@
     "syncSub": "여러 기기에서 같은 목록을 씁니다",
     "localTitle": "이 컴퓨터에서만 쓰기",
     "localSub": "계정 없이 바로 시작합니다",
-    "adopt": "이 컴퓨터에 있는 할 일 <b>{{count}}</b>개도 계정에 합치기",
+    "adopt_other": "이 컴퓨터에 있는 할 일 <b>{{count}}</b>개도 계정에 합치기",
     "foot": "나중에 설정에서 언제든 바꿀 수 있습니다.",
     "saveFailed": "설정을 저장하지 못했습니다. 다시 시도해 주세요.",
     "signOutFailed": "로그아웃하지 못했습니다. 다시 시도해 주세요. ({{code}})"
@@ -198,8 +210,8 @@
     "delete": "삭제",
     "untrash": "복원",
     "purge": "영구 삭제",
-    "confirmTrashAll": "완료한 항목 {{count}}개를 휴지통으로 옮길까요?",
-    "confirmPurgeAll": "휴지통의 {{count}}개 항목을 영구 삭제할까요? 되돌릴 수 없습니다."
+    "confirmTrashAll_other": "완료한 항목 {{count}}개를 휴지통으로 옮길까요?",
+    "confirmPurgeAll_other": "휴지통의 {{count}}개 항목을 영구 삭제할까요? 되돌릴 수 없습니다."
   },
   "oauth": {
     "done": "확인했습니다. 이 창을 닫고 앱으로 돌아가 주세요.",
