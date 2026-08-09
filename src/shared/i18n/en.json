@@ -108,19 +108,67 @@
     "app": {
       "dumpFirst": "Pour everything into the <b>Brain dump</b> first and sort it afterwards. Your head empties far faster when you are not asking “which quadrant is this?” after every line. Once it is all written down, dragging them into quadrants one by one is steps 2 and 3.",
       "notStorage": "<b>The four boxes are not storage.</b> Keep only what you have to decide about now; leave the rest in the <b>Brain dump</b>, or send it out by completing or deleting it. Dozens of rows in one box is not a set of priorities, it is the same list copied somewhere else. <b>Only quadrant 1 turns red</b>, so the other three are yours to thin out. And <b>the app will not stop you</b> — blocking what you write only puts it back in your head. Deciding is a person's job.",
-      "boards": "<b>The Work / Life toggle</b> at the top scopes the whole window, not just the matrix. The quadrants, the counts, the history, the trash and the export all show the side you picked, and <b>only the Brain dump is shared</b>. It is there so work stops being in front of you once the day is over.",
-      "drag": "<b>Drag</b> a task into another quadrant. When the situation changes, so does the box. Drag it up into the Brain dump and back down on the other board to move it <b>between Work and Life</b>.",
-      "due": "Set a <b>due date</b> and the chip changes colour as the day gets closer, so urgency is something you can see.",
-      "note": "<b>Click a task</b> and its note opens underneath. Writing down why it is in this box, and what comes next, makes the decision quicker the next time you look.",
-      "check": "<b>Check it off</b> and it stacks up in the history by date. The note goes with it, so you can read back what you were thinking at the time (read-only in the history and the trash).",
-      "delete": "<b>Delete</b> sends a task to the trash. Empty quadrant 4 as boldly as you like — it can all come back.",
-      "resize": "<b>Drag the lines between quadrants</b> to resize them. Grab the crossing point in the middle to move both at once, or double-click to go back to even halves.",
-      "export": "<b>Export</b> (settings ⚙ or <b>Ctrl+E</b>) saves the Brain dump and the four quadrants as they stand, to PDF, HTML or Markdown. It is a good way to keep the board as it was for a weekly review or to share it. Only the side you have selected goes out, so flip the toggle and export once more if you need both."
+      "boards": "<b>The Work / Life toggle</b> at the top scopes the whole window, not just the matrix. The quadrants, the counts, the history, the trash and the export all show the side you picked, and <b>only the Brain dump is shared</b>. It is there so work stops being in front of you once the day is over."
+    },
+    "tasksTitle": "Working with tasks",
+    "tasks": {
+      "add": "Type in the <b>box at the bottom of a quadrant</b> and press <code>Enter</code> to add a task there. The box clears itself so you can keep going, and <code>Ctrl</code> + <code>1</code>–<code>4</code> jumps straight to the box of the quadrant you want.",
+      "order": "The number in front of a task is <b>its place within that quadrant</b>. Drag to reorder and the numbers follow; drag it into another quadrant and it moves there. Circumstances change and so should the quadrant — drag a task up to the <b>Brain dump</b> and back down from the other matrix to move it between <b>Work and Life</b>.",
+      "edit": "<b>Double-click</b> a task to edit its text. <code>Enter</code> saves, <code>Esc</code> cancels.",
+      "done": "The <b>circle</b> on the left completes a task: it leaves the list and stacks up by date in the <b>History</b>. Its note goes with it, so you can read back what you were thinking at the time.",
+      "trash": "The <b>×</b> that appears when you hover over a task sends it to the <b>Trash</b>. Nothing is gone yet and it can be brought back, so empty out quadrant 4 without hesitating."
+    },
+    "dumpTitle": "The brain dump",
+    "dump": {
+      "toggle": "Click <b>Brain dump</b> in the header to open the list, click it again to fold it away. <code>Ctrl</code> + <code>0</code> opens it and puts the cursor in the box. Open or folded is remembered after you quit.",
+      "paste": "Paste <b>several lines at once</b> from a notepad or a chat and each line becomes its own task. Leading list markers like <code>-</code>, <code>*</code> or <code>1.</code> and blank lines are stripped for you (up to 100 lines at a time).",
+      "later": "Text is all you need here. <b>Due dates, notes and completing a task only come once it is down in a quadrant.</b> While anything is still unsorted a hollow count chip shows, even in bar mode, so you know something is waiting."
+    },
+    "dueTitle": "Due dates",
+    "due": {
+      "set": "The <b>calendar button</b> beside the input sets a date as you add the task; for a task that already exists, <b>click the date chip</b> on the right to open the calendar. The <code>×</code> next to the chip clears the date and nothing else.",
+      "colors": "The chip changes colour with the time left, so urgency is something you can see: <b>overdue</b> is red, <b>today</b> orange, <b>within three days</b> yellow, anything further out grey. Leave the app running for days and the colour and the count roll over at midnight on their own."
+    },
+    "noteTitle": "Notes",
+    "note": {
+      "open": "<b>Click a task</b> and its note opens below the matrix — one note per task. Writing down why it is in this quadrant and what comes next makes the next look much quicker. A task with a note is marked, and hovering the mark previews what it says.",
+      "keys": "A task without a note opens straight into editing. <code>Ctrl</code> + <code>Enter</code> saves, <code>Esc</code> cancels. <b>Double-click</b> a saved note to edit it again, and <code>Delete</code> removes the note only — the task stays.",
+      "panel": "Opening a note <b>does not shrink the quadrants</b>. The window grows by the height of the panel instead, and gives it back when the note closes. Click the same task again, or the <code>✕</code>, to close it.",
+      "readonly": "In the History and the Trash a note shows under its task, <b>read-only</b>. A long one is cut to three lines and clicking it opens the rest. Restore a task from the trash and its note comes back with it."
+    },
+    "logTitle": "History and trash",
+    "log": {
+      "history": "The <b>History</b> stacks completed tasks by date, newest first. <code>Restore</code> puts one back in the quadrant it came from and <code>Delete</code> sends it to the trash. <code>Move all to the trash</code> clears what you are looking at in one go.",
+      "trash": "The <b>Trash</b> keeps deleted tasks by date. <code>Restore</code> puts one back where it was — into the History if it had been completed — and <code>Delete forever</code> removes it for good. <code>Restore all</code> and <code>Empty the trash</code> do the whole list at once, and <b>emptying cannot be undone.</b>",
+      "search": "Both tabs have a search box, and <b>it searches the whole record rather than what happens to be drawn</b> — something you finished long ago comes straight up. A hundred are drawn at a time and the rest follow from <code>Show more</code> at the end of the list. Nothing is being removed."
+    },
+    "exportTitle": "Export",
+    "export": {
+      "run": "<b>Export in the settings (⚙)</b>, or <code>Ctrl</code> + <code>E</code>, saves the current <b>brain dump and four quadrants</b> to a file. Pick <b>PDF, HTML or Markdown</b> at the bottom of the save dialog, and once it is written <code>Open folder</code> takes you straight to it. It is a good way to keep the board as it stood for a weekly review or to share it.",
+      "what": "Only the <b>side you are on, Work or Life</b>, goes out. The document title and the file name say which, and the brain dump is shared so it appears in both. Flip the toggle and export again if you need the other one. <b>Completed tasks and the trash are not included</b> — only what is live right now."
+    },
+    "windowTitle": "The window and the keyboard",
+    "window": {
+      "bar": "The <b>Shrink to the bar</b> button in the title bar, a <b>double-click</b> on the title bar, or <code>Ctrl</code> + <code>M</code> — any of the three folds the window down to a thin bar. The Work/Life toggle and the per-quadrant counts stay on it, and <b>clicking a count chip opens the window again.</b> It expands from wherever you parked the bar and folds back to the same place.",
+      "pin": "Turn on <b>Always on top</b> and the window stays above everything else. Position, size, mode, theme and the pin are all remembered when you quit, and <b>if you leave it as a bar it opens as a bar next time.</b>",
+      "quads": "<b>Drag the edge between quadrants</b> to resize them. The horizontal and vertical edges are shared by all four, so growing one shrinks its neighbour, and grabbing the <b>crossing point</b> in the middle moves both at once. <b>Double-click</b> an edge to go back to even halves.",
+      "settings": "The <b>settings (⚙)</b> in the title bar hold <b>language, theme, export and syncing</b> in one place. Pressing it in bar mode expands the window first. The language follows your computer the first time the app runs; once you pick one it is remembered and takes effect on the spot, with no restart.",
+      "keys": "That is the whole keyboard: <code>Ctrl</code> + <code>M</code> for bar mode, <code>Ctrl</code> + <code>D</code> for the dark theme, <code>Ctrl</code> + <code>E</code> to export, <code>Ctrl</code> + <code>0</code> for the brain dump, <code>Ctrl</code> + <code>1</code>–<code>4</code> for a quadrant, <code>Enter</code> to add or save an edit, <code>Ctrl</code> + <code>Enter</code> to save a note, <code>Esc</code> to cancel."
     },
     "syncTitle": "Sync across devices",
     "sync": "Sign in and the tasks on this computer match your other devices. The app works as usual with no internet, and everything you changed in the meantime goes up on its own once you are connected again.",
     "syncNote": "<b>Signing out does not delete the tasks on this computer.</b> Neither does the server going down — your tasks are always here as well.",
-    "syncGear": "Signing in and the sync status are behind <b>the gear (⚙) in the title bar</b>. Reading about it and setting it up are deliberately in different places."
+    "syncGear": "Signing in and the sync status are behind <b>the gear (⚙) in the title bar</b>. Reading about it and setting it up are deliberately in different places.",
+    "syncSignIn": "Sign in with Google from <b>Sync across devices in the settings (⚙)</b>. The sign-in page opens in <b>your usual browser</b>, not inside the app. After that there is nothing to keep track of — what you change goes up a few seconds later, and what you changed elsewhere comes down on its own.",
+    "syncDot": "<b>A dot on the gear means something has not gone up yet</b>, and it shows in bar mode too. An <b>orange dot</b> means there are changes only this computer has; a <b>red dot</b> means the server could not be reached. Either way the changes are safely stored. Open the settings to see exactly how many are waiting.",
+    "syncConflict": "Edit the same task on two devices at almost the same moment and <b>the later edit is the one that stays.</b> If that overwrites something of yours that had not gone up yet, <b>the app tells you it did</b> — nothing disappears quietly.",
+    "syncMerge": "Sign in for the first time with tasks already here and <b>the app asks whether to merge them into the account.</b> Say no and they are moved aside rather than deleted — the point is that signing in briefly on someone else's computer should not push their tasks into your account.",
+    "syncLeave": "To remove the account itself, use <b>Delete account</b> in the settings. The copy on the server and syncing with your other devices go away, and <b>it cannot be undone.</b> <b>The tasks on this computer stay</b>, so you can carry on without an account. Pressing it does not delete anything straight away — it shows you what will happen and asks once more.",
+    "updateTitle": "Updates",
+    "update": {
+      "auto": "<b>There is nothing to do.</b> While the app is running it checks for a new version and downloads it in the background, and what it has downloaded <b>is applied when you close the app</b>. The version you are on is at the bottom of this page and beside the app name in the title bar.",
+      "now": "If you would rather not wait, the <b>Update ready</b> button in the title bar restarts and applies it there and then. <b>The button only appears once a version has been downloaded</b> — if it is not there you are either up to date or still downloading."
+    }
   },
   "matrix": {
     "addPlaceholder": "Add a task…",
