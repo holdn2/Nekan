@@ -13,6 +13,7 @@
 
 import { INBOX, splitBulkText } from "../core-bridge.js";
 import { $, numEl } from "../dom.js";
+import { t } from "../i18n.js";
 import { addTask, addTasks, deleteTask, inboxTasks } from "../store.js";
 import { startEdit } from "./inline-edit.js";
 
@@ -35,14 +36,14 @@ function inboxItemEl(task, index) {
   const text = document.createElement("span");
   text.className = "text";
   text.textContent = task.text;
-  text.title = "더블클릭하여 수정 · 분면으로 끌어다 놓아 분류";
+  text.title = t("item.hintInbox");
   text.addEventListener("dblclick", () => startEdit(li, text, task));
 
   const del = document.createElement("button");
   del.className = "del";
   del.textContent = "×";
-  del.title = "삭제 (휴지통으로 이동)";
-  del.setAttribute("aria-label", `삭제: ${task.text}`);
+  del.title = t("item.delete");
+  del.setAttribute("aria-label", t("item.deleteLabel", { text: task.text }));
   del.addEventListener("click", () => {
     del.disabled = true;
     li.classList.add("removing");

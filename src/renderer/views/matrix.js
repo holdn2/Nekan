@@ -10,6 +10,7 @@
  */
 
 import { QUADS, isCrowded } from "../core-bridge.js";
+import { currentLanguage, t } from "../i18n.js";
 import { $, $$, numEl } from "../dom.js";
 import { dueChip } from "../components/due-chip.js";
 import { memoMark } from "../components/memo-mark.js";
@@ -38,9 +39,12 @@ export function itemEl(task, index) {
 
   const check = document.createElement("button");
   check.className = "check";
-  check.title = "완료 (히스토리로 이동)";
+  check.title = t("item.complete");
   // Icon-only buttons: without this a screen reader announces "button".
-  check.setAttribute("aria-label", `완료: ${task.text}`);
+  check.setAttribute(
+    "aria-label",
+    t("item.completeLabel", { text: task.text }),
+  );
   check.addEventListener("click", () => {
     // The row only leaves the DOM on the next render, which is REMOVE_MS away,
     // so the button stays clickable until then. Disable it here so a second
@@ -53,7 +57,7 @@ export function itemEl(task, index) {
   const text = document.createElement("span");
   text.className = "text";
   text.textContent = task.text;
-  text.title = "클릭하여 메모 · 더블클릭하여 수정";
+  text.title = t("item.hint");
   text.addEventListener("dblclick", () => startEdit(li, text, task));
 
   const due = dueChip(task.dueDate, (value) => setDue(task.id, value));
@@ -61,8 +65,8 @@ export function itemEl(task, index) {
   const del = document.createElement("button");
   del.className = "del";
   del.textContent = "×";
-  del.title = "삭제 (휴지통으로 이동)";
-  del.setAttribute("aria-label", `삭제: ${task.text}`);
+  del.title = t("item.delete");
+  del.setAttribute("aria-label", t("item.deleteLabel", { text: task.text }));
   del.addEventListener("click", () => {
     del.disabled = true;
     li.classList.add("removing");
@@ -94,16 +98,24 @@ export function itemEl(task, index) {
  * redraw that was needed would be skipped.
  */
 const rowsKey = (items) =>
-  items
-    .map(
+  [
+    // The language leads, because a row carries strings that are in no task at
+    // all — the complete and delete titles, the "click for the note" hint, the
+    // words on the due chip. Switching language redraws everything, and without
+    // this the quadrants would be the one place that decided nothing changed.
+    currentLanguage(),
+    ...items.map(
       (t) =>
         `${t.id}\u0000${t.text}\u0000${t.dueDate || ""}` +
         `\u0000${t.memo ? 1 : 0}\u0000${isSelected(t.id) ? 1 : 0}`,
-    )
-    .join("\u0001");
+    ),
+  ].join("\u0001");
 
 /** The last rowsKey drawn into each quadrant. */
 const drawn = new Map();
+
+/** The four add-form chips, kept so renderMatrix can relabel them. */
+const addChips = [];
 
 /** Redraw all four quadrants and the count in each header. */
 export function renderMatrix() {
@@ -124,10 +136,12 @@ export function renderMatrix() {
     // A hint, not a limit — see isCrowded. Nothing here stops an add.
     const crowded = isCrowded(q, items.length);
     count.classList.toggle("crowded", crowded);
-    count.title = crowded
-      ? "이 칸이 이렇게 차 있으면 우선순위가 없는 것과 같습니다. 2분면에 시간을 먼저 잡아 두세요."
-      : "";
+    count.title = crowded ? t("matrix.crowded") : "";
   });
+  // The rows above are thrown away and rebuilt, so they pick up a new language
+  // on their own. These four are built once at startup and live for the run —
+  // re-applying the date they already hold is what repaints their labels.
+  addChips.forEach((chip) => chip.apply(chip.input.value));
 }
 
 /**
@@ -143,6 +157,7 @@ export function wireAddForms() {
   $$(".add:not(.inbox-add)").forEach((form) => {
     const input = $('input[type="text"]', form);
     const chip = dueChip(null, () => {});
+    addChips.push(chip);
     form.insertBefore(chip, $('button[type="submit"]', form));
 
     form.addEventListener("submit", (e) => {

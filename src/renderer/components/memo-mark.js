@@ -4,6 +4,7 @@
  * dblclick handler, a contentEditable or a save path.
  */
 
+import { t } from "../i18n.js";
 import { noteIcon } from "./icons.js";
 
 /**
@@ -13,15 +14,15 @@ import { noteIcon } from "./icons.js";
 export function memoMark(memo) {
   const el = document.createElement("span");
   el.className = "memo-mark";
-  el.title = `메모: ${memo}`;
-  el.setAttribute("aria-label", "메모 있음");
+  el.title = t("memo.mark", { memo });
+  el.setAttribute("aria-label", t("memo.markLabel"));
   el.append(noteIcon());
   return el;
 }
 
 /**
  * History / trash rows have the room to show the memo, so they do — clamped to
- * three lines by CSS and expanding on click. The pointer and the "전체 보기"
+ * three lines by CSS and expanding on click. The pointer and the "show all"
  * hint are *not* set here: only a memo that actually overflows should get them,
  * and that can only be measured once the row is in the document, so the archive
  * renderer flips the `clamped` class after insertion.
@@ -44,7 +45,9 @@ export function memoLine(memo) {
     // Let a click that was really a text selection stand.
     if (window.getSelection()?.toString()) return;
     if (!box.classList.contains("clamped")) return;
-    box.title = box.classList.toggle("open") ? "접기" : "전체 보기";
+    box.title = t(
+      box.classList.toggle("open") ? "memo.collapse" : "memo.expand",
+    );
   });
   return box;
 }

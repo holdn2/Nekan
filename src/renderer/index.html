@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -50,13 +50,26 @@
         class="switch space-switch"
         id="spaceSwitch"
         role="group"
-        aria-label="매트릭스 선택"
+        aria-label="Choose a matrix"
+        data-i18n="titlebar.boards"
+        data-i18n-attr="aria-label"
+        data-i18n-attr-only
       >
-        <button class="switch-btn active" data-space="work" aria-pressed="true">
-          업무
+        <button
+          class="switch-btn active"
+          data-space="work"
+          aria-pressed="true"
+          data-i18n="space.work"
+        >
+          Work
         </button>
-        <button class="switch-btn" data-space="life" aria-pressed="false">
-          일상
+        <button
+          class="switch-btn"
+          data-space="life"
+          aria-pressed="false"
+          data-i18n="space.life"
+        >
+          Life
         </button>
       </div>
 
@@ -67,35 +80,50 @@
           class="chip inbox-chip hidden"
           id="inboxChip"
           data-jump="inbox"
-          aria-label="아직 분류하지 않은 항목 수"
+          aria-label="Tasks not sorted yet"
+          data-i18n="titlebar.countInbox"
+          data-i18n-attr="aria-label"
+          data-i18n-attr-only
         >
           <i class="dot inbox"></i><b id="cInbox">0</b>
         </button>
         <button
           class="chip"
           data-jump="q1"
-          aria-label="Urgent &amp; Important 남은 개수"
+          aria-label="Urgent &amp; Important, remaining"
+          data-i18n="titlebar.countQ1"
+          data-i18n-attr="aria-label"
+          data-i18n-attr-only
         >
           <i class="dot q1"></i><b id="c1">0</b>
         </button>
         <button
           class="chip"
           data-jump="q2"
-          aria-label="Important &amp; Not Urgent 남은 개수"
+          aria-label="Important &amp; Not Urgent, remaining"
+          data-i18n="titlebar.countQ2"
+          data-i18n-attr="aria-label"
+          data-i18n-attr-only
         >
           <i class="dot q2"></i><b id="c2">0</b>
         </button>
         <button
           class="chip"
           data-jump="q3"
-          aria-label="Urgent &amp; Not Important 남은 개수"
+          aria-label="Urgent &amp; Not Important, remaining"
+          data-i18n="titlebar.countQ3"
+          data-i18n-attr="aria-label"
+          data-i18n-attr-only
         >
           <i class="dot q3"></i><b id="c3">0</b>
         </button>
         <button
           class="chip"
           data-jump="q4"
-          aria-label="Not Urgent &amp; Not Important 남은 개수"
+          aria-label="Not Urgent &amp; Not Important, remaining"
+          data-i18n="titlebar.countQ4"
+          data-i18n-attr="aria-label"
+          data-i18n-attr-only
         >
           <i class="dot q4"></i><b id="c4">0</b>
         </button>
@@ -110,8 +138,11 @@
         <button
           class="win-btn hidden"
           id="updateBtn"
-          title="업데이트 준비됨"
-          aria-label="업데이트 준비됨"
+          title="Update ready"
+          aria-label="Update ready"
+          data-i18n="titlebar.updateReady"
+          data-i18n-attr="title,aria-label"
+          data-i18n-attr-only
         >
           <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
             <circle
@@ -139,9 +170,12 @@
         <button
           class="win-btn"
           id="settingsBtn"
-          title="설정"
-          aria-label="설정"
+          title="Settings"
+          aria-label="Settings"
           aria-expanded="false"
+          data-i18n="settings.title"
+          data-i18n-attr="title,aria-label"
+          data-i18n-attr-only
         >
           <!-- A cog, not a circle with spokes: that reads as the sun icon the
                theme button used to be, right next to where it used to sit. The
@@ -169,8 +203,11 @@
         <button
           class="win-btn"
           id="pinBtn"
-          title="항상 위에 고정"
-          aria-label="항상 위에 고정"
+          title="Always on top"
+          aria-label="Always on top"
+          data-i18n="titlebar.pin"
+          data-i18n-attr="title,aria-label"
+          data-i18n-attr-only
         >
           <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
             <path
@@ -182,8 +219,11 @@
         <button
           class="win-btn"
           id="sizeBtn"
-          title="바 모드로 축소"
-          aria-label="바 모드로 축소"
+          title="Shrink to the bar"
+          aria-label="Shrink to the bar"
+          data-i18n="titlebar.collapse"
+          data-i18n-attr="title,aria-label"
+          data-i18n-attr-only
         >
           <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
             <rect
@@ -202,8 +242,11 @@
         <button
           class="win-btn"
           id="minBtn"
-          title="작업표시줄로 최소화"
-          aria-label="작업표시줄로 최소화"
+          title="Minimise to the taskbar"
+          aria-label="Minimise to the taskbar"
+          data-i18n="titlebar.minimize"
+          data-i18n-attr="title,aria-label"
+          data-i18n-attr-only
         >
           <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
             <path d="M3 8h10" stroke="currentColor" stroke-width="1.4" />
@@ -212,8 +255,11 @@
         <button
           class="win-btn danger"
           id="closeBtn"
-          title="완전히 닫기"
-          aria-label="완전히 닫기"
+          title="Quit"
+          aria-label="Quit"
+          data-i18n="titlebar.close"
+          data-i18n-attr="title,aria-label"
+          data-i18n-attr-only
         >
           <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
             <path
@@ -227,17 +273,24 @@
     </header>
 
     <nav class="tabs">
-      <button class="tab active" data-tab="matrix">매트릭스</button>
+      <button class="tab active" data-tab="matrix" data-i18n="tabs.matrix">
+        Matrix
+      </button>
+      <!-- The label is wrapped so the badge beside it survives: the string pass
+           replaces an element's children, and a bare text node next to the
+           count would take the count with it. -->
       <button class="tab" data-tab="history">
-        히스토리 <span class="badge" id="doneCount">0</span>
+        <span data-i18n="tabs.history">History</span>
+        <span class="badge" id="doneCount">0</span>
       </button>
       <button class="tab" data-tab="trash">
-        휴지통 <span class="badge" id="trashCount">0</span>
+        <span data-i18n="tabs.trash">Trash</span>
+        <span class="badge" id="trashCount">0</span>
       </button>
-      <button class="tab" data-tab="guide">가이드</button>
+      <button class="tab" data-tab="guide" data-i18n="tabs.guide">Guide</button>
       <div class="tabs-right">
-        <span class="hint"
-          >할 일을 클릭하면 메모, 더블클릭하면 내용을 수정할 수 있어요</span
+        <span class="hint" data-i18n="tabs.hint"
+          >Click a task to open its note, double-click to edit the text</span
         >
       </div>
     </nav>
@@ -271,18 +324,21 @@
               stroke-linejoin="round"
             />
           </svg>
-          <span class="inbox-label">다 꺼내기</span>
+          <span class="inbox-label" data-i18n="inbox.title">Brain dump</span>
           <span class="badge" id="inboxCount">0</span>
         </button>
         <!-- Spelled out because the toggle above scopes everything else: this
              list is the one part both matrices share. -->
         <span
           class="shared-tag"
-          title="업무·일상 매트릭스가 함께 쓰는 목록입니다"
-          >공유</span
+          title="One list, used by both the Work and Life matrices"
+          data-i18n="inbox.shared"
+          data-i18n-attr="title=inbox.sharedTitle"
+          >Shared</span
         >
-        <span class="inbox-hint"
-          >업무·일상 구분 없이 일단 다 적고, 적절한 곳으로 끌어다 놓으세요</span
+        <span class="inbox-hint" data-i18n="inbox.hint"
+          >Write everything down first, Work or Life alike, then drag each one
+          where it belongs</span
         >
       </header>
       <div class="inbox-body" id="inboxBody">
@@ -291,11 +347,22 @@
           <input
             type="text"
             id="inboxInput"
-            placeholder="아무거나 적기 (여러 줄을 붙여넣으면 줄마다 하나씩 추가됩니다)"
+            placeholder="Write anything (paste several lines to add one task per line)"
             maxlength="200"
             autocomplete="off"
+            data-i18n="inbox.placeholder"
+            data-i18n-attr="placeholder"
+            data-i18n-attr-only
           />
-          <button type="submit" title="추가">+</button>
+          <button
+            type="submit"
+            title="Add"
+            data-i18n="common.add"
+            data-i18n-attr="title"
+            data-i18n-attr-only
+          >
+            +
+          </button>
         </form>
       </div>
     </section>
@@ -306,76 +373,120 @@
       <section class="quad q1" data-quad="q1">
         <header>
           <span class="dot q1"></span>
-          <h2>Urgent &amp; Important</h2>
-          <span class="sub">Do 진행하기</span>
+          <h2 data-i18n="quad.q1.title">Urgent &amp; Important</h2>
+          <span class="sub" data-i18n="quad.q1.action">Do it now</span>
           <span class="count" data-count="q1">0</span>
         </header>
         <ul class="list" data-list="q1"></ul>
         <form class="add" data-add="q1">
           <input
             type="text"
-            placeholder="할 일 추가…"
+            placeholder="Add a task…"
             maxlength="200"
             autocomplete="off"
+            data-i18n="matrix.addPlaceholder"
+            data-i18n-attr="placeholder"
+            data-i18n-attr-only
           />
-          <button type="submit" title="추가">+</button>
+          <button
+            type="submit"
+            title="Add"
+            data-i18n="common.add"
+            data-i18n-attr="title"
+            data-i18n-attr-only
+          >
+            +
+          </button>
         </form>
       </section>
 
       <section class="quad q2" data-quad="q2">
         <header>
           <span class="dot q2"></span>
-          <h2>Important &amp; Not Urgent</h2>
-          <span class="sub">Plan 계획하기</span>
+          <h2 data-i18n="quad.q2.title">Important &amp; Not Urgent</h2>
+          <span class="sub" data-i18n="quad.q2.action">Plan it</span>
           <span class="count" data-count="q2">0</span>
         </header>
         <ul class="list" data-list="q2"></ul>
         <form class="add" data-add="q2">
           <input
             type="text"
-            placeholder="할 일 추가…"
+            placeholder="Add a task…"
             maxlength="200"
             autocomplete="off"
+            data-i18n="matrix.addPlaceholder"
+            data-i18n-attr="placeholder"
+            data-i18n-attr-only
           />
-          <button type="submit" title="추가">+</button>
+          <button
+            type="submit"
+            title="Add"
+            data-i18n="common.add"
+            data-i18n-attr="title"
+            data-i18n-attr-only
+          >
+            +
+          </button>
         </form>
       </section>
 
       <section class="quad q3" data-quad="q3">
         <header>
           <span class="dot q3"></span>
-          <h2>Urgent &amp; Not Important</h2>
-          <span class="sub">Delegate 위임하기</span>
+          <h2 data-i18n="quad.q3.title">Urgent &amp; Not Important</h2>
+          <span class="sub" data-i18n="quad.q3.action">Delegate it</span>
           <span class="count" data-count="q3">0</span>
         </header>
         <ul class="list" data-list="q3"></ul>
         <form class="add" data-add="q3">
           <input
             type="text"
-            placeholder="할 일 추가…"
+            placeholder="Add a task…"
             maxlength="200"
             autocomplete="off"
+            data-i18n="matrix.addPlaceholder"
+            data-i18n-attr="placeholder"
+            data-i18n-attr-only
           />
-          <button type="submit" title="추가">+</button>
+          <button
+            type="submit"
+            title="Add"
+            data-i18n="common.add"
+            data-i18n-attr="title"
+            data-i18n-attr-only
+          >
+            +
+          </button>
         </form>
       </section>
 
       <section class="quad q4" data-quad="q4">
         <header>
           <span class="dot q4"></span>
-          <h2>Not Urgent &amp; Not Important</h2>
-          <span class="sub">Delete 제거하기</span>
+          <h2 data-i18n="quad.q4.title">Not Urgent &amp; Not Important</h2>
+          <span class="sub" data-i18n="quad.q4.action">Drop it</span>
           <span class="count" data-count="q4">0</span>
         </header>
         <ul class="list" data-list="q4"></ul>
         <form class="add" data-add="q4">
           <input
             type="text"
-            placeholder="할 일 추가…"
+            placeholder="Add a task…"
             maxlength="200"
             autocomplete="off"
+            data-i18n="matrix.addPlaceholder"
+            data-i18n-attr="placeholder"
+            data-i18n-attr-only
           />
-          <button type="submit" title="추가">+</button>
+          <button
+            type="submit"
+            title="Add"
+            data-i18n="common.add"
+            data-i18n-attr="title"
+            data-i18n-attr-only
+          >
+            +
+          </button>
         </form>
       </section>
     </main>
@@ -385,14 +496,25 @@
         <input
           type="search"
           id="historySearch"
-          placeholder="완료한 항목 검색…"
+          placeholder="Search completed tasks…"
           autocomplete="off"
+          data-i18n="history.search"
+          data-i18n-attr="placeholder"
+          data-i18n-attr-only
         />
-        <button class="ghost danger" id="clearHistory">전체 휴지통으로</button>
+        <button
+          class="ghost danger"
+          id="clearHistory"
+          data-i18n="history.clearAll"
+        >
+          Move all to the trash
+        </button>
       </div>
       <div class="history-scroll">
         <ul class="history-list" id="historyList"></ul>
-        <p class="empty" id="historyEmpty">완료한 항목이 아직 없습니다.</p>
+        <p class="empty" id="historyEmpty" data-i18n="archive.historyEmpty">
+          Nothing completed yet.
+        </p>
       </div>
     </section>
 
@@ -401,15 +523,24 @@
         <input
           type="search"
           id="trashSearch"
-          placeholder="삭제한 항목 검색…"
+          placeholder="Search deleted tasks…"
           autocomplete="off"
+          data-i18n="trash.search"
+          data-i18n-attr="placeholder"
+          data-i18n-attr-only
         />
-        <button class="ghost" id="restoreAll">전체 복원</button>
-        <button class="ghost danger" id="emptyTrash">휴지통 비우기</button>
+        <button class="ghost" id="restoreAll" data-i18n="trash.restoreAll">
+          Restore all
+        </button>
+        <button class="ghost danger" id="emptyTrash" data-i18n="trash.empty">
+          Empty the trash
+        </button>
       </div>
       <div class="history-scroll">
         <ul class="history-list" id="trashList"></ul>
-        <p class="empty" id="trashEmpty">휴지통이 비어 있습니다.</p>
+        <p class="empty" id="trashEmpty" data-i18n="archive.trashEmpty">
+          The trash is empty.
+        </p>
       </div>
     </section>
 
@@ -671,8 +802,13 @@
           <footer class="guide-about">
             <span class="about-app">Nekan <b id="appVersion">—</b></span>
             <span class="about-update" id="updateState"></span>
-            <button class="about-link" id="releaseNotes" type="button">
-              릴리스 노트
+            <button
+              class="about-link"
+              id="releaseNotes"
+              type="button"
+              data-i18n="update.releaseNotes"
+            >
+              Release notes
             </button>
           </footer>
         </article>
@@ -682,7 +818,14 @@
     <!-- One memo per task, opened by clicking an item. It is extra height, not
          a slice of the matrix: main.js grows the window by --memo-h so the
          quadrants keep the sizes the user dragged them to. -->
-    <section id="memoPanel" class="memo hidden" aria-label="메모">
+    <section
+      id="memoPanel"
+      class="memo hidden"
+      aria-label="Note"
+      data-i18n="memo.panel"
+      data-i18n-attr="aria-label"
+      data-i18n-attr-only
+    >
       <div class="memo-card">
         <header class="memo-head">
           <span class="dot" id="memoDot"></span>
@@ -690,27 +833,53 @@
           <button
             class="memo-x"
             id="memoClose"
-            title="메모 닫기"
-            aria-label="메모 닫기"
+            title="Close the note"
+            aria-label="Close the note"
+            data-i18n="memo.close"
+            data-i18n-attr="title,aria-label"
+            data-i18n-attr-only
           >
             ✕
           </button>
         </header>
         <div class="memo-body">
-          <p class="memo-text" id="memoText" title="더블클릭하여 수정"></p>
+          <p
+            class="memo-text"
+            id="memoText"
+            title="Double-click to edit"
+            data-i18n="memo.edit"
+            data-i18n-attr="title"
+            data-i18n-attr-only
+          ></p>
+          <!-- Two strings on one element: what the empty box invites, and what
+               a screen reader calls it. `attr=key` is how the second one gets
+               its own entry without a wrapper the stylesheet would trip on. -->
           <textarea
             id="memoInput"
-            placeholder="메모를 입력하세요…"
-            aria-label="메모 내용"
+            placeholder="Write a note…"
+            aria-label="Note text"
             maxlength="2000"
             spellcheck="false"
+            data-i18n="memo.placeholder"
+            data-i18n-attr="placeholder,aria-label=memo.field"
+            data-i18n-attr-only
           ></textarea>
         </div>
         <footer class="memo-foot">
           <span class="memo-hint" id="memoHint"></span>
-          <button class="ghost danger" id="memoDelete">삭제</button>
-          <button class="ghost" id="memoCancel">취소</button>
-          <button class="primary" id="memoSave">저장</button>
+          <button
+            class="ghost danger"
+            id="memoDelete"
+            data-i18n="common.delete"
+          >
+            Delete
+          </button>
+          <button class="ghost" id="memoCancel" data-i18n="common.cancel">
+            Cancel
+          </button>
+          <button class="primary" id="memoSave" data-i18n="common.save">
+            Save
+          </button>
         </footer>
       </div>
     </section>
@@ -727,29 +896,74 @@
       id="settingsPanel"
       role="dialog"
       aria-modal="true"
-      aria-label="설정"
+      aria-label="Settings"
+      data-i18n="settings.title"
+      data-i18n-attr="aria-label"
+      data-i18n-attr-only
     >
       <header class="settings-head">
-        <h2>설정</h2>
-        <button class="settings-close" id="settingsClose" aria-label="닫기">
+        <h2 data-i18n="settings.title">Settings</h2>
+        <button
+          class="settings-close"
+          id="settingsClose"
+          aria-label="Close"
+          data-i18n="settings.close"
+          data-i18n-attr="aria-label"
+          data-i18n-attr-only
+        >
           ×
         </button>
       </header>
 
+      <!-- A select, not the .switch the theme row uses. That pill is
+           `width: calc(50% - 2px)` and `translateX(100%)`, so it is only ever
+           right for exactly two options — reusing it here would break on the
+           day a third language lands, which is the whole point of this row. -->
       <div class="settings-row">
-        <span class="settings-label">테마</span>
-        <div class="switch" id="themeSeg" role="group" aria-label="테마 선택">
-          <button class="switch-btn" data-theme="light" aria-pressed="false">
-            일반
+        <!-- A real <label>, not the <span> the other rows use: those sit beside
+             a group that carries its own aria-label, but a bare <select> next to
+             a <span> has no accessible name at all. -->
+        <label
+          class="settings-label"
+          for="languageSelect"
+          data-i18n="settings.language"
+          >Language</label
+        >
+        <select class="settings-select" id="languageSelect"></select>
+      </div>
+
+      <div class="settings-row">
+        <span class="settings-label" data-i18n="settings.theme">Theme</span>
+        <div
+          class="switch"
+          id="themeSeg"
+          role="group"
+          aria-label="Choose a theme"
+          data-i18n="settings.themeChoose"
+          data-i18n-attr="aria-label"
+          data-i18n-attr-only
+        >
+          <button
+            class="switch-btn"
+            data-theme="light"
+            aria-pressed="false"
+            data-i18n="settings.themeLight"
+          >
+            Light
           </button>
-          <button class="switch-btn" data-theme="dark" aria-pressed="false">
-            다크
+          <button
+            class="switch-btn"
+            data-theme="dark"
+            aria-pressed="false"
+            data-i18n="settings.themeDark"
+          >
+            Dark
           </button>
         </div>
       </div>
 
       <div class="settings-row">
-        <span class="settings-label">내보내기</span>
+        <span class="settings-label" data-i18n="settings.export">Export</span>
         <button class="settings-action" id="settingsExport">
           PDF · HTML · Markdown
           <kbd>Ctrl+E</kbd>
@@ -757,7 +971,9 @@
       </div>
 
       <div class="settings-block">
-        <span class="settings-label">기기 간 동기화</span>
+        <span class="settings-label" data-i18n="settings.sync"
+          >Sync across devices</span
+        >
         <section class="account" id="account">
           <div class="account-out" id="accountOut">
             <button class="google-btn" id="googleBtn" type="button">
@@ -784,35 +1000,61 @@
                   d="M9 3.6c1.3 0 2.5.5 3.4 1.3l2.6-2.6A9 9 0 0 0 .9 5l3 2.3C4.6 5.2 6.6 3.6 9 3.6z"
                 />
               </svg>
-              Google로 로그인
+              <span data-i18n="account.google">Sign in with Google</span>
             </button>
 
             <!-- Only shown when there is something to lose. Somebody signing
                in on a fresh machine has no decision to make and should not
                be handed one. -->
+            <!-- The count is bold and the words around it change places
+                 between languages, so the sentence cannot be split in two here.
+                 views/account.js writes the whole span from one catalogue
+                 string and the <b> travels inside it. -->
             <label class="account-adopt hidden" id="accountAdopt">
               <input type="checkbox" id="adoptLocal" checked />
-              이 컴퓨터에 있는 할 일 <b id="adoptCount">0</b>개도 계정에 합치기
+              <span id="adoptText"></span>
             </label>
-            <p class="account-hint hidden" id="adoptHint">
-              끄면 계정에 있는 것만 남습니다. 지금 있는 할 일은 지워지지 않고
-              <code>data.before-login.json</code>으로 옮겨 둡니다.
-            </p>
+            <p
+              class="account-hint hidden"
+              id="adoptHint"
+              data-i18n="account.adoptHint"
+            ></p>
 
             <!-- A development run only. The shipped app never registers this
                channel, so this stays hidden there. -->
             <form class="account-dev hidden" id="devLogin">
-              <input type="email" id="devEmail" placeholder="개발용 이메일" />
-              <input type="password" id="devPassword" placeholder="비밀번호" />
-              <button type="submit">개발용 로그인</button>
+              <input
+                type="email"
+                id="devEmail"
+                placeholder="Development email"
+                data-i18n="account.devEmail"
+                data-i18n-attr="placeholder"
+                data-i18n-attr-only
+              />
+              <input
+                type="password"
+                id="devPassword"
+                placeholder="Password"
+                data-i18n="account.devPassword"
+                data-i18n-attr="placeholder"
+                data-i18n-attr-only
+              />
+              <button type="submit" data-i18n="account.devSignIn">
+                Development sign-in
+              </button>
             </form>
           </div>
 
           <div class="account-in hidden" id="accountIn">
             <span class="account-who" id="accountEmail"></span>
             <span class="account-state" id="accountState"></span>
-            <button class="account-out-btn" id="logoutBtn" type="button">
-              로그아웃
+            <button
+              class="account-out-btn"
+              id="logoutBtn"
+              type="button"
+              data-i18n="account.signOut"
+            >
+              Sign out
             </button>
           </div>
 
@@ -821,29 +1063,44 @@
                "everything goes", so what stays has to be said before the
                irreversible button is on screen -- not in a toast afterwards. -->
           <div class="account-danger hidden" id="accountDanger">
-            <button class="account-leave-btn" id="leaveBtn" type="button">
-              회원탈퇴
+            <button
+              class="account-leave-btn"
+              id="leaveBtn"
+              type="button"
+              data-i18n="account.leave"
+            >
+              Delete account
             </button>
 
             <div class="account-confirm hidden" id="leaveConfirm">
-              <p class="account-confirm-lede">
-                계정과 <b>서버에 있는 사본</b>을 지웁니다. 다른 기기와의 동기화도
-                끊깁니다. <b>되돌릴 수 없습니다.</b>
-              </p>
-              <p class="account-confirm-keep">
-                <b>이 컴퓨터의 할 일은 그대로 남습니다.</b> 계정 없이 계속 쓸 수
-                있습니다.
-              </p>
+              <!-- Both sentences carry their own <b> through the catalogue.
+                   Splitting them into bold and not-bold keys would be asking a
+                   translator for sentence fragments, and where the emphasis
+                   falls moves with the language. -->
+              <p
+                class="account-confirm-lede"
+                data-i18n="account.confirmLede"
+              ></p>
+              <p
+                class="account-confirm-keep"
+                data-i18n="account.confirmKeep"
+              ></p>
               <div class="account-confirm-row">
                 <button
                   class="account-confirm-cancel"
                   id="leaveCancel"
                   type="button"
+                  data-i18n="common.cancel"
                 >
-                  취소
+                  Cancel
                 </button>
-                <button class="account-confirm-go" id="leaveGo" type="button">
-                  계정 삭제
+                <button
+                  class="account-confirm-go"
+                  id="leaveGo"
+                  type="button"
+                  data-i18n="account.confirmGo"
+                >
+                  Delete my account
                 </button>
               </div>
             </div>
@@ -855,13 +1112,15 @@
     </section>
 
     <!-- The first thing a new install shows, in place of the matrix. It is the
-         only moment where "이 앱은 계정을 쓸 수도 있다"는 사실을 전할 수 있는
-         자리라, 뒤로 미루면 아무도 모르는 기능이 됩니다. -->
+         only moment where "this app can also use an account" can be said at
+         all; put off, it becomes a feature nobody ever finds. -->
     <div class="welcome hidden" id="welcome">
       <div class="welcome-card">
         <img class="welcome-logo" src="../assets/icon.png" alt="" />
         <h1>Nekan</h1>
-        <p class="welcome-lede">할 일을 어디에 둘까요?</p>
+        <p class="welcome-lede" data-i18n="welcome.lede">
+          Where should your tasks live?
+        </p>
 
         <button
           class="welcome-choice recommended"
@@ -887,8 +1146,10 @@
             />
           </svg>
           <span class="welcome-choice-text">
-            <b>Google로 로그인해서 동기화</b>
-            <small>여러 기기에서 같은 목록을 씁니다</small>
+            <b data-i18n="welcome.syncTitle">Sign in with Google and sync</b>
+            <small data-i18n="welcome.syncSub">
+              The same list on every device
+            </small>
           </span>
         </button>
 
@@ -912,8 +1173,10 @@
             />
           </svg>
           <span class="welcome-choice-text">
-            <b>이 컴퓨터에서만 쓰기</b>
-            <small>계정 없이 바로 시작합니다</small>
+            <b data-i18n="welcome.localTitle">Keep them on this computer</b>
+            <small data-i18n="welcome.localSub"
+              >Start right now, no account</small
+            >
           </span>
         </button>
 
@@ -921,11 +1184,13 @@
              to decide and should not be handed a decision. -->
         <label class="welcome-adopt hidden" id="welcomeAdopt">
           <input type="checkbox" id="welcomeAdoptBox" checked />
-          이 컴퓨터에 있는 할 일 <b id="welcomeCount">0</b>개도 계정에 합치기
+          <span id="welcomeAdoptText"></span>
         </label>
 
         <p class="welcome-msg" id="welcomeMsg" role="status"></p>
-        <p class="welcome-foot">나중에 설정에서 언제든 바꿀 수 있습니다.</p>
+        <p class="welcome-foot" data-i18n="welcome.foot">
+          You can change this later in Settings.
+        </p>
       </div>
     </div>
 
@@ -933,8 +1198,13 @@
          changes the layout the memo panel and the inbox are accounting for. -->
     <div class="toast hidden" id="toast" role="status" aria-live="polite">
       <span class="toast-text" id="toastText"></span>
-      <button class="toast-act hidden" id="toastAct" type="button">
-        폴더 열기
+      <button
+        class="toast-act hidden"
+        id="toastAct"
+        type="button"
+        data-i18n="export.openFolder"
+      >
+        Open the folder
       </button>
     </div>
 

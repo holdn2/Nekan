@@ -1,12 +1,19 @@
 /**
- * Everything around the lists: the title bar, the 업무/일상 switch, the tabs,
+ * Everything around the lists: the title bar, the Work/Life switch, the tabs,
  * the count chips, the theme, and the expanded/bar window modes.
  *
  * These are the pieces of state that decide *what is on screen* rather than
  * what the data is, which is why they live together and away from the store.
+ *
+ * Most of what this file writes arrives as a push from the main process and is
+ * never asked for again — the pin state, the window mode, the update status.
+ * That makes it the exact shape of thing a language switch leaves behind in the
+ * old language, so each one is remembered here and `relabelChrome()` puts it
+ * back. See the same trap in views/account.js, where the sync line hit it first.
  */
 
-import { QUADS, SPACE_LABEL, isCrowded } from "../core-bridge.js";
+import { QUADS, isCrowded } from "../core-bridge.js";
+import { t } from "../i18n.js";
 import { $, $$, labelBtn } from "../dom.js";
 import { notify } from "../render-bus.js";
 import { toast } from "../components/toast.js";
@@ -27,6 +34,9 @@ let activeTab = "matrix";
 let theme = "light";
 /** The version already announced, so the toast fires once per download. */
 let announced = null;
+/** Last values pushed in, kept so relabelChrome() can rewrite them. */
+let pinned = true;
+let updateStatus = null;
 
 /** 'expanded' | 'collapsed'. The render dispatcher skips the lists in a bar. */
 export const getMode = () => mode;
@@ -73,7 +83,7 @@ function syncSpaceSwitch() {
     const on = btn.dataset.space === getSpace();
     btn.classList.toggle("active", on);
     btn.setAttribute("aria-pressed", String(on));
-    btn.title = `${SPACE_LABEL[btn.dataset.space]} 매트릭스 보기`;
+    btn.title = t("space.view", { space: t(`space.${btn.dataset.space}`) });
   });
 }
 
@@ -132,8 +142,9 @@ export function toggleTheme() {
 
 /** Reflect the always-on-top state main.js reports back. */
 export function applyPinned(on) {
+  pinned = on;
   $("#pinBtn").classList.toggle("on", on);
-  labelBtn("#pinBtn", on ? "항상 위 고정 해제" : "항상 위에 고정");
+  labelBtn("#pinBtn", t(on ? "titlebar.unpin" : "titlebar.pin"));
 }
 
 /* ----------------------------------------------------------------- update */
@@ -159,10 +170,10 @@ export function applyVersion(version) {
  * version above it is still there.
  */
 const UPDATE_TEXT = {
-  checking: () => "새 버전을 확인하는 중…",
-  latest: () => "최신 버전입니다.",
-  downloading: (v) => `새 버전${v ? ` ${v}` : ""}을 받는 중…`,
-  ready: (v) => `새 버전${v ? ` ${v}` : ""} 준비됨 — 앱을 닫으면 적용됩니다.`,
+  checking: "update.checking",
+  latest: "update.latest",
+  downloading: "update.downloading",
+  ready: "update.ready",
 };
 
 /**
@@ -174,8 +185,8 @@ const UPDATE_TEXT = {
  * happen yet is a dead button.
  *
  * The guide tab is not held to that. It is a tab someone opened to read about
- * the app, nothing there is clickable-but-useless, and "확인하는 중"이나
- * "최신 버전입니다" are answers to the question that brought them.
+ * the app, nothing there is clickable-but-useless, and "checking" or "this is
+ * the latest version" are answers to the question that brought them.
  *
  * `announce` splits news from state, and only news is worth interrupting for. A
  * pushed status is news: something finished downloading just now. The one that
@@ -184,19 +195,22 @@ const UPDATE_TEXT = {
  * belongs to both; the toast belongs only to the first.
  */
 export function applyUpdateStatus(status, { announce = false } = {}) {
+  updateStatus = status;
   const ready = status?.state === "ready";
   $("#updateBtn").classList.toggle("hidden", !ready);
 
-  const line = UPDATE_TEXT[status?.state];
-  $("#updateState").textContent = line ? line(status.version) : "";
+  // Both strings put the version somewhere a Korean particle never follows it:
+  // the one that would (…1.0.1'은' / …1.0.2'는') depends on how the last digit
+  // is read aloud, and no single wording is right for every release. The space
+  // travels with the number so the sentence closes up when there is none.
+  const version = status?.version ? ` ${status.version}` : "";
+
+  const key = UPDATE_TEXT[status?.state];
+  $("#updateState").textContent = key ? t(key, { version }) : "";
 
   if (!ready) return;
 
-  // Both strings put the version somewhere a Korean particle never follows it:
-  // the one that would (…1.0.1'은' / …1.0.2'는') depends on how the last digit
-  // is read aloud, and no single wording is right for every release.
-  const version = status.version ? ` ${status.version}` : "";
-  labelBtn("#updateBtn", `새 버전${version} 준비됨 — 지금 재시작하여 적용`);
+  labelBtn("#updateBtn", t("update.button", { version }));
 
   // `announced` is the guard against the same news arriving twice; it is module
   // state and a reload clears it, which is exactly why the reload path above
@@ -205,9 +219,12 @@ export function applyUpdateStatus(status, { announce = false } = {}) {
   announced = status.version;
   // No toast in a bar — collapsed.css hides it — but the button is there, and
   // the update lands on the next quit regardless.
-  toast(`새 버전을 받았습니다.${version && ` (${status.version})`}`, {
+  toast(t("update.toast", { version: version && ` (${status.version})` }), {
     ms: 10000,
-    action: { label: "지금 재시작", onClick: () => window.api.installUpdate() },
+    action: {
+      label: t("update.restart"),
+      onClick: () => window.api.installUpdate(),
+    },
   });
 }
 
@@ -224,8 +241,32 @@ export function applyMode(next) {
   if (mode === "collapsed") clearSelectionSilently();
   document.body.classList.toggle("collapsed", mode === "collapsed");
   document.body.classList.toggle("expanded", mode === "expanded");
-  labelBtn("#sizeBtn", mode === "collapsed" ? "펼치기" : "바 모드로 축소");
+  labelBtn(
+    "#sizeBtn",
+    t(mode === "collapsed" ? "titlebar.expand" : "titlebar.collapse"),
+  );
   notify();
+}
+
+/**
+ * Rewrite everything in the title bar that no redraw would reach on its own.
+ *
+ * Called from the render dispatcher, which is what a language switch ends on.
+ * Every one of these was last written by a push — a pin toggle, a mode change,
+ * an update that finished downloading — and none of them will be pushed again
+ * just because the language changed. It sits before the bar-mode return in
+ * render() on purpose: three of the four are visible in a bar.
+ */
+export function relabelChrome() {
+  syncSpaceSwitch();
+  applyPinned(pinned);
+  labelBtn(
+    "#sizeBtn",
+    t(mode === "collapsed" ? "titlebar.expand" : "titlebar.collapse"),
+  );
+  // No announce: this is the state as it already stood, and the toast for it
+  // has either fired or belongs to a version this run has not seen.
+  applyUpdateStatus(updateStatus);
 }
 
 /** Ctrl+M, the size button and a double-click on the bar all land here. */

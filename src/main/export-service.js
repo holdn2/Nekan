@@ -13,7 +13,7 @@ const fs = require("fs");
 const path = require("path");
 const { BrowserWindow, app, dialog, shell } = require("electron");
 
-const { sanitizeSpace, SPACE_LABEL } = require("../shared/core");
+const { sanitizeSpace } = require("../shared/core");
 const {
   buildSnapshot,
   defaultFileName,
@@ -21,11 +21,14 @@ const {
   toMarkdown,
 } = require("../shared/export");
 const { getSettings, getStore } = require("./store");
+const { language, t } = require("./i18n");
 
-const EXPORT_FILTERS = [
-  { name: "PDF 문서", extensions: ["pdf"] },
-  { name: "HTML 문서", extensions: ["html"] },
-  { name: "마크다운", extensions: ["md"] },
+/** Rebuilt per export: the dropdown is written when the dialog opens, and the
+ *  language can have changed since the last one. */
+const exportFilters = () => [
+  { name: t("export.filterPdf"), extensions: ["pdf"] },
+  { name: t("export.filterHtml"), extensions: ["html"] },
+  { name: t("export.filterMarkdown"), extensions: ["md"] },
 ];
 
 /**
@@ -68,16 +71,17 @@ async function runExport(parent) {
   if (!parent || parent.isDestroyed()) return { ok: false, reason: "canceled" };
 
   const space = sanitizeSpace(getSettings().activeSpace);
-  const snapshot = buildSnapshot(getStore().tasks, new Date(), space);
+  const i18n = { t, locale: language() };
+  const snapshot = buildSnapshot(getStore().tasks, new Date(), space, i18n);
   if (!snapshot.total) return { ok: false, reason: "empty" };
 
   const picked = await dialog.showSaveDialog(parent, {
-    title: `${SPACE_LABEL[space]} 매트릭스 내보내기`,
+    title: t("export.title", { space: t(`space.${space}`) }),
     defaultPath: path.join(
       app.getPath("documents"),
-      defaultFileName(new Date(), "pdf", space),
+      defaultFileName(new Date(), "pdf", space, t),
     ),
-    filters: EXPORT_FILTERS,
+    filters: exportFilters(),
   });
   if (picked.canceled || !picked.filePath) {
     return { ok: false, reason: "canceled" };
@@ -103,7 +107,7 @@ async function runExport(parent) {
   return { ok: true, path: target, name: path.basename(target) };
 }
 
-/** Show the written file in Explorer — the toast's "폴더 열기". */
+/** Show the written file in Explorer — the toast's "Open the folder". */
 function revealExport(target) {
   if (typeof target === "string" && target) shell.showItemInFolder(target);
 }

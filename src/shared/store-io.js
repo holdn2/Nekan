@@ -29,6 +29,12 @@ function defaultStore() {
       // is deliberate: sync is new and nobody goes looking for a feature they
       // do not know exists.
       startupChoice: null,
+      // Which language the interface is in. Null means "never chosen", and main
+      // settles it from the OS locale at startup -- Korean if the machine is
+      // Korean, English otherwise. Stored per machine rather than synced, the
+      // same way the window bounds and the board are: a work PC and a home PC
+      // can differ, and none of these describe the tasks.
+      language: null,
       // Where the bar was left, so quitting from bar mode and coming back does
       // not reopen it at the expanded window's corner. Position only — the bar
       // has one size and saving it would reopen the app 600x48.

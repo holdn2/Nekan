@@ -1,6 +1,30 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
+/**
+ * The interface language, read synchronously so the renderer has it on its very
+ * first line. Everything else here is a round trip and therefore lands after
+ * the first paint, which for a language would mean rendering one and then
+ * swapping. main puts it in argv when it builds the window.
+ */
+// The list of languages rides along for the same reason the current one does:
+// the picker has to be able to draw itself. It cannot be `require`d from
+// shared/ — this preload is sandboxed, where `require` serves a short list of
+// Electron built-ins and nothing else, and reaching for a local file there
+// takes the whole preload down. `window.api` then does not exist at all, which
+// looks nothing like a bad import and everything like the app being broken.
+const flag = (name) => {
+  const prefix = `--nekan-${name}=`;
+  const found = process.argv.find((arg) => arg.startsWith(prefix));
+  return found ? found.slice(prefix.length) : "";
+};
+
+const language = flag("lang") || null;
+const languages = flag("langs").split(",").filter(Boolean);
+
 contextBridge.exposeInMainWorld("api", {
+  language,
+  languages,
+  setLanguage: (next) => ipcRenderer.invoke("settings:language", next),
   load: () => ipcRenderer.invoke("state:load"),
   save: (tasks) => ipcRenderer.invoke("state:save", tasks),
   collapse: () => ipcRenderer.invoke("win:collapse"),

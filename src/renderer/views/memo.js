@@ -13,6 +13,7 @@
 
 import { INBOX, clampMemo } from "../core-bridge.js";
 import { $ } from "../dom.js";
+import { t } from "../i18n.js";
 import { findTask, inSpace, setMemo } from "../store.js";
 import { notify } from "../render-bus.js";
 
@@ -127,6 +128,11 @@ export function renderMemo() {
   if (!task) {
     panel.classList.add("hidden");
     panel.dataset.key = "";
+    // Nobody can see it, but it is the last thing this panel wrote and it is in
+    // whatever language was on screen then. Left behind, it is a Korean string
+    // sitting in an English document -- invisible to a user and a false hit for
+    // the sweep that looks for exactly that. Reopening rewrites it either way.
+    $("#memoHint").textContent = "";
     return;
   }
   panel.classList.remove("hidden");
@@ -157,9 +163,7 @@ export function renderMemo() {
   $("#memoSave").classList.toggle("hidden", !editing);
   $("#memoCancel").classList.toggle("hidden", !editing || !memo);
   $("#memoDelete").classList.toggle("hidden", editing || !memo);
-  $("#memoHint").textContent = editing
-    ? "Ctrl+Enter 저장 · Esc 취소"
-    : "더블클릭하여 수정";
+  $("#memoHint").textContent = t(editing ? "memo.editing" : "memo.edit");
   syncMemoSave();
 }
 
@@ -172,7 +176,7 @@ function saveMemo() {
   setMemo(task.id, value);
 }
 
-/** Esc / 취소: back to reading, or close outright if there was nothing yet. */
+/** Esc / Cancel: back to reading, or close outright if there was nothing yet. */
 function cancelMemoEdit() {
   // Nothing to fall back to when the memo is new — close the panel instead.
   if (!selectedTask()?.memo) {
@@ -187,7 +191,7 @@ function cancelMemoEdit() {
 function deleteMemo() {
   const task = selectedTask();
   if (!task || !task.memo) return;
-  if (!window.confirm("이 메모를 삭제할까요? 되돌릴 수 없습니다.")) return;
+  if (!window.confirm(t("memo.confirmDelete"))) return;
   memoEditing = false;
   setMemo(task.id, null);
 }

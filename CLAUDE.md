@@ -17,6 +17,7 @@ src/main/
   sync.js         당기고 밀고 다시 시도하는 루프. 판정은 안 하고 일정만 잡는다
   oauth.js        Google 로그인의 브라우저 쪽 (PKCE + loopback). 세션은 모른다
   ipc.js          ipcMain.handle 전부. 새 채널을 만들 때 첫 번째로 여는 파일
+  i18n.js         메인 쪽 i18next. 렌더러와 따로 산다 (프로세스가 다르다)
 src/preload.js    contextBridge → window.api (여기 없는 건 렌더러에서 못 씀)
 src/shared/       메인·렌더러·테스트가 공유. 여기만 테스트가 덮는다
   core.js         날짜·정규화·space 규칙·레이아웃 비율 등 순수 로직
@@ -24,9 +25,11 @@ src/shared/       메인·렌더러·테스트가 공유. 여기만 테스트가
   export.js       내보내기 문서 생성 (마크다운·인쇄용 HTML). 메인·테스트만 require
   sync.js         동기화 판정 (LWW·행 변환·커서·시계 오차). main/sync.js가 쓴다
   auth.js         세션 모양과 만료 판정. 렌더러에 나갈 필드를 여기서 고른다
+  i18n/           ko.json · en.json · GLOSSARY.md · locales.js (지원 목록과 기본값)
 src/renderer/     ES 모듈. 번들러 없음 — import 경로에 확장자를 반드시 쓴다
   index.html      정적 마크업. <link> 15개와 <script>는 순서가 의미를 갖는다
   app.js          진입점. render() 디스패처, 전역 단축키, init() 조립
+  i18n.js         렌더러 쪽 i18next. t · tNodes · applyStaticStrings · setLanguage
   store.js        tasks 배열과 모든 변경. DOM을 모른다 → commit()이 저장+notify
   render-bus.js   "다시 그려라" 신호 하나. store·view → app 순환을 막는 장치
   core-bridge.js  shared/core.js의 전역을 named export로 재수출
@@ -94,6 +97,12 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   `writeFileSync`로 바꾸지 말 것 — 쓰다 끊기면 전체 할 일이 사라진다.
 - IPC를 새로 추가할 때는 **세 곳을 모두** 건드려야 한다: `main/ipc.js`의 `ipcMain.handle`,
   `preload.js`의 `exposeInMainWorld`, 렌더러의 `window.api.*` 호출.
+- **`preload.js`는 샌드박스라 로컬 파일을 `require`할 수 없다.** `require`가 주는 것은
+  Electron 내장 모듈 몇 개뿐이고, `require("./shared/...")`를 넣는 순간 **preload가 통째로
+  죽는다.** 증상은 `window.api`가 **undefined** — 잘못된 import처럼 보이지 않고 앱이 망가진
+  것처럼 보인다(2026-08-08 실측). 메인이 아는 값을 렌더러에 **첫 페인트 전에** 넘겨야 하면
+  `webPreferences.additionalArguments`로 보내고 preload가 `process.argv`에서 읽는다 —
+  언어(`--nekan-lang`)와 지원 목록(`--nekan-langs`)이 그 방식이다.
 - **토큰은 IPC를 건너지 않는다.** `window.api`에 토큰을 돌려주는 함수가 **하나도 없어야** 한다.
   렌더러가 알 수 있는 것은 `state:load`의 `auth`(= `{ email, userId }`)뿐이고, 그 객체는
   `shared/auth.js`의 `publicSession()`이 **필드를 골라서** 만든다 — 지우는 방식이 아니라
@@ -221,6 +230,11 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   **그 30px은 개수가 두 자리일 때의 값이다.** 세 자리가 되면 **8px**로 떨어지고, 네 자리면
   `scrollWidth` 669로 **29px 넘친다**(2026-08-08 실측). 분면 하나에 1000개는 비현실적이지만,
   바에 뭔가를 더 넣을 때 기준으로 삼을 값은 30이 아니라 **세 자리 기준 8px**이다.
+  **여유는 언어에 따라 달라진다** — 스위치가 `업무/일상`에서 `Work/Life`가 되면서 두 자리
+  기준 30 → **27px**이 됐다(세 자리는 양쪽 다 8px, 넘침 0. 2026-08-09 실측). 세 번째 언어를
+  넣을 때는 이 두 낱말이 제일 긴 언어로 다시 재야 한다.
+  **개수를 CDP로 바꿔 잴 때는 접은 _다음에_ 바꿀 것** — `collapse()`가 `notify()`를 부르고
+  `renderCounts()`가 진짜 개수로 되돌려서, 먼저 바꾸면 여유가 100px처럼 보인다.
   스크린샷은 `PrintWindow`가 오른쪽 영역을 갱신 안 된 채 찍는 일이 있으니 CDP
   `Page.captureScreenshot`을 쓸 것.
   **테마·내보내기가 설정 패널로 들어가면서 바 버튼이 하나 줄고 톱니바퀴가 하나 늘어 순증은
@@ -329,6 +343,49 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
 - 기능을 바꾸면 `README.md`의 해당 섹션도 같이 고친다.
 - 되돌리기 어려운 결정을 내렸으면 `docs/DECISIONS.md`에 한 줄 남긴다.
 - **작업을 마칠 때마다 커밋한다.** 컨텍스트가 날아가도 커밋 로그가 남으면 복구된다.
+
+## 다국어 (진행 중, #27)
+
+- **문자열은 `src/shared/i18n/{ko,en}.json`에 있고 화면에는 `t("key")`로만 나간다.**
+  용어 대응은 `src/shared/i18n/GLOSSARY.md`에 있다 — **새 문자열을 넣기 전에 거기부터 본다.**
+  같은 한국어가 파일마다 다른 영어로 나가는 것을 막는 유일한 장치다.
+- **진행률은 기억이 아니라 `node tools/find-untranslated.js`의 숫자다.** 파일별로 남은 한글
+  줄 수를 센다(주석 제외). `index.html` 한글의 절반이 `title`·`aria-label`이라 **눈으로는
+  끝났는지 알 수 없다** — 다 된 것처럼 보이는데 스크린 리더는 한국어를 읽는다.
+- **i18next는 `node_modules`에서 직접 import한다** (`../../node_modules/i18next/dist/esm/i18next.js`).
+  JSON 카탈로그도 `with { type: "json" }`으로 직접 import한다. **둘 다 패키징된 asar에서
+  확인했다** — `npm start`는 `node_modules`가 그 자리에 있어서 아무것도 증명하지 못한다.
+- **언어는 첫 페인트 전에 정해져 있어야 한다.** `state:load`는 IPC 왕복이라 늦는다(저장된
+  테마가 늦게 와서 스위치 알약이 미끄러지던 것과 같은 함정). 메인이 창을 만들기 전에 정하고
+  `additionalArguments`로 넘긴다. 위 preload 항목 참고.
+- **전환은 재시작 없이 된다. 다만 "한 번 만들고 두는 것"은 전부 옛 언어로 남는다.** 재렌더가
+  버리고 다시 만드는 것만 저절로 따라온다. 지금까지 걸린 셋은 성격이 다 다르다:
+  ① **메인의 푸시로만 쓰이는 값** — 동기화 문구·톱니바퀴 툴팁, 그리고 핀·모드·업데이트 상태.
+  뷰가 마지막 값을 들고 있다가 `renderAccount()`·`relabelChrome()`에서 다시 적용한다.
+  ② **캐시로 렌더를 건너뛰는 곳** — `renderMatrix()`의 `rowsKey`는 task 필드만 보고 있어서
+  언어가 바뀌어도 "달라진 게 없다"고 판단했다. 그래서 키 맨 앞이 `currentLanguage()`다.
+  ③ **시작할 때 한 번 만들고 사는 DOM** — 4분면 add 폼의 마감 칩이 그렇다(행의 칩은 매번
+  다시 만들어져서 멀쩡했다). `dueChip`의 고정 라벨을 생성이 아니라 `apply()` 안에 두고,
+  `renderMatrix()`가 끝에서 네 개를 다시 칠한다.
+  **새 문자열을 넣을 때 "이건 언제 다시 그려지지?"를 먼저 물을 것.**
+- **검수는 눈이 아니라 DOM 훑기로 한다.** 영어로 바꾼 뒤 `document.querySelectorAll('*')`를
+  돌며 텍스트 노드와 **모든 속성값**에서 한글을 찾는다(`#guideView`와 task 텍스트는 제외).
+  위 세 가지가 전부 이렇게 나왔다 — 화면만 보면 다 번역된 것처럼 보인다.
+- 언어 선택은 `.switch`가 아니라 `<select>`다. 알약이 `calc(50% - 2px)` + `translateX(100%)`라
+  **정확히 두 칸일 때만 맞는다** — 세 번째 언어를 넣는 날 깨진다.
+- **`dueInfo()`는 계산만 한다** — `{ date, days, state, otherYear }`. 문자열은
+  `formatDue(info, t, locale)`가 만들고, **`t`를 인자로 받는다**: `core.js`는 고전 `<script>`로도
+  로드돼서 카탈로그를 가질 수 없다. `state`는 CSS가 쓰는 값이라 계산 쪽에 남는다. 요일은
+  카탈로그가 아니라 `Intl`이 만든다(언어마다 일곱 개를 손으로 적을 이유가 없다) — 나머지
+  모양은 `Intl`이 아니다. 한국어 전체 형식은 `8. 3. (월)`이라 칩보다 넓고 원래 `8/3`과 다르다.
+- **`shared/export.js`에는 카탈로그도 `t`도 없다.** `buildSnapshot(tasks, now, space, {t, locale})`이
+  **쓸 문자열을 전부 스냅샷 안에 박아** 넘기고, `toMarkdown`·`toHtml`은 그 객체만 읽는다.
+  마감일이 이미 그랬던 것(인쇄물은 나중에 다시 계산할 수 없다)을 문서 전체로 넓힌 것이다.
+  그래서 `shared/`가 `main/`을 require하지 않는다.
+- **마크업이 들어가는 문자열**은 `<b>`·`<code>` 둘만 되고 `tNodes()`가 파싱한다. `innerHTML`이
+  아니다. `data-i18n-attr`는 `title` 또는 `title=다른.키` 형태를 받는다.
+- **아직 안 된 것**: 가이드 탭 **117줄**(#29)뿐이다. 그 밖의 사용자 문자열은 전부 카탈로그로
+  나갔다. 문서 027·028 참고.
 
 ## 검증
 

@@ -29,6 +29,7 @@ const {
   collapseOrigin,
   needsStartupChoice,
 } = require("../shared/core");
+const { SUPPORTED } = require("../shared/i18n/locales");
 
 /** Where preload.js, the renderer and the icon live, from this folder. */
 const SRC = path.join(__dirname, "..");
@@ -193,6 +194,14 @@ function createWindow() {
       preload: path.join(SRC, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
+      // The language, handed over before the window exists. It cannot come
+      // through state:load: that is an IPC round trip and lands after the first
+      // paint, so the window would show one language for a frame and then swap.
+      // preload reads this out of argv synchronously, which is early enough.
+      additionalArguments: [
+        `--nekan-lang=${settings.language || ""}`,
+        `--nekan-langs=${SUPPORTED.join(",")}`,
+      ],
     },
   });
 

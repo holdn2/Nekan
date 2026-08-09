@@ -20,6 +20,7 @@ import {
 } from "./core-bridge.js";
 import { acceptSynced, setClockOffset, setTasks } from "./store.js";
 import { subscribe } from "./render-bus.js";
+import { applyStaticStrings, currentLanguage, t } from "./i18n.js";
 import { $ } from "./dom.js";
 import { toast } from "./components/toast.js";
 import { renderMatrix, wireAddForms } from "./views/matrix.js";
@@ -50,6 +51,7 @@ import {
   applyVersion,
   getMode,
   getTab,
+  relabelChrome,
   renderCounts,
   setTab,
   toggleSize,
@@ -70,6 +72,10 @@ import { exportBoard } from "./window/export-ui.js";
 function render() {
   dropStaleSelection();
   renderCounts();
+  // Cheap, and above the bar-mode return: the title bar is all a bar has, and
+  // everything relabelChrome() rewrites was last set by a push that will not
+  // come again just because the language changed.
+  relabelChrome();
   // Cheap, and outside the bar-mode return below: the account block counts the
   // tasks a sign-in would carry up, and that number moves with every change.
   renderAccount();
@@ -90,7 +96,7 @@ function render() {
 /**
  * Every due-date label is relative to *today*, but this widget is meant to sit
  * on screen for days. Without a rollover, an item added yesterday keeps its
- * orange "오늘" chip until some unrelated click happens to re-render.
+ * orange "today" chip until some unrelated click happens to re-render.
  */
 let dayTimer = null;
 let renderedDay = startOfToday().getTime();
@@ -207,6 +213,12 @@ let pushedSync = null;
  * the render that applyMode() triggers at the end.
  */
 async function init() {
+  // Before the first await, and before anything is drawn. The language came in
+  // on argv precisely so this does not have to wait for state:load — putting it
+  // after would show one language for a frame and then swap it.
+  document.documentElement.lang = currentLanguage();
+  applyStaticStrings();
+
   // Registered before the first await: the main process sends 'win:mode' from
   // ready-to-show, and a listener attached later would miss it silently.
   window.api.onMode((next) => {
@@ -316,7 +328,7 @@ function releaseSwitches() {
 // in a devtools console the user does not have open.
 init().catch((err) => {
   console.error("renderer init failed", err);
-  toast("시작하지 못했습니다. 앱을 다시 실행해 주세요.", {
+  toast(t("app.startFailed"), {
     error: true,
     ms: 20000,
   });

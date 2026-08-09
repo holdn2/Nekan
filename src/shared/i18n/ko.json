@@ -1,0 +1,226 @@
+{
+  "common": {
+    "add": "추가",
+    "cancel": "취소",
+    "save": "저장",
+    "delete": "삭제"
+  },
+  "space": {
+    "work": "업무",
+    "life": "일상",
+    "view": "{{space}} 매트릭스 보기"
+  },
+  "titlebar": {
+    "boards": "매트릭스 선택",
+    "countInbox": "아직 분류하지 않은 항목 수",
+    "countQ1": "Urgent & Important 남은 개수",
+    "countQ2": "Important & Not Urgent 남은 개수",
+    "countQ3": "Urgent & Not Important 남은 개수",
+    "countQ4": "Not Urgent & Not Important 남은 개수",
+    "updateReady": "업데이트 준비됨",
+    "pin": "항상 위에 고정",
+    "unpin": "항상 위 고정 해제",
+    "collapse": "바 모드로 축소",
+    "expand": "펼치기",
+    "minimize": "작업표시줄로 최소화",
+    "close": "완전히 닫기"
+  },
+  "tabs": {
+    "matrix": "매트릭스",
+    "history": "히스토리",
+    "trash": "휴지통",
+    "guide": "가이드",
+    "hint": "할 일을 클릭하면 메모, 더블클릭하면 내용을 수정할 수 있어요"
+  },
+  "quad": {
+    "q1": {
+      "title": "Urgent & Important",
+      "action": "Do 진행하기"
+    },
+    "q2": {
+      "title": "Important & Not Urgent",
+      "action": "Plan 계획하기"
+    },
+    "q3": {
+      "title": "Urgent & Not Important",
+      "action": "Delegate 위임하기"
+    },
+    "q4": {
+      "title": "Not Urgent & Not Important",
+      "action": "Delete 제거하기"
+    }
+  },
+  "matrix": {
+    "addPlaceholder": "할 일 추가…",
+    "crowded": "이 칸이 이렇게 차 있으면 우선순위가 없는 것과 같습니다. 2분면에 시간을 먼저 잡아 두세요."
+  },
+  "item": {
+    "complete": "완료 (히스토리로 이동)",
+    "completeLabel": "완료: {{text}}",
+    "delete": "삭제 (휴지통으로 이동)",
+    "deleteLabel": "삭제: {{text}}",
+    "hint": "클릭하여 메모 · 더블클릭하여 수정",
+    "hintInbox": "더블클릭하여 수정 · 분면으로 끌어다 놓아 분류"
+  },
+  "inbox": {
+    "title": "다 꺼내기",
+    "shared": "공유",
+    "sharedTitle": "업무·일상 매트릭스가 함께 쓰는 목록입니다",
+    "hint": "업무·일상 구분 없이 일단 다 적고, 적절한 곳으로 끌어다 놓으세요",
+    "placeholder": "아무거나 적기 (여러 줄을 붙여넣으면 줄마다 하나씩 추가됩니다)"
+  },
+  "due": {
+    "field": "마감일",
+    "clear": "날짜 지우기",
+    "clearLabel": "마감일 지우기",
+    "set": "마감일 지정",
+    "chip": "마감 {{date}} · {{hint}}",
+    "today": "오늘",
+    "tomorrow": "내일",
+    "overdue_other": "{{count}}일 지남",
+    "remaining_other": "{{count}}일 남음"
+  },
+  "memo": {
+    "panel": "메모",
+    "close": "메모 닫기",
+    "edit": "더블클릭하여 수정",
+    "editing": "Ctrl+Enter 저장 · Esc 취소",
+    "placeholder": "메모를 입력하세요…",
+    "field": "메모 내용",
+    "confirmDelete": "이 메모를 삭제할까요? 되돌릴 수 없습니다.",
+    "mark": "메모: {{memo}}",
+    "markLabel": "메모 있음",
+    "collapse": "접기",
+    "expand": "전체 보기"
+  },
+  "history": {
+    "search": "완료한 항목 검색…",
+    "clearAll": "전체 휴지통으로"
+  },
+  "trash": {
+    "search": "삭제한 항목 검색…",
+    "restoreAll": "전체 복원",
+    "empty": "휴지통 비우기"
+  },
+  "settings": {
+    "title": "설정",
+    "theme": "테마",
+    "themeChoose": "테마 선택",
+    "themeLight": "일반",
+    "themeDark": "다크",
+    "export": "내보내기",
+    "sync": "기기 간 동기화",
+    "language": "언어",
+    "close": "닫기"
+  },
+  "language": {
+    "ko": "한국어",
+    "en": "English"
+  },
+  "update": {
+    "checking": "새 버전을 확인하는 중…",
+    "latest": "최신 버전입니다.",
+    "downloading": "새 버전{{version}}을 받는 중…",
+    "ready": "새 버전{{version}} 준비됨 — 앱을 닫으면 적용됩니다.",
+    "button": "새 버전{{version}} 준비됨 — 지금 재시작하여 적용",
+    "toast": "새 버전을 받았습니다.{{version}}",
+    "restart": "지금 재시작",
+    "releaseNotes": "릴리스 노트"
+  },
+  "export": {
+    "title": "{{space}} 매트릭스 내보내기",
+    "filterPdf": "PDF 문서",
+    "filterHtml": "HTML 문서",
+    "filterMarkdown": "마크다운",
+    "inboxAction": "분류하기 전에 적어둔 것",
+    "sectionEmpty": "비어 있음",
+    "meta_other": "내보낸 시각: {{stamp}} · 항목 {{count}}개",
+    "metaShort_other": "{{stamp}} · 항목 {{count}}개",
+    "due": "마감 {{date}} ({{hint}})",
+    "saved": "저장했습니다 · {{name}}",
+    "openFolder": "폴더 열기",
+    "nothing": "내보낼 항목이 없습니다.",
+    "failedWith": "저장하지 못했습니다: {{message}}",
+    "failed": "저장하지 못했습니다."
+  },
+  "account": {
+    "error": {
+      "offline": "인터넷에 연결되어 있지 않습니다.",
+      "timeout": "시간이 초과됐습니다. 다시 시도해 주세요.",
+      "cancelled": "로그인이 취소되었습니다.",
+      "providerDisabled": "아직 Google 로그인을 쓸 수 없습니다.",
+      "validationFailed": "로그인 설정이 아직 끝나지 않았습니다.",
+      "expired": "로그인이 만료되었습니다. 다시 시도해 주세요.",
+      "noBrowser": "브라우저를 열지 못했습니다.",
+      "noLoopback": "로그인 창을 여는 데 실패했습니다. 방화벽 설정을 확인해 주세요.",
+      "noSecureStorage": "이 컴퓨터에서는 로그인 정보를 안전하게 저장할 수 없어 로그인하지 않습니다.",
+      "invalidCredentials": "이메일 또는 비밀번호가 맞지 않습니다.",
+      "badResponse": "서버 응답을 이해하지 못했습니다.",
+      "noSession": "로그인이 풀렸습니다. 다시 로그인한 뒤 시도해 주세요."
+    },
+    "state": {
+      "syncing": "동기화 중",
+      "synced": "동기화됨",
+      "pending": "대기 {{count}}개",
+      "offline": "오프라인"
+    },
+    "gearOffline": "설정 — 서버에 닿지 못했습니다. 변경은 이 컴퓨터에 저장되어 있습니다.",
+    "gearState": "설정 — {{state}}",
+    "google": "Google로 로그인",
+    "adopt_other": "이 컴퓨터에 있는 할 일 <b>{{count}}</b>개도 계정에 합치기",
+    "adoptHint": "끄면 계정에 있는 것만 남습니다. 지금 있는 할 일은 지워지지 않고 <code>data.before-login.json</code>으로 옮겨 둡니다.",
+    "devEmail": "개발용 이메일",
+    "devPassword": "비밀번호",
+    "devSignIn": "개발용 로그인",
+    "signOut": "로그아웃",
+    "leave": "회원탈퇴",
+    "confirmLede": "계정과 <b>서버에 있는 사본</b>을 지웁니다. 다른 기기와의 동기화도 끊깁니다. <b>되돌릴 수 없습니다.</b>",
+    "confirmKeep": "<b>이 컴퓨터의 할 일은 그대로 남습니다.</b> 계정 없이 계속 쓸 수 있습니다.",
+    "confirmGo": "계정 삭제",
+    "finishInBrowser": "브라우저에서 로그인을 마쳐 주세요.",
+    "signedIn": "{{email}} 계정으로 로그인했습니다.",
+    "signInFailed": "로그인하지 못했습니다. ({{code}})",
+    "signOutFailed": "로그아웃하지 못했습니다. ({{code}})",
+    "signedOut": "로그아웃했습니다. 이 컴퓨터의 할 일은 그대로 있습니다.",
+    "deleting": "계정을 지우는 중…",
+    "deleteFailed": "계정을 지우지 못했습니다. ({{code}})",
+    "deleted": "계정을 삭제했습니다. 이 컴퓨터의 할 일은 그대로 있습니다.",
+    "overwritten_other": "다른 기기에서 바꾼 내용으로 {{count}}개를 덮어썼습니다."
+  },
+  "welcome": {
+    "lede": "할 일을 어디에 둘까요?",
+    "syncTitle": "Google로 로그인해서 동기화",
+    "syncSub": "여러 기기에서 같은 목록을 씁니다",
+    "localTitle": "이 컴퓨터에서만 쓰기",
+    "localSub": "계정 없이 바로 시작합니다",
+    "adopt_other": "이 컴퓨터에 있는 할 일 <b>{{count}}</b>개도 계정에 합치기",
+    "foot": "나중에 설정에서 언제든 바꿀 수 있습니다.",
+    "saveFailed": "설정을 저장하지 못했습니다. 다시 시도해 주세요.",
+    "signOutFailed": "로그아웃하지 못했습니다. 다시 시도해 주세요. ({{code}})"
+  },
+  "archive": {
+    "quadInbox": "미분류",
+    "quadQ1": "Urgent·Important",
+    "quadQ2": "Important",
+    "quadQ3": "Urgent",
+    "quadOther": "기타",
+    "more": "더 보기 ({{count}}개 남음)",
+    "expand": "전체 보기",
+    "noResults": "검색 결과가 없습니다.",
+    "historyEmpty": "완료한 항목이 아직 없습니다.",
+    "trashEmpty": "휴지통이 비어 있습니다.",
+    "restore": "되돌리기",
+    "delete": "삭제",
+    "untrash": "복원",
+    "purge": "영구 삭제",
+    "confirmTrashAll_other": "완료한 항목 {{count}}개를 휴지통으로 옮길까요?",
+    "confirmPurgeAll_other": "휴지통의 {{count}}개 항목을 영구 삭제할까요? 되돌릴 수 없습니다."
+  },
+  "oauth": {
+    "done": "확인했습니다. 이 창을 닫고 앱으로 돌아가 주세요.",
+    "failed": "로그인하지 못했습니다. 이 창은 닫으셔도 됩니다."
+  },
+  "app": {
+    "startFailed": "시작하지 못했습니다. 앱을 다시 실행해 주세요."
+  }
+}
