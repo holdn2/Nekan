@@ -296,6 +296,9 @@ export function wireChrome() {
   $("#releaseNotes").addEventListener("click", () =>
     window.api.openReleaseNotes(),
   );
+  $("#guidePrivacy").addEventListener("click", () =>
+    window.api.openPrivacyPolicy(),
+  );
 
   $("#sizeBtn").addEventListener("click", toggleSize);
   $("#minBtn").addEventListener("click", () => window.api.minimize());

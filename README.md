@@ -5,6 +5,10 @@ Claude 계열의 밝은 베이지 테마 + 다크 테마를 지원합니다.
 
 이름은 네 칸(4분면)에서 왔습니다. 앱 안팎에서 표기는 `Nekan` 하나로 통일합니다.
 
+웹페이지는 **[holdn2.github.io/Nekan](https://holdn2.github.io/Nekan/)** 입니다 —
+[개인정보처리방침](https://holdn2.github.io/Nekan/privacy/)과
+[계정·데이터 삭제 요청](https://holdn2.github.io/Nekan/delete-request/) 창구가 거기 있습니다.
+
 > The English version of this document is at [README.en.md](README.en.md).
 
 ## 설치
@@ -74,6 +78,7 @@ Claude 계열의 밝은 베이지 테마 + 다크 테마를 지원합니다.
 **계정을 아주 지우려면 설정의 `회원탈퇴`입니다.** 서버에 있는 사본과 다른 기기와의 동기화가
 사라지고 **되돌릴 수 없습니다.** 대신 **이 컴퓨터의 할 일은 그대로 남아서**, 계정 없이 계속
 쓸 수 있습니다. 누르면 바로 지우지 않고 그 내용을 한 번 더 보여준 뒤 확인을 받습니다.
+앱을 이미 지웠다면 [웹에서도 요청할 수 있습니다](https://holdn2.github.io/Nekan/delete-request/).
 
 로컬에 할 일이 있는 채로 처음 로그인하면 **그것도 계정에 합칠지 물어봅니다.** 합치지 않기를
 고르면 지우지 않고 `%APPDATA%\Nekan\data.before-login.json`으로 옮겨 둡니다 — 남의 컴퓨터에

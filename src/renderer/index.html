@@ -783,6 +783,18 @@
           <footer class="guide-about">
             <span class="about-app">Nekan <b id="appVersion">—</b></span>
             <span class="about-update" id="updateState"></span>
+            <!-- The one place the policy is reachable in every state. The
+                 account panel carries it too, but only where an account is;
+                 somebody who never signs in still deserves to find out what
+                 the app would send if they did. -->
+            <button
+              class="about-link"
+              id="guidePrivacy"
+              type="button"
+              data-i18n="legal.privacy"
+            >
+              Privacy policy
+            </button>
             <button
               class="about-link"
               id="releaseNotes"
@@ -1044,6 +1056,18 @@
           <div class="account-in hidden" id="accountIn">
             <span class="account-who" id="accountEmail"></span>
             <span class="account-state" id="accountState"></span>
+            <!-- The notice above this lives in the signed-out block, which is
+                 hidden the moment somebody signs in — so without this the
+                 people whose tasks are actually on the server were the only
+                 ones who could not reach the policy. -->
+            <button
+              class="text-link"
+              id="accountInPrivacy"
+              type="button"
+              data-i18n="legal.privacy"
+            >
+              Privacy policy
+            </button>
             <button
               class="account-out-btn"
               id="logoutBtn"

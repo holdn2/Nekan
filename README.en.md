@@ -5,6 +5,10 @@ Ships with a warm Claude-style light theme and a dark one.
 
 The name comes from the four boxes (_ne_ = four, _kan_ = box). It is spelled `Nekan` everywhere, in the app and out of it.
 
+The website is **[holdn2.github.io/Nekan](https://holdn2.github.io/Nekan/)** — the
+[privacy policy](https://holdn2.github.io/Nekan/privacy/en/) and the way to
+[request account and data deletion](https://holdn2.github.io/Nekan/delete-request/en/) live there.
+
 > 한국어 문서는 [README.md](README.md)에 있습니다.
 
 ## Install
@@ -72,7 +76,8 @@ of yours that had not gone up yet, **the app tells you it did** — nothing disa
 **To delete the account itself, use `Delete account` in the settings.** The copy on the server and the syncing with
 your other devices both go away, and **it cannot be undone.** The **tasks on this computer stay**, so you can go on
 using the app without an account. Pressing it does not delete anything immediately: it shows you what will happen
-and asks again.
+and asks again. If you have already uninstalled the app, you can
+[ask from the web instead](https://holdn2.github.io/Nekan/delete-request/en/).
 
 If you sign in for the first time with tasks already on this computer, **the app asks whether to merge those into
 the account.** Decline and nothing is deleted — they are moved to `%APPDATA%\Nekan\data.before-login.json`. That

@@ -280,8 +280,11 @@ async function finish(promise) {
 export function wireAccount() {
   cache();
 
-  $("#accountPrivacy").addEventListener("click", () =>
-    window.api.openPrivacyPolicy(),
+  // Two of them: one beside the sign-in button, where the notice explains what
+  // pressing it sends, and one beside the account itself, which is the only one
+  // a signed-in person can see.
+  [$("#accountPrivacy"), $("#accountInPrivacy")].forEach((el) =>
+    el.addEventListener("click", () => window.api.openPrivacyPolicy()),
   );
 
   els.google.addEventListener("click", () => {
