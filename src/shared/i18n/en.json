@@ -95,7 +95,7 @@
       "urgency": "<b>Then urgency</b> — is there a deadline, does it need a response right now?",
       "place": "<b>Put it in a quadrant</b> — when it could go either way, pick the less important one. You can move it later.",
       "reserve": "<b>Book time for quadrant 2</b> — claim a slot in your calendar in advance. Leave this step out and the matrix is just a list.",
-      "review": "<b>Come back to it regularly</b> — rearrange the quadrants at the end of a day or a week. Urgency changes as time passes."
+      "review": "<b>Come back to it regularly</b> — rearrange the quadrants at the end of a day or a week."
     },
     "pointsTitle": "Worth remembering",
     "points": {

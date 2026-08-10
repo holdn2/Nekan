@@ -16,29 +16,6 @@ When it finishes you get a **Nekan** shortcut on the desktop and in the Start me
 > The build is not code-signed yet, so Windows SmartScreen puts up a "Windows protected your PC" warning.
 > **More info → Run anyway** installs it.
 
-## Updates
-
-**There is nothing to do.** While the app is open it checks for a new version and downloads it in the background.
-A downloaded version **is applied when you close the app**, so the next time you launch it you are already up to date.
-
-It checks at three moments: **just after launch**, **when you come back to the app or the computer wakes from sleep**,
-and, regardless of those, **every six hours**. The middle one is there so an app left running for days does not
-learn about a new version late; to avoid asking too often, checks are at least 30 minutes apart.
-
-If you would rather not wait, the **↑** button that appears in the title bar (or **Restart now** in the notification
-that comes with it) restarts and applies it there and then. **That button only appears once a version has been
-downloaded** — if you cannot see it, you are either already up to date or it is still downloading. A failed check
-(no network, say) shows nothing at all.
-
-Your tasks live in `%APPDATA%\Nekan`, not in the install folder, so an update leaves them alone.
-
-**The running version is written beside the app name in the title bar**, in small text (it drops out of bar mode
-along with the name, so it costs the bar no width).
-
-**At the bottom of the [Guide tab](#guide-tab)** you get the version, the update state (`This is the latest version` ·
-`Downloading the new version…` · `ready`) and a link to the release notes. When a check **fails it says nothing at
-all** — claiming "you are up to date" after failing to check would be the worst lie available.
-
 ## The first launch
 
 **On the first run the app asks where your tasks should live.**
@@ -100,6 +77,29 @@ and asks again.
 If you sign in for the first time with tasks already on this computer, **the app asks whether to merge those into
 the account.** Decline and nothing is deleted — they are moved to `%APPDATA%\Nekan\data.before-login.json`. That
 option exists so a quick sign-in on somebody else's computer does not push their tasks into your account.
+
+## Updates
+
+**There is nothing to do.** While the app is open it checks for a new version and downloads it in the background.
+A downloaded version **is applied when you close the app**, so the next time you launch it you are already up to date.
+
+It checks at three moments: **just after launch**, **when you come back to the app or the computer wakes from sleep**,
+and, regardless of those, **every six hours**. The middle one is there so an app left running for days does not
+learn about a new version late; to avoid asking too often, checks are at least 30 minutes apart.
+
+If you would rather not wait, the **↑** button that appears in the title bar (or **Restart now** in the notification
+that comes with it) restarts and applies it there and then. **That button only appears once a version has been
+downloaded** — if you cannot see it, you are either already up to date or it is still downloading. A failed check
+(no network, say) shows nothing at all.
+
+Your tasks live in `%APPDATA%\Nekan`, not in the install folder, so an update leaves them alone.
+
+**The running version is written beside the app name in the title bar**, in small text (it drops out of bar mode
+along with the name, so it costs the bar no width).
+
+**At the bottom of the [Guide tab](#guide-tab)** you get the version, the update state (`This is the latest version` ·
+`Downloading the new version…` · `ready`) and a link to the release notes. When a check **fails it says nothing at
+all**.
 
 ## Running it (development)
 
