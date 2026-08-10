@@ -36,7 +36,12 @@ const SKIP = new Set(["i18n"]);
 /** Blank out comments so their Korean does not count as work left to do. */
 function stripComments(text, ext) {
   if (ext === ".html") return text.replace(/<!--[\s\S]*?-->/g, blank);
-  return text.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/^\s*\/\/.*$/gm, "");
+  const blocks = text.replace(/\/\*[\s\S]*?\*\//g, blank);
+  // CSS has no `//` comment. Blanking those lines there would hide a real
+  // declaration -- and hiding one is the only way this tool can lie, which is
+  // the whole thing it exists not to do.
+  if (ext === ".css") return blocks;
+  return blocks.replace(/^\s*\/\/.*$/gm, "");
 }
 
 /** Keep the line count identical so reported line numbers stay true. */
