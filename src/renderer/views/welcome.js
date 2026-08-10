@@ -166,6 +166,13 @@ export function wireWelcome(done) {
   els.adoptText = $("#welcomeAdoptText");
   els.msg = $("#welcomeMsg");
 
+  // Opens in the real browser, like the guide tab's release-notes link. The
+  // overlay covers the title bar, so there is nowhere else on this screen a
+  // reader could reach it from.
+  $("#welcomePrivacy").addEventListener("click", () =>
+    window.api.openPrivacyPolicy(),
+  );
+
   els.sync.addEventListener("click", chooseSync);
   els.local.addEventListener("click", async () => {
     if (busy) return;

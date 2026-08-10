@@ -57,6 +57,9 @@ contextBridge.exposeInMainWorld("api", {
   deleteAccount: () => ipcRenderer.invoke("account:delete"),
   installUpdate: () => ipcRenderer.invoke("update:install"),
   openReleaseNotes: () => ipcRenderer.invoke("update:notes"),
+  // Opens the policy page for the language the app is in. Like the releases
+  // link, it takes nothing — the renderer cannot choose what gets opened.
+  openPrivacyPolicy: () => ipcRenderer.invoke("legal:privacy"),
   onMode: (cb) => ipcRenderer.on("win:mode", (_e, mode) => cb(mode)),
   onUpdateStatus: (cb) =>
     ipcRenderer.on("update:status", (_e, status) => cb(status)),

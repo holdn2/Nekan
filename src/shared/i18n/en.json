@@ -5,6 +5,10 @@
     "save": "Save",
     "delete": "Delete"
   },
+  "legal": {
+    "privacy": "Privacy policy",
+    "notice": "Signing in stores your email and your tasks on a server."
+  },
   "space": {
     "work": "Work",
     "life": "Life",

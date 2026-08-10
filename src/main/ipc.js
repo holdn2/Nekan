@@ -12,8 +12,20 @@
 
 const { app, ipcMain, shell } = require("electron");
 
-/** Where the guide tab's link goes. The only URL this process will open. */
+/** Where the guide tab's link goes. */
 const RELEASES_URL = "https://github.com/holdn2/Nekan/releases";
+
+/**
+ * The privacy policy, one page per language.
+ *
+ * A map rather than one URL with the language appended: the set of pages that
+ * exist is a fact about the site, not about the language tag, and a missing
+ * language should fall back to a page that is really there.
+ */
+const PRIVACY_URL = {
+  ko: "https://holdn2.github.io/Nekan/privacy/",
+  en: "https://holdn2.github.io/Nekan/privacy/en/",
+};
 
 const { sanitizeLayout, sanitizeSpace } = require("../shared/core");
 const {
@@ -34,7 +46,7 @@ const {
 } = require("./window");
 const { revealExport, runExport } = require("./export-service");
 const { getUpdateStatus, installUpdate } = require("./updater");
-const { setMainLanguage } = require("./i18n");
+const { language, setMainLanguage } = require("./i18n");
 const { storedLanguage } = require("../shared/i18n/locales");
 const {
   deleteAccount,
@@ -213,6 +225,15 @@ function registerIpc() {
   // renderer passed would be a way to launch anything the moment a task's text
   // could reach it; this one can only ever open the releases page.
   ipcMain.handle("update:notes", () => shell.openExternal(RELEASES_URL));
+
+  /* ------------------------------------------------------------- legal */
+
+  // Takes no argument for the same reason as update:notes above. The language
+  // is read here rather than passed in, so the renderer cannot pick the page
+  // either -- there is nothing on this channel for a task's text to steer.
+  ipcMain.handle("legal:privacy", () =>
+    shell.openExternal(PRIVACY_URL[language()] || PRIVACY_URL.en),
+  );
 
   /* -------------------------------------------------------------- auth */
 

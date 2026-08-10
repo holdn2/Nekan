@@ -954,6 +954,21 @@
               <span data-i18n="account.google">Sign in with Google</span>
             </button>
 
+            <!-- The other door into the same decision. Signing in is reachable
+                 from here as well as the first-run card, so the notice has to
+                 be in both or it leaks out of one of them. -->
+            <p class="account-hint">
+              <span data-i18n="legal.notice"></span>
+              <button
+                class="text-link"
+                id="accountPrivacy"
+                type="button"
+                data-i18n="legal.privacy"
+              >
+                Privacy policy
+              </button>
+            </p>
+
             <!-- Only shown when there is something to lose. Somebody signing
                in on a fresh machine has no decision to make and should not
                be handed one. -->
@@ -1139,8 +1154,22 @@
         </label>
 
         <p class="welcome-msg" id="welcomeMsg" role="status"></p>
-        <p class="welcome-foot" data-i18n="welcome.foot">
-          You can change this later in Settings.
+        <!-- The notice sits in the footer rather than under the sync button
+             because this card has to fit a 760x520 window, and the sync button
+             is the tallest thing in it. Both choices are still on screen. -->
+        <p class="welcome-foot">
+          <span data-i18n="welcome.foot"
+            >You can change this later in Settings.</span
+          >
+          <span data-i18n="legal.notice"></span>
+          <button
+            class="text-link"
+            id="welcomePrivacy"
+            type="button"
+            data-i18n="legal.privacy"
+          >
+            Privacy policy
+          </button>
         </p>
       </div>
     </div>

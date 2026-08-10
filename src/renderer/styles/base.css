@@ -92,3 +92,20 @@ button {
   color: inherit;
   cursor: pointer;
 }
+
+/* A button that reads as a link. Two areas use it -- the first-run card and
+   the account panel -- so it lives here rather than in either one's sheet,
+   for the same reason .switch does. */
+.text-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.text-link:hover {
+  opacity: 0.8;
+}
