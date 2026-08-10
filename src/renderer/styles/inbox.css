@@ -135,7 +135,7 @@ section.inbox.open .inbox-body {
 }
 
 .inbox-list:empty::after {
-  content: "떠오르는 대로 전부 적어두세요";
+  content: attr(data-empty);
   display: block;
   padding: 10px 8px;
   color: var(--faint);

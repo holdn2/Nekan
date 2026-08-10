@@ -1,0 +1,116 @@
+/* One stylesheet for every page on this site. Kept plain on purpose: the
+   pages a store links to should render on anything, including a ten-year-old
+   phone browser in a review queue. */
+:root {
+  color-scheme: light dark;
+  --bg: #fbf9f5;
+  --fg: #24211c;
+  --muted: #6b655c;
+  --line: #e2dcd2;
+  --card: #fff;
+  --accent: #b4623a;
+  --code-bg: #f2ede5;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #191714;
+    --fg: #e8e3da;
+    --muted: #9a9288;
+    --line: #332f29;
+    --card: #201d19;
+    --accent: #d98a5e;
+    --code-bg: #262220;
+  }
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  padding: 40px 20px 72px;
+  background: var(--bg);
+  color: var(--fg);
+  font:
+    16px/1.75 -apple-system,
+    "Segoe UI",
+    "Malgun Gothic",
+    sans-serif;
+}
+main {
+  max-width: 760px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: 26px;
+  line-height: 1.35;
+  margin: 0 0 6px;
+}
+.sub {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0 0 32px;
+}
+h2 {
+  font-size: 18px;
+  margin: 38px 0 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+p,
+li {
+  margin: 10px 0;
+}
+code {
+  background: var(--code-bg);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 13.5px;
+  font-family: "Cascadia Mono", Consolas, monospace;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 16px 0;
+  font-size: 14.5px;
+  display: block;
+  overflow-x: auto;
+}
+th,
+td {
+  border: 1px solid var(--line);
+  padding: 8px 11px;
+  text-align: left;
+  vertical-align: top;
+}
+th {
+  background: var(--card);
+  white-space: nowrap;
+}
+.box {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  padding: 14px 18px;
+  margin: 18px 0;
+}
+.box p:first-child {
+  margin-top: 0;
+}
+.box p:last-child {
+  margin-bottom: 0;
+}
+a {
+  color: var(--accent);
+}
+.lang {
+  float: right;
+  font-size: 14px;
+}
+footer {
+  margin-top: 48px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13.5px;
+}

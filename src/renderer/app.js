@@ -41,7 +41,12 @@ import {
 } from "./views/account.js";
 import { dropStaleSelection, renderMemo, wireMemo } from "./views/memo.js";
 import { closeSettings, wireSettings } from "./views/settings.js";
-import { needsWelcome, showWelcome, wireWelcome } from "./views/welcome.js";
+import {
+  needsWelcome,
+  relabelWelcome,
+  showWelcome,
+  wireWelcome,
+} from "./views/welcome.js";
 import {
   applyMode,
   applyPinned,
@@ -80,6 +85,10 @@ function render() {
   // never rebuilt, so they would keep the old language until the matrix tab
   // happened to redraw.
   relabelAddForms();
+  // Same again, one screen further out: the first-run card is built once and
+  // sits above everything, so its merge line keeps the language and the count
+  // it was born with. A no-op while the card is not showing.
+  relabelWelcome();
   // Cheap, and outside the bar-mode return below: the account block counts the
   // tasks a sign-in would carry up, and that number moves with every change.
   renderAccount();

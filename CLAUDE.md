@@ -353,7 +353,8 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   용어 대응은 `src/shared/i18n/GLOSSARY.md`에 있다 — **새 문자열을 넣기 전에 거기부터 본다.**
   같은 한국어가 파일마다 다른 영어로 나가는 것을 막는 유일한 장치다.
 - **진행률은 기억이 아니라 `node tools/find-untranslated.js`의 숫자다.** 파일별로 남은 한글
-  줄 수를 센다(주석 제외). `index.html` 한글의 절반이 `title`·`aria-label`이라 **눈으로는
+  줄 수를 센다(주석 제외). **`.js`·`.html`·`.css` 셋을 본다** — CSS를 빼먹었던 동안 도구는
+  0을 말하면서 화면에는 한글 배지가 떠 있었다(위 ④). `index.html` 한글의 절반이 `title`·`aria-label`이라 **눈으로는
   끝났는지 알 수 없다** — 다 된 것처럼 보이는데 스크린 리더는 한국어를 읽는다.
 - **i18next는 `node_modules`에서 직접 import한다** (`../../node_modules/i18next/dist/esm/i18next.js`).
   JSON 카탈로그도 `with { type: "json" }`으로 직접 import한다. **둘 다 패키징된 asar에서
@@ -372,7 +373,15 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   `relabelAddForms()`가 네 개를 다시 칠한다. **그 호출은 `renderMatrix()`가 아니라 `render()`에
   있다** — 매트릭스는 자기 탭에서만 다시 그려서, 가이드 탭에서 언어를 바꾸면 네 개가 그대로
   남는다. 안 보이는 자리라 기억으로 때울 수 없고, 그래서 고쳤다.
+  **첫 실행 카드가 같은 부류의 두 번째 사례다** — `welcome.adopt`는 카드가 열릴 때 한 번 쓰이고
+  아무것도 다시 그리지 않아서, 태어날 때의 언어와 개수를 그대로 들고 있었다. `relabelWelcome()`을
+  `render()`에서 부른다(카드가 안 떠 있으면 no-op).
   **새 문자열을 넣을 때 "이건 언제 다시 그려지지?"를 먼저 물을 것.**
+  ④ **CSS `content:` 문자열** — 화면에 나가는 낱말인데 **어떤 카탈로그도 닿을 수 없다.**
+  첫 실행 카드의 `추천` 배지, 빈 다 꺼내기 안내, 빈 분면의 `비어 있음` 셋이 그랬다.
+  `:empty::after` 같은 CSS 전용 빈 상태를 유지하고 싶으면 `content: attr(data-empty)`로 두고
+  마크업에 `data-i18n-attr="data-empty"`를 건다 — `applyStaticStrings()`의 속성 처리기는
+  임의 속성 이름을 받는다. **스타일시트에 낱말을 적지 말 것.**
 - **검수는 눈이 아니라 DOM 훑기로 한다.** 영어로 바꾼 뒤 `document.querySelectorAll('*')`를
   돌며 텍스트 노드와 **모든 속성값**에서 한글을 찾는다(task 텍스트와 언어 `<option>`은 제외).
   위 세 가지가 전부 이렇게 나왔다 — 화면만 보면 다 번역된 것처럼 보인다.

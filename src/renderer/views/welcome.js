@@ -13,7 +13,7 @@
 import { $ } from "../dom.js";
 import { needsStartupChoice } from "../core-bridge.js";
 import { activeCount } from "../store.js";
-import { t, tNodes } from "../i18n.js";
+import { t, tNodes, wireLanguageSelect } from "../i18n.js";
 
 /** Set by app.js: how a finished choice reaches the rest of the startup. */
 let onDone = () => {};
@@ -57,14 +57,27 @@ function say(text, isError = false) {
  */
 export const needsWelcome = needsStartupChoice;
 
-/** Put it on screen, with the local-tasks question only if there are any. */
-export function showWelcome() {
+/**
+ * The merge line, written from scratch.
+ *
+ * Its own function because it is built once when the card opens and then
+ * outlives every reason it had to be right: the count moves as tasks change,
+ * and the language can move under it. Nothing redraws this card otherwise, so
+ * whatever is on it stays until somebody rewrites it.
+ */
+export function relabelWelcome() {
+  if (!els.adoptText || els.root.classList.contains("hidden")) return;
   const count = activeCount();
   // Written whole rather than as a number dropped into fixed markup — see the
   // same label in views/account.js.
   els.adoptText.replaceChildren(...tNodes("welcome.adopt", { count }));
   els.adopt.classList.toggle("hidden", count === 0);
+}
+
+/** Put it on screen, with the local-tasks question only if there are any. */
+export function showWelcome() {
   els.root.classList.remove("hidden");
+  relabelWelcome();
 }
 
 /**
@@ -165,6 +178,17 @@ export function wireWelcome(done) {
   els.adoptBox = $("#welcomeAdoptBox");
   els.adoptText = $("#welcomeAdoptText");
   els.msg = $("#welcomeMsg");
+
+  // Opens in the real browser, like the guide tab's release-notes link. The
+  // overlay covers the title bar, so there is nowhere else on this screen a
+  // reader could reach it from.
+  $("#welcomePrivacy").addEventListener("click", () =>
+    window.api.openPrivacyPolicy(),
+  );
+
+  // Same reason: the gear is behind this screen. Switching here moves the one
+  // in the settings panel too — see wireLanguageSelect.
+  wireLanguageSelect($("#welcomeLanguage"));
 
   els.sync.addEventListener("click", chooseSync);
   els.local.addEventListener("click", async () => {

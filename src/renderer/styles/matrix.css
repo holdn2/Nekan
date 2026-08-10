@@ -175,7 +175,7 @@ body.resizing-both {
 }
 
 .list:empty::after {
-  content: "비어 있음";
+  content: attr(data-empty);
   display: block;
   padding: 14px 8px;
   color: var(--faint);

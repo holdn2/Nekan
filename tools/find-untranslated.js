@@ -14,6 +14,11 @@
  * where they are Korean and are not shipped to anybody. The catalogues are
  * skipped too, for the obvious reason.
  *
+ * Stylesheets are scanned as well, and that is not belt-and-braces: a CSS
+ * `content:` string is a word on screen that no catalogue can reach. The
+ * "Recommended" badge on the first-run card was exactly that, and this tool
+ * reported zero while the badge sat there in Korean under an English UI.
+ *
  * Only whole-line `//` comments are stripped, not trailing ones -- a Korean
  * comment after code counts as a hit. That is deliberate. Stripping every `//`
  * would eat the one inside `https://` in a string, and a real lexical scanner
@@ -31,7 +36,12 @@ const SKIP = new Set(["i18n"]);
 /** Blank out comments so their Korean does not count as work left to do. */
 function stripComments(text, ext) {
   if (ext === ".html") return text.replace(/<!--[\s\S]*?-->/g, blank);
-  return text.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/^\s*\/\/.*$/gm, "");
+  const blocks = text.replace(/\/\*[\s\S]*?\*\//g, blank);
+  // CSS has no `//` comment. Blanking those lines there would hide a real
+  // declaration -- and hiding one is the only way this tool can lie, which is
+  // the whole thing it exists not to do.
+  if (ext === ".css") return blocks;
+  return blocks.replace(/^\s*\/\/.*$/gm, "");
 }
 
 /** Keep the line count identical so reported line numbers stay true. */
@@ -44,7 +54,7 @@ function walk(dir, out = []) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       if (!SKIP.has(entry.name)) walk(full, out);
-    } else if (/\.(js|html)$/.test(entry.name)) {
+    } else if (/\.(js|html|css)$/.test(entry.name)) {
       out.push(full);
     }
   }

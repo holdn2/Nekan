@@ -342,7 +342,13 @@
         >
       </header>
       <div class="inbox-body" id="inboxBody">
-        <ul class="inbox-list" id="inboxList"></ul>
+        <ul
+          class="inbox-list"
+          id="inboxList"
+          data-i18n="inbox.empty"
+          data-i18n-attr="data-empty"
+          data-i18n-attr-only
+        ></ul>
         <form class="add inbox-add" id="inboxAdd">
           <input
             type="text"
@@ -377,7 +383,13 @@
           <span class="sub" data-i18n="quad.q1.action">Do it now</span>
           <span class="count" data-count="q1">0</span>
         </header>
-        <ul class="list" data-list="q1"></ul>
+        <ul
+          class="list"
+          data-list="q1"
+          data-i18n="matrix.empty"
+          data-i18n-attr="data-empty"
+          data-i18n-attr-only
+        ></ul>
         <form class="add" data-add="q1">
           <input
             type="text"
@@ -407,7 +419,13 @@
           <span class="sub" data-i18n="quad.q2.action">Plan it</span>
           <span class="count" data-count="q2">0</span>
         </header>
-        <ul class="list" data-list="q2"></ul>
+        <ul
+          class="list"
+          data-list="q2"
+          data-i18n="matrix.empty"
+          data-i18n-attr="data-empty"
+          data-i18n-attr-only
+        ></ul>
         <form class="add" data-add="q2">
           <input
             type="text"
@@ -437,7 +455,13 @@
           <span class="sub" data-i18n="quad.q3.action">Delegate it</span>
           <span class="count" data-count="q3">0</span>
         </header>
-        <ul class="list" data-list="q3"></ul>
+        <ul
+          class="list"
+          data-list="q3"
+          data-i18n="matrix.empty"
+          data-i18n-attr="data-empty"
+          data-i18n-attr-only
+        ></ul>
         <form class="add" data-add="q3">
           <input
             type="text"
@@ -467,7 +491,13 @@
           <span class="sub" data-i18n="quad.q4.action">Drop it</span>
           <span class="count" data-count="q4">0</span>
         </header>
-        <ul class="list" data-list="q4"></ul>
+        <ul
+          class="list"
+          data-list="q4"
+          data-i18n="matrix.empty"
+          data-i18n-attr="data-empty"
+          data-i18n-attr-only
+        ></ul>
         <form class="add" data-add="q4">
           <input
             type="text"
@@ -954,6 +984,21 @@
               <span data-i18n="account.google">Sign in with Google</span>
             </button>
 
+            <!-- The other door into the same decision. Signing in is reachable
+                 from here as well as the first-run card, so the notice has to
+                 be in both or it leaks out of one of them. -->
+            <p class="account-hint">
+              <span data-i18n="legal.notice"></span>
+              <button
+                class="text-link"
+                id="accountPrivacy"
+                type="button"
+                data-i18n="legal.privacy"
+              >
+                Privacy policy
+              </button>
+            </p>
+
             <!-- Only shown when there is something to lose. Somebody signing
                in on a fresh machine has no decision to make and should not
                be handed one. -->
@@ -1066,6 +1111,18 @@
          only moment where "this app can also use an account" can be said at
          all; put off, it becomes a feature nobody ever finds. -->
     <div class="welcome hidden" id="welcome">
+      <!-- The gear is behind this overlay, so this is the only way to change
+           language before the question is answered. Somebody whose machine
+           opened the app in a language they cannot read should not have to
+           decide where their tasks live first. -->
+      <select
+        class="settings-select welcome-lang"
+        id="welcomeLanguage"
+        aria-label="Language"
+        data-i18n="settings.language"
+        data-i18n-attr="aria-label"
+        data-i18n-attr-only
+      ></select>
       <div class="welcome-card">
         <img class="welcome-logo" src="../assets/icon.png" alt="" />
         <h1>Nekan</h1>
@@ -1097,7 +1154,17 @@
             />
           </svg>
           <span class="welcome-choice-text">
-            <b data-i18n="welcome.syncTitle">Sign in with Google and sync</b>
+            <b>
+              <span data-i18n="welcome.syncTitle"
+                >Sign in with Google and sync</span
+              >
+              <!-- Markup rather than a CSS `content` string. It used to be one,
+                   which put a word on screen that no catalogue could reach and
+                   that the untranslated sweep could not see. -->
+              <span class="welcome-badge" data-i18n="welcome.recommended"
+                >Recommended</span
+              >
+            </b>
             <small data-i18n="welcome.syncSub">
               The same list on every device
             </small>
@@ -1139,8 +1206,22 @@
         </label>
 
         <p class="welcome-msg" id="welcomeMsg" role="status"></p>
-        <p class="welcome-foot" data-i18n="welcome.foot">
-          You can change this later in Settings.
+        <!-- The notice sits in the footer rather than under the sync button
+             because this card has to fit a 760x520 window, and the sync button
+             is the tallest thing in it. Both choices are still on screen. -->
+        <p class="welcome-foot">
+          <span data-i18n="welcome.foot"
+            >You can change this later in Settings.</span
+          >
+          <span data-i18n="legal.notice"></span>
+          <button
+            class="text-link"
+            id="welcomePrivacy"
+            type="button"
+            data-i18n="legal.privacy"
+          >
+            Privacy policy
+          </button>
         </p>
       </div>
     </div>

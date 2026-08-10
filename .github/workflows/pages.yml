@@ -1,0 +1,48 @@
+# Publishes site/ to GitHub Pages.
+#
+# site/ rather than docs/ on purpose: docs/ already holds DECISIONS.md and the
+# gitignored discussions/, and neither belongs on a page a store links to.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; let a newer push win, but do not cancel a deploy
+# that is already writing.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # The contact address is filled in before this ever goes live. Failing
+      # here is the point: a policy page that still says {{CONTACT_EMAIL}} is
+      # worse than no page, because a store reviewer reads it as abandoned.
+      - name: Refuse to publish an unfilled placeholder
+        run: |
+          if grep -rn '{{CONTACT_EMAIL}}' site/; then
+            echo "::error::site/ still contains {{CONTACT_EMAIL}} — fill in the contact address first."
+            exit 1
+          fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4

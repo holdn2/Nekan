@@ -280,6 +280,10 @@ async function finish(promise) {
 export function wireAccount() {
   cache();
 
+  $("#accountPrivacy").addEventListener("click", () =>
+    window.api.openPrivacyPolicy(),
+  );
+
   els.google.addEventListener("click", () => {
     if (signingIn) return;
     finish(window.api.signInWithGoogle(adoptMode()));

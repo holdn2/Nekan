@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy policy · Nekan</title>
+    <link rel="stylesheet" href="../../style.css" />
+  </head>
+  <body>
+    <main>
+      <p class="lang"><a href="../">한국어</a></p>
+      <h1>Nekan privacy policy</h1>
+      <p class="sub">Effective 2026-08-10 · <a href="../../">Nekan</a></p>
+
+      <div class="box">
+        <p>
+          <strong>Nothing is collected unless you sign in.</strong> Nekan works
+          completely without an account, and in that case your tasks only ever
+          live in a file on your own computer. Everything below applies
+          <strong>only when you have signed in to sync across devices</strong>.
+        </p>
+      </div>
+
+      <h2>1. What is collected, and why</h2>
+      <table>
+        <tr>
+          <th>Data</th>
+          <th>Purpose</th>
+          <th>Collected when</th>
+        </tr>
+        <tr>
+          <td>Email address</td>
+          <td>Identifying the account and showing you are signed in</td>
+          <td>You sign in with a Google account</td>
+        </tr>
+        <tr>
+          <td>User identifier (UUID)</td>
+          <td>Telling your tasks apart from everyone else's</td>
+          <td>The account is created</td>
+        </tr>
+        <tr>
+          <td>The name and profile picture on your Google account</td>
+          <td>
+            Google hands these over with the account details at sign-in and the
+            authentication server keeps them.
+            <strong>The app neither reads nor writes them</strong> and shows
+            them nowhere.
+          </td>
+          <td>You sign in with a Google account</td>
+        </tr>
+        <tr>
+          <td>
+            Task content — text, notes, due dates, quadrant, Work/Life side,
+            sort order, and the times it was created, edited, completed, deleted
+            or deleted forever
+          </td>
+          <td>Syncing across your devices</td>
+          <td>You create or change a task while signed in</td>
+        </tr>
+      </table>
+
+      <p><strong>What is never collected:</strong></p>
+      <ul>
+        <li>Phone number, address, date of birth, gender</li>
+        <li>Location, contacts, photos, files</li>
+        <li>
+          Advertising identifiers —
+          <strong>there are no ads and no tracking of any kind</strong>
+        </li>
+        <li>
+          Usage or analytics data — no analytics tool is built into the app
+        </li>
+      </ul>
+
+      <h2>2. Retention and deletion</h2>
+      <ul>
+        <li>
+          Data is kept <strong>until you delete your account</strong>.
+          <strong>Settings (⚙) → Delete account</strong> in the app removes the
+          account and the tasks held on the server, and
+          <strong>it cannot be undone</strong>.
+        </li>
+        <li>
+          When you delete a task forever its content — the text and the note —
+          <strong>is erased immediately</strong>. A
+          <strong>content-free deletion marker</strong> (an identifier and a
+          timestamp) stays for <strong>90 days</strong> so that a device which
+          has not synced yet cannot bring the task back, and is then removed.
+        </li>
+        <li>
+          Signing out is not deletion.
+          <strong
+            >The tasks on your computer and the copy on the server both
+            stay.</strong
+          >
+        </li>
+      </ul>
+
+      <h2>3. Processors</h2>
+      <table>
+        <tr>
+          <th>Processor</th>
+          <th>What they do</th>
+          <th>Where data is stored</th>
+        </tr>
+        <tr>
+          <td>Supabase, Inc.</td>
+          <td>Account authentication, storing and syncing task data</td>
+          <td>Seoul, South Korea region</td>
+        </tr>
+        <tr>
+          <td>Google LLC</td>
+          <td>Google account sign-in</td>
+          <td>Per Google's own policy</td>
+        </tr>
+      </table>
+      <p>
+        Beyond those two,
+        <strong>nothing is shared with or sold to anyone.</strong> Google
+        sign-in only happens if you choose that method yourself.
+      </p>
+      <p>
+        The records that exist simply because a server was spoken to — access
+        logs, including IP addresses — are kept by those processors and by
+        whoever serves this page, each under their own policy.
+        <strong>Nekan neither collects nor uses them.</strong>
+      </p>
+
+      <h2>4. Your rights</h2>
+      <ul>
+        <li>
+          <strong>Access and correction</strong> — everything is visible and
+          editable inside the app at any time. No request is needed.
+        </li>
+        <li>
+          <strong>Deletion</strong> —
+          <strong>Settings (⚙) → Delete account</strong> does it yourself. If
+          you have already uninstalled the app, or cannot reach that screen, use
+          the <a href="../../delete-request/en/">deletion request page</a>.
+        </li>
+        <li>
+          <strong>Withdrawing consent</strong> — signing out stops anything
+          further being sent to the server. To remove the copy already there,
+          delete the account.
+        </li>
+      </ul>
+
+      <h2>5. How the data is protected</h2>
+      <ul>
+        <li>
+          All traffic to and from the server is
+          <strong>encrypted with HTTPS</strong>.
+        </li>
+        <li>
+          The database enforces that
+          <strong>you can only read and write your own rows</strong>
+          (Row Level Security). Somebody else's tasks do not come back even if
+          asked for.
+        </li>
+        <li>
+          Sign-in credentials are stored on your computer
+          <strong
+            >encrypted through the operating system's secure storage</strong
+          >, never in plain text.
+        </li>
+      </ul>
+
+      <h2>6. Children</h2>
+      <p>
+        Nekan is not directed at children under 14, and their personal data is
+        not knowingly collected.
+      </p>
+
+      <h2>7. Changes to this policy</h2>
+      <p>
+        If this changes, this page is updated and the effective date above is
+        changed with it. Significant changes are also announced inside the app.
+      </p>
+
+      <h2>8. Contact</h2>
+      <p>
+        For privacy questions or deletion requests, write to
+        <code>nekan.support@gmail.com</code>.
+      </p>
+
+      <footer>
+        Nekan · <a href="../../">Home</a> ·
+        <a href="../../delete-request/en/">Deletion request</a> ·
+        <a href="https://github.com/holdn2/Nekan">GitHub</a>
+      </footer>
+    </main>
+  </body>
+</html>

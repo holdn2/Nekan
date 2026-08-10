@@ -5,6 +5,10 @@
     "save": "Save",
     "delete": "Delete"
   },
+  "legal": {
+    "privacy": "Privacy policy",
+    "notice": "Signing in stores your email and your tasks on a server."
+  },
   "space": {
     "work": "Work",
     "life": "Life",
@@ -172,7 +176,8 @@
   },
   "matrix": {
     "addPlaceholder": "Add a task…",
-    "crowded": "A quadrant this full is the same as having no priorities at all. Block out time in quadrant 2 first."
+    "crowded": "A quadrant this full is the same as having no priorities at all. Block out time in quadrant 2 first.",
+    "empty": "Empty"
   },
   "item": {
     "complete": "Complete (moves to the history)",
@@ -187,7 +192,8 @@
     "shared": "Shared",
     "sharedTitle": "One list, used by both the Work and Life matrices",
     "hint": "Write everything down first, Work or Life alike, then drag each one where it belongs",
-    "placeholder": "Write anything (paste several lines to add one task per line)"
+    "placeholder": "Write anything (paste several lines to add one task per line)",
+    "empty": "Write them down as they come"
   },
   "due": {
     "field": "Due date",
@@ -316,6 +322,7 @@
   "welcome": {
     "lede": "Where should your tasks live?",
     "syncTitle": "Sign in with Google and sync",
+    "recommended": "Recommended",
     "syncSub": "The same list on every device",
     "localTitle": "Keep them on this computer",
     "localSub": "Start right now, no account",

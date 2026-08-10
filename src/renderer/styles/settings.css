@@ -209,6 +209,16 @@ body:has(#welcome:not(.hidden)) #closeBtn {
   z-index: 61;
 }
 
+/* Top-LEFT, because the two window buttons that stay usable are lifted above
+   this overlay at the top-right and a control tucked under them would be one
+   you cannot press. Taken out of the flow so the card keeps the height it was
+   measured at against a 760x520 window. */
+.welcome-lang {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+
 .welcome-card {
   width: 100%;
   max-width: 380px;
@@ -260,8 +270,7 @@ body:has(#welcome:not(.hidden)) #closeBtn {
   box-shadow: 0 1px 2px #00000010;
 }
 
-.welcome-choice.recommended b::after {
-  content: "추천";
+.welcome-choice.recommended .welcome-badge {
   margin-left: 7px;
   padding: 1px 6px;
   border-radius: 999px;
