@@ -209,6 +209,16 @@ body:has(#welcome:not(.hidden)) #closeBtn {
   z-index: 61;
 }
 
+/* Top-LEFT, because the two window buttons that stay usable are lifted above
+   this overlay at the top-right and a control tucked under them would be one
+   you cannot press. Taken out of the flow so the card keeps the height it was
+   measured at against a 760x520 window. */
+.welcome-lang {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+
 .welcome-card {
   width: 100%;
   max-width: 380px;

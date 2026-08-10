@@ -1111,6 +1111,18 @@
          only moment where "this app can also use an account" can be said at
          all; put off, it becomes a feature nobody ever finds. -->
     <div class="welcome hidden" id="welcome">
+      <!-- The gear is behind this overlay, so this is the only way to change
+           language before the question is answered. Somebody whose machine
+           opened the app in a language they cannot read should not have to
+           decide where their tasks live first. -->
+      <select
+        class="settings-select welcome-lang"
+        id="welcomeLanguage"
+        aria-label="Language"
+        data-i18n="settings.language"
+        data-i18n-attr="aria-label"
+        data-i18n-attr-only
+      ></select>
       <div class="welcome-card">
         <img class="welcome-logo" src="../assets/icon.png" alt="" />
         <h1>Nekan</h1>

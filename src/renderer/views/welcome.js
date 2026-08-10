@@ -13,7 +13,7 @@
 import { $ } from "../dom.js";
 import { needsStartupChoice } from "../core-bridge.js";
 import { activeCount } from "../store.js";
-import { t, tNodes } from "../i18n.js";
+import { t, tNodes, wireLanguageSelect } from "../i18n.js";
 
 /** Set by app.js: how a finished choice reaches the rest of the startup. */
 let onDone = () => {};
@@ -185,6 +185,10 @@ export function wireWelcome(done) {
   $("#welcomePrivacy").addEventListener("click", () =>
     window.api.openPrivacyPolicy(),
   );
+
+  // Same reason: the gear is behind this screen. Switching here moves the one
+  // in the settings panel too — see wireLanguageSelect.
+  wireLanguageSelect($("#welcomeLanguage"));
 
   els.sync.addEventListener("click", chooseSync);
   els.local.addEventListener("click", async () => {
