@@ -14,6 +14,11 @@
  * where they are Korean and are not shipped to anybody. The catalogues are
  * skipped too, for the obvious reason.
  *
+ * Stylesheets are scanned as well, and that is not belt-and-braces: a CSS
+ * `content:` string is a word on screen that no catalogue can reach. The
+ * "Recommended" badge on the first-run card was exactly that, and this tool
+ * reported zero while the badge sat there in Korean under an English UI.
+ *
  * Only whole-line `//` comments are stripped, not trailing ones -- a Korean
  * comment after code counts as a hit. That is deliberate. Stripping every `//`
  * would eat the one inside `https://` in a string, and a real lexical scanner
@@ -44,7 +49,7 @@ function walk(dir, out = []) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       if (!SKIP.has(entry.name)) walk(full, out);
-    } else if (/\.(js|html)$/.test(entry.name)) {
+    } else if (/\.(js|html|css)$/.test(entry.name)) {
       out.push(full);
     }
   }

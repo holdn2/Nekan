@@ -57,14 +57,27 @@ function say(text, isError = false) {
  */
 export const needsWelcome = needsStartupChoice;
 
-/** Put it on screen, with the local-tasks question only if there are any. */
-export function showWelcome() {
+/**
+ * The merge line, written from scratch.
+ *
+ * Its own function because it is built once when the card opens and then
+ * outlives every reason it had to be right: the count moves as tasks change,
+ * and the language can move under it. Nothing redraws this card otherwise, so
+ * whatever is on it stays until somebody rewrites it.
+ */
+export function relabelWelcome() {
+  if (!els.adoptText || els.root.classList.contains("hidden")) return;
   const count = activeCount();
   // Written whole rather than as a number dropped into fixed markup — see the
   // same label in views/account.js.
   els.adoptText.replaceChildren(...tNodes("welcome.adopt", { count }));
   els.adopt.classList.toggle("hidden", count === 0);
+}
+
+/** Put it on screen, with the local-tasks question only if there are any. */
+export function showWelcome() {
   els.root.classList.remove("hidden");
+  relabelWelcome();
 }
 
 /**

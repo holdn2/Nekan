@@ -342,7 +342,13 @@
         >
       </header>
       <div class="inbox-body" id="inboxBody">
-        <ul class="inbox-list" id="inboxList"></ul>
+        <ul
+          class="inbox-list"
+          id="inboxList"
+          data-i18n="inbox.empty"
+          data-i18n-attr="data-empty"
+          data-i18n-attr-only
+        ></ul>
         <form class="add inbox-add" id="inboxAdd">
           <input
             type="text"
@@ -377,7 +383,13 @@
           <span class="sub" data-i18n="quad.q1.action">Do it now</span>
           <span class="count" data-count="q1">0</span>
         </header>
-        <ul class="list" data-list="q1"></ul>
+        <ul
+          class="list"
+          data-list="q1"
+          data-i18n="matrix.empty"
+          data-i18n-attr="data-empty"
+          data-i18n-attr-only
+        ></ul>
         <form class="add" data-add="q1">
           <input
             type="text"
@@ -407,7 +419,13 @@
           <span class="sub" data-i18n="quad.q2.action">Plan it</span>
           <span class="count" data-count="q2">0</span>
         </header>
-        <ul class="list" data-list="q2"></ul>
+        <ul
+          class="list"
+          data-list="q2"
+          data-i18n="matrix.empty"
+          data-i18n-attr="data-empty"
+          data-i18n-attr-only
+        ></ul>
         <form class="add" data-add="q2">
           <input
             type="text"
@@ -437,7 +455,13 @@
           <span class="sub" data-i18n="quad.q3.action">Delegate it</span>
           <span class="count" data-count="q3">0</span>
         </header>
-        <ul class="list" data-list="q3"></ul>
+        <ul
+          class="list"
+          data-list="q3"
+          data-i18n="matrix.empty"
+          data-i18n-attr="data-empty"
+          data-i18n-attr-only
+        ></ul>
         <form class="add" data-add="q3">
           <input
             type="text"
@@ -467,7 +491,13 @@
           <span class="sub" data-i18n="quad.q4.action">Drop it</span>
           <span class="count" data-count="q4">0</span>
         </header>
-        <ul class="list" data-list="q4"></ul>
+        <ul
+          class="list"
+          data-list="q4"
+          data-i18n="matrix.empty"
+          data-i18n-attr="data-empty"
+          data-i18n-attr-only
+        ></ul>
         <form class="add" data-add="q4">
           <input
             type="text"
@@ -1112,7 +1142,17 @@
             />
           </svg>
           <span class="welcome-choice-text">
-            <b data-i18n="welcome.syncTitle">Sign in with Google and sync</b>
+            <b>
+              <span data-i18n="welcome.syncTitle"
+                >Sign in with Google and sync</span
+              >
+              <!-- Markup rather than a CSS `content` string. It used to be one,
+                   which put a word on screen that no catalogue could reach and
+                   that the untranslated sweep could not see. -->
+              <span class="welcome-badge" data-i18n="welcome.recommended"
+                >Recommended</span
+              >
+            </b>
             <small data-i18n="welcome.syncSub">
               The same list on every device
             </small>
