@@ -167,7 +167,7 @@ npm run release   # 빌드 + GitHub Release에 업로드 (아래 GH_TOKEN 참고
 
 ### 매트릭스 탭
 
-- 4분면: **Urgent&Important / Important&안Urgent / Urgent&안Important / 둘 다 아님**
+- 4분면의 이름은 **한국어에서도 영어 그대로**입니다 (`Urgent & Important` / `Important & Not Urgent` / `Urgent & Not Important` / `Not Urgent & Not Important`). 두 축의 이름이 곧 분면 이름이라 옮기면 길어지기만 하고, 분면 아래의 `Do 진행하기` · `Plan 계획하기` · `Delegate 위임하기` · `Delete 제거하기`가 네 개의 D를 기억장치로 쓰고 있어서 위아래가 같은 낱말이어야 합니다.
 - 분면 안의 순서는 배열 위치가 아니라 **항목마다 붙는 정렬 키**로 정해집니다. 그래서 하나를 옮겨도 목록 전체를 다시 쓰지 않습니다.
 - **1분면이 5개를 넘으면 개수 표시가 붉어집니다.** 급한 일만 쫓고 있다는 신호이고, 대개 2분면을 미뤄둔 결과입니다 ([가이드 탭](#가이드-탭) 참고). **막지는 않습니다** — 할 일을 못 적게 하면 그게 다시 머릿속으로 들어가니까요. 다른 분면에는 이 표시가 없습니다. 2분면이 차 있는 것은 오히려 잘하고 있다는 뜻입니다.
 

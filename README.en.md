@@ -56,11 +56,11 @@ connection must not block typing. Changes stay on this computer and go up when y
 
 **A dot on the gear means something has not gone up yet.** It is visible in bar mode too.
 
-| Gear      | Meaning                                                     |
-| --------- | ----------------------------------------------------------- |
-| No dot    | Everything is up, or you are not signed in                  |
-| Amber dot | Some changes are still only on this computer                |
-| Red dot   | The server could not be reached. Your changes are safe here |
+| Gear       | Meaning                                                     |
+| ---------- | ----------------------------------------------------------- |
+| No dot     | Everything is up, or you are not signed in                  |
+| Orange dot | Some changes are still only on this computer                |
+| Red dot    | The server could not be reached. Your changes are safe here |
 
 **Open the settings** for the exact number (`Synced` · `N waiting` · `Offline`).
 
@@ -168,7 +168,7 @@ Somewhere to pour out what is in your head before sorting any of it. It sits dir
 
 ### Matrix tab
 
-- The four quadrants: **Urgent & Important / Important & Not Urgent / Urgent & Not Important / neither**
+- The four quadrants are named after the axes and keep those names in both languages: **`Urgent & Important` / `Important & Not Urgent` / `Urgent & Not Important` / `Not Urgent & Not Important`**. Under each one sits `Do it now` · `Plan it` · `Delegate it` · `Delete it`, which is why the four Ds have to survive translation.
 - Order inside a quadrant comes from **a sort key on each task** rather than its position in an array, so moving one task does not rewrite the whole list.
 - **The count turns red once quadrant 1 holds more than five.** It means you are chasing whatever is loudest, and it is usually the result of putting quadrant 2 off (see the [Guide tab](#guide-tab)). **It does not stop you** — refusing to let somebody write a task down just puts it back in their head. No other quadrant has this mark. A full quadrant 2 is a sign you are doing well.
 
