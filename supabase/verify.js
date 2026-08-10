@@ -53,7 +53,7 @@ let skipped = 0;
  * Kept out of the exit code on purpose: the reasons are about the project's
  * quotas rather than about the schema, and failing the run for them would train
  * everyone to ignore the exit code. Loud in the output instead, and counted in
- * the summary so "22 passed" cannot quietly become "19 passed" unnoticed.
+ * the summary so "23 passed" cannot quietly become "19 passed" unnoticed.
  */
 function skip(name, why) {
   skipped += 1;
