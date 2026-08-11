@@ -17,7 +17,7 @@
 .ghost {
   padding: 7px 12px;
   border: 1px solid var(--line-strong);
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   background: var(--panel);
   color: var(--muted);
 }
@@ -52,7 +52,7 @@
 .day {
   padding: 10px 8px 4px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.3px;
 }
@@ -62,7 +62,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 /* Title + memo stack in the flex slot the title used to hold alone, so the
@@ -116,7 +116,7 @@
 .hitem .time {
   flex: 0 0 auto;
   color: var(--faint);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -124,11 +124,11 @@
 .hitem .act {
   flex: 0 0 auto;
   border: 1px solid var(--line-strong);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--muted);
   padding: 3px 8px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   white-space: nowrap;
   opacity: 0;
 }
@@ -160,10 +160,10 @@
   /* The indent that lines this up under the title is measured in renderArchive
      — the number column widens with the row count, so it is not a constant. */
   padding: 6px 9px;
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   background: var(--panel-2);
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 
 .hmemo .memo-mark {
@@ -208,10 +208,10 @@
 .history-list .more button {
   padding: 6px 16px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--panel-2);
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 
 .history-list .more button:hover {

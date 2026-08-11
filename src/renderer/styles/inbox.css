@@ -89,16 +89,16 @@ section.inbox.open .chev {
   margin-left: -2px;
   padding: 1px 7px;
   border: 1px solid var(--line-strong);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.3px;
 }
 
 .inbox-hint {
   color: var(--faint);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   margin-left: auto;
   white-space: nowrap;
   overflow: hidden;
@@ -139,7 +139,7 @@ section.inbox.open .inbox-body {
   display: block;
   padding: 10px 8px;
   color: var(--faint);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   text-align: center;
 }
 

@@ -9,7 +9,7 @@
 
 ::-webkit-scrollbar-thumb {
   background: var(--scroll);
-  border-radius: 99px;
+  border-radius: var(--radius-pill);
   border: 2px solid transparent;
   background-clip: content-box;
 }

@@ -36,11 +36,9 @@
   overflow-y: auto;
   padding: 14px 16px 16px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--panel);
-  box-shadow:
-    0 10px 30px #00000022,
-    0 2px 6px #00000014;
+  box-shadow: var(--shadow-pop);
 }
 
 .settings-head {
@@ -52,7 +50,7 @@
 
 .settings-head h2 {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--fs-lg);
   font-weight: 700;
 }
 
@@ -60,10 +58,10 @@
   border: 0;
   background: none;
   color: var(--muted);
-  font-size: 18px;
+  font-size: var(--fs-2xl);
   line-height: 1;
   padding: 2px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 
@@ -87,7 +85,7 @@
 }
 
 .settings-label {
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   color: var(--muted);
 }
 
@@ -101,10 +99,10 @@
   gap: 8px;
   padding: 5px 10px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   cursor: pointer;
 }
 
@@ -118,11 +116,11 @@
 .settings-select {
   padding: 5px 10px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text);
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   cursor: pointer;
 }
 
@@ -139,7 +137,7 @@
 
 .settings-action kbd {
   font-family: inherit;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--muted);
 }
 
@@ -232,13 +230,13 @@ body:has(#welcome:not(.hidden)) #closeBtn {
 
 .welcome-card h1 {
   margin: 8px 0 2px;
-  font-size: 20px;
+  font-size: var(--fs-3xl);
   letter-spacing: -0.01em;
 }
 
 .welcome-lede {
   margin: 0 0 18px;
-  font-size: 13.5px;
+  font-size: var(--fs-md);
   color: var(--muted);
 }
 
@@ -250,7 +248,7 @@ body:has(#welcome:not(.hidden)) #closeBtn {
   margin-bottom: 8px;
   padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--panel);
   color: var(--text);
   text-align: left;
@@ -267,16 +265,16 @@ body:has(#welcome:not(.hidden)) #closeBtn {
    wordmark colours stay the only colour on it. */
 .welcome-choice.recommended {
   border-color: var(--line-strong);
-  box-shadow: 0 1px 2px #00000010;
+  box-shadow: var(--shadow-knob);
 }
 
 .welcome-choice.recommended .welcome-badge {
   margin-left: 7px;
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--accent-soft);
   color: var(--accent);
-  font-size: 10.5px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   vertical-align: 1px;
 }
@@ -293,11 +291,11 @@ body:has(#welcome:not(.hidden)) #closeBtn {
 }
 
 .welcome-choice-text b {
-  font-size: 13.5px;
+  font-size: var(--fs-md);
 }
 
 .welcome-choice-text small {
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   color: var(--muted);
 }
 
@@ -307,7 +305,7 @@ body:has(#welcome:not(.hidden)) #closeBtn {
   justify-content: center;
   gap: 7px;
   margin-top: 12px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--muted);
   cursor: pointer;
 }
@@ -315,7 +313,7 @@ body:has(#welcome:not(.hidden)) #closeBtn {
 .welcome-msg {
   margin: 10px 0 0;
   min-height: 1.2em;
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   color: var(--muted);
 }
 
@@ -325,6 +323,6 @@ body:has(#welcome:not(.hidden)) #closeBtn {
 
 .welcome-foot {
   margin: 14px 0 0;
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   color: var(--faint);
 }

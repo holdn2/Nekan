@@ -18,10 +18,10 @@
   max-width: calc(100% - 40px);
   padding: 9px 14px;
   border: 1px solid var(--line-strong);
-  border-radius: 99px;
+  border-radius: var(--radius-pill);
   background: var(--panel);
   color: var(--text);
-  box-shadow: 0 6px 20px #00000026;
+  box-shadow: var(--shadow-toast);
   transition:
     opacity 0.18s ease,
     transform 0.18s ease;
@@ -48,16 +48,16 @@
 .toast-act {
   flex: 0 0 auto;
   border: 0;
-  border-radius: 99px;
+  border-radius: var(--radius-pill);
   padding: 3px 10px;
   background: var(--accent-soft);
   color: var(--accent);
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 
 .toast-act:hover {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .toast-act.hidden {
