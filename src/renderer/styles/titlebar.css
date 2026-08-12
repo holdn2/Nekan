@@ -8,9 +8,9 @@
   -webkit-app-region: drag;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--sp-lg);
   height: 48px;
-  padding: 0 6px 0 12px;
+  padding: 0 var(--sp-sm) 0 var(--sp-xl);
   background: var(--panel);
   border-bottom: 1px solid var(--line);
   flex: 0 0 auto;
@@ -19,7 +19,7 @@
 .brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sp-md);
   min-width: 0;
 }
 
@@ -60,15 +60,15 @@
   -webkit-app-region: no-drag;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--sp-sm);
   margin-left: auto;
 }
 
 .chip {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 9px;
+  gap: var(--sp-xs);
+  padding: var(--sp-2xs) var(--sp-md);
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
   background: var(--panel-2);
@@ -122,8 +122,8 @@
   -webkit-app-region: no-drag;
   display: flex;
   align-items: center;
-  gap: 2px;
-  margin-left: 6px;
+  gap: var(--sp-2xs);
+  margin-left: var(--sp-sm);
 }
 
 .win-btn {

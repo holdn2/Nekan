@@ -7,7 +7,7 @@
 .view {
   flex: 1 1 auto;
   min-height: 0;
-  padding: 8px 12px 12px;
+  padding: var(--sp-md) var(--sp-xl) var(--sp-xl);
 }
 
 .view.hidden {
@@ -115,8 +115,8 @@ body.resizing-both {
 .quad > header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: var(--sp-md);
+  padding: var(--sp-lg) var(--sp-xl);
   border-bottom: 1px solid var(--line);
 }
 
@@ -134,7 +134,7 @@ body.resizing-both {
 .quad .count {
   margin-left: auto;
   min-width: 20px;
-  padding: 1px 7px;
+  padding: var(--sp-hair) var(--sp-sm);
   border-radius: var(--radius-pill);
   background: var(--panel-3);
   color: var(--muted);
@@ -168,7 +168,7 @@ body.resizing-both {
 .list {
   list-style: none;
   margin: 0;
-  padding: 6px;
+  padding: var(--sp-sm);
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -177,7 +177,7 @@ body.resizing-both {
 .list:empty::after {
   content: attr(data-empty);
   display: block;
-  padding: 14px 8px;
+  padding: var(--sp-2xl) var(--sp-md);
   color: var(--faint);
   font-size: var(--fs-xs);
   text-align: center;
@@ -186,8 +186,8 @@ body.resizing-both {
 .item {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  padding: 7px 8px;
+  gap: var(--sp-md);
+  padding: var(--sp-sm) var(--sp-md);
   border-radius: var(--radius-md);
   cursor: grab;
 }
@@ -222,7 +222,7 @@ body.resizing-both {
   flex: 0 0 auto;
   width: 16px;
   height: 16px;
-  margin-top: 1px;
+  margin-top: var(--sp-hair);
   border: 1.6px solid var(--line-strong);
   border-radius: 50%;
   background: transparent;
@@ -245,7 +245,7 @@ body.resizing-both {
 .item .text[contenteditable="true"] {
   outline: 1px solid var(--accent);
   border-radius: var(--radius-xs);
-  padding: 0 3px;
+  padding: 0 var(--sp-2xs);
   background: var(--input-bg);
 }
 

@@ -9,7 +9,7 @@
 .memo {
   flex: 0 0 var(--memo-h);
   min-height: 0;
-  padding: 0 12px 12px;
+  padding: 0 var(--sp-xl) var(--sp-xl);
 }
 
 .memo.hidden,
@@ -32,8 +32,8 @@
 .memo-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 7px 7px 12px;
+  gap: var(--sp-md);
+  padding: var(--sp-sm) var(--sp-sm) var(--sp-sm) var(--sp-xl);
   border-bottom: 1px solid var(--line);
 }
 
@@ -69,14 +69,14 @@
   display: flex;
   flex: 1 1 auto;
   min-height: 0;
-  padding: 8px 10px 6px;
+  padding: var(--sp-md) var(--sp-lg) var(--sp-sm);
 }
 
 #memoInput {
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
-  padding: 6px 8px;
+  padding: var(--sp-sm) var(--sp-md);
   resize: none;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
@@ -101,7 +101,7 @@
   flex: 1 1 auto;
   min-height: 0;
   margin: 0;
-  padding: 6px 8px;
+  padding: var(--sp-sm) var(--sp-md);
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-word;
@@ -113,8 +113,8 @@
 .memo-foot {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 10px 9px;
+  gap: var(--sp-sm);
+  padding: 0 var(--sp-lg) var(--sp-md);
 }
 
 .memo-hint {
@@ -124,12 +124,12 @@
 }
 
 .memo-foot .ghost {
-  padding: 5px 12px;
+  padding: var(--sp-xs) var(--sp-xl);
   font-size: var(--fs-sm);
 }
 
 .primary {
-  padding: 5px 14px;
+  padding: var(--sp-xs) var(--sp-2xl);
   border: 1px solid var(--accent);
   border-radius: var(--radius-md);
   background: var(--accent);
@@ -157,7 +157,7 @@
 }
 
 .item .memo-mark {
-  margin-top: 2px;
+  margin-top: var(--sp-2xs);
 }
 
 .item.selected {

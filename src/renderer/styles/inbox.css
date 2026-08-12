@@ -26,7 +26,7 @@ section.inbox {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  margin: 8px 12px 0;
+  margin: var(--sp-md) var(--sp-xl) 0;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -48,15 +48,15 @@ section.inbox.drop {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 10px;
-  padding: 0 12px 0 0;
+  gap: var(--sp-lg);
+  padding: 0 var(--sp-xl) 0 0;
 }
 
 .inbox-toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 12px;
+  gap: var(--sp-md);
+  padding: var(--sp-md) var(--sp-xl);
   border: 0;
   background: transparent;
   font-weight: 600;
@@ -87,7 +87,7 @@ section.inbox.open .chev {
 .shared-tag {
   flex: 0 0 auto;
   margin-left: -2px;
-  padding: 1px 7px;
+  padding: var(--sp-hair) var(--sp-sm);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-pill);
   color: var(--muted);
@@ -123,7 +123,7 @@ section.inbox.open .inbox-body {
 .inbox-list {
   list-style: none;
   margin: 0;
-  padding: 6px;
+  padding: var(--sp-sm);
   /* The cap in normal use. When the window is too short for the matrix's own
      floor, flex shrinks the list below this and it scrolls -- min-height:0 is
      what lets it, since a flex item otherwise refuses to go under its
@@ -137,7 +137,7 @@ section.inbox.open .inbox-body {
 .inbox-list:empty::after {
   content: attr(data-empty);
   display: block;
-  padding: 10px 8px;
+  padding: var(--sp-lg) var(--sp-md);
   color: var(--faint);
   font-size: var(--fs-xs);
   text-align: center;

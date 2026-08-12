@@ -11,8 +11,8 @@
 }
 
 .account {
-  margin: 14px 0 6px;
-  padding: 14px 16px;
+  margin: var(--sp-2xl) 0 var(--sp-sm);
+  padding: var(--sp-2xl) var(--sp-3xl);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel);
@@ -23,7 +23,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: var(--sp-lg);
 }
 
 /* Google asks that its button keep white/grey chrome and the wordmark colours,
@@ -35,8 +35,8 @@
 .google-btn {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  padding: 8px 16px;
+  gap: var(--sp-md);
+  padding: var(--sp-md) var(--sp-3xl);
   border: 1px solid #dadce0;
   border-radius: var(--radius-sm);
   background: #fff;
@@ -69,7 +69,7 @@
 }
 
 .account-adopt input {
-  margin-right: 6px;
+  margin-right: var(--sp-sm);
   vertical-align: -1px;
 }
 
@@ -85,15 +85,15 @@
 .account-dev {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--sp-sm);
   flex-basis: 100%;
-  padding-top: 10px;
+  padding-top: var(--sp-lg);
   border-top: 1px dashed var(--line);
 }
 
 .account-dev button {
   flex-basis: 100%;
-  padding: 5px 8px;
+  padding: var(--sp-xs) var(--sp-md);
   border: 1px solid var(--line);
   border-radius: var(--radius-xs);
   background: transparent;
@@ -105,7 +105,7 @@
 .account-dev input {
   flex: 1 1 120px;
   min-width: 0;
-  padding: 5px 8px;
+  padding: var(--sp-xs) var(--sp-md);
   border: 1px solid var(--line);
   border-radius: var(--radius-xs);
   background: var(--bg);
@@ -124,7 +124,7 @@
 
 .account-out-btn {
   margin-left: auto;
-  padding: 6px 12px;
+  padding: var(--sp-sm) var(--sp-xl);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: transparent;
@@ -142,8 +142,8 @@
    account you cannot leave is the complaint this exists to answer -- without
    sitting next to 로그아웃 as an equal choice. */
 .account-danger {
-  margin-top: 12px;
-  padding-top: 10px;
+  margin-top: var(--sp-xl);
+  padding-top: var(--sp-lg);
   border-top: 1px solid var(--line);
 }
 
@@ -163,15 +163,15 @@
 }
 
 .account-confirm {
-  margin-top: 10px;
-  padding: 12px;
+  margin-top: var(--sp-lg);
+  padding: var(--sp-xl);
   border: 1px solid var(--danger);
   border-radius: var(--radius-md);
   background: var(--danger-soft);
 }
 
 .account-confirm p {
-  margin: 0 0 6px;
+  margin: 0 0 var(--sp-sm);
   font-size: var(--fs-sm);
   line-height: 1.55;
   /* The panel is narrow enough to split 되돌릴 수 없습니다 across two lines in
@@ -187,13 +187,13 @@
 .account-confirm-row {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 10px;
+  gap: var(--sp-md);
+  margin-top: var(--sp-lg);
 }
 
 .account-confirm-cancel,
 .account-confirm-go {
-  padding: 6px 12px;
+  padding: var(--sp-sm) var(--sp-xl);
   border-radius: var(--radius-sm);
   font-size: var(--fs-sm);
   cursor: pointer;
@@ -222,7 +222,7 @@
 }
 
 .account-msg {
-  margin: 10px 0 0;
+  margin: var(--sp-lg) 0 0;
   font-size: var(--fs-sm);
   color: var(--muted);
   min-height: 1.2em;

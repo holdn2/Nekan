@@ -16,7 +16,7 @@
   justify-content: center;
   height: 20px;
   min-width: 24px;
-  padding: 0 6px;
+  padding: 0 var(--sp-sm);
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   color: var(--faint);
@@ -103,7 +103,7 @@
 .due-clear {
   width: 15px;
   height: 15px;
-  margin-left: 1px;
+  margin-left: var(--sp-hair);
   padding: 0;
   border: 0;
   border-radius: var(--radius-xs);
@@ -133,8 +133,8 @@
 
 .add {
   display: flex;
-  gap: 6px;
-  padding: 8px;
+  gap: var(--sp-sm);
+  padding: var(--sp-md);
   border-top: 1px solid var(--line);
 }
 
@@ -161,7 +161,7 @@
 .history-bar input {
   flex: 1 1 auto;
   min-width: 0;
-  padding: 7px 10px;
+  padding: var(--sp-sm) var(--sp-lg);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
   background: var(--input-bg);

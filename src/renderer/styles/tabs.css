@@ -6,16 +6,16 @@
 .tabs {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px 12px 0;
+  gap: var(--sp-xs);
+  padding: var(--sp-md) var(--sp-xl) 0;
   flex: 0 0 auto;
 }
 
 .tab {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
+  gap: var(--sp-sm);
+  padding: var(--sp-sm) var(--sp-2xl);
   border: 1px solid transparent;
   border-radius: var(--radius-md) var(--radius-md) 0 0;
   background: transparent;
@@ -36,7 +36,7 @@
 
 .badge {
   min-width: 18px;
-  padding: 1px 6px;
+  padding: var(--sp-hair) var(--sp-sm);
   border-radius: var(--radius-pill);
   background: var(--panel-3);
   color: var(--muted);
