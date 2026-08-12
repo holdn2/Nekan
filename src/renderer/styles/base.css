@@ -22,13 +22,43 @@
   --danger: #b4453c;
   --danger-soft: #b4453c1a;
   --shadow: 0 1px 2px #0000000a;
+  /* The three below are not themed, unlike --shadow. They were written as
+     literals in four different files and are collected here as they were; a
+     dark-mode pass is a separate decision, not part of naming them. */
+  --shadow-knob: 0 1px 2px rgb(0 0 0 / 0.12);
+  --shadow-pop: 0 10px 30px #00000022, 0 2px 6px #00000014;
+  --shadow-toast: 0 6px 20px #00000026;
+  /* Text that sits on --accent or --danger, where the palette's --text would
+     be unreadable. Named so that changing the accent brings these two along. */
+  --on-accent: #fff;
   --scroll: #cdc7b7;
   --scroll-hover: #b8b1a0;
   --q1: #c85a4d;
   --q2: #4a72b8;
   --q3: #c1892c;
   --q4: #8d887d;
+
+  /* Type. One family, and a seven-step size scale. The sizes used to be
+     eleven values picked per element, four of them on half-pixels, which is
+     what made the app look assembled rather than designed. */
+  --font: "Malgun Gothic", "Segoe UI", system-ui, sans-serif;
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-lg: 14px;
+  --fs-xl: 16px;
+  --fs-2xl: 18px;
+  --fs-3xl: 20px;
+
+  /* Corners. --radius keeps its meaning (a panel) and its value; the rest are
+     new names for what the stylesheets were already spelling out. A circle
+     stays 50% at the call site because it is a shape, not a step. */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
   --radius: 10px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
   /* Space between quadrants; the drag hit zone is this plus a few px each side. */
   --gutter: 10px;
   /* Height the memo panel occupies, gap included. The renderer reads this and
@@ -81,8 +111,8 @@ body {
   flex-direction: column;
   background: var(--bg);
   color: var(--text);
-  font-family: "Malgun Gothic", "Segoe UI", system-ui, sans-serif;
-  font-size: 13px;
+  font-family: var(--font);
+  font-size: var(--fs-md);
   overflow: hidden;
   user-select: none;
 }

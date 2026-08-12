@@ -14,7 +14,7 @@
   margin: 14px 0 6px;
   padding: 14px 16px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--panel);
 }
 
@@ -27,21 +27,23 @@
 }
 
 /* Google asks that its button keep white/grey chrome and the wordmark colours,
-   which is why this one does not follow the app's button styling. */
+   which is why this one does not follow the app's button styling.
+   These four literals are the only colours in the app that do not come from a
+   token, and they must stay that way: pointing them at the palette would make
+   the button follow the theme, which is the thing the guidelines forbid. If a
+   sweep reports "4 hardcoded colours", this is all of them. */
 .google-btn {
   display: inline-flex;
   align-items: center;
   gap: 9px;
   padding: 8px 16px;
   border: 1px solid #dadce0;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: #fff;
   color: #3c4043;
-  font:
-    500 13px/1 "Malgun Gothic",
-    "Segoe UI",
-    system-ui,
-    sans-serif;
+  /* The colours above are Google's; the type is ours, so it goes through the
+     tokens and follows the app if the family or the scale changes. */
+  font: 500 var(--fs-md) / 1 var(--font);
   cursor: pointer;
 }
 
@@ -60,7 +62,7 @@
 .account-adopt {
   display: block;
   flex-basis: 100%;
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   line-height: 1.5;
   color: var(--muted);
   cursor: pointer;
@@ -74,7 +76,7 @@
 .account-hint {
   flex-basis: 100%;
   margin: -2px 0 0;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--muted);
 }
 
@@ -93,10 +95,10 @@
   flex-basis: 100%;
   padding: 5px 8px;
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   cursor: pointer;
 }
 
@@ -105,10 +107,10 @@
   min-width: 0;
   padding: 5px 8px;
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: var(--radius-xs);
   background: var(--bg);
   color: var(--text);
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 
 .account-who {
@@ -116,7 +118,7 @@
 }
 
 .account-state {
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   color: var(--muted);
 }
 
@@ -124,10 +126,10 @@
   margin-left: auto;
   padding: 6px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   cursor: pointer;
 }
 
@@ -150,7 +152,7 @@
   border: 0;
   background: none;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;
@@ -164,13 +166,13 @@
   margin-top: 10px;
   padding: 12px;
   border: 1px solid var(--danger);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--danger-soft);
 }
 
 .account-confirm p {
   margin: 0 0 6px;
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   line-height: 1.55;
   /* The panel is narrow enough to split 되돌릴 수 없습니다 across two lines in
      the middle of the word. Fine for a task somebody typed; not for the one
@@ -192,8 +194,8 @@
 .account-confirm-cancel,
 .account-confirm-go {
   padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12.5px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
   cursor: pointer;
 }
 
@@ -221,7 +223,7 @@
 
 .account-msg {
   margin: 10px 0 0;
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   color: var(--muted);
   min-height: 1.2em;
 }

@@ -53,10 +53,10 @@
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--faint);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   line-height: 1;
 }
 
@@ -79,7 +79,7 @@
   padding: 6px 8px;
   resize: none;
   border: 1px solid var(--line-strong);
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   background: var(--input-bg);
   color: var(--text);
   font: inherit;
@@ -120,21 +120,21 @@
 .memo-hint {
   flex: 1 1 auto;
   color: var(--faint);
-  font-size: 11px;
+  font-size: var(--fs-xs);
 }
 
 .memo-foot .ghost {
   padding: 5px 12px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 
 .primary {
   padding: 5px 14px;
   border: 1px solid var(--accent);
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   background: var(--accent);
-  color: #fff;
-  font-size: 12px;
+  color: var(--on-accent);
+  font-size: var(--fs-sm);
 }
 
 .primary:hover:not(:disabled) {
