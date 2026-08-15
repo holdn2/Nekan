@@ -13,7 +13,7 @@ Claude 계열의 밝은 베이지 테마 + 다크 테마를 지원합니다.
 
 ## 설치
 
-[Releases](https://github.com/holdn2/Nekan/releases)에서 최신 `Nekan-Setup-x.y.z.exe`를 받아 실행하면 됩니다.
+[Releases](https://github.com/holdn2/Nekan/releases)에서 최신 `Nekan-Setup-x.y.z.exe`를 받아 실행하면 됩니다. (`x.y.z`는 버전입니다.)
 클릭 한 번으로 끝나고 **관리자 권한을 묻지 않습니다** — 내 계정 폴더에만 설치되기 때문입니다.
 설치가 끝나면 바탕화면과 시작 메뉴에 **Nekan** 바로가기가 생깁니다.
 
