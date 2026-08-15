@@ -13,7 +13,7 @@ The website is **[holdn2.github.io/Nekan](https://holdn2.github.io/Nekan/)** —
 
 ## Install
 
-Grab the latest `Nekan-Setup-x.y.z.exe` from [Releases](https://github.com/holdn2/Nekan/releases) and run it.
+Grab the latest `Nekan-Setup-x.y.z.exe` from [Releases](https://github.com/holdn2/Nekan/releases) and run it. (`x.y.z` - version)
 One click and it is done, and it **never asks for administrator rights** — it installs into your own user folder.
 When it finishes you get a **Nekan** shortcut on the desktop and in the Start menu.
 
