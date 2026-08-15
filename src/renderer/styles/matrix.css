@@ -181,9 +181,11 @@ body.resizing-both {
   overflow-y: auto;
   /* A column so the rows can be separated by a gap rather than by their own
      margins: the rows are also the drop targets, and a margin would put dead
-     space inside the target where a gap leaves it between them. Two pixels is
-     enough to read them as separate rows -- any more and a full quadrant
-     starts scrolling sooner. */
+     space inside the target where a gap leaves it between them. Four pixels
+     rather than two: two was enough to read the rows apart and still looked
+     cramped, and this is the width of the step above. It is not free -- every
+     gap is height a full quadrant does not get -- so do not reach for the next
+     step without looking at a full one. */
   display: flex;
   flex-direction: column;
   gap: var(--sp-xs);

@@ -238,9 +238,14 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   **⚠️ 세 자리에서는 그 간격이 여유를 나타내지 않는다.** 8px은 최솟값이라 거기서 바닥을 친다 —
   2026-08-12에 간격 토큰화로 요약 영역이 300 → 285px이 됐는데 **간격은 양쪽 다 8px로 똑같았다.**
   그것만 봤으면 "변화 없음"으로 잘못 읽었을 값이다. **진짜 여유는 뷰포트를 줄여 넘침이 시작하는
-  폭으로 잰다**: CDP `Emulation.setDeviceMetricsOverride`로 폭을 640에서 낮춰가며
-  `.titlebar`의 `scrollWidth - innerWidth`를 본다. 그 방식으로 잰 값이 **632px → 617px**,
-  즉 세 자리 기준 여유가 **8px → 23px**이 됐다.
+  폭으로 잰다**: CDP `Emulation.setDeviceMetricsOverride`로 폭을 1px씩 낮춰가며 매 폭마다
+  `.titlebar`의 **`scrollWidth > clientWidth`가 참이 되는 첫 폭**을 찾는다. 그 폭 + 1이 들어가는
+  최소 폭이고, 640에서 그걸 빼면 여유다. **한 폭에서 잰 `scrollWidth - innerWidth`로 역산하지 말
+  것** — 바의 자식들이 `flex: 0 1 auto`라 좁아지면 눌리므로, 그 뺄셈은 답처럼 보이는 다른 값이다
+  (실제로 역산과 스캔이 1px 어긋났다). `innerWidth`가 아니라 `.titlebar`의 `clientWidth`와
+  비교하는 이유도 같다: 바가 뷰포트 폭과 같다는 보장이 없다.
+  2026-08-15 스캔값 — 처음 넘치는 폭 **631 → 616px**, 즉 들어가는 최소 폭 **632 → 617px**,
+  세 자리 기준 여유 **8px → 23px**.
   이 override 방식을 쓰는 이유가 하나 더 있다: **가려진 Electron 창은 리레이아웃을 하지 않아서**
   진짜로 `collapse()`를 해도 `window.innerWidth`가 확장 모드 값을 계속 돌려준다
   (`document.hidden`이 참인지 먼저 볼 것). 창을 안 띄우고도 같은 엔진에 같은 질문을 할 수 있다.
