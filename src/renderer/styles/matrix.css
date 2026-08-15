@@ -172,6 +172,14 @@ body.resizing-both {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  /* A column so the rows can be separated by a gap rather than by their own
+     margins: the rows are also the drop targets, and a margin would put dead
+     space inside the target where a gap leaves it between them. Two pixels is
+     enough to read them as separate rows -- any more and a full quadrant
+     starts scrolling sooner. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2xs);
 }
 
 .list:empty::after {
