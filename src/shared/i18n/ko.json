@@ -197,8 +197,6 @@
   },
   "due": {
     "field": "마감일",
-    "clear": "날짜 지우기",
-    "clearLabel": "마감일 지우기",
     "set": "마감일 지정",
     "chip": "마감 {{date}} · {{hint}}",
     "today": "오늘",

@@ -36,12 +36,10 @@ export function dueChip(value, onChange) {
   face.className = "face";
   chip.append(input, face);
 
-  const clear = document.createElement("button");
-  clear.type = "button";
-  clear.className = "due-clear";
-  clear.textContent = "×";
-
-  box.append(chip, clear);
+  // No clear button of our own: the native picker this chip opens already has
+  // one, and a second way to do the same thing was costing a control in every
+  // row and in every add form.
+  box.append(chip);
   box.draggable = false;
 
   /**
@@ -56,8 +54,6 @@ export function dueChip(value, onChange) {
   const apply = (next) => {
     input.value = next || "";
     input.setAttribute("aria-label", t("due.field"));
-    clear.title = t("due.clear");
-    clear.setAttribute("aria-label", t("due.clearLabel"));
     const info = dueInfo(next);
     box.className = info ? `duebox set ${info.state}` : "duebox";
     face.replaceChildren();
@@ -71,15 +67,11 @@ export function dueChip(value, onChange) {
     }
   };
 
+  // Clearing arrives here too: the picker's own delete empties the value and
+  // fires the same change, which is why removing our button costs nothing.
   input.addEventListener("change", () => {
     apply(input.value);
     onChange(input.value || null);
-  });
-  clear.addEventListener("click", (e) => {
-    // The row underneath treats a click as "select for the memo panel".
-    e.stopPropagation();
-    apply("");
-    onChange(null);
   });
 
   apply(value);

@@ -100,37 +100,6 @@
   opacity: 0.75;
 }
 
-.due-clear {
-  width: 15px;
-  height: 15px;
-  margin-left: var(--sp-hair);
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-xs);
-  background: transparent;
-  color: var(--faint);
-  font-size: var(--fs-sm);
-  line-height: 1;
-  opacity: 0;
-}
-
-.duebox:not(.set) .due-clear,
-.duebox.static .due-clear {
-  display: none;
-}
-
-.item:hover .duebox.set .due-clear,
-.duebox.set:hover .due-clear,
-.add .duebox.set .due-clear {
-  opacity: 0.7;
-}
-
-.due-clear:hover {
-  background: var(--danger-soft);
-  color: var(--danger);
-  opacity: 1;
-}
-
 .add {
   display: flex;
   gap: var(--sp-sm);
