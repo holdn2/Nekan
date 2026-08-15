@@ -131,15 +131,22 @@ body.resizing-both {
   font-size: var(--fs-xs);
 }
 
+/* inline-flex, not a bare inline: text-align only centres across, and a number
+   in a pill has to be centred both ways or the eye reads the pill as crooked.
+   line-height 1 makes the height padding plus the digit and nothing else, so
+   the shape is set here rather than by whatever the font thinks a line is. */
 .quad .count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin-left: auto;
-  min-width: 20px;
-  padding: var(--sp-hair) var(--sp-sm);
+  min-width: 22px;
+  padding: var(--sp-2xs) var(--sp-sm);
   border-radius: var(--radius-pill);
   background: var(--panel-3);
   color: var(--muted);
   font-size: var(--fs-xs);
-  text-align: center;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
@@ -257,19 +264,18 @@ body.resizing-both {
   background: var(--input-bg);
 }
 
+/* Holds a drawn cross, not the × character. As text it sat 1.36px low -- that
+   glyph centres on the font's maths axis rather than on its box -- and the fix
+   was a padding tuned by measurement, which stops being right the moment the
+   font changes. A path centred in its viewBox needs no number here at all. */
 .del {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 20px;
   height: 20px;
-  /* × is centred on the maths axis rather than on its box, so it renders low
-     -- 1.36px here, invisible until hover paints a square behind it and then
-     obvious. Shortening the content area from the bottom lifts what is centred
-     in it, and the box stays 20x20 under border-box so the hit area does not
-     move. A transform would have taken the square along with the mark.
-     The 4px is measured, not reasoned: 3px left it 0.56px low and 5px carried
-     it 1.04px high. Re-measure if the font or the size changes -- the offset
-     belongs to the glyph, not to this rule. */
-  padding: 0 6px 4px;
+  padding: 0;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;

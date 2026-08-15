@@ -34,15 +34,19 @@
   font-weight: 600;
 }
 
+/* Same shape as the quadrant count; see the note there for why inline-flex. */
 .badge {
-  min-width: 18px;
-  padding: var(--sp-hair) var(--sp-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  padding: var(--sp-2xs) var(--sp-sm);
   border-radius: var(--radius-pill);
   background: var(--panel-3);
   color: var(--muted);
   font-size: var(--fs-xs);
   font-weight: 400;
-  text-align: center;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 

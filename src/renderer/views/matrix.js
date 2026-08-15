@@ -14,6 +14,7 @@ import { currentLanguage, t } from "../i18n.js";
 import { $, $$, numEl } from "../dom.js";
 import { dueChip } from "../components/due-chip.js";
 import { memoMark } from "../components/memo-mark.js";
+import { closeIcon, plusIcon } from "../components/icons.js";
 import {
   activeOf,
   addTask,
@@ -64,7 +65,7 @@ export function itemEl(task, index) {
 
   const del = document.createElement("button");
   del.className = "del";
-  del.textContent = "×";
+  del.append(closeIcon());
   del.title = t("item.delete");
   del.setAttribute("aria-label", t("item.deleteLabel", { text: task.text }));
   del.addEventListener("click", () => {
@@ -172,7 +173,11 @@ export function wireAddForms() {
     const input = $('input[type="text"]', form);
     const chip = dueChip(null, () => {});
     addChips.push(chip);
-    form.insertBefore(chip, $('button[type="submit"]', form));
+    const submit = $('button[type="submit"]', form);
+    // The markup leaves this empty; a drawn + centres itself where the glyph
+    // would have needed a per-font nudge.
+    submit.replaceChildren(plusIcon());
+    form.insertBefore(chip, submit);
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();

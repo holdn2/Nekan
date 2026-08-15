@@ -151,14 +151,17 @@
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
+/* The + is drawn too; see icons.js. Centring is the flexbox's job now. */
 .add button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 32px;
+  padding: 0;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
   background: var(--panel-2);
   color: var(--muted);
-  font-size: var(--fs-xl);
-  line-height: 1;
 }
 
 .add button:hover {
