@@ -179,7 +179,7 @@ body.resizing-both {
      starts scrolling sooner. */
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2xs);
+  gap: var(--sp-xs);
 }
 
 .list:empty::after {
