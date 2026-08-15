@@ -191,6 +191,14 @@
   transform: translateY(-1px);
 }
 
+/* The space between the date and the mark is both of their paddings added up.
+   Take it off this side rather than the mark's: the mark's padding is its hit
+   area, and shrinking that to close a visual gap trades something you can feel
+   for something you can only see. */
+.add .duebox.set .due {
+  padding-right: var(--sp-2xs);
+}
+
 .add .duebox.set .due-clear {
   /* No reserved column -- the mark sizes to itself and the padding around it is
      the hit area, which is what keeps it reading as part of the chip. Full
