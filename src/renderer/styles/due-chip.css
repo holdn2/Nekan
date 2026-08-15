@@ -179,16 +179,15 @@
 }
 
 /* The chip gives up its own box to the wrapper above, and fills it instead.
-   The lift is optical, not layout: measured against the font, the date's ink
-   sits a pixel below the middle of the line box it is centred in, so a chip
-   that is centred to the pixel still looks like it sags. */
+   No optical nudge here: one was tried and it moved the calendar icon with the
+   text, because this box holds both. Flex centring is already right for the
+   icon, and the text's own offset belongs on the text. */
 .add .due,
 .add .due:hover {
   height: 100%;
   border: 0;
   border-radius: 0;
   background: transparent;
-  transform: translateY(-1px);
 }
 
 /* The space between the date and the mark is both of their paddings added up.
@@ -196,7 +195,7 @@
    area, and shrinking that to close a visual gap trades something you can feel
    for something you can only see. */
 .add .duebox.set .due {
-  padding-right: var(--sp-2xs);
+  padding-right: 0;
 }
 
 .add .duebox.set .due-clear {
@@ -211,19 +210,20 @@
   height: auto;
   align-self: stretch;
   margin-left: 0;
-  padding: 0 var(--sp-sm);
+  /* × and + are both centred on the maths axis rather than on their box, so
+     flex centring leaves them sitting low. Measured off the rendered pixels,
+     not the font metrics -- the metrics said one pixel and the screen said one
+     and a half. The date and the calendar icon land within half a pixel on
+     their own and are left alone.
+     The 3px at the bottom is that lift: it shortens the content area, and what
+     is centred in it rises by half. Padding rather than a transform so the
+     20px the finger aims at does not move with the mark. */
+  padding: 0 var(--sp-sm) 3px;
   border: 0;
   border-radius: 0;
   background: transparent;
   font-size: var(--fs-lg);
   opacity: 1;
-  /* Centred by flex and still visibly low, because × is centred on the maths
-     axis rather than on the box: measured against the font, its ink sits 2px
-     below the middle at this size where the date's sits 1px below. Lifting it
-     the difference is what makes the two read as one line -- one pixel of that
-     is the same lift the date gets above, and the second is the × alone.
-     Transform rather than margin so the hit area does not move with it. */
-  transform: translateY(-2px);
 }
 
 /* No box of its own, not even on hover: inside the chip it is a mark, and a
@@ -268,6 +268,15 @@
   color: var(--muted);
   font-size: var(--fs-xl);
   line-height: 1;
+}
+
+/* Same maths-axis lift as the clear mark beside it, measured the same way.
+   Padding rather than a transform: a transform moves the whole button, border
+   and hit area with it, and this box is meant to stay exactly where the input
+   and the chip put it. Eating 3px off the bottom of the content area lifts what
+   is centred in it by half that. */
+.add button {
+  padding: 0 0 3px;
 }
 
 .add button:hover {
