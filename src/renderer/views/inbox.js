@@ -13,6 +13,7 @@
 
 import { INBOX, splitBulkText } from "../core-bridge.js";
 import { $, numEl } from "../dom.js";
+import { closeIcon, plusIcon } from "../components/icons.js";
 import { t } from "../i18n.js";
 import { addTask, addTasks, deleteTask, inboxTasks } from "../store.js";
 import { startEdit } from "./inline-edit.js";
@@ -41,7 +42,7 @@ function inboxItemEl(task, index) {
 
   const del = document.createElement("button");
   del.className = "del";
-  del.textContent = "×";
+  del.append(closeIcon());
   del.title = t("item.delete");
   del.setAttribute("aria-label", t("item.deleteLabel", { text: task.text }));
   del.addEventListener("click", () => {
@@ -87,6 +88,7 @@ export function wireInbox() {
     if (inboxOpen) input.focus();
   });
 
+  $('#inboxAdd button[type="submit"]').replaceChildren(plusIcon());
   $("#inboxAdd").addEventListener("submit", (e) => {
     e.preventDefault();
     addTask(INBOX, input.value, null);

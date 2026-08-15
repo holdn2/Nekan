@@ -197,8 +197,6 @@
   },
   "due": {
     "field": "Due date",
-    "clear": "Clear the date",
-    "clearLabel": "Clear the due date",
     "set": "Set a due date",
     "chip": "Due {{date}} · {{hint}}",
     "today": "Today",

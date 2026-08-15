@@ -6,16 +6,16 @@
 .tabs {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px 12px 0;
+  gap: var(--sp-xs);
+  padding: var(--sp-md) var(--sp-xl) 0;
   flex: 0 0 auto;
 }
 
 .tab {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
+  gap: var(--sp-sm);
+  padding: var(--sp-sm) var(--sp-2xl);
   border: 1px solid transparent;
   border-radius: var(--radius-md) var(--radius-md) 0 0;
   background: transparent;
@@ -34,15 +34,19 @@
   font-weight: 600;
 }
 
+/* Same shape as the quadrant count; see the note there for why inline-flex. */
 .badge {
-  min-width: 18px;
-  padding: 1px 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  padding: var(--sp-2xs) var(--sp-sm);
   border-radius: var(--radius-pill);
   background: var(--panel-3);
   color: var(--muted);
   font-size: var(--fs-xs);
   font-weight: 400;
-  text-align: center;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 

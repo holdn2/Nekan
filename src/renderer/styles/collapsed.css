@@ -46,6 +46,6 @@ body.collapsed .settings-backdrop {
 }
 
 body.collapsed .titlebar {
-  padding: 0 6px 0 10px;
-  gap: 8px;
+  padding: 0 var(--sp-sm) 0 var(--sp-lg);
+  gap: var(--sp-md);
 }

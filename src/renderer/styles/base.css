@@ -50,6 +50,27 @@
   --fs-2xl: 18px;
   --fs-3xl: 20px;
 
+  /* Space. Twenty-three values with no rhythm became these; the ones that fell
+     between steps round *down*, never up, because the title bar lives on an 8px
+     margin and its chips are padded in these units -- rounding up there would
+     push the window buttons off the end.
+     If the result reads too tight, the fix is a value here, not the call sites.
+     The four largest steps are the guide tab's alone: it is the one screen
+     holding prose, and prose needs a coarser rhythm than a list of tasks. */
+  --sp-hair: 1px;
+  --sp-2xs: 2px;
+  --sp-xs: 4px;
+  --sp-sm: 6px;
+  --sp-md: 8px;
+  --sp-lg: 10px;
+  --sp-xl: 12px;
+  --sp-2xl: 14px;
+  --sp-3xl: 16px;
+  --sp-4xl: 20px;
+  --sp-5xl: 24px;
+  --sp-6xl: 32px;
+  --sp-7xl: 40px;
+
   /* Corners. --radius keeps its meaning (a panel) and its value; the rest are
      new names for what the stylesheets were already spelling out. A circle
      stays 50% at the call site because it is a shape, not a step. */

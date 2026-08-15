@@ -21,27 +21,27 @@
 .guide-doc {
   max-width: 760px;
   margin: 0 auto;
-  padding: 26px 30px 40px;
+  padding: var(--sp-5xl) var(--sp-6xl) var(--sp-7xl);
   line-height: 1.65;
   user-select: text;
 }
 
 .guide-doc h1 {
-  margin: 0 0 10px;
+  margin: 0 0 var(--sp-lg);
   font-size: var(--fs-3xl);
   letter-spacing: -0.2px;
 }
 
 .guide-doc h2 {
-  margin: 30px 0 12px;
-  padding-top: 18px;
+  margin: var(--sp-6xl) 0 var(--sp-xl);
+  padding-top: var(--sp-3xl);
   border-top: 1px solid var(--line);
   font-size: var(--fs-lg);
   letter-spacing: 0.2px;
 }
 
 .guide-doc p {
-  margin: 0 0 12px;
+  margin: 0 0 var(--sp-xl);
   color: var(--muted);
 }
 
@@ -61,8 +61,8 @@
 }
 
 .guide-doc blockquote {
-  margin: 18px 0;
-  padding: 12px 16px;
+  margin: var(--sp-3xl) 0;
+  padding: var(--sp-xl) var(--sp-3xl);
   border-left: 3px solid var(--accent);
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
   background: var(--accent-soft);
@@ -71,7 +71,7 @@
 
 .guide-doc cite {
   display: block;
-  margin-top: 6px;
+  margin-top: var(--sp-sm);
   color: var(--muted);
   font-size: var(--fs-xs);
   font-style: normal;
@@ -80,19 +80,19 @@
 .guide-axes {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: var(--sp-lg);
+  margin-bottom: var(--sp-xl);
 }
 
 .axis {
-  padding: 12px 14px;
+  padding: var(--sp-xl) var(--sp-2xl);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel-2);
 }
 
 .axis h3 {
-  margin: 0 0 6px;
+  margin: 0 0 var(--sp-sm);
   font-size: var(--fs-md);
 }
 
@@ -102,7 +102,7 @@
 }
 
 .guide-doc .note {
-  padding: 10px 14px;
+  padding: var(--sp-lg) var(--sp-2xl);
   border-radius: var(--radius-md);
   background: var(--panel-2);
   font-size: var(--fs-sm);
@@ -111,11 +111,11 @@
 .guide-quads {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: var(--sp-lg);
 }
 
 .guide-quad {
-  padding: 14px;
+  padding: var(--sp-2xl);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel-2);
@@ -138,8 +138,8 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 7px;
-  margin-bottom: 8px;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-md);
 }
 
 .guide-quad h3 {
@@ -153,7 +153,7 @@
 }
 
 .guide-quad p {
-  margin: 0 0 6px;
+  margin: 0 0 var(--sp-sm);
   font-size: var(--fs-sm);
 }
 
@@ -162,25 +162,25 @@
 }
 
 .guide-quad .tip {
-  margin: 8px 0 0;
-  padding-top: 8px;
+  margin: var(--sp-md) 0 0;
+  padding-top: var(--sp-md);
   border-top: 1px solid var(--line);
 }
 
 .guide-steps,
 .guide-points {
   margin: 0;
-  padding-left: 20px;
+  padding-left: var(--sp-4xl);
   color: var(--muted);
 }
 
 .guide-steps li,
 .guide-points li {
-  margin-bottom: 7px;
+  margin-bottom: var(--sp-sm);
 }
 
 .guide-points.app {
-  padding: 12px 14px 12px 32px;
+  padding: var(--sp-xl) var(--sp-2xl) var(--sp-xl) var(--sp-6xl);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel-2);
@@ -189,7 +189,7 @@
 
 .empty {
   margin: 0;
-  padding: 28px 12px;
+  padding: var(--sp-5xl) var(--sp-xl);
   text-align: center;
   color: var(--faint);
 }
@@ -204,10 +204,10 @@
 .guide-about {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--sp-lg);
   flex-wrap: wrap;
-  margin-top: 36px;
-  padding-top: 16px;
+  margin-top: var(--sp-6xl);
+  padding-top: var(--sp-3xl);
   border-top: 1px solid var(--line);
   color: var(--faint);
   font-size: var(--fs-sm);
@@ -226,7 +226,7 @@
 
 .about-link {
   margin-left: auto;
-  padding: 3px 10px;
+  padding: var(--sp-2xs) var(--sp-lg);
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
   background: transparent;

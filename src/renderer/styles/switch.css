@@ -16,7 +16,7 @@
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
-  padding: 2px;
+  padding: var(--sp-2xs);
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
   background: var(--panel-2);
@@ -62,7 +62,7 @@
   z-index: 1;
   /* Equal halves whatever the words are, which is what the 50% above assumes. */
   flex: 1 1 0;
-  padding: 3px 12px;
+  padding: var(--sp-2xs) var(--sp-xl);
   border: 0;
   border-radius: var(--radius-pill);
   background: transparent;

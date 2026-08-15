@@ -48,6 +48,48 @@ export function calendarIcon() {
   return svg;
 }
 
+/**
+ * The add button in every form. Same reason as closeIcon below: + is a maths
+ * glyph and rides the same axis, so as text it sat low by the same 1.5px.
+ */
+export function plusIcon() {
+  const svg = svgRoot(12);
+  svg.setAttribute("aria-hidden", "true");
+  svg.append(
+    shape("path", {
+      d: "M8 3.5v9M3.5 8h9",
+      stroke: "currentColor",
+      "stroke-width": "1.5",
+      "stroke-linecap": "round",
+    }),
+  );
+  return svg;
+}
+
+/**
+ * The delete mark on a task row.
+ *
+ * Drawn rather than typed. As the × character it sat 1.36px below the middle of
+ * its button, because that glyph centres on the font's maths axis and not on
+ * its box — invisible until hover paints a square behind it, and then plainly
+ * off. The fix was a padding tuned by measurement, which is a number that
+ * quietly stops being right the moment the font or the size changes. Two lines
+ * crossing at the centre of the viewBox are centred by construction.
+ */
+export function closeIcon() {
+  const svg = svgRoot(10);
+  svg.setAttribute("aria-hidden", "true");
+  svg.append(
+    shape("path", {
+      d: "M4.5 4.5l7 7M11.5 4.5l-7 7",
+      stroke: "currentColor",
+      "stroke-width": "1.5",
+      "stroke-linecap": "round",
+    }),
+  );
+  return svg;
+}
+
 /** The "this task has a memo" marker, on matrix rows and archive rows alike. */
 export function noteIcon() {
   const svg = svgRoot(11);

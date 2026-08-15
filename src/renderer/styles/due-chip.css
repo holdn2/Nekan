@@ -16,7 +16,7 @@
   justify-content: center;
   height: 20px;
   min-width: 24px;
-  padding: 0 6px;
+  padding: 0 var(--sp-sm);
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   color: var(--faint);
@@ -100,41 +100,10 @@
   opacity: 0.75;
 }
 
-.due-clear {
-  width: 15px;
-  height: 15px;
-  margin-left: 1px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-xs);
-  background: transparent;
-  color: var(--faint);
-  font-size: var(--fs-sm);
-  line-height: 1;
-  opacity: 0;
-}
-
-.duebox:not(.set) .due-clear,
-.duebox.static .due-clear {
-  display: none;
-}
-
-.item:hover .duebox.set .due-clear,
-.duebox.set:hover .due-clear,
-.add .duebox.set .due-clear {
-  opacity: 0.7;
-}
-
-.due-clear:hover {
-  background: var(--danger-soft);
-  color: var(--danger);
-  opacity: 1;
-}
-
 .add {
   display: flex;
-  gap: 6px;
-  padding: 8px;
+  gap: var(--sp-sm);
+  padding: var(--sp-md);
   border-top: 1px solid var(--line);
 }
 
@@ -161,7 +130,7 @@
 .history-bar input {
   flex: 1 1 auto;
   min-width: 0;
-  padding: 7px 10px;
+  padding: var(--sp-sm) var(--sp-lg);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
   background: var(--input-bg);
@@ -182,14 +151,17 @@
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
+/* The + is drawn too; see icons.js. Centring is the flexbox's job now. */
 .add button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 32px;
+  padding: 0;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
   background: var(--panel-2);
   color: var(--muted);
-  font-size: var(--fs-xl);
-  line-height: 1;
 }
 
 .add button:hover {
