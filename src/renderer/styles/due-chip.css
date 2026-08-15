@@ -120,8 +120,7 @@
 }
 
 .item:hover .duebox.set .due-clear,
-.duebox.set:hover .due-clear,
-.add .duebox.set .due-clear {
+.duebox.set:hover .due-clear {
   opacity: 0.7;
 }
 
@@ -155,6 +154,34 @@
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
+}
+
+/* In a row the clear is a quiet glyph that appears on hover, which is right
+   there. In the add form it sits between two bordered controls and is always
+   visible, and at 15px with no box of its own it read as debris rather than a
+   button. Same box as the submit beside it -- but the hover stays red. Two
+   buttons this close should not be indistinguishable when one of them adds and
+   the other takes away. */
+.add .due-clear {
+  width: 32px;
+  /* Stretch rather than a fixed height: the submit beside it takes the row's
+     height from the input, so anything hardcoded here is a pixel off the
+     moment the input's padding or font changes. The `auto` is load-bearing --
+     the base rule's 15px height would otherwise win and stretch would do
+     nothing. */
+  height: auto;
+  align-self: stretch;
+  margin-left: var(--sp-sm);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: var(--fs-xl);
+  opacity: 1;
+}
+
+.add .due-clear:hover {
+  border-color: var(--danger);
 }
 
 .add input[type="text"],
