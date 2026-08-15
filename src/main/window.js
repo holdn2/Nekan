@@ -40,7 +40,10 @@ const EXPANDED = { width: 1000, height: 700, minWidth: 760, minHeight: 520 };
 // before the switch existed, which left nothing to give, and 600 before the
 // update button — which is hidden nearly always but must still fit when it is
 // not, because the bar is the mode this widget is usually left in.
-const BAR = { width: 640, height: 48 };
+// 660 rather than 640: the content fits from 617 up, so 640 was never in
+// danger, but a bar that ends 6px past its last button reads as full. The
+// extra 20px is breathing room, not capacity.
+const BAR = { width: 660, height: 48 };
 
 /** However tall the renderer asks for, the panel may not take more than this. */
 const MEMO_MAX = 400;
