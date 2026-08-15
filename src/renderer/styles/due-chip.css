@@ -156,32 +156,64 @@
   color: var(--accent);
 }
 
-/* In a row the clear is a quiet glyph that appears on hover, which is right
-   there. In the add form it sits between two bordered controls and is always
-   visible, and at 15px with no box of its own it read as debris rather than a
-   button. Same box as the submit beside it -- but the hover stays red. Two
-   buttons this close should not be indistinguishable when one of them adds and
-   the other takes away. */
-.add .due-clear {
-  width: 32px;
-  /* Stretch rather than a fixed height: the submit beside it takes the row's
-     height from the input, so anything hardcoded here is a pixel off the
-     moment the input's padding or font changes. The `auto` is load-bearing --
-     the base rule's 15px height would otherwise win and stretch would do
-     nothing. */
-  height: auto;
+/* In a row the clear is a quiet glyph that appears on hover, and that is right
+   there. In the add form it is always visible, and standing on its own between
+   two bordered controls it read as debris. So the box moves up to the wrapper
+   and the clear lives inside it: one control that holds a date and the way to
+   drop it, rather than two things that happen to be adjacent.
+   Safe because the native date input is absolutely positioned inside .due, not
+   the wrapper -- it covers the date half and leaves the clear clickable. */
+.add .duebox {
+  /* Stretch so the three controls in the row line up exactly; the submit takes
+     its height from the input, and a number written here is a pixel off. */
   align-self: stretch;
-  margin-left: var(--sp-sm);
+  min-width: 30px;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
   background: var(--panel-2);
-  color: var(--muted);
-  font-size: var(--fs-xl);
+  overflow: hidden;
+}
+
+.add .duebox:has(.due:hover) {
+  border-color: var(--accent);
+}
+
+/* The chip gives up its own box to the wrapper above, and fills it instead. */
+.add .due,
+.add .due:hover {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.add .duebox.set .due-clear {
+  /* No reserved column -- the mark sizes to itself and the padding around it is
+     the hit area, which is what keeps it reading as part of the chip. Full
+     height comes from stretch, and the base rule's 15px has to go to auto first
+     or stretch does nothing at all. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  align-self: stretch;
+  margin-left: 0;
+  padding: 0 var(--sp-sm);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: var(--fs-sm);
   opacity: 1;
 }
 
-.add .due-clear:hover {
-  border-color: var(--danger);
+/* No box of its own, not even on hover: inside the chip it is a mark, and a
+   filled rectangle appearing under it turns the one control back into two.
+   The colour alone carries the state, and the whole 20px column stays the hit
+   area whether or not anything is painted on it. */
+.add .duebox.set .due-clear:hover {
+  background: transparent;
+  color: var(--danger);
 }
 
 .add input[type="text"],
