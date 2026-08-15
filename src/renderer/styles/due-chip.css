@@ -120,7 +120,8 @@
 }
 
 .item:hover .duebox.set .due-clear,
-.duebox.set:hover .due-clear {
+.duebox.set:hover .due-clear,
+.add .duebox.set .due-clear {
   opacity: 0.7;
 }
 
@@ -132,7 +133,7 @@
 
 .add {
   display: flex;
-  gap: var(--sp-xs);
+  gap: var(--sp-sm);
   padding: var(--sp-md);
   border-top: 1px solid var(--line);
 }
@@ -154,85 +155,6 @@
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
-}
-
-/* In a row the clear is a quiet glyph that appears on hover, and that is right
-   there. In the add form it is always visible, and standing on its own between
-   two bordered controls it read as debris. So the box moves up to the wrapper
-   and the clear lives inside it: one control that holds a date and the way to
-   drop it, rather than two things that happen to be adjacent.
-   Safe because the native date input is absolutely positioned inside .due, not
-   the wrapper -- it covers the date half and leaves the clear clickable. */
-.add .duebox {
-  /* Stretch so the three controls in the row line up exactly; the submit takes
-     its height from the input, and a number written here is a pixel off. */
-  align-self: stretch;
-  min-width: 30px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-md);
-  background: var(--panel-2);
-  overflow: hidden;
-}
-
-.add .duebox:has(.due:hover) {
-  border-color: var(--accent);
-}
-
-/* The chip gives up its own box to the wrapper above, and fills it instead.
-   No optical nudge here: one was tried and it moved the calendar icon with the
-   text, because this box holds both. Flex centring is already right for the
-   icon, and the text's own offset belongs on the text. */
-.add .due,
-.add .due:hover {
-  height: 100%;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
-/* The space between the date and the mark is both of their paddings added up.
-   Take it off this side rather than the mark's: the mark's padding is its hit
-   area, and shrinking that to close a visual gap trades something you can feel
-   for something you can only see. */
-.add .duebox.set .due {
-  padding-right: 0;
-}
-
-.add .duebox.set .due-clear {
-  /* No reserved column -- the mark sizes to itself and the padding around it is
-     the hit area, which is what keeps it reading as part of the chip. Full
-     height comes from stretch, and the base rule's 15px has to go to auto first
-     or stretch does nothing at all. */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: auto;
-  height: auto;
-  align-self: stretch;
-  margin-left: 0;
-  /* × and + are both centred on the maths axis rather than on their box, so
-     flex centring leaves them sitting low. Measured off the rendered pixels,
-     not the font metrics -- the metrics said one pixel and the screen said one
-     and a half. The date and the calendar icon land within half a pixel on
-     their own and are left alone.
-     The 3px at the bottom is that lift: it shortens the content area, and what
-     is centred in it rises by half. Padding rather than a transform so the
-     20px the finger aims at does not move with the mark. */
-  padding: 0 var(--sp-sm) 3px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  font-size: var(--fs-lg);
-  opacity: 1;
-}
-
-/* No box of its own, not even on hover: inside the chip it is a mark, and a
-   filled rectangle appearing under it turns the one control back into two.
-   The colour alone carries the state, and the whole 20px column stays the hit
-   area whether or not anything is painted on it. */
-.add .duebox.set .due-clear:hover {
-  background: transparent;
-  color: var(--danger);
 }
 
 .add input[type="text"],
@@ -268,15 +190,6 @@
   color: var(--muted);
   font-size: var(--fs-xl);
   line-height: 1;
-}
-
-/* Same maths-axis lift as the clear mark beside it, measured the same way.
-   Padding rather than a transform: a transform moves the whole button, border
-   and hit area with it, and this box is meant to stay exactly where the input
-   and the chip put it. Eating 3px off the bottom of the content area lifts what
-   is centred in it by half that. */
-.add button {
-  padding: 0 0 3px;
 }
 
 .add button:hover {
