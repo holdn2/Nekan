@@ -132,7 +132,7 @@
 
 .add {
   display: flex;
-  gap: var(--sp-sm);
+  gap: var(--sp-xs);
   padding: var(--sp-md);
   border-top: 1px solid var(--line);
 }
@@ -178,13 +178,17 @@
   border-color: var(--accent);
 }
 
-/* The chip gives up its own box to the wrapper above, and fills it instead. */
+/* The chip gives up its own box to the wrapper above, and fills it instead.
+   The lift is optical, not layout: measured against the font, the date's ink
+   sits a pixel below the middle of the line box it is centred in, so a chip
+   that is centred to the pixel still looks like it sags. */
 .add .due,
 .add .due:hover {
   height: 100%;
   border: 0;
   border-radius: 0;
   background: transparent;
+  transform: translateY(-1px);
 }
 
 .add .duebox.set .due-clear {
@@ -203,8 +207,15 @@
   border: 0;
   border-radius: 0;
   background: transparent;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-lg);
   opacity: 1;
+  /* Centred by flex and still visibly low, because × is centred on the maths
+     axis rather than on the box: measured against the font, its ink sits 2px
+     below the middle at this size where the date's sits 1px below. Lifting it
+     the difference is what makes the two read as one line -- one pixel of that
+     is the same lift the date gets above, and the second is the × alone.
+     Transform rather than margin so the hit area does not move with it. */
+  transform: translateY(-2px);
 }
 
 /* No box of its own, not even on hover: inside the chip it is a mark, and a
