@@ -33,8 +33,7 @@
     "matrix": "Matrix",
     "history": "History",
     "trash": "Trash",
-    "guide": "Guide",
-    "hint": "Click a task to open its note, double-click to edit the text"
+    "guide": "Guide"
   },
   "quad": {
     "q1": {
@@ -191,7 +190,6 @@
     "title": "Brain dump",
     "shared": "Shared",
     "sharedTitle": "One list, used by both the Work and Life matrices",
-    "hint": "Write everything down first, Work or Life alike, then drag each one where it belongs",
     "placeholder": "Write anything (paste several lines to add one task per line)",
     "empty": "Write them down as they come"
   },

@@ -26,6 +26,14 @@
   white-space: nowrap;
 }
 
+/* The face carries either the date text or, when there is no date, the calendar
+   icon. An inline <svg> is placed on the text baseline, not on the box's centre,
+   which left the icon 0.7px high while the drawn + beside it measured exact.
+   Block display takes it out of inline flow, and the flexbox above centres it. */
+.due .face svg {
+  display: block;
+}
+
 /* The native input sits invisibly on top so a click anywhere opens the picker. */
 .due input {
   position: absolute;
@@ -40,7 +48,15 @@
 }
 
 /* Only the picker indicator remains, stretched to fill the chip, so a click
-   anywhere on it opens the native calendar instead of focusing a text field. */
+   anywhere on it opens the native calendar instead of focusing a text field.
+
+   Note what this costs: with the datetime edit gone there are no date segments
+   to focus, so Delete and Backspace do nothing -- the keys reach the input and
+   the value does not move -- and the clear button is hidden here as well. The
+   calendar's own 삭제 is therefore the *only* way to clear a date, which is
+   what makes it worth having measured rather than assumed. It was, on
+   2026-08-16: clicking it emptied the value, fired change, returned the chip to
+   its icon, and wrote dueDate: null to disk. */
 .due input::-webkit-datetime-edit,
 .due input::-webkit-inner-spin-button,
 .due input::-webkit-clear-button {
@@ -151,12 +167,19 @@
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
-/* The + is drawn too; see icons.js. Centring is the flexbox's job now. */
+/* The + is drawn too; see icons.js. Centring is the flexbox's job now.
+   The box is stated in full -- both axes -- because this button and the due
+   chip beside it are read as a pair, and it was neither: 32px wide against the
+   chip's 30, and no height at all, so it stretched to the text input's 31.2 and
+   stood 1.2px taller as well. A height also has to be set to *stop* stretching;
+   align-self then puts the shorter box back on the row's centre line. */
 .add button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
+  align-self: center;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
