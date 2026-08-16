@@ -50,11 +50,3 @@
   font-variant-numeric: tabular-nums;
 }
 
-.tabs-right {
-  margin-left: auto;
-}
-
-.hint {
-  color: var(--faint);
-  font-size: var(--fs-xs);
-}
