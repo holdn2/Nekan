@@ -55,12 +55,18 @@
      an inherited weight (the count inside an active tab). A stray 500 in one
      button's shorthand folded into the label rank.
 
+     Light is for the task text itself. The lists are the one place on screen
+     that is nothing but content, and at this size a lighter face reads calmer
+     than the chrome around it -- which is the point, since the chrome is what
+     should recede. It stays off everything else.
+
      The whole ramp sits a step below where it started (400/600/700). Pretendard
      carries more weight at the same number than Malgun Gothic did, so the old
      numbers read as heavy once the family changed -- the ranks are what matter
      and they are still one step apart. Checked that the family really renders
      each of these rather than snapping two of them onto one face: at 32px the
      six weights from 300 to 800 all come out at different widths. */
+  --fw-light: 300;
   --fw-normal: 400;
   --fw-medium: 500;
   --fw-semibold: 600;

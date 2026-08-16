@@ -105,6 +105,7 @@
 
 .hitem .text {
   flex: 1 1 auto;
+  font-weight: var(--fw-light);
   color: var(--muted);
   text-decoration: line-through;
   word-break: break-word;

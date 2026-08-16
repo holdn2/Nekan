@@ -87,11 +87,13 @@ section.inbox.open .chev {
 .shared-tag {
   flex: 0 0 auto;
   margin-left: -2px;
-  padding: var(--sp-hair) var(--sp-sm);
+  /* Height stated rather than inherited -- see .switch-btn. */
+  padding: var(--sp-2xs) var(--sp-sm);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-pill);
   color: var(--muted);
   font-size: var(--fs-xs);
+  line-height: var(--lh-none);
   font-weight: var(--fw-medium);
   letter-spacing: var(--ls-wide);
 }
@@ -144,6 +146,7 @@ section.inbox.open .inbox-body {
 /* No due chip, no check, no memo mark — the inbox is for getting it out of your
    head, and the rest of the fields appear once it lands in a quadrant. */
 .inbox-item .text {
+  font-weight: var(--fw-light);
   flex: 1 1 auto;
   line-height: var(--lh-snug);
   word-break: break-word;

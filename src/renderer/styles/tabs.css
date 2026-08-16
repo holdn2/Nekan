@@ -15,7 +15,9 @@
   display: flex;
   align-items: center;
   gap: var(--sp-sm);
-  padding: var(--sp-sm) var(--sp-2xl);
+  /* Height stated rather than inherited -- see .switch-btn. 31px, as before. */
+  padding: var(--sp-md) var(--sp-2xl);
+  line-height: var(--lh-none);
   border: 1px solid transparent;
   border-radius: var(--radius-md) var(--radius-md) 0 0;
   background: transparent;

@@ -11,9 +11,18 @@
  * a title bar problem and not a switch one.
  */
 
+/* Two equal columns, each as wide as the *wider* word -- which flex could not
+   do. A shrink-to-fit flex row is as wide as the sum of its items, so an equal
+   split hands each one the average; the longer word then overflows its half and
+   anchors left inside a pill that is exactly 50%. Work/Life showed it plainly,
+   업무/일상 hid it by being the same width. A grid track of `1fr` is
+   `minmax(auto, 1fr)`: the auto floor is the widest item's max-content, and the
+   two tracks are equal, so both come out at the wider word and the pill lands
+   on the button. */
 .switch {
   position: relative;
-  display: inline-flex;
+  display: inline-grid;
+  grid-template-columns: repeat(2, 1fr);
   align-items: center;
   flex: 0 0 auto;
   padding: var(--sp-2xs);
@@ -60,14 +69,19 @@
 .switch-btn {
   position: relative;
   z-index: 1;
-  /* Equal halves whatever the words are, which is what the 50% above assumes. */
-  flex: 1 1 0;
-  padding: var(--sp-2xs) var(--sp-xl);
+  /* Equal halves come from the grid above, not from here. */
+  /* State the height instead of inheriting it. Without a line-height the box is
+     as tall as the family's natural line, so changing the font resized the
+     control: this switch lost 1.6px the day Pretendard arrived and started
+     looking small against the 30px window buttons beside it. Padding plus a
+     line-height of 1 says 20px in any font. */
+  padding: var(--sp-xs) var(--sp-xl);
   border: 0;
   border-radius: var(--radius-pill);
   background: transparent;
   color: var(--muted);
   font-size: var(--fs-sm);
+  line-height: var(--lh-none);
   font-weight: var(--fw-medium);
   white-space: nowrap;
   transition: color 180ms ease;
