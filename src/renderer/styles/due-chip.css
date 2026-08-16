@@ -48,7 +48,15 @@
 }
 
 /* Only the picker indicator remains, stretched to fill the chip, so a click
-   anywhere on it opens the native calendar instead of focusing a text field. */
+   anywhere on it opens the native calendar instead of focusing a text field.
+
+   Note what this costs: with the datetime edit gone there are no date segments
+   to focus, so Delete and Backspace do nothing -- the keys reach the input and
+   the value does not move -- and the clear button is hidden here as well. The
+   calendar's own 삭제 is therefore the *only* way to clear a date, which is
+   what makes it worth having measured rather than assumed. It was, on
+   2026-08-16: clicking it emptied the value, fired change, returned the chip to
+   its icon, and wrote dueDate: null to disk. */
 .due input::-webkit-datetime-edit,
 .due input::-webkit-inner-spin-button,
 .due input::-webkit-clear-button {
