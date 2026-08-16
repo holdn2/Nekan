@@ -68,7 +68,7 @@
   background: transparent;
   color: var(--muted);
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: var(--fw-medium);
   white-space: nowrap;
   transition: color 180ms ease;
 }

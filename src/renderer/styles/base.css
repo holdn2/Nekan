@@ -41,7 +41,7 @@
   /* Type. One family, and a seven-step size scale. The sizes used to be
      eleven values picked per element, four of them on half-pixels, which is
      what made the app look assembled rather than designed. */
-  --font: "Malgun Gothic", "Segoe UI", system-ui, sans-serif;
+  --font: Pretendard, "Malgun Gothic", "Segoe UI", system-ui, sans-serif;
   --fs-xs: 11px;
   --fs-sm: 12px;
   --fs-md: 13px;
@@ -49,6 +49,37 @@
   --fs-xl: 16px;
   --fs-2xl: 18px;
   --fs-3xl: 20px;
+
+  /* Weight. Three, because three is what the screen actually distinguishes:
+     medium labels a thing, semibold titles it, and normal exists only to undo
+     an inherited weight (the count inside an active tab). A stray 500 in one
+     button's shorthand folded into the label rank.
+
+     The whole ramp sits a step below where it started (400/600/700). Pretendard
+     carries more weight at the same number than Malgun Gothic did, so the old
+     numbers read as heavy once the family changed -- the ranks are what matter
+     and they are still one step apart. Checked that the family really renders
+     each of these rather than snapping two of them onto one face: at 32px the
+     six weights from 300 to 800 all come out at different widths. */
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+
+  /* Line height. `none` belongs to boxes that hold exactly one line and centre
+     it themselves -- chips, counts, icon buttons -- where any other value only
+     makes the box taller than what is in it. The other three are a ramp from
+     dense list to prose. The values here replace six that sat within 0.2 of
+     each other, which is the same drift the size scale was made to end. */
+  --lh-none: 1;
+  --lh-snug: 1.45;
+  --lh-normal: 1.55;
+  --lh-relaxed: 1.65;
+
+  /* Tracking. Two, and only where the size asks for it: large headings set
+     tighter, small all-caps-ish labels set looser. In em on the tight end so it
+     follows the heading's size instead of being right at one size only. */
+  --ls-tight: -0.01em;
+  --ls-wide: 0.3px;
 
   /* Space. Twenty-three values with no rhythm became these; the ones that fell
      between steps round *down*, never up, because the title bar lives on an 8px

@@ -31,7 +31,7 @@
   border-color: var(--line);
   border-bottom-color: var(--panel);
   color: var(--text);
-  font-weight: 600;
+  font-weight: var(--fw-medium);
 }
 
 /* Same shape as the quadrant count; see the note there for why inline-flex. */
@@ -45,8 +45,8 @@
   background: var(--panel-3);
   color: var(--muted);
   font-size: var(--fs-xs);
-  font-weight: 400;
-  line-height: 1;
+  font-weight: var(--fw-normal);
+  line-height: var(--lh-none);
   font-variant-numeric: tabular-nums;
 }
 

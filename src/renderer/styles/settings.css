@@ -51,7 +51,7 @@
 .settings-head h2 {
   margin: 0;
   font-size: var(--fs-lg);
-  font-weight: 700;
+  font-weight: var(--fw-semibold);
 }
 
 .settings-close {
@@ -59,7 +59,7 @@
   background: none;
   color: var(--muted);
   font-size: var(--fs-2xl);
-  line-height: 1;
+  line-height: var(--lh-none);
   padding: var(--sp-2xs) var(--sp-sm);
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -231,7 +231,7 @@ body:has(#welcome:not(.hidden)) #closeBtn {
 .welcome-card h1 {
   margin: var(--sp-md) 0 var(--sp-2xs);
   font-size: var(--fs-3xl);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--ls-tight);
 }
 
 .welcome-lede {
@@ -275,7 +275,7 @@ body:has(#welcome:not(.hidden)) #closeBtn {
   background: var(--accent-soft);
   color: var(--accent);
   font-size: var(--fs-xs);
-  font-weight: 600;
+  font-weight: var(--fw-medium);
   vertical-align: 1px;
 }
 

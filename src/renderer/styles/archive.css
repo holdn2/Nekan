@@ -53,8 +53,8 @@
   padding: var(--sp-lg) var(--sp-md) var(--sp-xs);
   color: var(--muted);
   font-size: var(--fs-xs);
-  font-weight: 700;
-  letter-spacing: 0.3px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-wide);
 }
 
 .hitem {
@@ -99,7 +99,7 @@
 }
 
 .hitem .num {
-  line-height: 1;
+  line-height: var(--lh-none);
   margin-right: -4px;
 }
 
@@ -173,7 +173,7 @@
 .hmemo-text {
   margin: 0;
   min-width: 0;
-  line-height: 1.5;
+  line-height: var(--lh-normal);
   white-space: pre-wrap;
   word-break: break-word;
   user-select: text;

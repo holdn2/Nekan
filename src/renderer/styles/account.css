@@ -43,7 +43,7 @@
   color: #3c4043;
   /* The colours above are Google's; the type is ours, so it goes through the
      tokens and follows the app if the family or the scale changes. */
-  font: 500 var(--fs-md) / 1 var(--font);
+  font: var(--fw-medium) var(--fs-md) / var(--lh-none) var(--font);
   cursor: pointer;
 }
 
@@ -63,7 +63,7 @@
   display: block;
   flex-basis: 100%;
   font-size: var(--fs-sm);
-  line-height: 1.5;
+  line-height: var(--lh-normal);
   color: var(--muted);
   cursor: pointer;
 }
@@ -114,7 +114,7 @@
 }
 
 .account-who {
-  font-weight: 600;
+  font-weight: var(--fw-medium);
 }
 
 .account-state {
@@ -173,7 +173,7 @@
 .account-confirm p {
   margin: 0 0 var(--sp-sm);
   font-size: var(--fs-sm);
-  line-height: 1.55;
+  line-height: var(--lh-normal);
   /* The panel is narrow enough to split 되돌릴 수 없습니다 across two lines in
      the middle of the word. Fine for a task somebody typed; not for the one
      sentence in the app that has to be read before an irreversible button. */

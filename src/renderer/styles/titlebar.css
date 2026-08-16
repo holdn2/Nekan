@@ -31,8 +31,8 @@
 }
 
 .title {
-  font-weight: 600;
-  letter-spacing: 0.2px;
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-wide);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
