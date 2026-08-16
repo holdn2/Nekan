@@ -26,6 +26,14 @@
   white-space: nowrap;
 }
 
+/* The face carries either the date text or, when there is no date, the calendar
+   icon. An inline <svg> is placed on the text baseline, not on the box's centre,
+   which left the icon 0.7px high while the drawn + beside it measured exact.
+   Block display takes it out of inline flow, and the flexbox above centres it. */
+.due .face svg {
+  display: block;
+}
+
 /* The native input sits invisibly on top so a click anywhere opens the picker. */
 .due input {
   position: absolute;
@@ -151,12 +159,19 @@
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
-/* The + is drawn too; see icons.js. Centring is the flexbox's job now. */
+/* The + is drawn too; see icons.js. Centring is the flexbox's job now.
+   The box is stated in full -- both axes -- because this button and the due
+   chip beside it are read as a pair, and it was neither: 32px wide against the
+   chip's 30, and no height at all, so it stretched to the text input's 31.2 and
+   stood 1.2px taller as well. A height also has to be set to *stop* stretching;
+   align-self then puts the shorter box back on the row's centre line. */
 .add button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
+  align-self: center;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
