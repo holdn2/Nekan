@@ -92,6 +92,9 @@ function exportItem(task, now, { t, locale }) {
  * It is also what puts every pre-split task on a board, and guarantees inbox
  * tasks have no space — which is why they survive the filter on both boards.
  */
+/** How many rows of any one list reach the page. See the note in buildSnapshot. */
+const PER_SECTION = 20;
+
 function buildSnapshot(tasks, now = new Date(), space, i18n) {
   const { t, locale } = i18n;
   const board = sanitizeSpace(space);
@@ -106,29 +109,53 @@ function buildSnapshot(tasks, now = new Date(), space, i18n) {
   // the user's. normalizeTasks() above has already given every row one.
   const inList = (q) => list.filter((t) => t.quadrant === q).sort(compareOrder);
 
+  // Every list gets the same ceiling, and the section says how many it left.
+  //
+  // Not a formatting preference -- the printed matrix is a two-column grid, and
+  // a grid row is as tall as its tallest cell. Measured 2026-08-18 with 300
+  // tasks in quadrant 2: the document ran to 11 pages, quadrant 1 became a
+  // 6129px box holding one task and nine pages of white, and quadrants 3 and 4
+  // came out at the very end. Past roughly 25 rows a quadrant stops fitting a
+  // page, so the ceiling sits below that.
+  //
+  // The dump is capped too. It prints full width above the matrix, so a long
+  // one pushes the whole board off the first page for the same reason.
+  const section = (key, title, action, quadrant) => {
+    const all = inList(quadrant);
+    const shown = all.slice(0, PER_SECTION);
+    const hidden = all.length - shown.length;
+    return {
+      key,
+      title,
+      action,
+      items: shown.map((task) => exportItem(task, now, i18n)),
+      // What the quadrant really holds, which is not what is on the page.
+      count: all.length,
+      hidden,
+      more: hidden ? t("export.more", { count: hidden }) : "",
+    };
+  };
+
   const sections = [
-    {
-      key: INBOX,
-      title: t("inbox.title"),
-      action: t("export.inboxAction"),
-      items: inList(INBOX).map((task) => exportItem(task, now, i18n)),
-    },
-    ...QUADS.map((q) => ({
-      key: q,
-      title: t(`quad.${q}.title`),
-      action: t(`quad.${q}.action`),
-      items: inList(q).map((task) => exportItem(task, now, i18n)),
-    })),
+    section(INBOX, t("inbox.title"), t("export.inboxAction"), INBOX),
+    ...QUADS.map((q) =>
+      section(q, t(`quad.${q}.title`), t(`quad.${q}.action`), q),
+    ),
   ];
 
   const stamp = stampLabel(now);
-  const total = sections.reduce((sum, s) => sum + s.items.length, 0);
+  // The board's size, not the document's: a count that dropped to 100 whenever
+  // someone had more would read as tasks having gone missing.
+  const total = sections.reduce((sum, s) => sum + s.count, 0);
+  const truncated = sections.some((s) => s.hidden > 0);
 
   return {
     stamp,
     space: board,
     spaceLabel: t(`space.${board}`),
     total,
+    truncated,
+    perSection: PER_SECTION,
     inbox: sections[0],
     quads: sections.slice(1),
     sections,
@@ -139,6 +166,8 @@ function buildSnapshot(tasks, now = new Date(), space, i18n) {
       meta: t("export.meta", { stamp, count: total }),
       metaShort: t("export.metaShort", { stamp, count: total }),
       empty: t("export.sectionEmpty"),
+      // Stated once, at the top, and only when it actually bit.
+      limit: truncated ? t("export.limit", { limit: PER_SECTION }) : "",
     },
   };
 }
@@ -152,6 +181,7 @@ const mdCell = (text) =>
 /** One quadrant as a numbered markdown list, memos quoted underneath. */
 function markdownSection(section, labels) {
   const lines = [`## ${section.title}`, "", `_${section.action}_`, ""];
+  const tail = section.more ? [`_${section.more}_`, ""] : [];
   if (!section.items.length) {
     lines.push(`_(${labels.empty})_`, "");
     return lines;
@@ -166,7 +196,7 @@ function markdownSection(section, labels) {
         .forEach((line) => lines.push(`   > ${mdCell(line)}`));
     }
   });
-  lines.push("");
+  lines.push(...tail, "");
   return lines;
 }
 
@@ -175,7 +205,9 @@ function toMarkdown(snapshot) {
   const lines = [
     `# Nekan — ${snapshot.spaceLabel}`,
     "",
-    snapshot.labels.meta,
+    snapshot.labels.limit
+      ? `${snapshot.labels.meta} · ${snapshot.labels.limit}`
+      : snapshot.labels.meta,
     "",
   ];
   snapshot.sections.forEach((s) =>
@@ -219,19 +251,36 @@ function htmlSection(section, tag, labels) {
     `<span class="dot"></span>` +
     `<h2>${escapeHtml(section.title)}</h2>` +
     `<span class="act">${escapeHtml(section.action)}</span>` +
-    `<span class="n">${section.items.length}</span>` +
+    `<span class="n">${section.count}</span>` +
     "</header>" +
     body +
+    (section.more ? `<p class="more">${escapeHtml(section.more)}</p>` : "") +
     "</section>"
   );
 }
 
 /**
- * A standalone page: no external CSS, fonts or scripts, because it is opened
- * straight from disk and printed headlessly. Always the light palette — the
- * dark theme would print as a black rectangle.
+ * A standalone page: no external CSS or scripts, because it is opened straight
+ * from disk. Always the light palette — the dark theme would print as a black
+ * rectangle.
+ *
+ * `fontUrl` is the one thing that can come from outside, and only the PDF
+ * path passes it. The saved .html has to stay portable — a URL into this
+ * machine's install would be a broken link on anyone else's computer, and it
+ * would write the user's home directory into a file they may hand to someone.
+ * The PDF is printed from a temp file that is deleted straight after, so there
+ * it can point at the app's own copy and the document comes out in the same
+ * typeface as the window it was exported from. Without it the stack below
+ * still asks for an installed Pretendard before falling back.
  */
-function toHtml(snapshot) {
+function toHtml(snapshot, { fontUrl } = {}) {
+  // Measured 2026-08-18: a file:// face does load in the printToPDF window
+  // even though the page itself lives in another directory, and the glyphs are
+  // embedded in the PDF. Fonts are a CORS-checked subresource, so this was
+  // worth proving rather than assuming.
+  const face = fontUrl
+    ? `@font-face{font-family:"Pretendard Variable";src:url("${fontUrl}") format("woff2");font-weight:100 900;font-display:block}`
+    : "";
   const dots = Object.entries(QUAD_COLOR)
     .map(([key, color]) => `.${key} .dot{background:${color}}`)
     .join("");
@@ -242,11 +291,13 @@ function toHtml(snapshot) {
 <meta charset="UTF-8">
 <title>Nekan ${escapeHtml(snapshot.spaceLabel)} ${escapeHtml(snapshot.stamp)}</title>
 <style>
+  ${face}
   @page { size: A4 landscape; margin: 12mm; }
   * { box-sizing: border-box; }
   body {
     margin: 0; padding: 18px 20px 24px;
-    font-family: "Malgun Gothic", "Segoe UI", system-ui, sans-serif;
+    font-family: "Pretendard Variable", "Pretendard", "Malgun Gothic",
+      "Segoe UI", system-ui, sans-serif;
     font-size: 11.5px; line-height: 1.5; color: #1f1e1c; background: #fff;
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
@@ -276,6 +327,7 @@ function toHtml(snapshot) {
   .memo { margin: 2px 0 5px; padding-left: 8px; border-left: 2px solid #e2ded1;
     color: #6f6b61; font-size: 10.5px; white-space: pre-wrap; }
   .empty { margin: 2px 0; color: #a29d90; }
+  .more { margin: 4px 0 0; color: #a29d90; font-size: 10px; }
   .inbox { margin-bottom: 12px; background: #faf9f5; }
   /* The rows get a floor so a short board still prints as a 2x2 matrix instead
      of four boxes stacked at the top of an empty page; they grow past it when
@@ -289,7 +341,9 @@ function toHtml(snapshot) {
 <div class="head">
   <h1>Nekan</h1>
   <span class="board">${escapeHtml(snapshot.spaceLabel)}</span>
-  <span class="meta">${escapeHtml(snapshot.labels.metaShort)}</span>
+  <span class="meta">${escapeHtml(snapshot.labels.metaShort)}${
+    snapshot.labels.limit ? " · " + escapeHtml(snapshot.labels.limit) : ""
+  }</span>
 </div>
 ${htmlSection(snapshot.inbox, "inbox", snapshot.labels)}
 <div class="grid">${snapshot.quads

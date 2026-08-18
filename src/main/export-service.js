@@ -11,6 +11,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { pathToFileURL } = require("url");
 const { BrowserWindow, app, dialog, shell } = require("electron");
 
 const { sanitizeSpace } = require("../shared/core");
@@ -30,6 +31,19 @@ const exportFilters = () => [
   { name: t("export.filterHtml"), extensions: ["html"] },
   { name: t("export.filterMarkdown"), extensions: ["md"] },
 ];
+
+/**
+ * The app's own copy of Pretendard, as a URL the print window can fetch.
+ *
+ * Only the PDF gets this. It is an absolute path into wherever Nekan happens
+ * to be installed -- inside app.asar in a packaged build -- so it is right for
+ * the throwaway file we print and delete, and wrong for anything the user
+ * keeps. See the note on toHtml.
+ */
+const fontUrl = () =>
+  pathToFileURL(
+    path.join(__dirname, "..", "assets", "fonts", "PretendardVariable.woff2"),
+  ).href;
 
 /**
  * Print the export page in a throwaway window. It has to be a real window with
@@ -97,7 +111,7 @@ async function runExport(parent) {
     } else {
       // Anything else (including a name typed without an extension, which the
       // dialog completes to .pdf) goes through the printer.
-      await renderPdf(toHtml(snapshot), target);
+      await renderPdf(toHtml(snapshot, { fontUrl: fontUrl() }), target);
     }
   } catch (err) {
     console.error("export failed", err);

@@ -9,6 +9,7 @@ const {
   isoDay,
 } = require("../src/shared/export");
 const { initI18n, setMainLanguage, t } = require("../src/main/i18n");
+const { orderKeyBetween } = require("../src/shared/core");
 
 const NOW = new Date(2026, 7, 2, 14, 30); // 2026-08-02 14:30, local
 
@@ -214,11 +215,113 @@ test("html is a standalone document with no external references", () => {
   const html = toHtml(snapshotOf([task({ text: "a" })], NOW));
   assert.match(html, /^<!doctype html>/);
   assert.equal(/<link|<script|https?:\/\//.test(html), false);
+  // Portable means no reference to this machine either: no face, no url().
+  assert.equal(/@font-face|url\(/.test(html), false);
+});
+
+test("the printed copy may name a font file, and the saved one may not", () => {
+  const snap = snapshotOf([task({ text: "a" })], NOW);
+  const url = "file:///C:/Program%20Files/Nekan/PretendardVariable.woff2";
+
+  const printed = toHtml(snap, { fontUrl: url });
+  assert.match(printed, /@font-face\{font-family:"Pretendard Variable"/);
+  assert.equal(printed.includes(url), true);
+  assert.match(printed, /font-weight:100 900/);
+
+  // The saved copy travels to other machines, so it must stay portable.
+  assert.equal(toHtml(snap).includes("Program%20Files"), false);
+});
+
+test("both copies ask for the same typeface before falling back", () => {
+  for (const html of [
+    toHtml(snapshotOf([task({ text: "a" })], NOW)),
+    toHtml(snapshotOf([task({ text: "a" })], NOW), { fontUrl: "x.woff2" }),
+  ]) {
+    assert.match(html, /font-family: "Pretendard Variable", "Pretendard",/);
+  }
 });
 
 test("html renders a memo with its line breaks preserved", () => {
   const html = toHtml(snapshotOf([task({ memo: "one\ntwo" })], NOW));
   assert.match(html, /class="memo">one<br>two<\/p>/);
+});
+
+// A quadrant that runs past the page is capped, and the document says so.
+// The numbers here are the ones that made the ceiling necessary: 300 rows
+// printed as 11 pages with the neighbouring quadrant an empty box.
+const manyIn = (quadrant, n) =>
+  Array.from({ length: n }, (_, i) =>
+    task({ quadrant, text: "row " + (i + 1) }),
+  );
+
+test("a long list is cut to twenty and the section says how many are left", () => {
+  const snap = snapshotOf(manyIn("q2", 25));
+  const q2 = snap.quads.find((q) => q.key === "q2");
+
+  assert.equal(q2.items.length, 20);
+  assert.equal(q2.hidden, 5);
+  // The count is the quadrant's, not the page's -- a number that shrank to
+  // twenty would read as tasks having gone missing.
+  assert.equal(q2.count, 25);
+  assert.equal(snap.total, 25);
+  assert.equal(snap.truncated, true);
+
+  const html = toHtml(snap);
+  assert.equal((html.match(/<li>/g) || []).length, 20);
+  assert.match(html, /<span class="n">25<\/span>/);
+  assert.match(html, /class="more">출력하지 않은 항목이 5개 더 있습니다/);
+  assert.match(html, /각 분면에서 최대 20개까지만 출력됩니다/);
+
+  const md = toMarkdown(snap);
+  assert.match(md, /_출력하지 않은 항목이 5개 더 있습니다_/);
+  assert.match(md, /각 분면에서 최대 20개까지만 출력됩니다/);
+  assert.equal(md.includes("21. row 21"), false);
+});
+
+test("a board that fits says nothing about a limit", () => {
+  const snap = snapshotOf(manyIn("q2", 20));
+  assert.equal(snap.truncated, false);
+  assert.equal(snap.labels.limit, "");
+
+  const html = toHtml(snap);
+  assert.equal(html.includes('class="more"'), false);
+  assert.equal(html.includes("최대 20개"), false);
+  assert.equal(toMarkdown(snap).includes("최대 20개"), false);
+});
+
+test("the brain dump is capped on the same terms as a quadrant", () => {
+  const snap = snapshotOf(manyIn("inbox", 23));
+  assert.equal(snap.inbox.items.length, 20);
+  assert.equal(snap.inbox.hidden, 3);
+  assert.equal(snap.inbox.count, 23);
+});
+
+test("the cut follows the quadrant's order, not the order rows are stored", () => {
+  // Storage order is not the user's order -- orderKey is. Rows go in
+  // backwards to prove the cut sorts before it slices.
+  //
+  // The keys come from the app's own generator rather than being written by
+  // hand: a padded decimal looks ordered but normalizeTasks rejects anything
+  // ending in the lowest digit ("020" came back as "01"), and a rejected key
+  // is refilled from array position -- exactly what this test rules out.
+  const keys = [];
+  for (let i = 0, k = null; i < 22; i++) {
+    k = orderKeyBetween(k, null);
+    keys.push(k);
+  }
+
+  const rows = keys
+    .map((orderKey, i) => task({ quadrant: "q2", text: "row " + i, orderKey }))
+    .reverse();
+  const snap = snapshotOf(rows);
+  const q2 = snap.quads.find((q) => q.key === "q2");
+
+  assert.equal(q2.items[0].text, "row 0");
+  assert.equal(q2.items[19].text, "row 19");
+  assert.equal(
+    q2.items.some((i) => i.text === "row 20" || i.text === "row 21"),
+    false,
+  );
 });
 
 test("the suggested file name carries the board, the day and the format", () => {

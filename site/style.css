@@ -1,6 +1,23 @@
 /* One stylesheet for every page on this site. Kept plain on purpose: the
    pages a store links to should render on anything, including a ten-year-old
    phone browser in a review queue. */
+
+/* The app's typeface, cut down to the glyphs these pages draw: 68 KB rather
+   than the 2MB the app carries, because the app reads its copy off the disk
+   and a visitor downloads this one. Built by tools/build-site-font.js --
+   rerun it after changing any text here, or a new word arrives in whatever
+   the browser falls back to.
+
+   swap, not block: the app can afford to wait for a local file, a policy page
+   on a bad connection cannot, and unreadable text is worse than text that
+   changes shape once. */
+@font-face {
+  font-family: "Pretendard Variable";
+  src: url("fonts/pretendard-subset.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 :root {
   color-scheme: light dark;
   --bg: #fbf9f5;
@@ -31,7 +48,9 @@ body {
   background: var(--bg);
   color: var(--fg);
   font:
-    16px/1.75 -apple-system,
+    16px/1.75 "Pretendard Variable",
+    "Pretendard",
+    -apple-system,
     "Segoe UI",
     "Malgun Gothic",
     sans-serif;
