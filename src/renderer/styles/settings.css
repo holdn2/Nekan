@@ -215,6 +215,12 @@ body:has(#welcome:not(.hidden)) #closeBtn {
   position: absolute;
   top: 12px;
   left: 12px;
+  /* It sits inside the title bar's strip, and a draggable region hands its
+     mouse input to the OS rather than to the page -- so without this the
+     dropdown simply never opens. Painting over the bar is not enough: the
+     region is hit-tested from the CSS property, not from what is on top.
+     Verified with a real click: the select did not even take focus. */
+  -webkit-app-region: no-drag;
 }
 
 .welcome-card {
@@ -235,7 +241,7 @@ body:has(#welcome:not(.hidden)) #closeBtn {
 }
 
 .welcome-lede {
-  margin: 0 0 var(--sp-3xl);
+  margin: 0 0 var(--sp-6xl);
   font-size: var(--fs-md);
   color: var(--muted);
 }
@@ -292,6 +298,7 @@ body:has(#welcome:not(.hidden)) #closeBtn {
 
 .welcome-choice-text b {
   font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
 }
 
 .welcome-choice-text small {
