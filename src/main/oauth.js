@@ -49,12 +49,19 @@ function pkcePair() {
   return { verifier, challenge };
 }
 
-/** What the browser tab says once it has done its job. */
+/**
+ * What the browser tab says once it has done its job.
+ *
+ * The app ships Pretendard but this page is drawn by the system browser, so it
+ * can only ask for an installed copy before falling back. Serving the 2MB file
+ * over loopback for a line of text that is on screen for a second is not worth
+ * the route.
+ */
 function donePage(message) {
   return `<!doctype html><html lang="${language()}"><head><meta charset="utf-8">
 <title>Nekan</title><style>
 body{margin:0;height:100vh;display:grid;place-items:center;background:#f7f5ef;
-color:#23211d;font:16px/1.6 "Malgun Gothic","Segoe UI",system-ui,sans-serif}
+color:#23211d;font:16px/1.6 "Pretendard Variable","Pretendard","Malgun Gothic","Segoe UI",system-ui,sans-serif}
 @media(prefers-color-scheme:dark){body{background:#171614;color:#e8e4da}}
 p{margin:0}</style></head><body><p>${message}</p></body></html>`;
 }

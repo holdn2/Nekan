@@ -30,8 +30,15 @@ body {
   padding: 40px 20px 72px;
   background: var(--bg);
   color: var(--fg);
+  /* The app ships Pretendard; this page only asks for an installed copy. It
+     is the same 2MB file, and putting it on a policy page a store reviewer
+     opens on a slow connection would cost more than matching the app is
+     worth -- see the note at the top. Anyone without it gets exactly what
+     they got before. */
   font:
-    16px/1.75 -apple-system,
+    16px/1.75 "Pretendard Variable",
+    "Pretendard",
+    -apple-system,
     "Segoe UI",
     "Malgun Gothic",
     sans-serif;

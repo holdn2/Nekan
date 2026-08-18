@@ -227,11 +227,27 @@ function htmlSection(section, tag, labels) {
 }
 
 /**
- * A standalone page: no external CSS, fonts or scripts, because it is opened
- * straight from disk and printed headlessly. Always the light palette — the
- * dark theme would print as a black rectangle.
+ * A standalone page: no external CSS or scripts, because it is opened straight
+ * from disk. Always the light palette — the dark theme would print as a black
+ * rectangle.
+ *
+ * `fontUrl` is the one thing that can come from outside, and only the PDF
+ * path passes it. The saved .html has to stay portable — a URL into this
+ * machine's install would be a broken link on anyone else's computer, and it
+ * would write the user's home directory into a file they may hand to someone.
+ * The PDF is printed from a temp file that is deleted straight after, so there
+ * it can point at the app's own copy and the document comes out in the same
+ * typeface as the window it was exported from. Without it the stack below
+ * still asks for an installed Pretendard before falling back.
  */
-function toHtml(snapshot) {
+function toHtml(snapshot, { fontUrl } = {}) {
+  // Measured 2026-08-18: a file:// face does load in the printToPDF window
+  // even though the page itself lives in another directory, and the glyphs are
+  // embedded in the PDF. Fonts are a CORS-checked subresource, so this was
+  // worth proving rather than assuming.
+  const face = fontUrl
+    ? `@font-face{font-family:"Pretendard Variable";src:url("${fontUrl}") format("woff2");font-weight:100 900;font-display:block}`
+    : "";
   const dots = Object.entries(QUAD_COLOR)
     .map(([key, color]) => `.${key} .dot{background:${color}}`)
     .join("");
@@ -242,11 +258,13 @@ function toHtml(snapshot) {
 <meta charset="UTF-8">
 <title>Nekan ${escapeHtml(snapshot.spaceLabel)} ${escapeHtml(snapshot.stamp)}</title>
 <style>
+  ${face}
   @page { size: A4 landscape; margin: 12mm; }
   * { box-sizing: border-box; }
   body {
     margin: 0; padding: 18px 20px 24px;
-    font-family: "Malgun Gothic", "Segoe UI", system-ui, sans-serif;
+    font-family: "Pretendard Variable", "Pretendard", "Malgun Gothic",
+      "Segoe UI", system-ui, sans-serif;
     font-size: 11.5px; line-height: 1.5; color: #1f1e1c; background: #fff;
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }

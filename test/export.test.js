@@ -214,6 +214,30 @@ test("html is a standalone document with no external references", () => {
   const html = toHtml(snapshotOf([task({ text: "a" })], NOW));
   assert.match(html, /^<!doctype html>/);
   assert.equal(/<link|<script|https?:\/\//.test(html), false);
+  // Portable means no reference to this machine either: no face, no url().
+  assert.equal(/@font-face|url\(/.test(html), false);
+});
+
+test("the printed copy may name a font file, and the saved one may not", () => {
+  const snap = snapshotOf([task({ text: "a" })], NOW);
+  const url = "file:///C:/Program%20Files/Nekan/PretendardVariable.woff2";
+
+  const printed = toHtml(snap, { fontUrl: url });
+  assert.match(printed, /@font-face\{font-family:"Pretendard Variable"/);
+  assert.equal(printed.includes(url), true);
+  assert.match(printed, /font-weight:100 900/);
+
+  // The saved copy travels to other machines, so it must stay portable.
+  assert.equal(toHtml(snap).includes("Program%20Files"), false);
+});
+
+test("both copies ask for the same typeface before falling back", () => {
+  for (const html of [
+    toHtml(snapshotOf([task({ text: "a" })], NOW)),
+    toHtml(snapshotOf([task({ text: "a" })], NOW), { fontUrl: "x.woff2" }),
+  ]) {
+    assert.match(html, /font-family: "Pretendard Variable", "Pretendard",/);
+  }
 });
 
 test("html renders a memo with its line breaks preserved", () => {
