@@ -40,7 +40,7 @@
 .memo-title {
   flex: 1 1 auto;
   min-width: 0;
-  font-weight: 600;
+  font-weight: var(--fw-medium);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -57,7 +57,7 @@
   background: transparent;
   color: var(--faint);
   font-size: var(--fs-sm);
-  line-height: 1;
+  line-height: var(--lh-none);
 }
 
 .memo-x:hover {
@@ -83,7 +83,7 @@
   background: var(--input-bg);
   color: var(--text);
   font: inherit;
-  line-height: 1.55;
+  line-height: var(--lh-normal);
   outline: none;
   user-select: text;
 }
@@ -105,7 +105,7 @@
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-word;
-  line-height: 1.55;
+  line-height: var(--lh-normal);
   user-select: text;
   cursor: text;
 }

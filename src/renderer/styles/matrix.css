@@ -123,7 +123,7 @@ body.resizing-both {
 .quad h2 {
   margin: 0;
   font-size: var(--fs-md);
-  font-weight: 700;
+  font-weight: var(--fw-semibold);
 }
 
 .quad .sub {
@@ -146,7 +146,7 @@ body.resizing-both {
   background: var(--panel-3);
   color: var(--muted);
   font-size: var(--fs-xs);
-  line-height: 1;
+  line-height: var(--lh-none);
   font-variant-numeric: tabular-nums;
 }
 
@@ -231,7 +231,7 @@ body.resizing-both {
   text-align: right;
   color: var(--faint);
   font-size: var(--fs-xs);
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
   font-variant-numeric: tabular-nums;
 }
 
@@ -253,7 +253,8 @@ body.resizing-both {
 
 .item .text {
   flex: 1 1 auto;
-  line-height: 1.45;
+  font-weight: var(--fw-light);
+  line-height: var(--lh-snug);
   word-break: break-word;
   white-space: pre-wrap;
   user-select: text;
@@ -282,7 +283,7 @@ body.resizing-both {
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--faint);
-  line-height: 1;
+  line-height: var(--lh-none);
   opacity: 0;
 }
 

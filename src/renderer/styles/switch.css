@@ -11,9 +11,18 @@
  * a title bar problem and not a switch one.
  */
 
+/* Two equal columns, each as wide as the *wider* word -- which flex could not
+   do. A shrink-to-fit flex row is as wide as the sum of its items, so an equal
+   split hands each one the average; the longer word then overflows its half and
+   anchors left inside a pill that is exactly 50%. Work/Life showed it plainly,
+   업무/일상 hid it by being the same width. A grid track of `1fr` is
+   `minmax(auto, 1fr)`: the auto floor is the widest item's max-content, and the
+   two tracks are equal, so both come out at the wider word and the pill lands
+   on the button. */
 .switch {
   position: relative;
-  display: inline-flex;
+  display: inline-grid;
+  grid-template-columns: repeat(2, 1fr);
   align-items: center;
   flex: 0 0 auto;
   padding: var(--sp-2xs);
@@ -44,7 +53,14 @@
   width: calc(50% - 2px);
   border-radius: var(--radius-pill);
   background: var(--panel);
-  box-shadow: var(--shadow-knob);
+  /* Even, not dropped. There are only 2px of track above and below the pill, so
+     --shadow-knob's downward offset filled the lower gap and left the upper one
+     clean -- and the pill then read as riding high although it measures dead
+     centre (2.8px top, 2.8px bottom). Removing it altogether was worse: the
+     pill and the track are only nine levels of luminance apart, and this edge
+     is most of what tells them apart. --shadow-knob still suits the first-run
+     card, which has room for a shadow to fall on. */
+  box-shadow: var(--shadow-even);
   transition: transform 180ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -60,15 +76,29 @@
 .switch-btn {
   position: relative;
   z-index: 1;
-  /* Equal halves whatever the words are, which is what the 50% above assumes. */
-  flex: 1 1 0;
-  padding: var(--sp-2xs) var(--sp-xl);
+  /* Equal halves come from the grid above, not from here. */
+  /* State the height instead of inheriting it. Without a line-height the box is
+     as tall as the family's natural line, so changing the font resized the
+     control: this switch lost 1.6px the day Pretendard arrived and started
+     looking small against the 30px window buttons beside it. Padding plus a
+     line-height of 1 says 20px in any font.
+
+     The vertical pair is 5/3 rather than 4/4, and that one pixel belongs to the
+     font rather than to the design. Pretendard's ascent and descent (11 and 3
+     at this size) are not symmetric about its ink (10 and 1), so a line box
+     centred inside its box still leaves the letters riding high -- invisible in
+     running text, plain once a pill is drawn around them. CSS can centre a line
+     box but not ink, so the shift has to be stated. The height is unchanged.
+     Re-measure if --font changes: the right value is the one that makes the
+     ink's gap to the top and bottom of the pill equal. */
+  padding: 5px var(--sp-xl) 3px;
   border: 0;
   border-radius: var(--radius-pill);
   background: transparent;
   color: var(--muted);
   font-size: var(--fs-sm);
-  font-weight: 600;
+  line-height: var(--lh-none);
+  font-weight: var(--fw-medium);
   white-space: nowrap;
   transition: color 180ms ease;
 }

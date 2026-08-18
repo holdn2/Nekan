@@ -21,7 +21,7 @@
   border-radius: var(--radius-sm);
   color: var(--faint);
   font-size: var(--fs-xs);
-  line-height: 1;
+  line-height: var(--lh-none);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }

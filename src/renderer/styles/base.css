@@ -5,6 +5,24 @@
  * Moving one of those out of :root would silently break the window accounting.
  */
 
+/* Shipped with the app rather than fetched, so it is there on a machine that
+   has never installed it and on one with no network. A CDN would have meant
+   opening up the renderer's `default-src 'self'`, and would have put a request
+   to a third party in the launch of an app whose privacy policy says nothing
+   leaves the machine unless you sign in.
+   One variable file rather than four static ones: it covers every weight from
+   100 to 900 in 1.96MB, where the four this app uses would be 3.1MB on their
+   own. SIL Open Font License 1.1 -- the text is beside it in OFL.txt. */
+@font-face {
+  font-family: "Pretendard Variable";
+  src: url("../../assets/fonts/PretendardVariable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  /* The file is local, so it is there on the first frame; `block` keeps the
+     brief fallback flash off a launch that has no network wait to justify it. */
+  font-display: block;
+}
+
 :root,
 :root[data-theme="light"] {
   --bg: #f0eee6;
@@ -26,6 +44,13 @@
      literals in four different files and are collected here as they were; a
      dark-mode pass is a separate decision, not part of naming them. */
   --shadow-knob: 0 1px 2px rgb(0 0 0 / 0.12);
+  /* Directionless, for something sitting in a gap too tight to fall into: an
+     offset shadow fills the space below and leaves the space above clean, and
+     the thing then reads as riding high even when it is centred to the pixel.
+     Carrying a little more weight than --shadow-knob because it is doing more
+     work -- the switch's pill and its track are nine levels of luminance apart,
+     so this edge is most of what separates them. */
+  --shadow-even: 0 0 3px rgb(0 0 0 / 0.18);
   --shadow-pop: 0 10px 30px #00000022, 0 2px 6px #00000014;
   --shadow-toast: 0 6px 20px #00000026;
   /* Text that sits on --accent or --danger, where the palette's --text would
@@ -41,7 +66,12 @@
   /* Type. One family, and a seven-step size scale. The sizes used to be
      eleven values picked per element, four of them on half-pixels, which is
      what made the app look assembled rather than designed. */
-  --font: "Malgun Gothic", "Segoe UI", system-ui, sans-serif;
+  /* The bundled file first, so every machine draws the same thing. The
+     installed copy and the system stack behind it are what a build with the
+     font stripped would fall back to. */
+  --font:
+    "Pretendard Variable", "Pretendard", "Malgun Gothic", "Segoe UI", system-ui,
+    sans-serif;
   --fs-xs: 11px;
   --fs-sm: 12px;
   --fs-md: 13px;
@@ -49,6 +79,43 @@
   --fs-xl: 16px;
   --fs-2xl: 18px;
   --fs-3xl: 20px;
+
+  /* Weight. Three, because three is what the screen actually distinguishes:
+     medium labels a thing, semibold titles it, and normal exists only to undo
+     an inherited weight (the count inside an active tab). A stray 500 in one
+     button's shorthand folded into the label rank.
+
+     Light is for the task text itself. The lists are the one place on screen
+     that is nothing but content, and at this size a lighter face reads calmer
+     than the chrome around it -- which is the point, since the chrome is what
+     should recede. It stays off everything else.
+
+     The whole ramp sits a step below where it started (400/600/700). Pretendard
+     carries more weight at the same number than Malgun Gothic did, so the old
+     numbers read as heavy once the family changed -- the ranks are what matter
+     and they are still one step apart. Checked that the family really renders
+     each of these rather than snapping two of them onto one face: at 32px the
+     six weights from 300 to 800 all come out at different widths. */
+  --fw-light: 300;
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+
+  /* Line height. `none` belongs to boxes that hold exactly one line and centre
+     it themselves -- chips, counts, icon buttons -- where any other value only
+     makes the box taller than what is in it. The other three are a ramp from
+     dense list to prose. The values here replace six that sat within 0.2 of
+     each other, which is the same drift the size scale was made to end. */
+  --lh-none: 1;
+  --lh-snug: 1.45;
+  --lh-normal: 1.55;
+  --lh-relaxed: 1.65;
+
+  /* Tracking. Two, and only where the size asks for it: large headings set
+     tighter, small all-caps-ish labels set looser. In em on the tight end so it
+     follows the heading's size instead of being right at one size only. */
+  --ls-tight: -0.01em;
+  --ls-wide: 0.3px;
 
   /* Space. Twenty-three values with no rhythm became these; the ones that fell
      between steps round *down*, never up, because the title bar lives on an 8px

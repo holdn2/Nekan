@@ -31,8 +31,10 @@
 }
 
 .title {
-  font-weight: 600;
-  letter-spacing: 0.2px;
+  /* The app's own name, and the one word in the bar that is a title rather than
+     a label -- so it takes the title rank the quadrant headings use. */
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-wide);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -68,11 +70,14 @@
   display: flex;
   align-items: center;
   gap: var(--sp-xs);
-  padding: var(--sp-2xs) var(--sp-md);
+  /* Height stated rather than inherited -- see .switch-btn for what happens
+     otherwise. This lands on the 23px the chip has always been. */
+  padding: var(--sp-xs) var(--sp-md);
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
   background: var(--panel-2);
   color: var(--muted);
+  line-height: var(--lh-none);
 }
 
 .chip:hover {
