@@ -24,6 +24,26 @@ const SOURCE = path.join(ROOT, "src/assets/fonts/PretendardVariable.woff2");
 const OUT_DIR = path.join(ROOT, "site/fonts");
 const OUT = path.join(OUT_DIR, "pretendard-subset.woff2");
 
+/**
+ * Whichever name Python answers to here.
+ *
+ * Windows installs it as `python`; a Linux CI image may only have `python3`.
+ * Picking one and hoping is how a tool works on the machine it was written on
+ * and nowhere else.
+ */
+const PYTHON = (() => {
+  for (const name of ["python3", "python", "py"]) {
+    try {
+      execFileSync(name, ["-c", "import fontTools"], { stdio: "ignore" });
+      return name;
+    } catch {
+      /* try the next one */
+    }
+  }
+  console.error("No Python with fontTools. Try: pip install fonttools brotli");
+  process.exit(1);
+})();
+
 /** Everything under site/ that can carry a word onto the screen. */
 function siteFiles(dir = path.join(ROOT, "site")) {
   const out = [];
@@ -69,7 +89,7 @@ function coveredChars(file) {
     "for t in f['cmap'].tables: cps.update(t.cmap.keys())",
     "sys.stdout.write(','.join(str(c) for c in sorted(cps)))",
   ].join("\n");
-  const out = execFileSync("python", ["-c", script, file], {
+  const out = execFileSync(PYTHON, ["-c", script, file], {
     encoding: "utf8",
   });
   return new Set(
@@ -129,7 +149,7 @@ try {
   // python -m rather than the pyftsubset shim: pip installs that script into a
   // Scripts directory that is not necessarily on PATH, and it was not here.
   execFileSync(
-    "python",
+    PYTHON,
     [
       "-m",
       "fontTools.subset",

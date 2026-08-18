@@ -40,6 +40,16 @@ jobs:
             exit 1
           fi
 
+      # A stale font subset is the quiet kind of wrong: nothing errors, no
+      # request 404s, and one word simply comes out in whatever the browser
+      # falls back to. Failing the deploy is the only way anyone finds out --
+      # the alternative is a page that looks fine to whoever last edited it,
+      # because their machine has the full font installed.
+      - name: Refuse to publish a stale font subset
+        run: |
+          python3 -m pip install --quiet fonttools brotli
+          node tools/build-site-font.js --check
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
