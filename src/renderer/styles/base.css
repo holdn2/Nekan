@@ -5,6 +5,24 @@
  * Moving one of those out of :root would silently break the window accounting.
  */
 
+/* Shipped with the app rather than fetched, so it is there on a machine that
+   has never installed it and on one with no network. A CDN would have meant
+   opening up the renderer's `default-src 'self'`, and would have put a request
+   to a third party in the launch of an app whose privacy policy says nothing
+   leaves the machine unless you sign in.
+   One variable file rather than four static ones: it covers every weight from
+   100 to 900 in 1.96MB, where the four this app uses would be 3.1MB on their
+   own. SIL Open Font License 1.1 -- the text is beside it in OFL.txt. */
+@font-face {
+  font-family: "Pretendard Variable";
+  src: url("../../assets/fonts/PretendardVariable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  /* The file is local, so it is there on the first frame; `block` keeps the
+     brief fallback flash off a launch that has no network wait to justify it. */
+  font-display: block;
+}
+
 :root,
 :root[data-theme="light"] {
   --bg: #f0eee6;
@@ -48,7 +66,12 @@
   /* Type. One family, and a seven-step size scale. The sizes used to be
      eleven values picked per element, four of them on half-pixels, which is
      what made the app look assembled rather than designed. */
-  --font: Pretendard, "Malgun Gothic", "Segoe UI", system-ui, sans-serif;
+  /* The bundled file first, so every machine draws the same thing. The
+     installed copy and the system stack behind it are what a build with the
+     font stripped would fall back to. */
+  --font:
+    "Pretendard Variable", Pretendard, "Malgun Gothic", "Segoe UI", system-ui,
+    sans-serif;
   --fs-xs: 11px;
   --fs-sm: 12px;
   --fs-md: 13px;

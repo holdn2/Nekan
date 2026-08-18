@@ -31,7 +31,9 @@
 }
 
 .title {
-  font-weight: var(--fw-medium);
+  /* The app's own name, and the one word in the bar that is a title rather than
+     a label -- so it takes the title rank the quadrant headings use. */
+  font-weight: var(--fw-semibold);
   letter-spacing: var(--ls-wide);
   white-space: nowrap;
   overflow: hidden;
