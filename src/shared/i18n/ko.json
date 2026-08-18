@@ -256,7 +256,7 @@
     "filterMarkdown": "마크다운",
     "inboxAction": "분류하기 전에 적어둔 것",
     "sectionEmpty": "비어 있음",
-    "more_other": "그 밖 {{count}}개는 출력하지 않았습니다",
+    "more_other": "출력하지 않은 항목이 {{count}}개 더 있습니다",
     "limit": "다 꺼내기와 각 분면에서 최대 {{limit}}개까지만 출력됩니다",
     "meta_other": "내보낸 시각: {{stamp}} · 항목 {{count}}개",
     "metaShort_other": "{{stamp}} · 항목 {{count}}개",

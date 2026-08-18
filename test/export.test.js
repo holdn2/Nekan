@@ -269,11 +269,11 @@ test("a long list is cut to twenty and the section says how many are left", () =
   const html = toHtml(snap);
   assert.equal((html.match(/<li>/g) || []).length, 20);
   assert.match(html, /<span class="n">25<\/span>/);
-  assert.match(html, /class="more">그 밖 5개는 출력하지 않았습니다/);
+  assert.match(html, /class="more">출력하지 않은 항목이 5개 더 있습니다/);
   assert.match(html, /각 분면에서 최대 20개까지만 출력됩니다/);
 
   const md = toMarkdown(snap);
-  assert.match(md, /_그 밖 5개는 출력하지 않았습니다_/);
+  assert.match(md, /_출력하지 않은 항목이 5개 더 있습니다_/);
   assert.match(md, /각 분면에서 최대 20개까지만 출력됩니다/);
   assert.equal(md.includes("21. row 21"), false);
 });
