@@ -328,8 +328,26 @@ body:has(#welcome:not(.hidden)) #closeBtn {
   color: var(--danger);
 }
 
+/* Two rows, because there are two things being said: the choice is
+   reversible, and signing in stores something. Run together they wrapped
+   mid-sentence and left "다." stranded on a line of its own.
+
+   keep-all is what stops that. Korean has no need of spaces to be readable, so
+   the default breaks between syllables -- fine for a paragraph, wrong for two
+   short lines where the break lands inside a word. */
 .welcome-foot {
-  margin: var(--sp-2xl) 0 0;
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-xs);
+  margin: var(--sp-4xl) 0 0;
   font-size: var(--fs-xs);
+  line-height: var(--lh-snug);
   color: var(--faint);
+  word-break: keep-all;
+  text-wrap: pretty;
+}
+
+/* The link is the end of the sentence it belongs to, not a third line. */
+.welcome-foot-legal {
+  display: inline;
 }
