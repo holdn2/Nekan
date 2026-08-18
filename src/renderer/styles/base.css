@@ -26,6 +26,13 @@
      literals in four different files and are collected here as they were; a
      dark-mode pass is a separate decision, not part of naming them. */
   --shadow-knob: 0 1px 2px rgb(0 0 0 / 0.12);
+  /* Directionless, for something sitting in a gap too tight to fall into: an
+     offset shadow fills the space below and leaves the space above clean, and
+     the thing then reads as riding high even when it is centred to the pixel.
+     Carrying a little more weight than --shadow-knob because it is doing more
+     work -- the switch's pill and its track are nine levels of luminance apart,
+     so this edge is most of what separates them. */
+  --shadow-even: 0 0 3px rgb(0 0 0 / 0.18);
   --shadow-pop: 0 10px 30px #00000022, 0 2px 6px #00000014;
   --shadow-toast: 0 6px 20px #00000026;
   /* Text that sits on --accent or --danger, where the palette's --text would

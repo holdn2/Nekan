@@ -53,7 +53,14 @@
   width: calc(50% - 2px);
   border-radius: var(--radius-pill);
   background: var(--panel);
-  box-shadow: var(--shadow-knob);
+  /* Even, not dropped. There are only 2px of track above and below the pill, so
+     --shadow-knob's downward offset filled the lower gap and left the upper one
+     clean -- and the pill then read as riding high although it measures dead
+     centre (2.8px top, 2.8px bottom). Removing it altogether was worse: the
+     pill and the track are only nine levels of luminance apart, and this edge
+     is most of what tells them apart. --shadow-knob still suits the first-run
+     card, which has room for a shadow to fall on. */
+  box-shadow: var(--shadow-even);
   transition: transform 180ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -74,8 +81,17 @@
      as tall as the family's natural line, so changing the font resized the
      control: this switch lost 1.6px the day Pretendard arrived and started
      looking small against the 30px window buttons beside it. Padding plus a
-     line-height of 1 says 20px in any font. */
-  padding: var(--sp-xs) var(--sp-xl);
+     line-height of 1 says 20px in any font.
+
+     The vertical pair is 5/3 rather than 4/4, and that one pixel belongs to the
+     font rather than to the design. Pretendard's ascent and descent (11 and 3
+     at this size) are not symmetric about its ink (10 and 1), so a line box
+     centred inside its box still leaves the letters riding high -- invisible in
+     running text, plain once a pill is drawn around them. CSS can centre a line
+     box but not ink, so the shift has to be stated. The height is unchanged.
+     Re-measure if --font changes: the right value is the one that makes the
+     ink's gap to the top and bottom of the pill equal. */
+  padding: 5px var(--sp-xl) 3px;
   border: 0;
   border-radius: var(--radius-pill);
   background: transparent;
