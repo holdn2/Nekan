@@ -69,15 +69,17 @@
 .chip {
   display: flex;
   align-items: center;
-  gap: var(--sp-xs);
+  gap: var(--sp-sm);
   /* Height stated rather than inherited -- see .switch-btn for what happens
-     otherwise. This lands on the 23px the chip has always been. */
+     otherwise. Without the line-height the chip is as tall as the font's own
+     leading, which is 24.8px in Pretendard and something else in the next
+     typeface. */
   padding: var(--sp-xs) var(--sp-md);
+  line-height: var(--lh-none);
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
   background: var(--panel-2);
   color: var(--muted);
-  line-height: var(--lh-none);
 }
 
 .chip:hover {
