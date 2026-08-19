@@ -56,6 +56,11 @@ section.inbox.drop {
   display: flex;
   align-items: center;
   gap: var(--sp-md);
+  /* Spans the row so the count can sit at the far right, the way the quadrant
+     headers and the tab badges do. A header that stops halfway also looked
+     clickable only halfway. */
+  flex: 1 1 auto;
+  min-width: 0;
   padding: var(--sp-md) var(--sp-xl);
   border: 0;
   background: transparent;
@@ -84,18 +89,17 @@ section.inbox.open .chev {
 
 /* The header toggle scopes the rest of the app, so this list has to say out
    loud that it is the exception. */
-.shared-tag {
-  flex: 0 0 auto;
-  margin-left: -2px;
-  /* Height stated rather than inherited -- see .switch-btn. */
-  padding: var(--sp-2xs) var(--sp-sm);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-pill);
-  color: var(--muted);
+/* The quadrants' .sub, worn by the one panel that is not a quadrant --
+   and a step fainter than theirs, because a quadrant's sub names the action
+   you take there while this one only says who the list belongs to. */
+.inbox-sub {
+  flex: 0 1 auto;
+  min-width: 0;
+  color: var(--faint);
   font-size: var(--fs-xs);
-  line-height: var(--lh-none);
-  font-weight: var(--fw-medium);
-  letter-spacing: var(--ls-wide);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .inbox-body {
