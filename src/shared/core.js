@@ -537,10 +537,18 @@ function clampSpan(start, length, min, span) {
 /**
  * Where the expanded window goes when the bar grows into it.
  *
- * It grows from the bar's top-left, because that corner is where the user just
- * clicked. The exception is a bar sitting near the right of the display:
- * growing rightwards from there would push most of the window past the edge,
- * so the two right edges are lined up instead and the window grows leftwards.
+ * It asks the same question collapseOrigin asks — is this thing on the right
+ * half of the display? — and that is the whole point. A bar on the right lines
+ * its right edge up with the window's; one on the left grows from its own
+ * top-left corner, where the user just clicked.
+ *
+ * It used to ask a different question: whether the window would fit if it grew
+ * rightwards. That reads sensibly on its own and is wrong as half of a pair,
+ * because a bar can sit right of centre and still have room to its right. Fold
+ * such a window and it lands right-aligned; open it again and it grows the
+ * other way, so the widget takes a step across the screen. Swept over every
+ * starting position on a 2304px display, 333 of 1303 of them moved, by as much
+ * as 318px; asking the mirrored question moves none of them.
  *
  * Vertically there is no such pivot — the window simply grows downwards — so a
  * bar near the bottom is pushed up by the clamp until it fits. Both axes are
@@ -551,8 +559,9 @@ function clampSpan(start, length, min, span) {
  * bar and then opening it has to open it where it was left.
  */
 function expandOrigin(bar, size, area) {
-  const fitsGrowingRight = bar.x + size.width <= area.x + area.width;
-  const x = fitsGrowingRight ? bar.x : bar.x + bar.width - size.width;
+  const middleOfScreen = area.x + area.width / 2;
+  const onTheRight = bar.x + bar.width / 2 > middleOfScreen;
+  const x = onTheRight ? bar.x + bar.width - size.width : bar.x;
   return {
     x: clampSpan(x, size.width, area.x, area.width),
     y: clampSpan(bar.y, size.height, area.y, area.height),

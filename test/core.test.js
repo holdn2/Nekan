@@ -720,6 +720,25 @@ test("a window in the middle settles after one fold", () => {
   assert.deepEqual(collapseOrigin(reopened, BAR, SCREEN), folded);
 });
 
+test("folding and opening again puts the window back, from anywhere", () => {
+  // The spot checks above cover the two corners; this covers the middle, which
+  // is where the pair used to disagree. Fold a window at every x it can start
+  // at and open it again -- it has to land on the pixel it left from, or the
+  // widget walks across the screen a bit at a time and the user cannot say why.
+  const moved = [];
+  for (let x = 0; x <= SCREEN.width - WIN.width; x++) {
+    const opened = { ...WIN, x, y: 300 };
+    const folded = collapseOrigin(opened, BAR, SCREEN);
+    const back = expandOrigin(
+      { ...folded, width: BAR.width, height: BAR.height },
+      WIN,
+      SCREEN,
+    );
+    if (back.x !== x) moved.push(`${x} -> ${back.x}`);
+  }
+  assert.deepEqual(moved, [], `${moved.length} start positions moved`);
+});
+
 test("placement follows the display the window is actually on", () => {
   // A second monitor to the right: "the right half" is that monitor's half.
   const second = { x: 1920, y: 0, width: 1920, height: 1080 };
