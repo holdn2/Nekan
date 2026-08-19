@@ -48,6 +48,13 @@
 
 /* Cursor is inherited, so setting it on the grid covers the quadrant edges
    too — the padding areas a drag actually starts on. */
+/* The top edge of the grid is the boundary with the brain dump above it. It
+   is a row edge like any other, even though the two boxes on either side are
+   not both quadrants. */
+.matrix.edge-inbox {
+  cursor: row-resize;
+}
+
 .matrix.edge-col {
   cursor: col-resize;
 }
@@ -67,7 +74,9 @@ body.resizing-col * {
 }
 
 body.resizing-row,
-body.resizing-row * {
+body.resizing-row *,
+body.resizing-inbox,
+body.resizing-inbox * {
   cursor: row-resize !important;
 }
 
@@ -78,7 +87,8 @@ body.resizing-both * {
 
 body.resizing-col,
 body.resizing-row,
-body.resizing-both {
+body.resizing-both,
+body.resizing-inbox {
   user-select: none;
 }
 

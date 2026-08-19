@@ -127,7 +127,11 @@ section.inbox.open .inbox-body {
      content. */
   flex: 0 1 auto;
   min-height: 0;
-  max-height: min(var(--inbox-max-h), 26vh);
+  /* --inbox-h is written by layout.js when the edge above the matrix has been
+     dragged; until then the stylesheet's own cap applies. The fallback stays
+     here rather than being copied into the variable, because 26vh is a share
+     of the window and a pixel value written once would stop following it. */
+  max-height: var(--inbox-h, min(var(--inbox-max-h), 26vh));
   overflow-y: auto;
 }
 

@@ -47,7 +47,9 @@ export const {
   MAX_RATIO,
   MIN_COL_PX,
   MIN_ROW_PX,
+  MIN_INBOX_PX,
   clampRatio,
   clampAxis,
+  clampInbox,
   sanitizeLayout,
 } = core;
