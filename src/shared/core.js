@@ -459,7 +459,14 @@ function normalizeTasks(list) {
 
 /* ----------------------------------------------------------------- layout */
 
-const DEFAULT_LAYOUT = { cols: 0.5, rows: 0.5 };
+/**
+ * `inbox` is a height in px, not a ratio, and null means "whatever the
+ * stylesheet says". The quadrants split a fixed box so a ratio is the natural
+ * unit there; the dump takes height *away* from the matrix, and what the user
+ * wants is a list this tall -- not a list that is a quarter of whatever the
+ * window happens to be.
+ */
+const DEFAULT_LAYOUT = { cols: 0.5, rows: 0.5, inbox: null };
 const MIN_RATIO = 0.15;
 const MAX_RATIO = 0.85;
 
@@ -474,6 +481,30 @@ const clampRatio = (v) => Math.min(MAX_RATIO, Math.max(MIN_RATIO, v));
  */
 const MIN_COL_PX = 180;
 const MIN_ROW_PX = 110;
+
+/**
+ * Smallest the dump's list may be dragged to: one row and its padding. Below
+ * that the panel says nothing the folded header does not already say, and the
+ * fold is the control for "I do not want this open".
+ */
+const MIN_INBOX_PX = 56;
+
+/**
+ * How tall the dump's list may be, given the room there is for it.
+ *
+ * `available` is the list's own height plus everything the matrix can give up
+ * before it hits its own floor -- the caller works that out, because only the
+ * renderer knows what the grid is currently doing. When there is not even the
+ * minimum to be had, the minimum still wins: the matrix has its own overflow
+ * rules for that case, and a list of zero height would read as a broken panel.
+ */
+function clampInbox(value, available) {
+  if (!Number.isFinite(value)) return MIN_INBOX_PX;
+  return Math.max(
+    MIN_INBOX_PX,
+    Math.min(Math.round(value), Math.round(available)),
+  );
+}
 
 /**
  * The clamp a drag uses: a pixel minimum while `span` is big enough to honour
@@ -564,6 +595,14 @@ function sanitizeLayout(saved) {
     ? asRatio(saved.rows)
     : (asRatio(saved?.left) + asRatio(saved?.right)) / 2;
   if (Number.isFinite(rows)) next.rows = clampRatio(rows);
+
+  // Held loosely on purpose: the upper bound depends on the window, which this
+  // file cannot see. Anything at or above the floor is kept and clamped again
+  // when it is applied, so a saved height from a big monitor comes back intact
+  // on a small one instead of being rounded away on the way in.
+  const inbox = asRatio(saved?.inbox);
+  next.inbox =
+    Number.isFinite(inbox) && inbox >= MIN_INBOX_PX ? Math.round(inbox) : null;
   return next;
 }
 
@@ -616,6 +655,8 @@ const emCore = {
   MAX_RATIO,
   MIN_COL_PX,
   MIN_ROW_PX,
+  MIN_INBOX_PX,
+  clampInbox,
   clampRatio,
   clampAxis,
   expandOrigin,

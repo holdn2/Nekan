@@ -35,7 +35,9 @@ const {
   MAX_RATIO,
   MIN_COL_PX,
   MIN_ROW_PX,
+  MIN_INBOX_PX,
   clampAxis,
+  clampInbox,
   expandOrigin,
   collapseOrigin,
 } = require("../src/shared/core");
@@ -339,11 +341,37 @@ test("sanitizeLayout clamps ratios into the drag range", () => {
   assert.deepEqual(sanitizeLayout({ cols: 0.01, rows: 0.99 }), {
     cols: MIN_RATIO,
     rows: MAX_RATIO,
+    inbox: null,
   });
   assert.deepEqual(sanitizeLayout({ cols: 0.3, rows: 0.7 }), {
     cols: 0.3,
     rows: 0.7,
+    inbox: null,
   });
+});
+
+test("sanitizeLayout keeps a dump height it cannot check the ceiling of", () => {
+  // The upper bound depends on the window, which core.js cannot see, so this
+  // only enforces the floor. A height saved on a large monitor has to survive
+  // the trip to a small one and be clamped where the room is known.
+  assert.equal(sanitizeLayout({ inbox: 400 }).inbox, 400);
+  assert.equal(sanitizeLayout({ inbox: MIN_INBOX_PX }).inbox, MIN_INBOX_PX);
+  assert.equal(sanitizeLayout({ inbox: 240.6 }).inbox, 241);
+
+  for (const junk of [undefined, null, 0, -10, "200", NaN, MIN_INBOX_PX - 1]) {
+    assert.equal(sanitizeLayout({ inbox: junk }).inbox, null, String(junk));
+  }
+});
+
+test("clampInbox holds the floor even when there is no room for it", () => {
+  assert.equal(clampInbox(200, 500), 200);
+  assert.equal(clampInbox(600, 500), 500);
+  assert.equal(clampInbox(10, 500), MIN_INBOX_PX);
+  // A window too short to give the list its minimum still gets the minimum:
+  // the matrix has its own overflow rules, and a zero-height list reads as a
+  // broken panel rather than a small one.
+  assert.equal(clampInbox(200, 10), MIN_INBOX_PX);
+  assert.equal(clampInbox(NaN, 500), MIN_INBOX_PX);
 });
 
 test("sanitizeLayout falls back to an even split for junk", () => {
@@ -362,6 +390,7 @@ test("sanitizeLayout averages the legacy per-column row split", () => {
   assert.deepEqual(sanitizeLayout({ cols: 0.4, left: 0.3, right: 0.5 }), {
     cols: 0.4,
     rows: 0.4,
+    inbox: null,
   });
 });
 

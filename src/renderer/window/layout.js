@@ -15,9 +15,11 @@
 import {
   DEFAULT_LAYOUT,
   MIN_COL_PX,
+  MIN_INBOX_PX,
   MIN_ROW_PX,
   QUADS,
   clampAxis,
+  clampInbox,
   sanitizeLayout,
 } from "../core-bridge.js";
 import { $ } from "../dom.js";
@@ -36,6 +38,11 @@ const GUTTER =
 /** How far past the gutter the grab zone reaches into each quadrant. */
 const EDGE_REACH = 4;
 const HIT = GUTTER / 2 + EDGE_REACH;
+
+/** The dump's list, whose height the edge above the matrix drags. */
+const inboxList = () => $("#inboxList");
+/** No edge to grab while it is folded: there is nothing between the two. */
+const dumpOpen = () => $("#inboxPanel")?.classList.contains("open");
 
 let layout = { ...DEFAULT_LAYOUT };
 let layoutTimer = null;
@@ -74,6 +81,32 @@ function applyLayout() {
       (Number.parseFloat(cs.paddingBottom) || 0);
   }
   grid.style.minHeight = `${2 * MIN_ROW_PX + GUTTER + gridPadY}px`;
+
+  // The dump reads this instead of its stylesheet default. Cleared rather than
+  // set to the default so the CSS keeps owning the untouched case -- 26vh is a
+  // share of the window, and writing today's pixels into the variable would
+  // freeze it at the size of whatever window it was last dragged in.
+  const root = document.documentElement;
+  if (layout.inbox === null) root.style.removeProperty("--inbox-h");
+  else root.style.setProperty("--inbox-h", `${layout.inbox}px`);
+}
+
+/**
+ * How tall the dump's list may be dragged right now: what it already has, plus
+ * everything the matrix can give up before it reaches its own floor.
+ *
+ * Read once per drag rather than per move. The two boxes swap height as the
+ * pointer moves, so measuring during the drag would feed the answer back into
+ * itself and the limit would drift with the pointer.
+ */
+function inboxRoom() {
+  const list = inboxList();
+  const grid = $("#matrixView");
+  if (!list || !grid) return MIN_INBOX_PX;
+  const slack =
+    grid.getBoundingClientRect().height -
+    (Number.parseFloat(grid.style.minHeight) || 0);
+  return list.getBoundingClientRect().height + Math.max(0, slack);
 }
 
 /**
@@ -102,8 +135,22 @@ function metrics() {
   };
 }
 
-/** Which divider the point is on: "col", "row", "both", or null. */
+/**
+ * Which divider the point is on: "inbox", "col", "row", "both", or null.
+ *
+ * The dump's edge is tested first and against the whole width. It is the top
+ * of the grid, so a pointer there is also inside the first quadrant's column
+ * band, and asking about the quadrants first would make the corner of the
+ * matrix ungrabbable.
+ */
 function edgeAt(x, y) {
+  const grid = $("#matrixView");
+  if (dumpOpen()) {
+    const g = grid.getBoundingClientRect();
+    if (x >= g.left && x <= g.right && y >= g.top && y - g.top <= HIT) {
+      return "inbox";
+    }
+  }
   const m = metrics();
   if (m.width <= 0 || m.height <= 0) return null;
   if (x < m.left || x > m.left + m.width) return null;
@@ -120,10 +167,18 @@ function edgeAt(x, y) {
 /** Cursor on the grid, accent border on the two quadrants sharing the edge. */
 function markEdge(mode) {
   const grid = $("#matrixView");
+  grid.classList.toggle("edge-inbox", mode === "inbox");
   grid.classList.toggle("edge-col", mode === "col");
   grid.classList.toggle("edge-row", mode === "row");
   grid.classList.toggle("edge-both", mode === "both");
 
+  if (mode === "inbox") {
+    QUADS.forEach((q) => {
+      const el = $(`[data-quad="${q}"]`);
+      el.classList.remove("edge-r", "edge-l", "edge-b");
+    });
+    return;
+  }
   const col = mode === "col" || mode === "both";
   const row = mode === "row" || mode === "both";
   QUADS.forEach((q) => {
@@ -142,6 +197,9 @@ function markEdge(mode) {
 export function wireQuadEdges() {
   const grid = $("#matrixView");
   let dragging = null;
+
+  /** Set at pointerdown for a dump drag; see inboxRoom for why it is not live. */
+  let dumpStart = null;
 
   /** Pointer position → the ratios for whichever axes are being dragged. */
   const ratiosAt = (ev) => {
@@ -174,13 +232,28 @@ export function wireQuadEdges() {
     if (!mode) return;
 
     e.preventDefault();
+    if (mode === "inbox") {
+      const list = inboxList();
+      dumpStart = {
+        y: e.clientY,
+        height: list.getBoundingClientRect().height,
+        room: inboxRoom(),
+      };
+    }
     dragging = mode;
     markEdge(mode);
     grid.setPointerCapture(e.pointerId);
     document.body.classList.add(`resizing-${mode}`);
 
     const onMove = (ev) => {
-      Object.assign(layout, ratiosAt(ev));
+      if (dragging === "inbox") {
+        layout.inbox = clampInbox(
+          dumpStart.height + (ev.clientY - dumpStart.y),
+          dumpStart.room,
+        );
+      } else {
+        Object.assign(layout, ratiosAt(ev));
+      }
       applyLayout();
       saveLayout();
     };
@@ -188,10 +261,12 @@ export function wireQuadEdges() {
     // released off-window, capture stolen — the listeners come off.
     const onUp = (ev) => {
       dragging = null;
+      dumpStart = null;
       document.body.classList.remove(
         "resizing-col",
         "resizing-row",
         "resizing-both",
+        "resizing-inbox",
       );
       markEdge(ev ? edgeAt(ev.clientX, ev.clientY) : null);
       grid.removeEventListener("pointermove", onMove);
@@ -210,8 +285,11 @@ export function wireQuadEdges() {
   grid.addEventListener("dblclick", (e) => {
     const mode = edgeAt(e.clientX, e.clientY);
     if (!mode) return;
-    if (mode !== "row") layout.cols = DEFAULT_LAYOUT.cols;
-    if (mode !== "col") layout.rows = DEFAULT_LAYOUT.rows;
+    if (mode === "inbox") layout.inbox = DEFAULT_LAYOUT.inbox;
+    if (mode === "col" || mode === "row" || mode === "both") {
+      if (mode !== "row") layout.cols = DEFAULT_LAYOUT.cols;
+      if (mode !== "col") layout.rows = DEFAULT_LAYOUT.rows;
+    }
     applyLayout();
     saveLayout();
   });

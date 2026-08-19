@@ -188,8 +188,7 @@
   },
   "inbox": {
     "title": "Brain dump",
-    "shared": "Shared",
-    "sharedTitle": "One list, used by both the Work and Life matrices",
+    "shared": "Shared by Work and Life",
     "placeholder": "Write anything (paste several lines to add one task per line)",
     "empty": "Write them down as they come"
   },

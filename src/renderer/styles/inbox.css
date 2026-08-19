@@ -56,6 +56,11 @@ section.inbox.drop {
   display: flex;
   align-items: center;
   gap: var(--sp-md);
+  /* Spans the row so the count can sit at the far right, the way the quadrant
+     headers and the tab badges do. A header that stops halfway also looked
+     clickable only halfway. */
+  flex: 1 1 auto;
+  min-width: 0;
   padding: var(--sp-md) var(--sp-xl);
   border: 0;
   background: transparent;
@@ -84,18 +89,17 @@ section.inbox.open .chev {
 
 /* The header toggle scopes the rest of the app, so this list has to say out
    loud that it is the exception. */
-.shared-tag {
-  flex: 0 0 auto;
-  margin-left: -2px;
-  /* Height stated rather than inherited -- see .switch-btn. */
-  padding: var(--sp-2xs) var(--sp-sm);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-pill);
-  color: var(--muted);
+/* The quadrants' .sub, worn by the one panel that is not a quadrant --
+   and a step fainter than theirs, because a quadrant's sub names the action
+   you take there while this one only says who the list belongs to. */
+.inbox-sub {
+  flex: 0 1 auto;
+  min-width: 0;
+  color: var(--faint);
   font-size: var(--fs-xs);
-  line-height: var(--lh-none);
-  font-weight: var(--fw-medium);
-  letter-spacing: var(--ls-wide);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .inbox-body {
@@ -123,7 +127,18 @@ section.inbox.open .inbox-body {
      content. */
   flex: 0 1 auto;
   min-height: 0;
-  max-height: min(var(--inbox-max-h), 26vh);
+  /* --inbox-h is written by layout.js when the edge above the matrix has been
+     dragged; until then the stylesheet's own cap applies. The fallback stays
+     here rather than being copied into the variable, because 26vh is a share
+     of the window and a pixel value written once would stop following it. */
+  /* Both, and for different reasons. max-height alone only caps: a list with
+     four rows in it would ignore a drag downwards entirely, because nothing
+     was pushing against the cap. height is what makes the panel the size it
+     was dragged to. While --inbox-h is unset the declaration is invalid at
+     computed-value time and height falls back to auto, which is the
+     content-sized default this panel has always had. */
+  height: var(--inbox-h);
+  max-height: var(--inbox-h, min(var(--inbox-max-h), 26vh));
   overflow-y: auto;
 }
 

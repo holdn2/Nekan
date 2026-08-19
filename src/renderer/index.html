@@ -320,17 +320,14 @@
             />
           </svg>
           <span class="inbox-label" data-i18n="inbox.title">Brain dump</span>
+          <!-- Says what the panel is, the way each quadrant's .sub does. It
+               used to be a bordered pill reading just "Shared", which named a
+               property without saying whose. -->
+          <span class="inbox-sub" data-i18n="inbox.shared"
+            >Shared by Work and Life</span
+          >
           <span class="badge" id="inboxCount">0</span>
         </button>
-        <!-- Spelled out because the toggle above scopes everything else: this
-             list is the one part both matrices share. -->
-        <span
-          class="shared-tag"
-          title="One list, used by both the Work and Life matrices"
-          data-i18n="inbox.shared"
-          data-i18n-attr="title=inbox.sharedTitle"
-          >Shared</span
-        >
       </header>
       <div class="inbox-body" id="inboxBody">
         <ul

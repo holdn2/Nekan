@@ -41,8 +41,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  padding: var(--sp-2xs) var(--sp-sm);
+  /* Vertical padding in px, and 1px heavier on top. That asymmetry belongs to
+     the font, not to the design: flex centres the line box and a reader sees
+     the ink, which in Pretendard sits high in its own line. Solved from the
+     glyph metrics rather than guessed -- with equal padding the digit was
+     1.2px above centre. Re-measure when --font changes. */
+  padding: 3.5px var(--sp-sm) 2.5px;
   border-radius: var(--radius-pill);
   background: var(--panel-3);
   color: var(--muted);
@@ -51,4 +55,3 @@
   line-height: var(--lh-none);
   font-variant-numeric: tabular-nums;
 }
-
