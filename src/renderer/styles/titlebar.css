@@ -75,7 +75,6 @@
      leading, which is 24.8px in Pretendard and something else in the next
      typeface. */
   padding: var(--sp-xs) var(--sp-md);
-  line-height: var(--lh-none);
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
   background: var(--panel-2);

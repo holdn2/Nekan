@@ -131,6 +131,13 @@ section.inbox.open .inbox-body {
      dragged; until then the stylesheet's own cap applies. The fallback stays
      here rather than being copied into the variable, because 26vh is a share
      of the window and a pixel value written once would stop following it. */
+  /* Both, and for different reasons. max-height alone only caps: a list with
+     four rows in it would ignore a drag downwards entirely, because nothing
+     was pushing against the cap. height is what makes the panel the size it
+     was dragged to. While --inbox-h is unset the declaration is invalid at
+     computed-value time and height falls back to auto, which is the
+     content-sized default this panel has always had. */
+  height: var(--inbox-h);
   max-height: var(--inbox-h, min(var(--inbox-max-h), 26vh));
   overflow-y: auto;
 }
