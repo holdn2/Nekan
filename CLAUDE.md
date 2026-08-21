@@ -9,7 +9,7 @@
 src/main.js       앱 생명주기와 조립만 — store 로드 → IPC 등록 → 창 생성 순서가 전부
 src/main/
   store.js        메모리 위의 data.json + 디바운스 저장 (persist / persistNow)
-  window.js       창 생성, expanded/collapsed 전환, 메모 패널 높이 회계
+  window.js       창 생성과 expanded/collapsed 전환. 패널 두 개는 모른다
   export-service.js  PDF·HTML·MD 쓰기 (숨은 창에서 printToPDF)
   updater.js      electron-updater. 창을 모르고, main.js가 넘긴 콜백으로만 알린다
   api-client.js   Supabase와 말하는 유일한 곳. URL·anon key·로그인·토큰 갱신·시계 오차

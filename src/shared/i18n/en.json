@@ -136,7 +136,7 @@
     "note": {
       "open": "<b>Click a task</b> and its note opens below the matrix — one note per task. Writing down why it is in this quadrant and what comes next makes the next look much quicker. A task with a note is marked, and hovering the mark previews what it says.",
       "keys": "A task without a note opens straight into editing. <code>Ctrl</code> + <code>Enter</code> saves, <code>Esc</code> cancels. <b>Double-click</b> a saved note to edit it again, and <code>Delete</code> removes the note only — the task stays.",
-      "panel": "Opening a note <b>does not shrink the quadrants</b>. The window grows by the height of the panel instead, and gives it back when the note closes. Click the same task again, or the <code>✕</code>, to close it.",
+      "panel": "Opening a note <b>takes the room out of the matrix</b> — the window stays the size you left it. <b>Drag the top edge</b> of the card to change its height, and <b>double-click</b> to put it back. Click the same task again, or the <code>✕</code>, to close it.",
       "readonly": "In the History and the Trash a note shows under its task, <b>read-only</b>. A long one is cut to three lines and clicking it opens the rest. Restore a task from the trash and its note comes back with it."
     },
     "logTitle": "History and trash",
