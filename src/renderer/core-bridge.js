@@ -49,7 +49,6 @@ export const {
   MIN_ROW_PX,
   MIN_INBOX_PX,
   MIN_MEMO_PX,
-  MAX_MEMO_PX,
   clampRatio,
   clampAxis,
   clampInbox,

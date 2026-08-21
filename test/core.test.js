@@ -37,7 +37,6 @@ const {
   MIN_ROW_PX,
   MIN_INBOX_PX,
   MIN_MEMO_PX,
-  MAX_MEMO_PX,
   clampAxis,
   clampInbox,
   clampMemoPanel,
@@ -379,33 +378,27 @@ test("clampInbox holds the floor even when there is no room for it", () => {
   assert.equal(clampInbox(NaN, 500), MIN_INBOX_PX);
 });
 
-test("sanitizeLayout clamps a memo height at both ends", () => {
-  // Unlike the dump above, both bounds are known here: the panel is extra
-  // window height, so its ceiling does not depend on what the grid is doing.
-  assert.equal(sanitizeLayout({ memo: 240 }).memo, 240);
+test("sanitizeLayout keeps a note height it cannot check the ceiling of", () => {
+  // Same rule as the dump: the ceiling is the matrix's to give, so only the
+  // floor is enforced here and a height saved on a large monitor survives.
+  assert.equal(sanitizeLayout({ memo: 400 }).memo, 400);
   assert.equal(sanitizeLayout({ memo: MIN_MEMO_PX }).memo, MIN_MEMO_PX);
   assert.equal(sanitizeLayout({ memo: 240.6 }).memo, 241);
-  assert.equal(sanitizeLayout({ memo: 9000 }).memo, MAX_MEMO_PX);
 
   for (const junk of [undefined, null, 0, -10, "200", NaN, MIN_MEMO_PX - 1]) {
     assert.equal(sanitizeLayout({ memo: junk }).memo, null, String(junk));
   }
 });
 
-test("clampMemoPanel stops at the flat ceiling and at the display", () => {
-  assert.equal(clampMemoPanel(240), 240);
-  assert.equal(clampMemoPanel(9000), MAX_MEMO_PX);
-  assert.equal(clampMemoPanel(10), MIN_MEMO_PX);
-  assert.equal(clampMemoPanel(240.6), 241);
-
-  // A short display bounds it below the flat ceiling...
-  assert.equal(clampMemoPanel(300, 200), 200);
-  assert.equal(clampMemoPanel(300, 900), 300);
-  assert.equal(clampMemoPanel(9000, 900), MAX_MEMO_PX);
-  // ...but never below the floor: the window is about to be clamped anyway,
-  // and a panel of no height reads as broken rather than small.
-  assert.equal(clampMemoPanel(300, 0), MIN_MEMO_PX);
-  assert.equal(clampMemoPanel(NaN, 300), MIN_MEMO_PX);
+test("clampMemoPanel holds its floor even when there is no room for it", () => {
+  assert.equal(clampMemoPanel(240, 500), 240);
+  assert.equal(clampMemoPanel(600, 500), 500);
+  assert.equal(clampMemoPanel(10, 500), MIN_MEMO_PX);
+  assert.equal(clampMemoPanel(240.6, 500), 241);
+  // The floor wins over the room, as it does for the dump: the matrix has its
+  // own overflow rules, and a panel of no height reads as broken.
+  assert.equal(clampMemoPanel(300, 10), MIN_MEMO_PX);
+  assert.equal(clampMemoPanel(NaN, 500), MIN_MEMO_PX);
 });
 
 test("sanitizeLayout falls back to an even split for junk", () => {

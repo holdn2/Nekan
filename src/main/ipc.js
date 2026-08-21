@@ -37,14 +37,7 @@ const {
   persistNow,
   setTasks,
 } = require("./store");
-const {
-  collapse,
-  expand,
-  getMode,
-  getWindow,
-  setMemoPanel,
-  memoRoom,
-} = require("./window");
+const { collapse, expand, getMode, getWindow } = require("./window");
 const { revealExport, runExport } = require("./export-service");
 const { getUpdateStatus, installUpdate } = require("./updater");
 const { language, setMainLanguage } = require("./i18n");
@@ -129,14 +122,6 @@ function registerIpc() {
     persistNow();
     app.quit();
   });
-
-  // Open, close *and* resize: a drag on the panel's top edge is a stream of
-  // these with `open` already true.
-  ipcMain.handle("win:memo", (_e, open, height) =>
-    setMemoPanel(!!open, height),
-  );
-
-  ipcMain.handle("win:memoRoom", () => memoRoom());
 
   ipcMain.handle("win:togglePin", () => {
     const win = getWindow();

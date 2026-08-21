@@ -466,11 +466,9 @@ function normalizeTasks(list) {
  * user wants is a list this tall -- not a list that is a quarter of whatever
  * the window happens to be.
  *
- * They are px for the same reason and clamped by different rules. The dump
- * competes with the matrix inside one window, so its ceiling is whatever the
- * grid can give up and only the renderer can work it out. The memo panel
- * competes with the display -- it is extra window height -- so its ceiling is
- * a flat maximum here plus whatever room main says the screen has left.
+ * Both take their height out of the matrix, so both have the same ceiling:
+ * whatever the grid can give up, which only the renderer can work out. That is
+ * why neither is clamped from above here.
  */
 const DEFAULT_LAYOUT = { cols: 0.5, rows: 0.5, inbox: null, memo: null };
 const MIN_RATIO = 0.15;
@@ -496,32 +494,25 @@ const MIN_ROW_PX = 110;
 const MIN_INBOX_PX = 56;
 
 /**
- * The memo panel's range, in px of extra window height.
- *
- * The floor keeps the card's header and the first line of the note on screen;
- * below it the panel says nothing the row's memo mark does not already say,
- * and closing it is the control for "I do not want this open". The ceiling is
- * the older of the two numbers -- main.js has always refused to grow the
- * window by more than this -- and it lives here now so the drag stops where
- * the window stops instead of being clamped after the fact.
+ * Smallest the memo panel may be dragged to: its header and the first line of
+ * the note. Below that the panel says nothing the row's memo mark does not
+ * already say, and closing the note is the control for "not now".
  */
 const MIN_MEMO_PX = 96;
-const MAX_MEMO_PX = 400;
 
 /**
- * How tall the memo panel may be asked to be.
+ * How tall the memo panel may be, given the room there is for it.
  *
- * `room` is what the display can still give, which only main knows; leave it
- * out and the flat ceiling is the only bound. When there is not even the
- * minimum to be had the minimum still wins -- the window is about to be
- * clamped anyway, and a panel of no height reads as a broken one.
+ * The twin of clampInbox, floor apart, and for the same reason: `available` is
+ * the panel's own height plus everything the matrix can give up, and only the
+ * renderer knows what the grid is currently doing.
  */
-function clampMemoPanel(value, room) {
+function clampMemoPanel(value, available) {
   if (!Number.isFinite(value)) return MIN_MEMO_PX;
-  const ceiling = Number.isFinite(room)
-    ? Math.min(MAX_MEMO_PX, Math.round(room))
-    : MAX_MEMO_PX;
-  return Math.max(MIN_MEMO_PX, Math.min(Math.round(value), ceiling));
+  return Math.max(
+    MIN_MEMO_PX,
+    Math.min(Math.round(value), Math.round(available)),
+  );
 }
 
 /**
@@ -648,13 +639,10 @@ function sanitizeLayout(saved) {
   next.inbox =
     Number.isFinite(inbox) && inbox >= MIN_INBOX_PX ? Math.round(inbox) : null;
 
-  // Clamped tightly, unlike the dump above: both ends of this range are known
-  // here, so a saved height is either usable or it is not.
+  // Held loosely for the same reason as the dump: the ceiling is the window's.
   const memo = asRatio(saved?.memo);
   next.memo =
-    Number.isFinite(memo) && memo >= MIN_MEMO_PX
-      ? Math.min(Math.round(memo), MAX_MEMO_PX)
-      : null;
+    Number.isFinite(memo) && memo >= MIN_MEMO_PX ? Math.round(memo) : null;
   return next;
 }
 
@@ -709,7 +697,6 @@ const emCore = {
   MIN_ROW_PX,
   MIN_INBOX_PX,
   MIN_MEMO_PX,
-  MAX_MEMO_PX,
   clampInbox,
   clampMemoPanel,
   clampRatio,

@@ -1,6 +1,5 @@
 /**
- * The one window: creating it, the two modes it has, and the height accounting
- * that keeps the memo panel from stealing from the matrix.
+ * The one window: creating it and the two modes it has.
  *
  * Two rules run through this file and are easy to break from the outside:
  *
@@ -12,12 +11,10 @@
  *     window is standing at that moment, so moving the bar and then opening it
  *     opens it where it was left. shared/core.js owns which corner they pivot
  *     on; see expandOrigin() and collapseOrigin().
- *   - The memo panel is *extra* height, not a slice of the matrix. Opening it
- *     grows the window by what the renderer asks for and closing it hands
- *     exactly that back, so the quadrant ratios never move. `memoDelta` is what
- *     the window actually gained — a display with no room clamps it — and every
- *     saved bound has it subtracted back out. Skip that and the window grows by
- *     the panel height on every restart.
+ *   - Nothing in the page resizes the window. The brain dump and the memo panel
+ *     both take their height out of the matrix, in the renderer, so this file
+ *     never hears about either of them. It grew the window for the memo panel
+ *     until 2026-08-21; docs/DECISIONS.md says why that stopped.
  */
 
 const path = require("path");
@@ -25,8 +22,6 @@ const { BrowserWindow, screen } = require("electron");
 
 const { getSettings, persist } = require("./store");
 const {
-  MAX_MEMO_PX,
-  clampMemoPanel,
   expandOrigin,
   collapseOrigin,
   needsStartupChoice,
@@ -49,8 +44,6 @@ const BAR = { width: 684, height: 48 };
 
 let win = null;
 let mode = "expanded";
-let memoOpen = false;
-let memoDelta = 0;
 /**
  * True while the window is being placed by code rather than by the user.
  *
@@ -64,31 +57,6 @@ let memoDelta = 0;
  * resize would otherwise save a size nobody chose. ready-to-show clears it.
  */
 let switching = true;
-
-/**
- * The last rectangle this file asked the window for.
- *
- * `switching` covers a placement for one turn of the event loop, which is
- * enough for a mode switch but not for a drag: the memo panel's edge sends a
- * resize every frame, and a resize event arriving 5ms late lands after the
- * flag has already been cleared. Saving what the window measures then is the
- * feedback loop this whole file is written to avoid -- on a scaled display the
- * measurement is a pixel or two off what was asked for, and that becomes the
- * base of the next resize.
- *
- * Comparing against what we asked for catches those echoes without a timer to
- * get stuck on: anything that does not match is the user, and gets saved.
- */
-let placedAt = null;
-
-/** Same rectangle, near enough. The slack is the scaled-display rounding. */
-const samePlacement = (a, b) =>
-  a &&
-  b &&
-  Math.abs(a.x - b.x) <= 4 &&
-  Math.abs(a.y - b.y) <= 4 &&
-  Math.abs(a.width - b.width) <= 4 &&
-  Math.abs(a.height - b.height) <= 4;
 
 /** The BrowserWindow, or null before it is built / after it closed. */
 const getWindow = () => win;
@@ -104,12 +72,6 @@ function sanitizeBounds(bounds) {
   const x = Math.min(Math.max(bounds.x, area.x), area.x + area.width - width);
   const y = Math.min(Math.max(bounds.y, area.y), area.y + area.height - height);
   return { x, y, width, height };
-}
-
-/** Window bounds with the memo panel's extra height taken back out. */
-function boundsWithoutMemo() {
-  const b = win.getBounds();
-  return { ...b, height: b.height - memoDelta };
 }
 
 /** A saved bar position, or null when there is none worth trusting. */
@@ -132,8 +94,7 @@ function rememberBarPosition() {
  */
 function rememberPlacement() {
   if (!win || win.isDestroyed() || switching) return;
-  if (samePlacement(win.getBounds(), placedAt)) return;
-  if (mode === "expanded") getSettings().bounds = boundsWithoutMemo();
+  if (mode === "expanded") getSettings().bounds = win.getBounds();
   else rememberBarPosition();
   persist();
 }
@@ -144,7 +105,6 @@ function rememberPlacement() {
  */
 function placeWindow(bounds, remember) {
   switching = true;
-  placedAt = bounds;
   win.setBounds(bounds);
   remember(bounds);
   persist();
@@ -152,100 +112,6 @@ function placeWindow(bounds, remember) {
   setImmediate(() => {
     switching = false;
   });
-}
-
-/** What the panel is doing, and how much height it actually got for it. */
-const memoState = () => ({ open: memoOpen, height: memoDelta });
-
-/**
- * The tallest the panel may be asked to be on this display right now.
- *
- * Only main can answer it -- it is the screen's height minus the window
- * without the panel -- and the renderer needs it before a drag starts, or the
- * drag would keep asking for height the display cannot give and the panel
- * would end up taller than the room the window gained for it.
- */
-function memoRoom() {
-  if (!win || win.isDestroyed() || mode !== "expanded") return MAX_MEMO_PX;
-  const base = sanitizeBounds(getSettings().bounds) || win.getBounds();
-  const area = screen.getDisplayMatching(base).workArea;
-  return Math.max(0, area.height - base.height);
-}
-
-/**
- * Open, close or resize the room the memo panel needs. Returns the resulting
- * state, so the renderer's IPC call gets an answer even when the request was
- * ignored (no window, or a bar, which has no panel).
- */
-function setMemoPanel(open, height) {
-  if (!win || win.isDestroyed() || mode !== "expanded") return memoState();
-  // Opening an open panel is a resize, which is what a drag on its top edge
-  // sends -- dozens of times a second, with no transition anywhere in it.
-  // Closing a closed one is still nothing.
-  if (!open && !memoOpen) return memoState();
-
-  // The store, not the window — the same rule the mode switch follows, and for
-  // the same reason. setBounds and getBounds do not round-trip on a scaled
-  // display, so measuring the window and then building the next resize on that
-  // measurement compounds: at 125% this grew the window 4px wider and ~1px
-  // taller per open/close pair, wrote the result to disk, and never stopped.
-  // `bounds` is by definition the window without the panel, which is the base
-  // both branches want.
-  const base = sanitizeBounds(getSettings().bounds) || win.getBounds();
-  // Written by both branches, so a resize raised mid-switch cannot save a size
-  // that is halfway through this.
-  const keepBase = () => {
-    getSettings().bounds = base;
-  };
-
-  if (open) {
-    const want = clampMemoPanel(height, memoRoom());
-    // Opening pins the top edge and grows downwards; resizing pins the bottom
-    // and moves the top. Both are "the base rectangle plus some extra", but a
-    // drag has the user's finger on the divider, and a divider that does not
-    // follow the cursor reads as a dead handle. Pinning the bottom makes the
-    // matrix slide up by exactly what the panel gains, so the edge stays under
-    // the pointer.
-    //
-    // The anchor needs no separate bookkeeping: `base` and `memoDelta` are
-    // rewritten together on every call, so base.y + base.height + memoDelta is
-    // the same screen pixel for as long as the drag lasts.
-    const bottom = base.y + base.height + memoDelta;
-    const target = memoOpen
-      ? { ...base, y: bottom - (base.height + want), height: base.height + want }
-      : { ...base, height: base.height + want };
-    // What the display had room for, taken from the request rather than from
-    // the window afterwards.
-    const grown = sanitizeBounds(target);
-    memoDelta = Math.max(0, grown.height - base.height);
-    memoOpen = true;
-    // The base moves with the window: it is this rectangle without the panel,
-    // and after a bottom-pinned resize its top-left is the window's.
-    const nextBase = { ...grown, height: base.height };
-    placeWindow(grown, () => {
-      getSettings().bounds = nextBase;
-    });
-    // Capped at the display: EXPANDED.minHeight plus a fully dragged panel is
-    // 920px, and a minimum taller than the screen leaves a window that cannot
-    // be shrunk back down.
-    const area = screen.getDisplayMatching(grown).workArea;
-    win.setMinimumSize(
-      EXPANDED.minWidth,
-      Math.min(EXPANDED.minHeight + memoDelta, area.height),
-    );
-  } else {
-    win.setMinimumSize(EXPANDED.minWidth, EXPANDED.minHeight);
-    memoOpen = false;
-    memoDelta = 0;
-    placeWindow(
-      sanitizeBounds({
-        ...base,
-        height: Math.max(EXPANDED.minHeight, base.height),
-      }),
-      keepBase,
-    );
-  }
-  return memoState();
 }
 
 /** Build the window from the saved settings and show it once it can paint. */
@@ -282,13 +148,6 @@ function createWindow() {
   });
 
   win.loadFile(path.join(SRC, "renderer", "index.html"));
-
-  // A reload starts the renderer with nothing selected, so the panel height
-  // main is still holding would be stranded — the window would stay tall with
-  // no panel in it, and the saved bounds would drift by that much.
-  win.webContents.on("did-finish-load", () => {
-    if (memoOpen) setMemoPanel(false);
-  });
 
   win.once("ready-to-show", () => {
     win.show();
@@ -344,8 +203,6 @@ function collapse(at) {
   mode = "collapsed";
   settings.mode = mode;
   // The bar has no memo panel; the renderer drops its selection to match.
-  memoOpen = false;
-  memoDelta = 0;
   win.setResizable(false);
   win.setMinimumSize(BAR.width, BAR.height);
   placeWindow(
@@ -383,12 +240,13 @@ function expand() {
 
   mode = "expanded";
   settings.mode = mode;
-  // After setResizable, not before. On Windows turning resizing off stashes
-  // the current minimum and turning it back on restores it -- so a minimum set
-  // first is overwritten by whatever was in force when the bar was folded. That
-  // was invisible while the minimum was always EXPANDED.minHeight; the memo
-  // panel's drag raises it, and the window came back out of the bar stuck at
-  // 520 plus however tall the panel had been dragged.
+  // After setResizable, not before. On Windows, turning resizing off stashes
+  // the current minimum and turning it back on restores it, so a minimum set
+  // first is overwritten by whatever was in force when the bar was folded. It
+  // makes no difference while that is always EXPANDED.minHeight, which is the
+  // only value this file uses -- but the day anything raises the minimum, the
+  // window comes back out of the bar stuck at the old one. Measured on
+  // 2026-08-21, when the memo panel briefly did exactly that.
   win.setResizable(true);
   win.setMinimumSize(EXPANDED.minWidth, EXPANDED.minHeight);
   placeWindow(
@@ -406,8 +264,6 @@ module.exports = {
   createWindow,
   collapse,
   expand,
-  setMemoPanel,
-  memoRoom,
   getWindow,
   getMode,
 };

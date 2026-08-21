@@ -1,11 +1,10 @@
 /**
  * One memo per task, shown in a panel under the matrix.
  *
- * The panel is extra window height, not a slice of the matrix: opening it asks
- * main.js to grow the window by --memo-h and closing it hands exactly that
- * back, so the quadrant ratios the user dragged never move. That is also why
- * the height is read from CSS here instead of being a number in JS — the
- * stylesheet and the window accounting cannot drift if there is only one value.
+ * The panel takes its height out of the matrix, the way the brain dump above
+ * does, and the whole of that happens in CSS: --memo-h sizes it and the grid
+ * shrinks to fit. Nothing here talks to main -- opening a note does not move
+ * the window.
  *
  * Selection lives here too, because "which task is selected" only ever means
  * "whose memo is open".
@@ -47,12 +46,6 @@ export function wireRowSelection(li, textEl, task) {
   li.addEventListener("dblclick", () => clearTimeout(clickTimer));
 }
 
-/** Panel height comes from CSS so main.js and the stylesheet cannot drift. */
-const memoPanelHeight = () =>
-  Number.parseFloat(
-    getComputedStyle(document.documentElement).getPropertyValue("--memo-h"),
-  ) || 0;
-
 /**
  * The selected task, or null once it has left the matrix on screen. Being
  * dragged up to the inbox counts as leaving (those rows have no memo), and so
@@ -71,15 +64,10 @@ export function selectedTask() {
   return task;
 }
 
-/** Only the open/closed transition resizes; swapping tasks keeps the height. */
 export function setSelected(id) {
   if (id === selectedId) return;
-  const wasOpen = selectedId !== null;
   selectedId = id;
   memoEditing = false;
-  if (wasOpen !== (id !== null)) {
-    window.api.setMemoPanel(id !== null, memoPanelHeight());
-  }
   notify();
 }
 
@@ -91,13 +79,9 @@ export function dropStaleSelection() {
   if (!selectedId || selectedTask()) return;
   selectedId = null;
   memoEditing = false;
-  window.api.setMemoPanel(false, 0);
 }
 
-/**
- * Forget the selection *without* asking for a resize — for the trip to bar
- * mode, where collapse() has already taken the panel's height off the window.
- */
+/** Forget the selection without drawing: the bar has no panel to show it in. */
 export function clearSelectionSilently() {
   selectedId = null;
   memoEditing = false;
