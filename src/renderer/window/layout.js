@@ -14,12 +14,14 @@
 
 import {
   DEFAULT_LAYOUT,
+  MAX_MEMO_PX,
   MIN_COL_PX,
   MIN_INBOX_PX,
   MIN_ROW_PX,
   QUADS,
   clampAxis,
   clampInbox,
+  clampMemoPanel,
   sanitizeLayout,
 } from "../core-bridge.js";
 import { $ } from "../dom.js";
@@ -38,6 +40,9 @@ const GUTTER =
 /** How far past the gutter the grab zone reaches into each quadrant. */
 const EDGE_REACH = 4;
 const HIT = GUTTER / 2 + EDGE_REACH;
+
+/** How far either side of the memo panel's top border the grab zone reaches. */
+const MEMO_HIT = 6;
 
 /** The dump's list, whose height the edge above the matrix drags. */
 const inboxList = () => $("#inboxList");
@@ -89,6 +94,23 @@ function applyLayout() {
   const root = document.documentElement;
   if (layout.inbox === null) root.style.removeProperty("--inbox-h");
   else root.style.setProperty("--inbox-h", `${layout.inbox}px`);
+
+  // Same arrangement for the memo panel, and it is read by two people: the
+  // stylesheet sizes the panel from it, and views/memo.js hands the same
+  // number to main so the window grows by exactly what is on screen. Setting
+  // it here rather than in the drag keeps the startup path and the drag path
+  // on one line of code.
+  if (layout.memo === null) root.style.removeProperty("--memo-h");
+  else root.style.setProperty("--memo-h", `${layout.memo}px`);
+}
+
+/** The panel's height as the stylesheet and main.js both see it. */
+function memoHeight() {
+  return (
+    Number.parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue("--memo-h"),
+    ) || 0
+  );
 }
 
 /**
@@ -292,6 +314,119 @@ export function wireQuadEdges() {
     }
     applyLayout();
     saveLayout();
+  });
+}
+
+/**
+ * Dragging the memo panel's top edge.
+ *
+ * Bound to the panel rather than folded into edgeAt(): that hit test walks the
+ * corner quadrants to find the grid's own dividers, and this edge is not one
+ * of them -- the panel is the grid's sibling, and the boundary is its border.
+ *
+ * The gesture is upside down compared with the dump's. Dragging up makes this
+ * panel *taller*, because it hangs below the divider rather than above it.
+ */
+export function wireMemoEdge() {
+  const panel = $("#memoPanel");
+  if (!panel) return;
+
+  /** Set at pointerdown: where the drag began, and what the display can give. */
+  let start = null;
+  /** One resize in flight at a time; a drag would otherwise queue hundreds. */
+  let busy = false;
+  let queued = null;
+
+  const shown = () => !panel.classList.contains("hidden");
+  const onEdge = (y) =>
+    shown() && Math.abs(y - panel.getBoundingClientRect().top) <= MEMO_HIT;
+
+  /**
+   * Ask main for the height and draw it. Coalescing rather than throttling on
+   * a timer: every pointermove is answered by the most recent one, and the
+   * last position the pointer was at is always the one that gets drawn.
+   */
+  const push = (px) => {
+    layout.memo = px;
+    applyLayout();
+    saveLayout();
+    if (busy) {
+      queued = px;
+      return;
+    }
+    busy = true;
+    Promise.resolve(window.api.setMemoPanel(true, px)).then(
+      () => {
+        busy = false;
+        const next = queued;
+        queued = null;
+        if (next !== null) push(next);
+      },
+      () => {
+        busy = false;
+        queued = null;
+      },
+    );
+  };
+
+  panel.addEventListener("pointermove", (e) => {
+    if (!start) panel.classList.toggle("edge-memo", onEdge(e.clientY));
+  });
+
+  panel.addEventListener("pointerleave", () => {
+    if (!start) panel.classList.remove("edge-memo");
+  });
+
+  panel.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0 || !e.isPrimary || !onEdge(e.clientY)) return;
+    e.preventDefault();
+
+    // screenY, not clientY. Growing the panel moves the window up, and the
+    // viewport moves with it -- a pointer held still would read as travelling
+    // downwards by exactly what the drag just gained, and the two would cancel
+    // to a dead handle. The screen is the one frame of reference the resize
+    // does not move.
+    start = { y: e.screenY, height: memoHeight(), room: MAX_MEMO_PX };
+    // The display's answer arrives a tick later. Until it does the flat
+    // ceiling applies, which is the bound main used before this drag existed.
+    Promise.resolve(window.api.memoRoom()).then((room) => {
+      if (start && Number.isFinite(room)) start.room = room;
+    });
+
+    panel.setPointerCapture(e.pointerId);
+    panel.classList.add("edge-memo");
+    document.body.classList.add("resizing-memo");
+
+    const onMove = (ev) => {
+      // Up is taller: the divider is this panel's top, so the height it gains
+      // is exactly how far the pointer has climbed.
+      push(clampMemoPanel(start.height - (ev.screenY - start.y), start.room));
+    };
+    const onUp = (ev) => {
+      start = null;
+      document.body.classList.remove("resizing-memo");
+      panel.classList.toggle("edge-memo", ev ? onEdge(ev.clientY) : false);
+      panel.removeEventListener("pointermove", onMove);
+      panel.removeEventListener("pointerup", onUp);
+      panel.removeEventListener("pointercancel", onUp);
+      panel.removeEventListener("lostpointercapture", onUp);
+    };
+
+    panel.addEventListener("pointermove", onMove);
+    panel.addEventListener("pointerup", onUp);
+    panel.addEventListener("pointercancel", onUp);
+    panel.addEventListener("lostpointercapture", onUp);
+  });
+
+  // Double-clicking the edge puts it back to the stylesheet's height, the same
+  // as double-clicking a quadrant divider. Cleared rather than assigned, so the
+  // default keeps living in one place.
+  panel.addEventListener("dblclick", (e) => {
+    if (!onEdge(e.clientY)) return;
+    layout.memo = DEFAULT_LAYOUT.memo;
+    applyLayout();
+    saveLayout();
+    window.api.setMemoPanel(true, memoHeight());
   });
 }
 

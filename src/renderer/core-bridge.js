@@ -48,8 +48,11 @@ export const {
   MIN_COL_PX,
   MIN_ROW_PX,
   MIN_INBOX_PX,
+  MIN_MEMO_PX,
+  MAX_MEMO_PX,
   clampRatio,
   clampAxis,
   clampInbox,
+  clampMemoPanel,
   sanitizeLayout,
 } = core;

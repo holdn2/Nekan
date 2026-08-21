@@ -76,7 +76,9 @@ body.resizing-col * {
 body.resizing-row,
 body.resizing-row *,
 body.resizing-inbox,
-body.resizing-inbox * {
+body.resizing-inbox *,
+body.resizing-memo,
+body.resizing-memo * {
   cursor: row-resize !important;
 }
 
@@ -88,7 +90,8 @@ body.resizing-both * {
 body.resizing-col,
 body.resizing-row,
 body.resizing-both,
-body.resizing-inbox {
+body.resizing-inbox,
+body.resizing-memo {
   user-select: none;
 }
 

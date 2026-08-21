@@ -7,9 +7,41 @@
 /* The window grows by --memo-h when this opens, so .view keeps its height and
    the quadrant ratios never move. The gap above it is .view's bottom padding. */
 .memo {
+  position: relative;
   flex: 0 0 var(--memo-h);
   min-height: 0;
   padding: 0 var(--sp-xl) var(--sp-xl);
+}
+
+/* The grab zone for the height drag, straddling the card's top border: half in
+   the gap above, half over the border itself. It has to be a positioned box to
+   paint over the matrix's padding, which is what the upper half sits in. The
+   6px each way is the same reach layout.js hit-tests with -- both numbers are
+   small enough that a second one going stale would be hard to see, so keep
+   them together in mind when either changes. */
+.memo::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(-1 * var(--sp-sm));
+  height: calc(2 * var(--sp-sm));
+  z-index: 2;
+  cursor: row-resize;
+}
+
+/* Pointer is on the edge: a line in the gap, not a change to the card, so
+   nothing moves by a pixel when it lights up. */
+.memo.edge-memo::after {
+  content: "";
+  position: absolute;
+  left: var(--sp-xl);
+  right: var(--sp-xl);
+  top: -3px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+  z-index: 2;
 }
 
 .memo.hidden,

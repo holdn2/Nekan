@@ -212,8 +212,25 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
 - **메모 패널은 매트릭스에서 높이를 뺏지 않고 창을 키운다.** 렌더러가 CSS `--memo-h`를 읽어
   `win:memo`로 넘기면 `main/window.js`가 그만큼 창을 늘리고, 실제로 늘어난 값(`memoDelta` — 화면에
   여유가 없으면 요청보다 작다)을 저장하는 `bounds`에서 다시 빼준다(`boundsWithoutMemo`). 이걸
-  건너뛰면 재시작할 때마다 창이 패널 높이만큼 계속 자란다. 패널 높이를 바꿀 곳은
-  `styles/base.css`의 `--memo-h` 하나뿐이다.
+  건너뛰면 재시작할 때마다 창이 패널 높이만큼 계속 자란다. **기본 높이**를 바꿀 곳은
+  `styles/base.css`의 `--memo-h` 하나뿐이지만, 그 변수는 이제 고정값이 아니다 — 사용자가 위
+  가장자리를 끌면 `layout.js`의 `applyLayout()`이 `settings.layout.memo`(px)로 덮어쓴다.
+  범위는 `shared/core.js`의 `MIN_MEMO_PX`(96) ~ `MAX_MEMO_PX`(400)이고, 그 위에 **화면이 실제로
+  줄 수 있는 만큼**(`main/window.js`의 `memoRoom()`)이 더 걸린다.
+  **드래그는 `clientY`가 아니라 `screenY`로 잰다.** 여는 것은 창 위를 붙박고 아래로 자라지만
+  드래그는 아래를 붙박고 위를 올려서 — 경계선이 커서를 따라오게 하려면 그 방법뿐이다 —
+  뷰포트가 함께 올라간다. 그래서 가만히 있는 포인터의 `clientY`가 방금 얻은 높이만큼 늘고,
+  **두 값이 정확히 상쇄돼 손잡이가 죽는다.** CDP로 검증할 때도 같은 함정이 있다:
+  `Input.dispatchMouseEvent`의 좌표는 뷰포트 기준이라 같은 y를 계속 보내면 진짜 마우스와
+  **반대로** 움직인다. 매 스텝 `window.screenY`를 읽어 보낼 y를 다시 계산할 것.
+  **`win.setResizable(true)`는 최소 크기를 되돌린다**(Windows). 접을 때의 최소 크기가 펼 때
+  복원되므로 `expand()`의 `setMinimumSize`는 `setResizable` **뒤에** 와야 한다. 최소 높이가 늘
+  520이던 동안에는 안 보였고, 패널 드래그가 그 값을 바꾸면서 바에서 돌아온 창이 520 + 마지막
+  패널 높이에 묶였다(2026-08-21 실측 820px).
+  **`rememberPlacement`는 자기가 요청한 크기가 되돌아오면 저장하지 않는다**(`placedAt`).
+  `switching` 플래그는 한 틱만 덮어서 모드 전환에는 충분하지만 드래그에는 모자란다 — 매 프레임
+  리사이즈가 나가는데 5ms 늦게 도착한 이벤트 하나가 배율 걸린 화면의 **측정값**을 기준으로
+  삼으면 그것이 다음 리사이즈의 base가 된다.
 - **인박스("다 꺼내기")는 메모 패널과 정반대다.** 메모 패널은 창을 키우고, 인박스는 매트릭스에서
   높이를 가져간다. 그래서 `main/window.js`에 창 크기 회계가 없고 접힘 상태(`settings.inboxOpen`)만
   저장한다. 대신 목록이 4분면을 밀어내지 않도록 `styles/base.css`의 `--inbox-max-h`와 `styles/inbox.css`의 `26vh`가
@@ -614,6 +631,11 @@ npx electron . --user-data-dir=<임시폴더>
 ```
 
 진짜 데이터 폴더를 가리키면 거부한다.
+
+**테스트 프로필의 `data.json`을 PowerShell로 쓰지 말 것.** 5.1의 `Set-Content -Encoding utf8`은
+**BOM을 붙이고**, `JSON.parse`가 그 파일을 거절하면 `load()`의 손상 파일 폴백이 조용히 **빈
+보드**를 준다 — 앱은 아무 말도 하지 않고 할 일이 0개인 화면이 뜬다(2026-08-21 실측:
+`ef bb bf`). `ConvertTo-Json`을 거치면 한글이 깨지는 것은 덤이다. `node -e`로 쓸 것.
 
 **재기 전에 `document.body.className`부터 확인할 것.** 바 모드면 `render()`가 `renderCounts()`
 다음에 바로 빠져나가므로, 무엇을 클릭하든 1~4ms가 나오고 DOM은 그대로다. 여기에 한참을 썼다 —

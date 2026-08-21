@@ -36,8 +36,11 @@ const {
   MIN_COL_PX,
   MIN_ROW_PX,
   MIN_INBOX_PX,
+  MIN_MEMO_PX,
+  MAX_MEMO_PX,
   clampAxis,
   clampInbox,
+  clampMemoPanel,
   expandOrigin,
   collapseOrigin,
 } = require("../src/shared/core");
@@ -342,11 +345,13 @@ test("sanitizeLayout clamps ratios into the drag range", () => {
     cols: MIN_RATIO,
     rows: MAX_RATIO,
     inbox: null,
+    memo: null,
   });
   assert.deepEqual(sanitizeLayout({ cols: 0.3, rows: 0.7 }), {
     cols: 0.3,
     rows: 0.7,
     inbox: null,
+    memo: null,
   });
 });
 
@@ -374,6 +379,35 @@ test("clampInbox holds the floor even when there is no room for it", () => {
   assert.equal(clampInbox(NaN, 500), MIN_INBOX_PX);
 });
 
+test("sanitizeLayout clamps a memo height at both ends", () => {
+  // Unlike the dump above, both bounds are known here: the panel is extra
+  // window height, so its ceiling does not depend on what the grid is doing.
+  assert.equal(sanitizeLayout({ memo: 240 }).memo, 240);
+  assert.equal(sanitizeLayout({ memo: MIN_MEMO_PX }).memo, MIN_MEMO_PX);
+  assert.equal(sanitizeLayout({ memo: 240.6 }).memo, 241);
+  assert.equal(sanitizeLayout({ memo: 9000 }).memo, MAX_MEMO_PX);
+
+  for (const junk of [undefined, null, 0, -10, "200", NaN, MIN_MEMO_PX - 1]) {
+    assert.equal(sanitizeLayout({ memo: junk }).memo, null, String(junk));
+  }
+});
+
+test("clampMemoPanel stops at the flat ceiling and at the display", () => {
+  assert.equal(clampMemoPanel(240), 240);
+  assert.equal(clampMemoPanel(9000), MAX_MEMO_PX);
+  assert.equal(clampMemoPanel(10), MIN_MEMO_PX);
+  assert.equal(clampMemoPanel(240.6), 241);
+
+  // A short display bounds it below the flat ceiling...
+  assert.equal(clampMemoPanel(300, 200), 200);
+  assert.equal(clampMemoPanel(300, 900), 300);
+  assert.equal(clampMemoPanel(9000, 900), MAX_MEMO_PX);
+  // ...but never below the floor: the window is about to be clamped anyway,
+  // and a panel of no height reads as broken rather than small.
+  assert.equal(clampMemoPanel(300, 0), MIN_MEMO_PX);
+  assert.equal(clampMemoPanel(NaN, 300), MIN_MEMO_PX);
+});
+
 test("sanitizeLayout falls back to an even split for junk", () => {
   for (const junk of [
     undefined,
@@ -391,6 +425,7 @@ test("sanitizeLayout averages the legacy per-column row split", () => {
     cols: 0.4,
     rows: 0.4,
     inbox: null,
+    memo: null,
   });
 });
 
