@@ -63,7 +63,7 @@ import {
   toggleTheme,
   wireChrome,
 } from "./window/chrome.js";
-import { setLayout, wireQuadEdges } from "./window/layout.js";
+import { setLayout, wireMemoEdge, wireQuadEdges } from "./window/layout.js";
 import { wireDragAndDrop } from "./window/dnd.js";
 import { exportBoard } from "./window/export-ui.js";
 
@@ -296,6 +296,7 @@ async function init() {
   wireShortcuts();
   wireDragAndDrop();
   wireQuadEdges();
+  wireMemoEdge();
 
   // Before the first render, so nobody sees a matrix flash behind it. The
   // wiring above has to be done first: this screen can sign in, and a sign-in

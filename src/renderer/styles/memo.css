@@ -1,15 +1,43 @@
 /**
  * The memo panel under the matrix, plus the marker on rows that have one.
- * --memo-h is defined in base.css because main.js grows the window by it.
+ * --memo-h is defined in base.css and overwritten by window/layout.js when the
+ * top edge is dragged.
  */
 
 /* ---------- memo panel ---------- */
-/* The window grows by --memo-h when this opens, so .view keeps its height and
-   the quadrant ratios never move. The gap above it is .view's bottom padding. */
+/* Takes its height out of the matrix, like the brain dump above. Shrinkable
+   with a zero min-height, and a flex column itself: a block box would keep its
+   own height and let the card overflow onto the quadrants, which body's
+   overflow:hidden would then make look fixed. The gap above it is .view's
+   bottom padding. */
 .memo {
-  flex: 0 0 var(--memo-h);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 var(--memo-h);
   min-height: 0;
   padding: 0 var(--sp-xl) var(--sp-xl);
+}
+
+/* The grab zone for the height drag, straddling the card's top border: half in
+   the gap above, half over the border itself. It has to be a positioned box to
+   paint over the matrix's padding, which is what the upper half sits in. The
+   6px each way is the same reach layout.js hit-tests with -- both numbers are
+   small enough that a second one going stale would be hard to see, so keep
+   them together in mind when either changes.
+
+   The cursor is the whole affordance, as it is on the dump's edge. The card's
+   top border is already an accent line, so a highlight drawn above it reads as
+   two rules stacked rather than as an edge lighting up. */
+.memo::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(-1 * var(--sp-sm));
+  height: calc(2 * var(--sp-sm));
+  z-index: 2;
+  cursor: row-resize;
 }
 
 .memo.hidden,
@@ -20,7 +48,8 @@
 .memo-card {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
   background: var(--panel);
   border: 1px solid var(--line);
   border-top: 2px solid var(--accent);

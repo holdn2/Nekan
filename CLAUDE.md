@@ -9,7 +9,7 @@
 src/main.js       앱 생명주기와 조립만 — store 로드 → IPC 등록 → 창 생성 순서가 전부
 src/main/
   store.js        메모리 위의 data.json + 디바운스 저장 (persist / persistNow)
-  window.js       창 생성, expanded/collapsed 전환, 메모 패널 높이 회계
+  window.js       창 생성과 expanded/collapsed 전환. 패널 두 개는 모른다
   export-service.js  PDF·HTML·MD 쓰기 (숨은 창에서 printToPDF)
   updater.js      electron-updater. 창을 모르고, main.js가 넘긴 콜백으로만 알린다
   api-client.js   Supabase와 말하는 유일한 곳. URL·anon key·로그인·토큰 갱신·시계 오차
@@ -174,6 +174,10 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   렌더러에서 `window.api.expand()`를 부르는 조건이 **한 번도 참이 되지 않아**, 바 모드로
   종료했던 사용자가 업데이트 후 380px 카드를 **640×48 바 안에서** 만났다. 판정은
   `shared/core.js`의 `needsStartupChoice()`에 있고 메인·렌더러가 같은 함수를 부른다.
+- **`win.setResizable(true)`는 Windows에서 최소 크기를 되돌린다.** 접을 때 저장돼 있던 값이 펼
+  때 복원되므로 `expand()`의 `setMinimumSize`는 `setResizable` **뒤에** 와야 한다. 지금은 최소
+  높이가 늘 `EXPANDED.minHeight`라 증상이 없지만, 무엇이든 그 값을 바꾸는 날 바에서 돌아온
+  창이 옛 최소 크기에 묶인다 — 2026-08-21에 메모 패널이 잠깐 그랬고 실측 820px이었다.
 - **모드 전환의 기준점은 창에 물어보지 않고 저장된 값을 쓴다.** `expand()`는 `barPosition`에서,
   `collapse()`는 `bounds`에서 출발한다. `win.getBounds()`로 재면 배율이 걸린 화면에서 요청값과
   1~2px 어긋난 값이 돌아오고, 그걸로 다음 전환의 기준을 잡으면 **토글할 때마다 위젯이 몇 px씩
@@ -188,6 +192,10 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   최대 318px 옮겨갔다** (2026-08-19, 2304px 화면에서 시작 위치 1303곳 중 333곳). 지금은 펴기도
   같은 질문을 하고, `test/core.test.js`가 **모든 시작 위치를 훑어** 0px임을 지킨다 — 모서리
   두 곳만 보는 spot check는 이 결함을 통과시켰다. **그 훑는 테스트를 지우면 조용히 돌아온다.**
+  **위 2304·1303·333은 실측 화면의 숫자이고 테스트의 숫자가 아니다.** 테스트는 자기 픽스처
+  (화면 1920 · 바 600 · 창 1000, 시작 위치 921곳)를 쓴다 — 두 함수가 bar·win·screen을 인자로
+  받는 순수 함수라 폭이 무엇이든 왕복 성질은 같고, 그래서 `BAR.width`가 684가 돼도 픽스처는
+  따라가지 않는다. **픽스처의 600을 앱의 값이라고 읽지 말 것.**
   토글할 때마다 위젯이 이동한다.
 - 분면 비율 `layout.cols/rows`는 0.15~0.85로 클램프된다. 상수와 클램프 함수는
   `shared/core.js` 한 곳에만 있고 `main/ipc.js`와 `renderer/window/layout.js`가 그걸 부른다.
@@ -205,14 +213,23 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   고쳐진 것처럼 보이니 반드시 배율이 걸린 화면에서 볼 것.
   창 생성만은 여전히 요청보다 크게 잡혀서, 냉시작 뒤 처음 창을 옮길 때 `bounds`가 한 번
   +5px 커진다. **누적되지는 않는다**(재시작·이동 3회 반복 실측: 1005×705에서 고정).
-- **메모 패널은 매트릭스에서 높이를 뺏지 않고 창을 키운다.** 렌더러가 CSS `--memo-h`를 읽어
-  `win:memo`로 넘기면 `main/window.js`가 그만큼 창을 늘리고, 실제로 늘어난 값(`memoDelta` — 화면에
-  여유가 없으면 요청보다 작다)을 저장하는 `bounds`에서 다시 빼준다(`boundsWithoutMemo`). 이걸
-  건너뛰면 재시작할 때마다 창이 패널 높이만큼 계속 자란다. 패널 높이를 바꿀 곳은
-  `styles/base.css`의 `--memo-h` 하나뿐이다.
-- **인박스("다 꺼내기")는 메모 패널과 정반대다.** 메모 패널은 창을 키우고, 인박스는 매트릭스에서
-  높이를 가져간다. 그래서 `main/window.js`에 창 크기 회계가 없고 접힘 상태(`settings.inboxOpen`)만
-  저장한다. 대신 목록이 4분면을 밀어내지 않도록 `styles/base.css`의 `--inbox-max-h`와 `styles/inbox.css`의 `26vh`가
+- **메모 패널과 다 꺼내기는 같은 방식이다 — 둘 다 매트릭스에서 높이를 가져간다.**
+  창 크기는 변하지 않고, `main/window.js`는 **두 패널의 존재를 모른다.** 높이는 CSS
+  `--memo-h`·`--inbox-h`가 정하고, 위/아래 경계를 끌면 `renderer/window/layout.js`의
+  `applyLayout()`이 그 변수를 `settings.layout.memo`·`.inbox`(px)로 덮어쓴다. 기본값을 바꿀
+  곳은 `styles/base.css` 한 곳이고, `null`이 "스타일시트가 정한 값"이다.
+  **2026-08-21 전에는 메모 패널만 창을 키웠다**(`memoDelta`·`boundsWithoutMemo`·`win:memo`).
+  전부 사라졌으니 옛 커밋이나 문서에서 그 이름을 보면 이 날짜를 기준으로 읽을 것 —
+  근거는 `docs/DECISIONS.md` 2026-08-21이고, 2026-08-01 항목이 그 앞에 살아 있다.
+  **그래서 다 꺼내기가 걸렸던 함정 셋에 메모 패널도 함께 걸린다**(아래 항목 ①②③).
+  `.memo`는 `flex: 0 1 var(--memo-h)` · `min-height: 0` · **자신이 flex 컬럼**이어야 하고,
+  `.memo-card`는 `height: 100%`가 아니라 `flex: 1 1 auto`여야 한다 — 아니면 카드가 4분면 위로
+  넘치고, `body`의 `overflow: hidden` 때문에 **겉보기엔 고쳐진 것처럼 보인다.**
+  **드래그 방향이 다 꺼내기와 반대다**: 메모 패널은 경계 아래에 있어서 **위로 끌면 커진다.**
+  범위는 `MIN_MEMO_PX`(96)부터 `memoRoom()`이 계산한 여유까지 — `inboxRoom()`의 쌍둥이이고,
+  같은 이유로 **pointerdown 때 한 번만** 잰다(드래그 중에 재면 답이 자기 자신에게 되먹인다).
+- **인박스("다 꺼내기")도 매트릭스에서 높이를 가져간다.** `main/window.js`에 창 크기 회계가
+  없고 접힘 상태(`settings.inboxOpen`)만 저장한다. 대신 목록이 4분면을 밀어내지 않도록 `styles/base.css`의 `--inbox-max-h`와 `styles/inbox.css`의 `26vh`가
   높이를 묶는다 — 이 상한을 없애면 항목이 쌓일수록 매트릭스가 화면 밖으로 나간다.
   **그 상한만으로는 부족하다.** 26vh는 *창*의 몫이지 *남은 공간*의 몫이 아니라서, 창을 최소
   크기(760×520)로 줄이면 매트릭스가 자기 그리드 바닥값 아래로 밀려 아래 두 분면이 화면 밖으로
@@ -561,6 +578,15 @@ npx electron . --user-data-dir=<B> --remote-debugging-port=9334
 가를 것.** 그리고 **씨앗 데이터에 검사어를 넣지 말 것** — 할 일 텍스트에 `Pretendard`가 있어서
 "스타일시트에 글꼴 이름이 남았나" 가드가 본문에 걸렸다. 검사는 `<style>` 블록으로 좁힌다.
 
+**메인 프로세스 코드는 `location.reload()`로 갱신되지 않는다.** 렌더러만 다시 그려질 뿐이고,
+`main/window.js`의 상수를 고친 뒤 리로드해서 재면 **옛 값이 계속 나온다** — 2026-08-19에
+`BAR.width`를 684로 바꾸고도 660이 나와서 한참 헤맸다. 메인을 건드렸으면 **앱을 다시 띄울 것.**
+
+**CDP 입력이 안 먹는 것처럼 보이면 먼저 무엇이 덮고 있는지 본다.** `Input.dispatchMouseEvent`가
+무시되는 줄 알고 OS 마우스(`SendInput`)로 갈아타 좌표 보정에 오래 썼는데, 실제로는 **첫 실행
+카드가 이벤트를 받고 있었다.** 카드를 넘기니 CDP로 바로 됐다. 확인법은 `document`에
+`pointerdown` 리스너를 붙여 **`e.target`을 찍어 보는 것**이다 — 좌표가 아니라 대상이 답을 준다.
+
 **렌더러를 재는 곳을 헷갈리지 말 것.** `renderCounts()`가 갱신하는 것은 **바 칩**(`#c1`~`#c4`)
 이고, 분면 헤더(`[data-count=q1]`)는 `renderMatrix()` 즉 **매트릭스 탭일 때만** 다시 그려진다.
 가이드 탭을 열어 둔 채 분면 헤더를 읽으면 마지막 매트릭스 렌더의 잔상이 보이고, 그걸 "동기화가
@@ -601,6 +627,11 @@ npx electron . --user-data-dir=<임시폴더>
 ```
 
 진짜 데이터 폴더를 가리키면 거부한다.
+
+**테스트 프로필의 `data.json`을 PowerShell로 쓰지 말 것.** 5.1의 `Set-Content -Encoding utf8`은
+**BOM을 붙이고**, `JSON.parse`가 그 파일을 거절하면 `load()`의 손상 파일 폴백이 조용히 **빈
+보드**를 준다 — 앱은 아무 말도 하지 않고 할 일이 0개인 화면이 뜬다(2026-08-21 실측:
+`ef bb bf`). `ConvertTo-Json`을 거치면 한글이 깨지는 것은 덤이다. `node -e`로 쓸 것.
 
 **재기 전에 `document.body.className`부터 확인할 것.** 바 모드면 `render()`가 `renderCounts()`
 다음에 바로 빠져나가므로, 무엇을 클릭하든 1~4ms가 나오고 DOM은 그대로다. 여기에 한참을 썼다 —

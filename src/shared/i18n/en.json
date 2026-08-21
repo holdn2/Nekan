@@ -136,7 +136,7 @@
     "note": {
       "open": "<b>Click a task</b> and its note opens below the matrix — one note per task. Writing down why it is in this quadrant and what comes next makes the next look much quicker. A task with a note is marked, and hovering the mark previews what it says.",
       "keys": "A task without a note opens straight into editing. <code>Ctrl</code> + <code>Enter</code> saves, <code>Esc</code> cancels. <b>Double-click</b> a saved note to edit it again, and <code>Delete</code> removes the note only — the task stays.",
-      "panel": "Opening a note <b>does not shrink the quadrants</b>. The window grows by the height of the panel instead, and gives it back when the note closes. Click the same task again, or the <code>✕</code>, to close it.",
+      "panel": "Opening a note <b>takes the room out of the matrix</b> — the window stays the size you left it. <b>Drag the top edge</b> of the card to change its height, and <b>double-click</b> to put it back. Click the same task again, or the <code>✕</code>, to close it.",
       "readonly": "In the History and the Trash a note shows under its task, <b>read-only</b>. A long one is cut to three lines and clicking it opens the rest. Restore a task from the trash and its note comes back with it."
     },
     "logTitle": "History and trash",
@@ -154,7 +154,7 @@
     "window": {
       "bar": "The <b>Shrink to the bar</b> button in the title bar, a <b>double-click</b> on the title bar, or <code>Ctrl</code> + <code>M</code> — any of the three folds the window down to a thin bar. The Work/Life toggle and the per-quadrant counts stay on it, and <b>clicking a count chip opens the window again.</b> It expands from wherever you parked the bar and folds back to the same place.",
       "pin": "Turn on <b>Always on top</b> and the window stays above everything else. Position, size, mode, theme and the pin are all remembered when you quit, and <b>if you leave it as a bar it opens as a bar next time.</b>",
-      "quads": "<b>Drag the edge between quadrants</b> to resize them. The horizontal and vertical edges are shared by all four, so growing one shrinks its neighbour, and grabbing the <b>crossing point</b> in the middle moves both at once. <b>Double-click</b> an edge to go back to even halves.",
+      "quads": "<b>Drag the edge between quadrants</b> to resize them. The horizontal and vertical edges are shared by all four, so growing one shrinks its neighbour, and grabbing the <b>crossing point</b> in the middle moves both at once. The same works on the <b>bottom edge of the brain dump</b> and the <b>top edge of a note</b> — the window stays the size you left it and the matrix gives up the difference. <b>Double-click</b> any edge to put it back.",
       "settings": "The <b>settings (⚙)</b> in the title bar hold <b>language, theme, export and syncing</b> in one place. Pressing it in bar mode expands the window first. The language follows your computer the first time the app runs; once you pick one it is remembered and takes effect on the spot, with no restart.",
       "keys": "That is the whole keyboard: <code>Ctrl</code> + <code>M</code> for bar mode, <code>Ctrl</code> + <code>D</code> for the dark theme, <code>Ctrl</code> + <code>E</code> to export, <code>Ctrl</code> + <code>0</code> for the brain dump, <code>Ctrl</code> + <code>1</code>–<code>4</code> for a quadrant, <code>Enter</code> to add or save an edit, <code>Ctrl</code> + <code>Enter</code> to save a note, <code>Esc</code> to cancel."
     },

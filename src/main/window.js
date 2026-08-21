@@ -1,6 +1,5 @@
 /**
- * The one window: creating it, the two modes it has, and the height accounting
- * that keeps the memo panel from stealing from the matrix.
+ * The one window: creating it and the two modes it has.
  *
  * Two rules run through this file and are easy to break from the outside:
  *
@@ -12,12 +11,10 @@
  *     window is standing at that moment, so moving the bar and then opening it
  *     opens it where it was left. shared/core.js owns which corner they pivot
  *     on; see expandOrigin() and collapseOrigin().
- *   - The memo panel is *extra* height, not a slice of the matrix. Opening it
- *     grows the window by what the renderer asks for and closing it hands
- *     exactly that back, so the quadrant ratios never move. `memoDelta` is what
- *     the window actually gained — a display with no room clamps it — and every
- *     saved bound has it subtracted back out. Skip that and the window grows by
- *     the panel height on every restart.
+ *   - Nothing in the page resizes the window. The brain dump and the memo panel
+ *     both take their height out of the matrix, in the renderer, so this file
+ *     never hears about either of them. It grew the window for the memo panel
+ *     until 2026-08-21; docs/DECISIONS.md says why that stopped.
  */
 
 const path = require("path");
@@ -45,13 +42,8 @@ const EXPANDED = { width: 1000, height: 700, minWidth: 760, minHeight: 520 };
 // extra 20px is breathing room, not capacity.
 const BAR = { width: 684, height: 48 };
 
-/** However tall the renderer asks for, the panel may not take more than this. */
-const MEMO_MAX = 400;
-
 let win = null;
 let mode = "expanded";
-let memoOpen = false;
-let memoDelta = 0;
 /**
  * True while the window is being placed by code rather than by the user.
  *
@@ -82,12 +74,6 @@ function sanitizeBounds(bounds) {
   return { x, y, width, height };
 }
 
-/** Window bounds with the memo panel's extra height taken back out. */
-function boundsWithoutMemo() {
-  const b = win.getBounds();
-  return { ...b, height: b.height - memoDelta };
-}
-
 /** A saved bar position, or null when there is none worth trusting. */
 function savedBarPosition() {
   const at = getSettings().barPosition;
@@ -108,7 +94,7 @@ function rememberBarPosition() {
  */
 function rememberPlacement() {
   if (!win || win.isDestroyed() || switching) return;
-  if (mode === "expanded") getSettings().bounds = boundsWithoutMemo();
+  if (mode === "expanded") getSettings().bounds = win.getBounds();
   else rememberBarPosition();
   persist();
 }
@@ -126,53 +112,6 @@ function placeWindow(bounds, remember) {
   setImmediate(() => {
     switching = false;
   });
-}
-
-/**
- * Open or close the room the memo panel needs. Returns the resulting state, so
- * the renderer's IPC call gets an answer even when the request was ignored
- * (no window, or a bar, which has no panel).
- */
-function setMemoPanel(open, height) {
-  if (!win || win.isDestroyed() || mode !== "expanded") return memoOpen;
-  if (open === memoOpen) return memoOpen;
-
-  // The store, not the window — the same rule the mode switch follows, and for
-  // the same reason. setBounds and getBounds do not round-trip on a scaled
-  // display, so measuring the window and then building the next resize on that
-  // measurement compounds: at 125% this grew the window 4px wider and ~1px
-  // taller per open/close pair, wrote the result to disk, and never stopped.
-  // `bounds` is by definition the window without the panel, which is the base
-  // both branches want.
-  const base = sanitizeBounds(getSettings().bounds) || win.getBounds();
-  // Written by both branches, so a resize raised mid-switch cannot save a size
-  // that is halfway through this.
-  const keepBase = () => {
-    getSettings().bounds = base;
-  };
-
-  if (open) {
-    const want = Math.min(MEMO_MAX, Math.max(0, Math.round(height) || 0));
-    // What the display had room for, taken from the request rather than from
-    // the window afterwards.
-    const grown = sanitizeBounds({ ...base, height: base.height + want });
-    memoDelta = grown.height - base.height;
-    memoOpen = true;
-    placeWindow(grown, keepBase);
-    win.setMinimumSize(EXPANDED.minWidth, EXPANDED.minHeight + memoDelta);
-  } else {
-    win.setMinimumSize(EXPANDED.minWidth, EXPANDED.minHeight);
-    memoOpen = false;
-    memoDelta = 0;
-    placeWindow(
-      sanitizeBounds({
-        ...base,
-        height: Math.max(EXPANDED.minHeight, base.height),
-      }),
-      keepBase,
-    );
-  }
-  return memoOpen;
 }
 
 /** Build the window from the saved settings and show it once it can paint. */
@@ -209,13 +148,6 @@ function createWindow() {
   });
 
   win.loadFile(path.join(SRC, "renderer", "index.html"));
-
-  // A reload starts the renderer with nothing selected, so the panel height
-  // main is still holding would be stranded — the window would stay tall with
-  // no panel in it, and the saved bounds would drift by that much.
-  win.webContents.on("did-finish-load", () => {
-    if (memoOpen) setMemoPanel(false);
-  });
 
   win.once("ready-to-show", () => {
     win.show();
@@ -271,8 +203,6 @@ function collapse(at) {
   mode = "collapsed";
   settings.mode = mode;
   // The bar has no memo panel; the renderer drops its selection to match.
-  memoOpen = false;
-  memoDelta = 0;
   win.setResizable(false);
   win.setMinimumSize(BAR.width, BAR.height);
   placeWindow(
@@ -310,8 +240,15 @@ function expand() {
 
   mode = "expanded";
   settings.mode = mode;
-  win.setMinimumSize(EXPANDED.minWidth, EXPANDED.minHeight);
+  // After setResizable, not before. On Windows, turning resizing off stashes
+  // the current minimum and turning it back on restores it, so a minimum set
+  // first is overwritten by whatever was in force when the bar was folded. It
+  // makes no difference while that is always EXPANDED.minHeight, which is the
+  // only value this file uses -- but the day anything raises the minimum, the
+  // window comes back out of the bar stuck at the old one. Measured on
+  // 2026-08-21, when the memo panel briefly did exactly that.
   win.setResizable(true);
+  win.setMinimumSize(EXPANDED.minWidth, EXPANDED.minHeight);
   placeWindow(
     sanitizeBounds({ ...expandOrigin(bar, size, area), ...size }),
     (opened) => {
@@ -327,7 +264,6 @@ module.exports = {
   createWindow,
   collapse,
   expand,
-  setMemoPanel,
   getWindow,
   getMode,
 };

@@ -460,13 +460,17 @@ function normalizeTasks(list) {
 /* ----------------------------------------------------------------- layout */
 
 /**
- * `inbox` is a height in px, not a ratio, and null means "whatever the
- * stylesheet says". The quadrants split a fixed box so a ratio is the natural
- * unit there; the dump takes height *away* from the matrix, and what the user
- * wants is a list this tall -- not a list that is a quarter of whatever the
- * window happens to be.
+ * `inbox` and `memo` are heights in px, not ratios, and null means "whatever
+ * the stylesheet says". The quadrants split a fixed box so a ratio is the
+ * natural unit there; those two panels are told how tall to be, and what the
+ * user wants is a list this tall -- not a list that is a quarter of whatever
+ * the window happens to be.
+ *
+ * Both take their height out of the matrix, so both have the same ceiling:
+ * whatever the grid can give up, which only the renderer can work out. That is
+ * why neither is clamped from above here.
  */
-const DEFAULT_LAYOUT = { cols: 0.5, rows: 0.5, inbox: null };
+const DEFAULT_LAYOUT = { cols: 0.5, rows: 0.5, inbox: null, memo: null };
 const MIN_RATIO = 0.15;
 const MAX_RATIO = 0.85;
 
@@ -488,6 +492,28 @@ const MIN_ROW_PX = 110;
  * fold is the control for "I do not want this open".
  */
 const MIN_INBOX_PX = 56;
+
+/**
+ * Smallest the memo panel may be dragged to: its header and the first line of
+ * the note. Below that the panel says nothing the row's memo mark does not
+ * already say, and closing the note is the control for "not now".
+ */
+const MIN_MEMO_PX = 96;
+
+/**
+ * How tall the memo panel may be, given the room there is for it.
+ *
+ * The twin of clampInbox, floor apart, and for the same reason: `available` is
+ * the panel's own height plus everything the matrix can give up, and only the
+ * renderer knows what the grid is currently doing.
+ */
+function clampMemoPanel(value, available) {
+  if (!Number.isFinite(value)) return MIN_MEMO_PX;
+  return Math.max(
+    MIN_MEMO_PX,
+    Math.min(Math.round(value), Math.round(available)),
+  );
+}
 
 /**
  * How tall the dump's list may be, given the room there is for it.
@@ -612,6 +638,11 @@ function sanitizeLayout(saved) {
   const inbox = asRatio(saved?.inbox);
   next.inbox =
     Number.isFinite(inbox) && inbox >= MIN_INBOX_PX ? Math.round(inbox) : null;
+
+  // Held loosely for the same reason as the dump: the ceiling is the window's.
+  const memo = asRatio(saved?.memo);
+  next.memo =
+    Number.isFinite(memo) && memo >= MIN_MEMO_PX ? Math.round(memo) : null;
   return next;
 }
 
@@ -665,7 +696,9 @@ const emCore = {
   MIN_COL_PX,
   MIN_ROW_PX,
   MIN_INBOX_PX,
+  MIN_MEMO_PX,
   clampInbox,
+  clampMemoPanel,
   clampRatio,
   clampAxis,
   expandOrigin,

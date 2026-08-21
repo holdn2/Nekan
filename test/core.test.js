@@ -36,8 +36,10 @@ const {
   MIN_COL_PX,
   MIN_ROW_PX,
   MIN_INBOX_PX,
+  MIN_MEMO_PX,
   clampAxis,
   clampInbox,
+  clampMemoPanel,
   expandOrigin,
   collapseOrigin,
 } = require("../src/shared/core");
@@ -342,11 +344,13 @@ test("sanitizeLayout clamps ratios into the drag range", () => {
     cols: MIN_RATIO,
     rows: MAX_RATIO,
     inbox: null,
+    memo: null,
   });
   assert.deepEqual(sanitizeLayout({ cols: 0.3, rows: 0.7 }), {
     cols: 0.3,
     rows: 0.7,
     inbox: null,
+    memo: null,
   });
 });
 
@@ -374,6 +378,29 @@ test("clampInbox holds the floor even when there is no room for it", () => {
   assert.equal(clampInbox(NaN, 500), MIN_INBOX_PX);
 });
 
+test("sanitizeLayout keeps a note height it cannot check the ceiling of", () => {
+  // Same rule as the dump: the ceiling is the matrix's to give, so only the
+  // floor is enforced here and a height saved on a large monitor survives.
+  assert.equal(sanitizeLayout({ memo: 400 }).memo, 400);
+  assert.equal(sanitizeLayout({ memo: MIN_MEMO_PX }).memo, MIN_MEMO_PX);
+  assert.equal(sanitizeLayout({ memo: 240.6 }).memo, 241);
+
+  for (const junk of [undefined, null, 0, -10, "200", NaN, MIN_MEMO_PX - 1]) {
+    assert.equal(sanitizeLayout({ memo: junk }).memo, null, String(junk));
+  }
+});
+
+test("clampMemoPanel holds its floor even when there is no room for it", () => {
+  assert.equal(clampMemoPanel(240, 500), 240);
+  assert.equal(clampMemoPanel(600, 500), 500);
+  assert.equal(clampMemoPanel(10, 500), MIN_MEMO_PX);
+  assert.equal(clampMemoPanel(240.6, 500), 241);
+  // The floor wins over the room, as it does for the dump: the matrix has its
+  // own overflow rules, and a panel of no height reads as broken.
+  assert.equal(clampMemoPanel(300, 10), MIN_MEMO_PX);
+  assert.equal(clampMemoPanel(NaN, 500), MIN_MEMO_PX);
+});
+
 test("sanitizeLayout falls back to an even split for junk", () => {
   for (const junk of [
     undefined,
@@ -391,6 +418,7 @@ test("sanitizeLayout averages the legacy per-column row split", () => {
     cols: 0.4,
     rows: 0.4,
     inbox: null,
+    memo: null,
   });
 });
 

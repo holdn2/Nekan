@@ -34,7 +34,6 @@ contextBridge.exposeInMainWorld("api", {
   togglePin: () => ipcRenderer.invoke("win:togglePin"),
   setTheme: (theme) => ipcRenderer.invoke("settings:theme", theme),
   setLayout: (layout) => ipcRenderer.invoke("settings:layout", layout),
-  setMemoPanel: (open, height) => ipcRenderer.invoke("win:memo", open, height),
   setInboxOpen: (open) => ipcRenderer.invoke("settings:inbox", open),
   setSpace: (space) => ipcRenderer.invoke("settings:space", space),
   setStartupChoice: (choice) => ipcRenderer.invoke("settings:startup", choice),

@@ -1,8 +1,9 @@
 /**
  * Palette, theme switch and the element defaults everything else builds on.
- * The custom properties JS reads live here: --gutter (layout.js), --memo-h
- * (memo.js, which hands it to main.js as the window growth) and --inbox-max-h.
- * Moving one of those out of :root would silently break the window accounting.
+ * The custom properties JS reads live here: --gutter, --memo-h and --inbox-h
+ * (all layout.js) and --inbox-max-h. The two panel heights are read *and*
+ * written -- dragging an edge sets them on :root -- so moving either out of
+ * here leaves the drag writing to a variable nothing cascades from.
  */
 
 /* Shipped with the app rather than fetched, so it is there on a machine that
@@ -150,8 +151,8 @@
   /* Space between quadrants; the drag hit zone is this plus a few px each side. */
   --gutter: 10px;
   /* Height the memo panel occupies, gap included. The renderer reads this and
-     hands it to main.js, which grows the window by exactly this much — so the
-     value lives here and nowhere else. */
+     the default height of the memo panel. Dragging its top edge overwrites the
+     variable from JS, so this is the value it goes back to. */
   --memo-h: 172px;
   /* How tall the "다 꺼내기" list may grow before it starts scrolling. It sizes
      to its content below this, so a short list costs the matrix almost nothing.
