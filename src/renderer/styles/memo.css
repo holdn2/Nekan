@@ -24,7 +24,11 @@
    paint over the matrix's padding, which is what the upper half sits in. The
    6px each way is the same reach layout.js hit-tests with -- both numbers are
    small enough that a second one going stale would be hard to see, so keep
-   them together in mind when either changes. */
+   them together in mind when either changes.
+
+   The cursor is the whole affordance, as it is on the dump's edge. The card's
+   top border is already an accent line, so a highlight drawn above it reads as
+   two rules stacked rather than as an edge lighting up. */
 .memo::before {
   content: "";
   position: absolute;
@@ -34,20 +38,6 @@
   height: calc(2 * var(--sp-sm));
   z-index: 2;
   cursor: row-resize;
-}
-
-/* Pointer is on the edge: a line in the gap, not a change to the card, so
-   nothing moves by a pixel when it lights up. */
-.memo.edge-memo::after {
-  content: "";
-  position: absolute;
-  left: var(--sp-xl);
-  right: var(--sp-xl);
-  top: -3px;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--accent);
-  z-index: 2;
 }
 
 .memo.hidden,

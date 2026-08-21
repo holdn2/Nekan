@@ -352,21 +352,12 @@ export function wireMemoEdge() {
   const onEdge = (y) =>
     shown() && Math.abs(y - panel.getBoundingClientRect().top) <= MEMO_HIT;
 
-  panel.addEventListener("pointermove", (e) => {
-    if (!start) panel.classList.toggle("edge-memo", onEdge(e.clientY));
-  });
-
-  panel.addEventListener("pointerleave", () => {
-    if (!start) panel.classList.remove("edge-memo");
-  });
-
   panel.addEventListener("pointerdown", (e) => {
     if (e.button !== 0 || !e.isPrimary || !onEdge(e.clientY)) return;
     e.preventDefault();
 
     start = { y: e.clientY, height: memoHeight(), room: memoRoom() };
     panel.setPointerCapture(e.pointerId);
-    panel.classList.add("edge-memo");
     document.body.classList.add("resizing-memo");
 
     const onMove = (ev) => {
@@ -379,10 +370,9 @@ export function wireMemoEdge() {
       applyLayout();
       saveLayout();
     };
-    const onUp = (ev) => {
+    const onUp = () => {
       start = null;
       document.body.classList.remove("resizing-memo");
-      panel.classList.toggle("edge-memo", ev ? onEdge(ev.clientY) : false);
       panel.removeEventListener("pointermove", onMove);
       panel.removeEventListener("pointerup", onUp);
       panel.removeEventListener("pointercancel", onUp);
