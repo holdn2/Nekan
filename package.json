@@ -2,31 +2,36 @@
   "name": "nekan",
   "version": "1.0.0",
   "description": "Nekan — Eisenhower matrix desktop widget",
-  "main": "src/main.js",
+  "main": "out/main.js",
   "author": "makersfarm",
   "license": "MIT",
   "scripts": {
-    "test": "node --test",
+    "build": "node tools/build.js",
+    "build:watch": "node tools/build.js --watch",
+    "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.shared.json",
+    "test": "npm run build && node --test \"test/**/*.test.js\"",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "start": "electron .",
-    "dist": "electron-builder --win nsis --publish never",
-    "release": "electron-builder --win nsis --publish always && node tools/check-release.js"
+    "start": "npm run build && electron .",
+    "dist": "npm run build && electron-builder --win nsis --publish never",
+    "release": "npm run build && electron-builder --win nsis --publish always && node tools/check-release.js"
   },
   "dependencies": {
     "electron-updater": "^6.8.9",
     "i18next": "^26.3.6"
   },
   "devDependencies": {
+    "@types/node": "^22.20.1",
     "electron": "^43.2.0",
     "electron-builder": "^26.15.3",
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.6",
+    "typescript": "^7.0.2"
   },
   "build": {
     "appId": "com.makersfarm.nekan",
     "productName": "Nekan",
     "files": [
-      "src/**/*",
+      "out/**/*",
       "package.json"
     ],
     "directories": {

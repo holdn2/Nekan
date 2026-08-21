@@ -9,3 +9,6 @@ docs/discussions/
 
 # Generated; reformatting it only makes the diff harder to read.
 package-lock.json
+
+# Compiler output.
+out/

@@ -1,0 +1,20 @@
+{
+  // The main process, the preload and everything in shared/ that main uses.
+  // CommonJS, because that is what Electron's main process and the sandboxed
+  // preload both load -- see the preload note in CLAUDE.md.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "module": "node16",
+    "moduleResolution": "node16",
+    "types": ["node"],
+    "esModuleInterop": true
+  },
+  "include": [
+    "src/main.js",
+    "src/main.ts",
+    "src/preload.js",
+    "src/preload.ts",
+    "src/main/**/*",
+    "src/shared/**/*"
+  ]
+}

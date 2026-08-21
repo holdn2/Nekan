@@ -9,8 +9,10 @@
  * and a delete list was not updated.
  *
  * Required of main/ and the tests only -- never loaded by the renderer, which
- * is why this file may be plain CommonJS unlike core.js.
+ * is why this file is a plain module unlike core.js.
  */
+
+import type { PublicSession, Session } from "./types";
 
 /**
  * How early an access token counts as spent.
@@ -19,12 +21,19 @@
  * a request that leaves valid can still arrive expired, and the reply would be
  * a 401 for no reason a user could act on. The last minute is treated as gone.
  */
-const REFRESH_SKEW_MS = 60_000;
+export const REFRESH_SKEW_MS = 60_000;
 
 /** Empty strings are as useless as missing ones, and JWTs are always strings. */
-function text(value) {
+function text(value: unknown): string | null {
   return typeof value === "string" && value ? value : null;
 }
+
+/** Anything parsed from a reply or a file: known to be an object, no more. */
+type Unknowns = Record<string, unknown>;
+
+/** Is this an object we can read fields off, rather than null or a scalar? */
+const fields = (value: unknown): Unknowns | null =>
+  value && typeof value === "object" ? (value as Unknowns) : null;
 
 /**
  * A token endpoint's reply -> the session we keep. Null if it is not one.
@@ -35,35 +44,42 @@ function text(value) {
  * from `expires_in` keeps both sides of those comparisons on one clock, so a
  * device whose clock is off renews on time instead of never or constantly.
  */
-function sessionFromToken(body, receivedAt) {
-  if (!body || typeof body !== "object") return null;
-  const accessToken = text(body.access_token);
-  const refreshToken = text(body.refresh_token);
+export function sessionFromToken(
+  body: unknown,
+  receivedAt: number,
+): Session | null {
+  const reply = fields(body);
+  if (!reply) return null;
+  const accessToken = text(reply.access_token);
+  const refreshToken = text(reply.refresh_token);
   // Both or neither. An access token with no refresh token is an hour of app
   // that logs itself out, which is worse than never having logged in.
   if (!accessToken || !refreshToken) return null;
 
-  const seconds = Number(body.expires_in);
+  const seconds = Number(reply.expires_in);
   const lifetime = Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : 0;
-  const user = body.user && typeof body.user === "object" ? body.user : {};
+  const user = fields(reply.user) ?? {};
 
   return {
     accessToken,
     refreshToken,
     expiresAt: receivedAt + lifetime,
+    // A reply with no user is still a session -- the tokens are what the app
+    // runs on -- so this stays null rather than being refused or blanked.
     userId: text(user.id),
     email: text(user.email),
   };
 }
 
 /** A decrypted auth.json -> the session it stood for. Null if it is not one. */
-function sessionFromStored(parsed) {
-  if (!parsed || typeof parsed !== "object") return null;
-  const accessToken = text(parsed.accessToken);
-  const refreshToken = text(parsed.refreshToken);
+export function sessionFromStored(parsed: unknown): Session | null {
+  const stored = fields(parsed);
+  if (!stored) return null;
+  const accessToken = text(stored.accessToken);
+  const refreshToken = text(stored.refreshToken);
   if (!refreshToken) return null;
 
-  const expiresAt = Number(parsed.expiresAt);
+  const expiresAt = Number(stored.expiresAt);
   return {
     // A file old enough to have lost its access token is still worth keeping:
     // the refresh token is what actually holds the login, and an expiry of 0
@@ -71,13 +87,17 @@ function sessionFromStored(parsed) {
     accessToken: accessToken || "",
     refreshToken,
     expiresAt: Number.isFinite(expiresAt) ? expiresAt : 0,
-    userId: text(parsed.userId),
-    email: text(parsed.email),
+    userId: text(stored.userId),
+    email: text(stored.email),
   };
 }
 
 /** Is this session too old to send? Missing and unparseable both count as yes. */
-function needsRefresh(session, now, skew = REFRESH_SKEW_MS) {
+export function needsRefresh(
+  session: Session | null | undefined,
+  now: number,
+  skew: number = REFRESH_SKEW_MS,
+): boolean {
   if (!session || !text(session.accessToken)) return true;
   // Written as a negated `>` so a NaN deadline answers yes rather than no.
   return !(session.expiresAt - skew > now);
@@ -90,15 +110,9 @@ function needsRefresh(session, now, skew = REFRESH_SKEW_MS) {
  * to the session later has to be listed here to escape, instead of escaping
  * because nobody remembered to exclude it.
  */
-function publicSession(session) {
+export function publicSession(
+  session: Session | null | undefined,
+): PublicSession | null {
   if (!session) return null;
   return { email: session.email || null, userId: session.userId || null };
 }
-
-module.exports = {
-  REFRESH_SKEW_MS,
-  sessionFromToken,
-  sessionFromStored,
-  needsRefresh,
-  publicSession,
-};

@@ -7,13 +7,38 @@
  * HTTP, the tokens and the retries live in main/ and are boring by comparison.
  *
  * Required of main/ and the tests only -- never loaded by the renderer, which
- * is why this file may be plain CommonJS unlike core.js.
+ * is why this file is a plain module unlike core.js.
  */
 
-const { normalizeTasks } = require("./core");
+import { normalizeTasks } from "./core";
+import type { Task } from "./types";
+
+/**
+ * A task as the server stores it: snake_case columns, and `user_id` on every
+ * one because RLS matches on it.
+ *
+ * Loose on purpose -- FIELDS below is the real spec of which columns exist, and
+ * naming them twice would let the two drift. What the type is here to say is
+ * that the column names are strings and the values are JSON, not that a row is
+ * a Task; `server_seq` is the clearest case, since the server stamps it and
+ * ignores anything a client sends.
+ */
+export interface Row {
+  user_id: string;
+  id: string;
+  [column: string]: string | number | null | undefined;
+}
+
+/**
+ * A task on its way to or from the server: every field optional, because a row
+ * written by another device -- possibly an older build -- has not been checked
+ * by anything yet. mergeIncoming normalizes before handing it on, and that is
+ * the moment it becomes a Task.
+ */
+export type LooseTask = Partial<Task> & { id: string };
 
 /** Column names, in the order the row object is built. JS is camel, SQL snake. */
-const FIELDS = [
+const FIELDS: ReadonlyArray<readonly [keyof Task, string]> = [
   ["text", "text"],
   ["quadrant", "quadrant"],
   ["space", "space"],
@@ -28,16 +53,17 @@ const FIELDS = [
 ];
 
 /** A missing or unparseable stamp sorts before every real one. */
-function stamp(value) {
+export function stamp(value: unknown): number {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
 }
 
 /** Task -> the row shape the server stores. `userId` is the caller's own. */
-function toRow(task, userId) {
-  const row = { user_id: userId, id: String(task.id) };
+export function toRow(task: LooseTask, userId: string): Row {
+  const row: Row = { user_id: userId, id: String(task.id) };
   for (const [key, column] of FIELDS) {
-    row[column] = task[key] === undefined ? null : task[key];
+    const value = task[key];
+    row[column] = value === undefined ? null : (value as Row[string]);
   }
   // updated_at is the one column the table refuses to take a null for, and its
   // DEFAULT cannot save us: Postgres only applies a default when the column is
@@ -52,10 +78,11 @@ function toRow(task, userId) {
 }
 
 /** The row shape the server stores -> a task the rest of the app understands. */
-function fromRow(row) {
-  const task = { id: String(row.id) };
+export function fromRow(row: Row): LooseTask {
+  const task = { id: String(row.id) } as LooseTask;
   for (const [key, column] of FIELDS) {
-    task[key] = row[column] === undefined ? null : row[column];
+    const value = row[column];
+    (task as Record<string, unknown>)[key] = value === undefined ? null : value;
   }
   return task;
 }
@@ -69,7 +96,7 @@ function fromRow(row) {
  * hold different rows forever and neither would ever hear otherwise. One side
  * has to yield, and the server is the only side both devices can see.
  */
-function remoteWins(local, remote) {
+export function remoteWins(local: LooseTask, remote: LooseTask): boolean {
   return !(stamp(local.updatedAt) > stamp(remote.updatedAt));
 }
 
@@ -88,10 +115,15 @@ function remoteWins(local, remote) {
  * check belongs here rather than in a caller, because a caller that forgets is
  * exactly how such a row would arrive.
  */
-function mergeIncoming(tasks, rows) {
-  const byId = new Map((tasks || []).map((t) => [String(t.id), t]));
-  const applied = [];
-  const kept = [];
+export function mergeIncoming(
+  tasks: LooseTask[] | null | undefined,
+  rows: Row[] | null | undefined,
+): { tasks: Task[]; applied: string[]; kept: string[] } {
+  const byId = new Map<string, LooseTask>(
+    (tasks || []).map((t) => [String(t.id), t]),
+  );
+  const applied: string[] = [];
+  const kept: string[] = [];
 
   for (const row of rows || []) {
     const remote = fromRow(row);
@@ -116,7 +148,10 @@ function mergeIncoming(tasks, rows) {
  * row or two get re-sent, which the server drops on its own -- an equal
  * updated_at loses there.
  */
-function pendingChanges(tasks, since) {
+export function pendingChanges(
+  tasks: LooseTask[] | null | undefined,
+  since: unknown,
+): LooseTask[] {
   const from = stamp(since);
   return (tasks || []).filter((t) => stamp(t.updatedAt) >= from);
 }
@@ -129,13 +164,19 @@ function pendingChanges(tasks, since) {
  * would read "1개 대기" forever after every successful sync. Same idea, two
  * different jobs -- one decides what to send, this one decides what to say.
  */
-function unsentChanges(tasks, since) {
+export function unsentChanges(
+  tasks: LooseTask[] | null | undefined,
+  since: unknown,
+): LooseTask[] {
   const from = stamp(since);
   return (tasks || []).filter((t) => stamp(t.updatedAt) > from);
 }
 
 /** How far `pendingChanges` may be advanced once those rows are accepted. */
-function pushedThrough(pending, since) {
+export function pushedThrough(
+  pending: LooseTask[] | null | undefined,
+  since: unknown,
+): number {
   return (pending || []).reduce(
     (max, t) => Math.max(max, stamp(t.updatedAt)),
     stamp(since),
@@ -149,7 +190,10 @@ function pushedThrough(pending, since) {
  * with -- a page that arrives empty or out of order must not rewind the client
  * and make it replay everything.
  */
-function nextCursor(rows, cursor) {
+export function nextCursor(
+  rows: Row[] | null | undefined,
+  cursor: unknown,
+): number {
   return (rows || []).reduce(
     (max, row) => Math.max(max, stamp(row.server_seq)),
     stamp(cursor),
@@ -157,7 +201,7 @@ function nextCursor(rows, cursor) {
 }
 
 /** How many rows one pull may ask for. Also what "the page was full" means. */
-const PAGE_SIZE = 500;
+export const PAGE_SIZE = 500;
 
 /**
  * Is there more waiting behind this page?
@@ -169,7 +213,10 @@ const PAGE_SIZE = 500;
  *
  * A full last page costs one extra empty request. That is the right way round.
  */
-function hasMore(rows, limit = PAGE_SIZE) {
+export function hasMore(
+  rows: unknown[] | null | undefined,
+  limit: number = PAGE_SIZE,
+): boolean {
   return (rows || []).length >= limit;
 }
 
@@ -185,7 +232,7 @@ function hasMore(rows, limit = PAGE_SIZE) {
  * the response spent on the wire. Neither matters: this correction exists to
  * catch a clock that is minutes or hours out, not milliseconds.
  */
-const CLOCK_TOLERANCE_MS = 2000;
+export const CLOCK_TOLERANCE_MS = 2000;
 
 /**
  * Server time minus ours, read off a response's Date header.
@@ -197,7 +244,10 @@ const CLOCK_TOLERANCE_MS = 2000;
  * would throw that away and start stamping with its own wrong clock again.
  * nextOffset() already refuses a sample it cannot read.
  */
-function clockOffset(dateHeader, receivedAt) {
+export function clockOffset(
+  dateHeader: string | null | undefined,
+  receivedAt: number,
+): number {
   if (!dateHeader) return NaN;
   const server = Date.parse(dateHeader);
   if (!Number.isFinite(server)) return NaN;
@@ -211,26 +261,14 @@ function clockOffset(dateHeader, receivedAt) {
  * so an offset that jitters by a few hundred milliseconds every request would
  * make the order of two edits depend on which reply happened to arrive first.
  */
-function nextOffset(current, sample, tolerance = CLOCK_TOLERANCE_MS) {
+export function nextOffset(
+  current: number,
+  sample: number,
+  tolerance: number = CLOCK_TOLERANCE_MS,
+): number {
   const now = Number.isFinite(current) ? current : 0;
   if (!Number.isFinite(sample)) return now;
   return Math.abs(sample - now) >= tolerance ? sample : now;
 }
 
-module.exports = {
-  CLOCK_TOLERANCE_MS,
-  FIELDS,
-  PAGE_SIZE,
-  stamp,
-  toRow,
-  fromRow,
-  remoteWins,
-  mergeIncoming,
-  pendingChanges,
-  unsentChanges,
-  pushedThrough,
-  nextCursor,
-  hasMore,
-  clockOffset,
-  nextOffset,
-};
+export { FIELDS };

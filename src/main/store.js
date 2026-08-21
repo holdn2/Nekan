@@ -14,7 +14,7 @@ const fs = require("fs");
 const path = require("path");
 const { app } = require("electron");
 
-const { loadStore, writeStore } = require("../shared/store-io");
+const { loadStore, writeStore } = require("./store-io");
 const { dropExpiredTombstones } = require("../shared/core");
 const { stamp } = require("../shared/sync");
 

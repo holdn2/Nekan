@@ -1,0 +1,38 @@
+{
+  // Shared by every config below. The three that emit differ only in module
+  // format and in which globals they are allowed to see; everything that is a
+  // property of the language rather than of a target lives here.
+  "compilerOptions": {
+    // Electron 43 is Chromium 150 and Node 22. Nothing here has to run
+    // anywhere older, so nothing is down-levelled.
+    "target": "ES2022",
+    "lib": ["ES2022"],
+
+    // The migration runs file by file, so `src` is a mix of .ts and .js for as
+    // long as it takes. allowJs carries the ones not converted yet through to
+    // `out` untouched, which is what keeps `out` a complete, runnable app at
+    // every commit rather than only at the end.
+    "allowJs": true,
+    "checkJs": false,
+
+    "rootDir": "src",
+    "outDir": "out",
+
+    // The comments in this codebase carry the reasons. Stripping them from the
+    // build would mean the thing that actually runs is the one nobody can read.
+    // Off here and on in tsconfig.shared.json. The risk in this migration is
+    // not the renaming -- it is the edits made to satisfy the compiler, in
+    // 6,159 lines of main and renderer code that no test covers. src/shared/
+    // is the opposite: 159 tests sit on exactly those files, so it is checked
+    // strictly from the first day and the rest is tightened later, per
+    // directory, once there is something to catch a regression.
+    "strict": false,
+
+    "removeComments": false,
+    "newLine": "lf",
+
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true
+  }
+}

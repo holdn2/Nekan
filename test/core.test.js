@@ -42,14 +42,14 @@ const {
   clampMemoPanel,
   expandOrigin,
   collapseOrigin,
-} = require("../src/shared/core");
+} = require("../out/shared/core");
 
 /** A 1920x1080 display starting at the origin, minus nothing. */
 const SCREEN = { x: 0, y: 0, width: 1920, height: 1080 };
 const BAR = { width: 600, height: 48 };
 const WIN = { width: 1000, height: 700 };
 
-const { initI18n, setMainLanguage, t } = require("../src/main/i18n");
+const { initI18n, setMainLanguage, t } = require("../out/main/i18n");
 
 /** Local 'YYYY-MM-DD' for a day offset from a base day, the way the UI writes it. */
 function dayString(offset, base) {

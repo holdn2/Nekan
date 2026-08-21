@@ -9,7 +9,14 @@
  */
 
 /** Every language with a catalogue. The order is what a picker should show. */
-const SUPPORTED = ["ko", "en"];
+export const SUPPORTED = ["ko", "en"] as const;
+
+/** One of the languages that has a catalogue. */
+export type Language = (typeof SUPPORTED)[number];
+
+/** True for a string this app can actually serve. Narrows, which is the point. */
+const isSupported = (tag: string): tag is Language =>
+  (SUPPORTED as readonly string[]).includes(tag);
 
 /**
  * What to fall back to.
@@ -20,7 +27,7 @@ const SUPPORTED = ["ko", "en"];
  * otherwise open a widget written in a script they cannot read and have to find
  * the settings panel by shape.
  */
-const FALLBACK = "en";
+export const FALLBACK: Language = "en";
 
 /**
  * The language to open in, from an OS locale like "ko-KR" or "en-GB".
@@ -29,16 +36,14 @@ const FALLBACK = "en";
  * attached and there is no per-region catalogue, so "ko-KR" and a bare "ko"
  * have to land in the same place.
  */
-function pickLanguage(osLocale) {
+export function pickLanguage(osLocale: string | null | undefined): Language {
   const tag = String(osLocale || "")
     .toLowerCase()
     .split(/[-_]/)[0];
-  return SUPPORTED.includes(tag) ? tag : FALLBACK;
+  return isSupported(tag) ? tag : FALLBACK;
 }
 
 /** A stored `settings.language`, or null when it is not one we can serve. */
-function storedLanguage(value) {
-  return SUPPORTED.includes(value) ? value : null;
+export function storedLanguage(value: unknown): Language | null {
+  return typeof value === "string" && isSupported(value) ? value : null;
 }
-
-module.exports = { SUPPORTED, FALLBACK, pickLanguage, storedLanguage };

@@ -1,0 +1,26 @@
+{
+  // Not a build -- a rule, enforced.
+  //
+  // src/shared/ is read by three consumers now and four when the mobile client
+  // lands: the main process requires it, the renderer loads core.ts as a
+  // classic <script>, the tests require it, and Metro will read the .ts source
+  // directly. A file in here that reaches for `fs` or for `document` breaks one
+  // of them, and until now the only thing stopping that was a paragraph in
+  // CLAUDE.md that a person had to remember.
+  //
+  // With no `types` and no DOM lib, reaching for either stops compiling.
+  //
+  // core.js is still plain JavaScript and so is only carried through, not
+  // checked -- it is the one file the renderer loads as a classic <script>, and
+  // it converts together with the removal of core-bridge.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "module": "node16",
+    "moduleResolution": "node16",
+    "types": [],
+    "lib": ["ES2022"]
+  },
+  "include": ["src/shared/**/*"]
+}

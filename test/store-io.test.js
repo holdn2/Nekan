@@ -4,12 +4,8 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 
-const {
-  defaultStore,
-  loadStore,
-  writeStore,
-} = require("../src/shared/store-io");
-const { DEFAULT_SPACE } = require("../src/shared/core");
+const { defaultStore, loadStore, writeStore } = require("../out/main/store-io");
+const { DEFAULT_SPACE } = require("../out/shared/core");
 
 function tmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "em-store-"));

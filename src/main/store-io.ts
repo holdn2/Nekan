@@ -6,7 +6,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const { DEFAULT_LAYOUT, DEFAULT_SPACE } = require("./core");
+const { DEFAULT_LAYOUT, DEFAULT_SPACE } = require("../shared/core");
 
 /** A first-run store: no tasks, and the settings every reader assumes exist. */
 function defaultStore() {

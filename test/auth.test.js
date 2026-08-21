@@ -7,7 +7,7 @@ const {
   sessionFromStored,
   needsRefresh,
   publicSession,
-} = require("../src/shared/auth");
+} = require("../out/shared/auth");
 
 /** What Supabase's token endpoint actually answers, trimmed to what we read. */
 function reply(over = {}) {

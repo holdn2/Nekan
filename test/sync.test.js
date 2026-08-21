@@ -15,7 +15,7 @@ const {
   pushedThrough,
   nextCursor,
   hasMore,
-} = require("../src/shared/sync");
+} = require("../out/shared/sync");
 
 function task(over = {}) {
   return {

@@ -7,9 +7,9 @@ const {
   toHtml,
   defaultFileName,
   isoDay,
-} = require("../src/shared/export");
-const { initI18n, setMainLanguage, t } = require("../src/main/i18n");
-const { orderKeyBetween } = require("../src/shared/core");
+} = require("../out/shared/export");
+const { initI18n, setMainLanguage, t } = require("../out/main/i18n");
+const { orderKeyBetween } = require("../out/shared/core");
 
 const NOW = new Date(2026, 7, 2, 14, 30); // 2026-08-02 14:30, local
 
