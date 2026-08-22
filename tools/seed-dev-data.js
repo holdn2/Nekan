@@ -28,7 +28,9 @@
 const fs = require("fs");
 const path = require("path");
 
-const { normalizeTasks, DEFAULT_LAYOUT } = require("../src/shared/core");
+// The build output, not the source: src/shared/ is TypeScript now. Run
+// `npm run build` first -- every npm script that matters already does.
+const { normalizeTasks, DEFAULT_LAYOUT } = require("../out/shared/core");
 
 const DEFAULTS = {
   quad: 500, // per quadrant, so four times this in the matrix
