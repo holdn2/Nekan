@@ -185,6 +185,10 @@ export function wireMemo() {
   const input = $<HTMLTextAreaElement>("#memoInput");
   input.addEventListener("input", syncMemoSave);
   input.addEventListener("keydown", (e) => {
+    // Same reason as inline-edit: an Escape that cancels an IME composition
+    // must not also close the memo. Ctrl+Enter is safe either way, but the
+    // guard is the whole handler's, not one branch's.
+    if (e.isComposing) return;
     if (e.key === "Escape") {
       e.preventDefault();
       cancelMemoEdit();

@@ -615,6 +615,17 @@ npx electron . --user-data-dir=<B> --remote-debugging-port=9334
 `main/window.ts`의 상수를 고친 뒤 리로드해서 재면 **옛 값이 계속 나온다** — 2026-08-19에
 `BAR.width`를 684로 바꾸고도 660이 나와서 한참 헤맸다. 메인을 건드렸으면 **앱을 다시 띄울 것.**
 
+**IME 경로는 한글로 눌러봐야만 보인다.** 조합 중의 `keydown`은 `isComposing: true`를 달고
+오는데(2026-08-22 실측), 그걸 안 보면 **조합을 확정하는 Enter가 편집도 함께 끝내고 조합을
+취소하는 Escape가 편집도 취소한다.** 영어로 누르면 조합이 없어서 검증을 그냥 통과한다 —
+인라인 편집과 메모 textarea가 실제로 그랬다. 진짜 조합은 CDP로 만들 수 있다:
+`Input.imeSetComposition`에 `ㅎ` → `하` → `한`을 차례로 보내면 값이 실제로 조합되고,
+이어서 `Input.dispatchKeyEvent`로 보낸 키가 `isComposing`을 달고 도착한다.
+**`Page.bringToFront`를 먼저 보내지 않으면 포커스가 입력란에 없어서 조합이 아예 안 들어가고**,
+그러면 "가드가 안 먹는다"로 잘못 읽는다(빈 `keydown` 목록이 그 신호다).
+텍스트를 받는 곳을 새로 만들면 `e.isComposing`을 핸들러 맨 앞에서 볼 것 — 폼의 `submit`은
+브라우저가 조합 중 Enter를 삼켜서 이 문제가 없다.
+
 **CDP 입력이 안 먹는 것처럼 보이면 먼저 무엇이 덮고 있는지 본다.** `Input.dispatchMouseEvent`가
 무시되는 줄 알고 OS 마우스(`SendInput`)로 갈아타 좌표 보정에 오래 썼는데, 실제로는 **첫 실행
 카드가 이벤트를 받고 있었다.** 카드를 넘기니 CDP로 바로 됐다. 확인법은 `document`에

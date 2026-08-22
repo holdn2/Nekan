@@ -51,6 +51,12 @@ export function startEdit(li, textEl, task) {
   };
 
   const onKey = (e) => {
+    // An IME is mid-word. The Enter that commits a Korean syllable and the
+    // Escape that abandons one are delivered here first, and without this they
+    // would finish the edit instead -- one keystroke doing two jobs, the second
+    // of which nobody asked for. The composing keydown carries isComposing,
+    // because compositionend only fires after it.
+    if (e.isComposing) return;
     if (e.key === "Enter") {
       e.preventDefault();
       finish(true);
