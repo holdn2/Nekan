@@ -33,11 +33,11 @@ function jsSpecifiersAreTypeScript(): Plugin {
       if (!importer || !source.startsWith(".") || !source.endsWith(".js")) {
         return null;
       }
-      const candidate = resolve(dirname(importer), source).replace(
-        /\.js$/,
-        ".ts",
+      const stem = resolve(dirname(importer), source).replace(/\.js$/, "");
+      const candidate = [`${stem}.ts`, `${stem}.tsx`].find((f) =>
+        existsSync(f),
       );
-      if (!existsSync(candidate)) return null;
+      if (!candidate) return null;
       return this.resolve(candidate, importer, { ...options, skipSelf: true });
     },
   };

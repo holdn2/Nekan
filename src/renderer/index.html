@@ -1232,17 +1232,7 @@
 
     <!-- Save confirmations and errors. Floats over everything so it never
          changes the layout the memo panel and the inbox are accounting for. -->
-    <div class="toast hidden" id="toast" role="status" aria-live="polite">
-      <span class="toast-text" id="toastText"></span>
-      <button
-        class="toast-act hidden"
-        id="toastAct"
-        type="button"
-        data-i18n="export.openFolder"
-      >
-        Open the folder
-      </button>
-    </div>
+    <div id="toastRoot"></div>
 
     <!-- One entry point. src/shared/ is compiled to ES modules, so the page
          imports it the same way the module graph imports everything else and
