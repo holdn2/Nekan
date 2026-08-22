@@ -6,86 +6,21 @@
  * shrinks to fit. Nothing here talks to main -- opening a note does not move
  * the window.
  *
- * Selection lives here too, because "which task is selected" only ever means
- * "whose memo is open".
+ * Which task is selected lives in selection.js, not here: the matrix and the
+ * title bar both need to know, and neither of them wants this panel.
  */
 
-import { INBOX, clampMemo } from "../../shared/core.js";
+import { clampMemo } from "../../shared/core.js";
 import { $ } from "../dom.js";
 import { t } from "../i18n.js";
-import { findTask, inSpace, setMemo } from "../store.js";
+import { setMemo } from "../store.js";
+import {
+  isMemoEditing,
+  selectedTask,
+  setMemoEditing,
+  setSelected,
+} from "../selection.js";
 import { notify } from "../render-bus.js";
-
-let selectedId = null;
-/** Whether the textarea is up. A task with no memo yet always starts there. */
-let memoEditing = false;
-/** Long enough for the second click of a double-click to arrive first. */
-const CLICK_DELAY = 220;
-let clickTimer = null;
-
-/** Does this row get the selected styling? */
-export const isSelected = (id) => id === selectedId;
-
-/**
- * Click selects for the memo panel, double-click edits the text — so a single
- * click has to wait out the double-click window before it acts. Without the
- * wait, a double-click would toggle the selection twice and the window would
- * grow and shrink under the cursor.
- */
-export function wireRowSelection(li, textEl, task) {
-  li.addEventListener("click", (e) => {
-    if (e.detail > 1) return;
-    if (e.target.closest("button, .duebox")) return;
-    if (textEl.isContentEditable) return;
-    clearTimeout(clickTimer);
-    clickTimer = setTimeout(
-      () => setSelected(isSelected(task.id) ? null : task.id),
-      CLICK_DELAY,
-    );
-  });
-  li.addEventListener("dblclick", () => clearTimeout(clickTimer));
-}
-
-/**
- * The selected task, or null once it has left the matrix on screen. Being
- * dragged up to the inbox counts as leaving (those rows have no memo), and so
- * does switching to the other board — in both cases the panel closes itself
- * rather than pointing at something the list no longer shows.
- */
-export function selectedTask() {
-  if (!selectedId) return null;
-  const task = findTask(selectedId);
-  if (!task || task.purgedAt || task.completedAt || task.deletedAt) return null;
-  // The INBOX test cannot be folded into inSpace(): an inbox row has
-  // `space: null`, which inSpace() passes on purpose so the staging list is
-  // shared by both boards. Dropping it here would leave the panel open on a row
-  // that has no memo to show.
-  if (task.quadrant === INBOX || !inSpace(task)) return null;
-  return task;
-}
-
-export function setSelected(id) {
-  if (id === selectedId) return;
-  selectedId = id;
-  memoEditing = false;
-  notify();
-}
-
-/**
- * Completing, trashing or purging the selected task takes the panel with it.
- * Called at the top of every render, before anything is drawn from it.
- */
-export function dropStaleSelection() {
-  if (!selectedId || selectedTask()) return;
-  selectedId = null;
-  memoEditing = false;
-}
-
-/** Forget the selection without drawing: the bar has no panel to show it in. */
-export function clearSelectionSilently() {
-  selectedId = null;
-  memoEditing = false;
-}
 
 /**
  * Rule for the save button: a new memo needs text, an edit needs text *and* a
@@ -122,7 +57,7 @@ export function renderMemo() {
   panel.classList.remove("hidden");
 
   const memo = task.memo || "";
-  const editing = memoEditing || !memo;
+  const editing = isMemoEditing() || !memo;
 
   $("#memoTitle").textContent = task.text;
   $("#memoTitle").title = task.text;
@@ -156,7 +91,7 @@ function saveMemo() {
   const task = selectedTask();
   const { value, canSave } = memoSaveState();
   if (!task || !canSave) return;
-  memoEditing = false;
+  setMemoEditing(false);
   setMemo(task.id, value);
 }
 
@@ -167,8 +102,7 @@ function cancelMemoEdit() {
     setSelected(null);
     return;
   }
-  memoEditing = false;
-  renderMemo();
+  setMemoEditing(false);
 }
 
 /** Drop the memo but keep the task. Confirmed, because there is no undo. */
@@ -176,7 +110,7 @@ function deleteMemo() {
   const task = selectedTask();
   if (!task || !task.memo) return;
   if (!window.confirm(t("memo.confirmDelete"))) return;
-  memoEditing = false;
+  setMemoEditing(false);
   setMemo(task.id, null);
 }
 
@@ -198,10 +132,7 @@ export function wireMemo() {
     }
   });
 
-  $("#memoText").addEventListener("dblclick", () => {
-    memoEditing = true;
-    renderMemo();
-  });
+  $("#memoText").addEventListener("dblclick", () => setMemoEditing(true));
 
   $("#memoSave").addEventListener("click", saveMemo);
   $("#memoCancel").addEventListener("click", cancelMemoEdit);

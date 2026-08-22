@@ -27,7 +27,7 @@ import {
 } from "../store.js";
 import { resetArchivePaging } from "../views/archive.js";
 import { applyInboxOpen } from "../views/inbox.js";
-import { clearSelectionSilently, setSelected } from "../views/memo.js";
+import { clearSelectionSilently, setSelected } from "../selection.js";
 
 let mode = "expanded";
 let activeTab = "matrix";

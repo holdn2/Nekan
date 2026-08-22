@@ -34,6 +34,10 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
     i18n.ts        렌더러 쪽 i18next. t · tNodes · applyStaticStrings · setLanguage
     store.ts       tasks 배열과 모든 변경. DOM을 모른다 → commit()이 저장+notify
     render-bus.ts  "다시 그려라" 신호 하나. store·view → app 순환을 막는 장치
+                   횟수도 센다 — React가 비교할 스냅샷이 그 숫자다
+    selection.ts   어느 task의 메모를 보고 있나. 매트릭스·타이틀바가 뷰를 import하지
+                   않고 이걸 본다
+    react/         React 쪽 배관. use-store.ts가 render-bus를 구독하는 훅 하나
     dom.ts         $ · $$ · target · numEl · actionBtn · labelBtn
     window-api.d.ts  window.api를 preload의 `typeof api`에서 받아 전역으로 선언
     components/    icons · due-chip · memo-mark · toast (task를 모르는 조각들)

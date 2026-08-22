@@ -23,7 +23,7 @@ import {
   deleteTask,
   setDue,
 } from "../store.js";
-import { isSelected, wireRowSelection } from "./memo.js";
+import { isSelected, wireRowSelection } from "../selection.js";
 import { startEdit } from "./inline-edit.js";
 
 /** Matches the row's fade-out in styles.css, so the change lands unseen. */

@@ -39,7 +39,8 @@ import {
   setDevLogin,
   wireAccount,
 } from "./views/account.js";
-import { dropStaleSelection, renderMemo, wireMemo } from "./views/memo.js";
+import { renderMemo, wireMemo } from "./views/memo.js";
+import { dropStaleSelection } from "./selection.js";
 import { closeSettings, wireSettings } from "./views/settings.js";
 import {
   needsWelcome,
