@@ -17,7 +17,7 @@ import {
   normalizeTasks,
   startOfToday,
   startOfTomorrow,
-} from "./core-bridge.js";
+} from "../shared/core.js";
 import { acceptSynced, setClockOffset, setTasks } from "./store.js";
 import { subscribe } from "./render-bus.js";
 import { applyStaticStrings, currentLanguage, t } from "./i18n.js";

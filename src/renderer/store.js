@@ -25,7 +25,7 @@ import {
   orderKeyBetween,
   sanitizeSpace,
   spaceFor,
-} from "./core-bridge.js";
+} from "../shared/core.js";
 
 /** The whole renderer state that survives a restart. */
 let tasks = [];

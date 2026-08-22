@@ -12,7 +12,7 @@
  * back. See the same trap in views/account.js, where the sync line hit it first.
  */
 
-import { QUADS, isCrowded } from "../core-bridge.js";
+import { QUADS, isCrowded } from "../../shared/core.js";
 import { t } from "../i18n.js";
 import { $, $$, labelBtn } from "../dom.js";
 import { notify } from "../render-bus.js";

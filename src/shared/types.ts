@@ -45,6 +45,34 @@ export interface Task {
   purgedAt: number | null;
 }
 
+/** What the stylesheets colour a due chip by.a computed value, not a worded one. */
+export type DueState = "overdue" | "today" | "soon" | "far";
+
+/**
+ * Everything formatDue needs, and not one string.
+ *
+ * dueInfo() computes; formatDue() words it. They are apart because core has no
+ * catalogue -- it is handed `t` -- and because `state` is what the CSS colours
+ * by, which must not depend on the language on screen.
+ */
+export interface DueInfo {
+  date: Date;
+  days: number;
+  state: DueState;
+  otherYear: boolean;
+}
+
+/** Screen geometry, in the DIP the main process measures windows in. */
+export interface Point {
+  x: number;
+  y: number;
+}
+export interface Size {
+  width: number;
+  height: number;
+}
+export interface Rect extends Point, Size {}
+
 /** The two grid ratios and the two panel heights, as stored in settings. */
 export interface Layout {
   cols: number;

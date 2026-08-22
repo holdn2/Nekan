@@ -23,7 +23,7 @@ import {
   clampInbox,
   clampMemoPanel,
   sanitizeLayout,
-} from "../core-bridge.js";
+} from "../../shared/core.js";
 import { $ } from "../dom.js";
 
 /**

@@ -26,8 +26,8 @@ import {
   formatDue,
   normalizeTasks,
   sanitizeSpace,
-} from "./core";
-import type { Place, Space, Task } from "./types";
+} from "./core.js";
+import type { Place, Space, Task } from "./types.js";
 
 /**
  * The catalogue, as this file is allowed to see it.

@@ -10,7 +10,7 @@
  * "whose memo is open".
  */
 
-import { INBOX, clampMemo } from "../core-bridge.js";
+import { INBOX, clampMemo } from "../../shared/core.js";
 import { $ } from "../dom.js";
 import { t } from "../i18n.js";
 import { findTask, inSpace, setMemo } from "../store.js";

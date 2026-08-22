@@ -11,7 +11,7 @@
  */
 
 import { $ } from "../dom.js";
-import { needsStartupChoice } from "../core-bridge.js";
+import { needsStartupChoice } from "../../shared/core.js";
 import { activeCount } from "../store.js";
 import { t, tNodes, wireLanguageSelect } from "../i18n.js";
 

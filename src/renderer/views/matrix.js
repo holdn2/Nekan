@@ -9,7 +9,7 @@
  * quadrant — see rowsKey.
  */
 
-import { QUADS, isCrowded } from "../core-bridge.js";
+import { QUADS, isCrowded } from "../../shared/core.js";
 import { currentLanguage, t } from "../i18n.js";
 import { $, $$, numEl } from "../dom.js";
 import { dueChip } from "../components/due-chip.js";

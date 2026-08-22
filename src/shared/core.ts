@@ -10,18 +10,46 @@
  *     names freely — they just have to import them rather than read globals.
  */
 
-const QUADS = ["q1", "q2", "q3", "q4"];
+import type {
+  DueInfo,
+  DueState,
+  Layout,
+  Place,
+  Point,
+  Quadrant,
+  Rect,
+  Size,
+  Space,
+  Task,
+} from "./types.js";
+
+// Re-exported so a consumer needs one import, not two. core is where these
+// are produced; types.ts is only where they are written down.
+export type {
+  DueInfo,
+  DueState,
+  Layout,
+  Place,
+  Point,
+  Quadrant,
+  Rect,
+  Size,
+  Space,
+  Task,
+};
+
+export const QUADS: Quadrant[] = ["q1", "q2", "q3", "q4"];
 /**
  * The staging list above the matrix, where a task waits before it is classified.
  * It is a fifth value for `quadrant`, not a fifth quadrant: QUADS still drives
  * every 2×2 grid loop (renderMatrix, markEdge, the counts), so the inbox has to
  * be rendered on its own and cannot be folded into those.
  */
-const INBOX = "inbox";
+export const INBOX = "inbox" as const;
 /** Every place a task may legally sit. */
-const PLACES = [INBOX, ...QUADS];
+export const PLACES: Place[] = [INBOX, ...QUADS];
 /** Where a task with an unknown quadrant lands. */
-const FALLBACK_QUAD = "q4";
+export const FALLBACK_QUAD: Quadrant = "q4";
 
 /**
  * When a quadrant is holding more than the method it stands for can carry.
@@ -34,10 +62,10 @@ const FALLBACK_QUAD = "q4";
  * It marks and never blocks. Refusing a task sends it back into somebody's
  * head, which is the one thing 다 꺼내기 exists to prevent.
  */
-const CROWDED = { q1: 5 };
+export const CROWDED: Partial<Record<Place, number>> = { q1: 5 };
 
 /** True when `count` is past the point that quadrant stops meaning anything. */
-const isCrowded = (quadrant, count) =>
+export const isCrowded = (quadrant: Place, count: unknown) =>
   Number(count) > (CROWDED[quadrant] ?? Infinity);
 
 /**
@@ -49,12 +77,13 @@ const isCrowded = (quadrant, count) =>
  * sitting there has `space: null` and shows up on both boards. Classifying it
  * (dragging it down into a quadrant) is what gives it a space.
  */
-const SPACES = ["work", "life"];
+export const SPACES: Space[] = ["work", "life"];
 /** Where tasks saved before the split — and any unknown value — land. */
-const DEFAULT_SPACE = "work";
+export const DEFAULT_SPACE: Space = "work";
 
 /** Any unknown value — including undefined — reads as the default board. */
-const sanitizeSpace = (v) => (SPACES.includes(v) ? v : DEFAULT_SPACE);
+export const sanitizeSpace = (v: unknown): Space =>
+  SPACES.includes(v as Space) ? (v as Space) : DEFAULT_SPACE;
 
 /**
  * The space a task in `quadrant` should carry. Kept in one place because both
@@ -62,7 +91,7 @@ const sanitizeSpace = (v) => (SPACES.includes(v) ? v : DEFAULT_SPACE);
  * inbox is space-less; if they drift, a shared task starts showing on only one
  * board or a classified one on neither.
  */
-function spaceFor(quadrant, space) {
+export function spaceFor(quadrant: Place, space: unknown): Space | null {
   if (quadrant === INBOX) return null;
   return sanitizeSpace(space);
 }
@@ -76,18 +105,19 @@ function spaceFor(quadrant, space) {
  * main is the only side that can keep the window out of it in the first place —
  * by the time the renderer hears about the mode, it has already collapsed.
  */
-const needsStartupChoice = (choice) => choice !== "sync" && choice !== "local";
+export const needsStartupChoice = (choice: unknown) =>
+  choice !== "sync" && choice !== "local";
 
 /** Must match the add form's maxlength in index.html. */
-const MAX_TEXT = 200;
+export const MAX_TEXT = 200;
 /** Memos are free-form and multi-line, so they get a much looser cap. */
-const MAX_MEMO = 2000;
+export const MAX_MEMO = 2000;
 
-const DAY_MS = 86400000;
+export const DAY_MS = 86400000;
 
 /* ------------------------------------------------------------------ dates */
 
-function startOfToday(now = new Date()) {
+export function startOfToday(now = new Date()) {
   const d = new Date(now.getTime());
   d.setHours(0, 0, 0, 0);
   return d;
@@ -97,16 +127,17 @@ function startOfToday(now = new Date()) {
  * Next local midnight. Built by day arithmetic instead of `+ DAY_MS` so a DST
  * transition cannot put the rollover timer an hour off.
  */
-function startOfTomorrow(now = new Date()) {
+export function startOfTomorrow(now = new Date()) {
   const d = startOfToday(now);
   d.setDate(d.getDate() + 1);
   return d;
 }
 
 /** 'YYYY-MM-DD' → Date at local midnight, or null when unset/invalid. */
-function parseDue(value) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return null;
-  const [y, m, d] = value.split("-").map(Number);
+export function parseDue(value: unknown): Date | null {
+  const text = String(value ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
+  const [y, m, d] = text.split("-").map(Number);
   const date = new Date(y, m - 1, d);
   if (Number.isNaN(date.getTime())) return null;
   // Reject roll-overs like 2026-02-31 → Mar 3.
@@ -130,12 +161,17 @@ function parseDue(value) {
  * Time-dependent, so anything rendered from it has to be redrawn when the day
  * changes — see scheduleDayRollover in renderer/app.js.
  */
-function dueInfo(value, now = new Date()) {
+export function dueInfo(
+  value: unknown,
+  now: Date = new Date(),
+): DueInfo | null {
   const date = parseDue(value);
   if (!date) return null;
-  const days = Math.round((date - startOfToday(now)) / DAY_MS);
+  const days = Math.round(
+    (date.getTime() - startOfToday(now).getTime()) / DAY_MS,
+  );
 
-  let state = "far";
+  let state: DueState = "far";
   if (days < 0) state = "overdue";
   else if (days === 0) state = "today";
   else if (days <= 3) state = "soon";
@@ -165,7 +201,11 @@ function dueInfo(value, now = new Date()) {
  * `Intl`'s — a full Korean date formats as "8. 3. (월)", which is wider than the
  * chip and reads nothing like the "8/3" it has always shown.
  */
-function formatDue(info, t, locale) {
+export function formatDue(
+  info: DueInfo | null | undefined,
+  t: (key: string, vars?: Record<string, unknown>) => string,
+  locale: string,
+): { text: string; hint: string } | null {
   if (!info) return null;
   const { date, days, otherYear } = info;
 
@@ -187,7 +227,7 @@ function formatDue(info, t, locale) {
 /* ------------------------------------------------------------------ tasks */
 
 /** Trim and cut to the shared length cap; inline editing has no maxlength. */
-function clampText(text) {
+export function clampText(text: unknown): string {
   return String(text == null ? "" : text)
     .trim()
     .slice(0, MAX_TEXT);
@@ -197,7 +237,7 @@ function clampText(text) {
  * Same idea for memos, but blank means "no memo": the caller stores null so
  * `task.memo` is either a non-empty string or absent, never `''`.
  */
-function clampMemo(memo) {
+export function clampMemo(memo: unknown): string | null {
   const trimmed = String(memo == null ? "" : memo)
     .trim()
     .slice(0, MAX_MEMO);
@@ -211,10 +251,10 @@ function clampMemo(memo) {
  * and the batch is capped so a stray paste of a whole document cannot flood
  * the store.
  */
-const MAX_BULK_LINES = 100;
+export const MAX_BULK_LINES = 100;
 
 /** One pasted block → one task per surviving line. */
-function splitBulkText(raw) {
+export function splitBulkText(raw: unknown): string[] {
   return String(raw == null ? "" : raw)
     .split(/\r?\n/)
     .map((line) => clampText(line.replace(/^\s*(?:[-*•·]|\d{1,3}[.)])\s+/, "")))
@@ -263,7 +303,7 @@ const ORDER_BASE = ORDER_DIGITS.length;
  * is ever inserted before them, because they only exist as the tail of a key
  * that already sorts after everything.
  */
-function orderKeyAfter(a) {
+function orderKeyAfter(a: string): string {
   if (!a) return ORDER_DIGITS[Math.round(ORDER_BASE / 2)];
 
   // Walk past the digits with nothing left to give. Anything before the first
@@ -285,7 +325,7 @@ function orderKeyAfter(a) {
  * digit that differs; when those digits are neighbours there is no room at this
  * position, so it keeps `a`'s digit and goes one place deeper.
  */
-function orderMidpoint(a, b) {
+function orderMidpoint(a: string, b: string | null): string {
   // No `b` is not a midpoint at all — see orderKeyAfter for why the two cases
   // want different arithmetic.
   if (b === null) return orderKeyAfter(a);
@@ -322,7 +362,7 @@ function orderMidpoint(a, b) {
  * file or, later, from another device. A row carrying one is treated as having
  * no key at all, which is what makes normalizeTasks() replace it.
  */
-function isOrderKey(value) {
+export function isOrderKey(value: unknown): value is string {
   return (
     typeof value === "string" &&
     value !== "" &&
@@ -339,7 +379,10 @@ function isOrderKey(value) {
  * would make the midpoint meaningless, so the broken side is dropped rather
  * than thrown on: a bad key in the file must not stop a drag from completing.
  */
-function orderKeyBetween(before, after) {
+export function orderKeyBetween(
+  before?: string | null,
+  after?: string | null,
+): string {
   const a = isOrderKey(before) ? before : "";
   const b = isOrderKey(after) ? after : null;
   if (b !== null && a >= b) return orderMidpoint("", b);
@@ -347,7 +390,7 @@ function orderKeyBetween(before, after) {
 }
 
 /** Sort comparator for rows of one quadrant; ties break on id so it is total. */
-function compareOrder(a, b) {
+export function compareOrder(a: Partial<Task>, b: Partial<Task>): number {
   const ka = typeof a?.orderKey === "string" ? a.orderKey : "";
   const kb = typeof b?.orderKey === "string" ? b.orderKey : "";
   if (ka !== kb) return ka < kb ? -1 : 1;
@@ -358,11 +401,12 @@ function compareOrder(a, b) {
 }
 
 /** Keys only have to be unique within one quadrant of one board. */
-function orderGroupOf(task) {
+function orderGroupOf(task: Partial<Task>): string {
   return `${task.quadrant}\u0000${task.space === null ? "" : task.space}`;
 }
 
-const hasOrderKey = (t) => isOrderKey(t?.orderKey);
+const hasOrderKey = (t: Partial<Task> | null | undefined) =>
+  isOrderKey(t?.orderKey);
 
 /**
  * Give a key to every row saved before the field existed, in the array order
@@ -373,7 +417,7 @@ const hasOrderKey = (t) => isOrderKey(t?.orderKey);
  * could deliver one) fills only its gaps: each missing row is placed between
  * the previous key in its group and the next existing one.
  */
-function assignOrderKeys(list) {
+function assignOrderKeys(list: Task[]): Task[] {
   if (list.every(hasOrderKey)) return list;
 
   // The nearest existing key *after* each index, within the same group.
@@ -386,7 +430,7 @@ function assignOrderKeys(list) {
   }
 
   const previous = new Map();
-  list.forEach((task, i) => {
+  list.forEach((task: Task, i: number) => {
     const group = orderGroupOf(task);
     if (hasOrderKey(task)) {
       previous.set(group, task.orderKey);
@@ -410,17 +454,23 @@ function assignOrderKeys(list) {
  * pushes it back. The tombstone is what tells the other side "this is gone".
  * It can only be dropped for good once every device has certainly seen it.
  */
-const TOMBSTONE_TTL_MS = 90 * DAY_MS;
+export const TOMBSTONE_TTL_MS = 90 * DAY_MS;
 
 /**
  * Drop tombstones old enough that no device can still be carrying the row.
  * The only place a task really leaves the array — everything else is a flag.
  */
-function dropExpiredTombstones(list, now = Date.now()) {
+export function dropExpiredTombstones<T extends Partial<Task>>(
+  list: T[] | null | undefined,
+  now: number = Date.now(),
+): T[] {
   if (!Array.isArray(list)) return [];
   return list.filter(
     (t) =>
-      !(Number.isFinite(t?.purgedAt) && now - t.purgedAt > TOMBSTONE_TTL_MS),
+      !(
+        Number.isFinite(t?.purgedAt) &&
+        now - (t.purgedAt as number) > TOMBSTONE_TTL_MS
+      ),
   );
 }
 
@@ -434,7 +484,7 @@ function dropExpiredTombstones(list, now = Date.now()) {
  *
  * Never drops entries — that is dropExpiredTombstones()'s job alone.
  */
-function normalizeTasks(list) {
+export function normalizeTasks(list: unknown): Task[] {
   if (!Array.isArray(list)) return [];
   const normalized = list.map((t) => {
     const quadrant = PLACES.includes(t?.quadrant) ? t.quadrant : FALLBACK_QUAD;
@@ -470,12 +520,18 @@ function normalizeTasks(list) {
  * whatever the grid can give up, which only the renderer can work out. That is
  * why neither is clamped from above here.
  */
-const DEFAULT_LAYOUT = { cols: 0.5, rows: 0.5, inbox: null, memo: null };
-const MIN_RATIO = 0.15;
-const MAX_RATIO = 0.85;
+export const DEFAULT_LAYOUT: Layout = {
+  cols: 0.5,
+  rows: 0.5,
+  inbox: null,
+  memo: null,
+};
+export const MIN_RATIO = 0.15;
+export const MAX_RATIO = 0.85;
 
 /** Keep a quadrant from being dragged away to nothing. */
-const clampRatio = (v) => Math.min(MAX_RATIO, Math.max(MIN_RATIO, v));
+export const clampRatio = (v: number) =>
+  Math.min(MAX_RATIO, Math.max(MIN_RATIO, v));
 
 /**
  * Smallest a quadrant may be dragged to, in pixels, where the window can afford
@@ -483,22 +539,22 @@ const clampRatio = (v) => Math.min(MAX_RATIO, Math.max(MIN_RATIO, v));
  * renderer's grid `minmax()` floor have to be the same number — if they drift,
  * the drag stops at one size while the grid lays out at another.
  */
-const MIN_COL_PX = 180;
-const MIN_ROW_PX = 110;
+export const MIN_COL_PX = 180;
+export const MIN_ROW_PX = 110;
 
 /**
  * Smallest the dump's list may be dragged to: one row and its padding. Below
  * that the panel says nothing the folded header does not already say, and the
  * fold is the control for "I do not want this open".
  */
-const MIN_INBOX_PX = 56;
+export const MIN_INBOX_PX = 56;
 
 /**
  * Smallest the memo panel may be dragged to: its header and the first line of
  * the note. Below that the panel says nothing the row's memo mark does not
  * already say, and closing the note is the control for "not now".
  */
-const MIN_MEMO_PX = 96;
+export const MIN_MEMO_PX = 96;
 
 /**
  * How tall the memo panel may be, given the room there is for it.
@@ -507,7 +563,7 @@ const MIN_MEMO_PX = 96;
  * the panel's own height plus everything the matrix can give up, and only the
  * renderer knows what the grid is currently doing.
  */
-function clampMemoPanel(value, available) {
+export function clampMemoPanel(value: number, available: number): number {
   if (!Number.isFinite(value)) return MIN_MEMO_PX;
   return Math.max(
     MIN_MEMO_PX,
@@ -524,7 +580,7 @@ function clampMemoPanel(value, available) {
  * minimum to be had, the minimum still wins: the matrix has its own overflow
  * rules for that case, and a list of zero height would read as a broken panel.
  */
-function clampInbox(value, available) {
+export function clampInbox(value: number, available: number): number {
   if (!Number.isFinite(value)) return MIN_INBOX_PX;
   return Math.max(
     MIN_INBOX_PX,
@@ -541,7 +597,7 @@ function clampInbox(value, available) {
  * 1 - MIN_RATIO, and changing one of them in this file would then not reach the
  * drag at all.
  */
-function clampAxis(value, span, minPx) {
+export function clampAxis(value: number, span: number, minPx: number): number {
   if (!Number.isFinite(value)) return 0.5;
   const floor = span > 0 ? Math.min(minPx / span, 0.5) : MIN_RATIO;
   const low = Math.max(MIN_RATIO, floor);
@@ -556,7 +612,12 @@ function clampAxis(value, span, minPx) {
  * A window taller or wider than the display gets the near edge; there is no
  * placement that fits, and hanging off the far edge hides the title bar.
  */
-function clampSpan(start, length, min, span) {
+function clampSpan(
+  start: number,
+  length: number,
+  min: number,
+  span: number,
+): number {
   return Math.min(Math.max(start, min), Math.max(min, min + span - length));
 }
 
@@ -584,7 +645,7 @@ function clampSpan(start, length, min, span) {
  * `bar` is where the bar is *now*, never a remembered position — moving the
  * bar and then opening it has to open it where it was left.
  */
-function expandOrigin(bar, size, area) {
+export function expandOrigin(bar: Rect, size: Size, area: Rect): Point {
   const middleOfScreen = area.x + area.width / 2;
   const onTheRight = bar.x + bar.width / 2 > middleOfScreen;
   const x = onTheRight ? bar.x + bar.width - size.width : bar.x;
@@ -605,7 +666,7 @@ function expandOrigin(bar, size, area) {
  * back to exactly the bar position it came from. A window sitting in the middle
  * can shift once on its first fold, and is stable from then on.
  */
-function collapseOrigin(bounds, bar, area) {
+export function collapseOrigin(bounds: Rect, bar: Size, area: Rect): Point {
   const middleOfScreen = area.x + area.width / 2;
   const onTheRight = bounds.x + bounds.width / 2 > middleOfScreen;
   const x = onTheRight ? bounds.x + bounds.width - bar.width : bounds.x;
@@ -616,98 +677,34 @@ function collapseOrigin(bounds, bar, area) {
 }
 
 /** Ratios are always real numbers in the store; null/"" must not read as 0. */
-const asRatio = (v) => (typeof v === "number" && Number.isFinite(v) ? v : NaN);
+const asRatio = (v: unknown): number =>
+  typeof v === "number" && Number.isFinite(v) ? v : NaN;
 
 /** Keep only sane numbers; anything else falls back to an even split. */
-function sanitizeLayout(saved) {
+export function sanitizeLayout(saved: unknown): Layout {
+  const from = (saved ?? {}) as Record<string, unknown>;
   const next = { ...DEFAULT_LAYOUT };
-  const cols = asRatio(saved?.cols);
+  const cols = asRatio(from.cols);
   if (Number.isFinite(cols)) next.cols = clampRatio(cols);
 
   // Saves from the two-splitter layout gave each column its own row split;
   // the grid has a single shared one, so average them.
-  const rows = Number.isFinite(asRatio(saved?.rows))
-    ? asRatio(saved.rows)
-    : (asRatio(saved?.left) + asRatio(saved?.right)) / 2;
+  const rows = Number.isFinite(asRatio(from.rows))
+    ? asRatio(from.rows)
+    : (asRatio(from.left) + asRatio(from.right)) / 2;
   if (Number.isFinite(rows)) next.rows = clampRatio(rows);
 
   // Held loosely on purpose: the upper bound depends on the window, which this
   // file cannot see. Anything at or above the floor is kept and clamped again
   // when it is applied, so a saved height from a big monitor comes back intact
   // on a small one instead of being rounded away on the way in.
-  const inbox = asRatio(saved?.inbox);
+  const inbox = asRatio(from.inbox);
   next.inbox =
     Number.isFinite(inbox) && inbox >= MIN_INBOX_PX ? Math.round(inbox) : null;
 
   // Held loosely for the same reason as the dump: the ceiling is the window's.
-  const memo = asRatio(saved?.memo);
+  const memo = asRatio(from.memo);
   next.memo =
     Number.isFinite(memo) && memo >= MIN_MEMO_PX ? Math.round(memo) : null;
   return next;
-}
-
-/**
- * The one export list, handed to whichever loader is running us.
- *
- * The name matters: in the renderer this is a classic script, so a top-level
- * `const` lands in the global lexical scope, and a plain `api` would collide
- * with the `window.api` that preload.js exposes (a SyntaxError that kills the
- * whole file).
- *
- * `require` (main process, tests) gets it as module.exports. The renderer loads
- * this file as a classic <script>, where top-level `const` bindings are *not*
- * properties of window — so the module graph could not reach them. Publishing
- * the same object on window gives renderer/core-bridge.js something to
- * re-export as named imports.
- */
-const emCore = {
-  QUADS,
-  INBOX,
-  PLACES,
-  FALLBACK_QUAD,
-  CROWDED,
-  isCrowded,
-  SPACES,
-  DEFAULT_SPACE,
-  sanitizeSpace,
-  spaceFor,
-  needsStartupChoice,
-  MAX_TEXT,
-  MAX_MEMO,
-  MAX_BULK_LINES,
-  DAY_MS,
-  startOfToday,
-  startOfTomorrow,
-  parseDue,
-  dueInfo,
-  formatDue,
-  clampText,
-  clampMemo,
-  splitBulkText,
-  isOrderKey,
-  orderKeyBetween,
-  compareOrder,
-  TOMBSTONE_TTL_MS,
-  dropExpiredTombstones,
-  normalizeTasks,
-  DEFAULT_LAYOUT,
-  MIN_RATIO,
-  MAX_RATIO,
-  MIN_COL_PX,
-  MIN_ROW_PX,
-  MIN_INBOX_PX,
-  MIN_MEMO_PX,
-  clampInbox,
-  clampMemoPanel,
-  clampRatio,
-  clampAxis,
-  expandOrigin,
-  collapseOrigin,
-  sanitizeLayout,
-};
-
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = emCore;
-} else if (typeof window !== "undefined") {
-  window.EM_CORE = emCore;
 }

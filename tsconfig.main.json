@@ -16,5 +16,6 @@
     "src/preload.ts",
     "src/main/**/*",
     "src/shared/**/*"
-  ]
+  ],
+  "references": [{ "path": "./tsconfig.shared.json" }]
 }

@@ -8,7 +8,7 @@
  * chip and a PDF can never word one date two ways.
  */
 
-import { dueInfo, formatDue } from "../core-bridge.js";
+import { dueInfo, formatDue } from "../../shared/core.js";
 import { currentLanguage, t } from "../i18n.js";
 import { calendarIcon } from "./icons.js";
 

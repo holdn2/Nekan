@@ -12,7 +12,7 @@
  * is why this file is a plain module unlike core.js.
  */
 
-import type { PublicSession, Session } from "./types";
+import type { PublicSession, Session } from "./types.js";
 
 /**
  * How early an access token counts as spent.

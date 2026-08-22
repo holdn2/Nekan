@@ -11,7 +11,7 @@
  *     list would push the quadrants off the bottom of a small window.
  */
 
-import { INBOX, splitBulkText } from "../core-bridge.js";
+import { INBOX, splitBulkText } from "../../shared/core.js";
 import { $, numEl } from "../dom.js";
 import { closeIcon, plusIcon } from "../components/icons.js";
 import { t } from "../i18n.js";

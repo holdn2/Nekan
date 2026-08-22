@@ -10,8 +10,8 @@
  * is why this file is a plain module unlike core.js.
  */
 
-import { normalizeTasks } from "./core";
-import type { Task } from "./types";
+import { normalizeTasks } from "./core.js";
+import type { Task } from "./types.js";
 
 /**
  * A task as the server stores it: snake_case columns, and `user_id` on every

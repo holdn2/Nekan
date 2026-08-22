@@ -13,3 +13,6 @@ docs/discussions/
 # TypeScript build output. `out/` is the app that actually runs;
 # `src/` is what is written.
 out/
+
+# Compiler bookkeeping.
+*.tsbuildinfo
