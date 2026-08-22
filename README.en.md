@@ -110,8 +110,10 @@ all**.
 
 ```powershell
 npm install   # once
-npm start
-npm test      # unit tests for storage, normalisation and dates (optional)
+npm start           # builds, then opens the app
+npm test            # builds, then the unit tests (storage, normalisation, dates, sync)
+npm run build       # compile src/ into out/ and nothing else
+npm run build:watch # keep compiling while you edit
 ```
 
 **Building the installer**
@@ -199,7 +201,7 @@ Writes the current **brain dump plus four quadrants** as PDF, HTML or Markdown.
 - **Completed tasks and the trash are not included.** Only what is live right now.
 - The HTML references no external files, so it can be sent on as it is.
 - PDFs are always built with the **light palette** — printing a dark theme gives you a black sheet.
-- The document is built in the main process, not the renderer. Its shape lives in `src/shared/export.js` alone and has nothing to do with `src/renderer/styles/`.
+- The document is built in the main process, not the renderer. Its shape lives in `src/shared/export.ts` alone and has nothing to do with `src/renderer/styles/`.
 
 ### History tab · Trash tab
 
@@ -252,39 +254,40 @@ tools/make-icon.ps1    # icon generator
 tools/seed-dev-data.js # bulk dummy data (for performance checks)
 tools/check-release.js # inspects and repairs release drafts (called by the release script)
 tools/find-untranslated.js # counts the Korean still baked into the source
-src/
-  main.js              # app lifecycle and assembly
-  preload.js           # the contextBridge IPC bridge
+src/                   # what you write (TypeScript)
+  main.ts              # app lifecycle and assembly
+  preload.ts           # the contextBridge IPC bridge
   assets/icon.*        # icon copies used at runtime
   main/
-    store.js           # in-memory copy of data.json + debounced saving
-    window.js          # window creation, expanded/bar modes, note-panel height
-    export-service.js  # writing PDF / HTML / MD
-    updater.js         # checking GitHub Releases · background downloads
-    api-client.js      # the one place that talks to Supabase
-    token-store.js     # the session, encrypted into auth.json
-    sync.js            # the pull / push / retry loop
-    oauth.js           # the browser side of Google sign-in (PKCE + loopback)
-    i18n.js            # strings for the main process
-    ipc.js             # every ipcMain handler
-  shared/
-    core.js            # dates, normalisation, layout ratios, Work/Life rules (main, renderer and tests)
-    store-io.js        # reading and writing data.json (temp write + rename)
-    export.js          # building the export documents (Markdown / print HTML → PDF)
-    sync.js            # sync decisions (last-write-wins, row mapping, cursors, clock skew)
-    auth.js            # session shape and expiry
-    i18n/              # ko.json · en.json · GLOSSARY.md · locales.js
-  renderer/            # ES modules (no bundler)
+    store.ts           # in-memory copy of data.json + debounced saving
+    store-io.ts        # reading and writing data.json (temp write + rename)
+    window.ts          # window creation, expanded/bar modes
+    export-service.ts  # writing PDF / HTML / MD
+    updater.ts         # checking GitHub Releases · background downloads
+    api-client.ts      # the one place that talks to Supabase
+    token-store.ts     # the session, encrypted into auth.json
+    sync.ts            # the pull / push / retry loop
+    oauth.ts           # the browser side of Google sign-in (PKCE + loopback)
+    i18n.ts            # strings for the main process
+    ipc.ts             # every ipcMain handler
+  shared/              # main, renderer and tests. Uses neither Node nor the DOM
+    types.ts           # the vocabulary: Task, Place, Space, Layout, Session
+    core.ts            # dates, normalisation, layout ratios, Work/Life rules
+    export.ts          # building the export documents (Markdown / print HTML → PDF)
+    sync.ts            # sync decisions (last-write-wins, row mapping, cursors, clock skew)
+    auth.ts            # session shape and expiry
+    i18n/              # ko.json · en.json · GLOSSARY.md · locales.ts
+  renderer/            # ES modules (no bundler — imports keep their .js extension)
     index.html
-    app.js             # entry point: render dispatcher, shortcuts, init
-    store.js           # the task array and every change to it (knows nothing of the DOM)
-    render-bus.js      # the one "redraw" signal
-    core-bridge.js     # shared/core.js as named exports
-    i18n.js            # strings for the renderer
-    dom.js             # shared DOM helpers
+    app.ts             # entry point: render dispatcher, shortcuts, init
+    store.ts           # the task array and every change to it (knows nothing of the DOM)
+    render-bus.ts      # the one "redraw" signal
+    i18n.ts            # strings for the renderer
+    dom.ts             # shared DOM helpers
     components/        # icons, due chip, note marker, toast
     views/             # quadrants · brain dump · history/trash · note panel · account · settings · first run
     window/            # title bar and tabs · quadrant edges · drag and drop · export
     styles/            # 15 files by area (light/dark palettes in base.css, the shared toggle in switch.css)
-test/                  # node --test unit tests
+out/                   # built by `npm run build`. This is what actually runs
+test/                  # node --test unit tests (TypeScript)
 ```

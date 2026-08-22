@@ -14,6 +14,13 @@
  * where they are Korean and are not shipped to anybody. The catalogues are
  * skipped too, for the obvious reason.
  *
+ * `.ts` counts as well as `.js`. While src/ was being converted this tool went
+ * on reporting zero for files it had simply stopped looking at, which is the
+ * same failure it was written to catch -- a number that means "nothing found"
+ * and a number that means "nothing looked at" are not distinguishable here.
+ * After changing what it scans, plant a Korean string somewhere it should see
+ * and check the count moves before believing a zero.
+ *
  * Stylesheets are scanned as well, and that is not belt-and-braces: a CSS
  * `content:` string is a word on screen that no catalogue can reach. The
  * "Recommended" badge on the first-run card was exactly that, and this tool
@@ -54,7 +61,7 @@ function walk(dir, out = []) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       if (!SKIP.has(entry.name)) walk(full, out);
-    } else if (/\.(js|html|css)$/.test(entry.name)) {
+    } else if (/\.(js|ts|html|css)$/.test(entry.name)) {
       out.push(full);
     }
   }

@@ -1,0 +1,30 @@
+{
+  // The main process, the preload and everything in shared/ that main uses.
+  // CommonJS, because that is what Electron's main process and the sandboxed
+  // preload both load -- see the preload note in CLAUDE.md.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    // Declarations, so the renderer can name the preload bridge without
+    // pulling this project's files into its own program -- the same mechanism
+    // that lets both halves share src/shared/.
+    "composite": true,
+    "declaration": true,
+    "tsBuildInfoFile": "out/.tsbuildinfo-main",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+    "esModuleInterop": true
+  },
+  "include": [
+    "src/main.ts",
+    "src/preload.ts",
+    "src/main/**/*",
+    // The catalogues are named on their own because an include glob only picks
+    // up code, and composite wants every file in the program listed. src/shared
+    // itself is not here at all -- it is a referenced project, read from its
+    // declarations and emitted by nobody but itself.
+    "src/shared/i18n/ko.json",
+    "src/shared/i18n/en.json"
+  ],
+  "references": [{ "path": "./tsconfig.shared.json" }]
+}

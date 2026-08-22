@@ -1,0 +1,23 @@
+{
+  // The unit tests. CommonJS like the main process, because that is what
+  // `node --test` loads them as, and they require the same built modules main
+  // does -- out/shared/ is ES modules and require() reaches it the same way.
+  //
+  // A project of its own so it lands in out/test/ with a rootDir of its own.
+  // Folding it into the main project would put it under out/src/ and move
+  // every relative path in it.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "test",
+    "outDir": "out/test",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+    "esModuleInterop": true
+  },
+  "include": ["test/**/*"],
+  "references": [
+    { "path": "./tsconfig.shared.json" },
+    { "path": "./tsconfig.main.json" }
+  ]
+}

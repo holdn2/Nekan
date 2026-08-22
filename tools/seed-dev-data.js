@@ -28,7 +28,16 @@
 const fs = require("fs");
 const path = require("path");
 
-const { normalizeTasks, DEFAULT_LAYOUT } = require("../src/shared/core");
+// The build output, not the source: src/shared/ is TypeScript now. This is the
+// one tool run by hand rather than through an npm script, so it is also the one
+// that can meet a repo nobody has built yet -- and MODULE_NOT_FOUND on a path
+// with `out/` in it reads as a broken tool rather than a missing step.
+const shared = path.join(__dirname, "..", "out", "shared", "core.js");
+if (!fs.existsSync(shared)) {
+  console.error("out/ is missing. Run `npm run build` first.");
+  process.exit(1);
+}
+const { normalizeTasks, DEFAULT_LAYOUT } = require(shared);
 
 const DEFAULTS = {
   quad: 500, // per quadrant, so four times this in the matrix

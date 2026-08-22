@@ -1244,13 +1244,9 @@
       </button>
     </div>
 
-    <!-- Shared with the main process and the tests. It is a classic script, not
-         a module, because the same file is `require`d by main.js and the tests —
-         so it publishes globals, which core-bridge.js re-exports as named
-         imports for the module graph below. Classic scripts run before deferred
-         module scripts, so those globals are always in place by the time app.js
-         evaluates. -->
-    <script src="../shared/core.js"></script>
+    <!-- One entry point. src/shared/ is compiled to ES modules, so the page
+         imports it the same way the module graph imports everything else and
+         the main process requires the very same files. -->
     <script type="module" src="app.js"></script>
   </body>
 </html>

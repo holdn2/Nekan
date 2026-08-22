@@ -1,0 +1,17 @@
+{
+  // The renderer. ES modules with the .js extension written out in every
+  // import, because there is no bundler and the browser resolves the specifier
+  // exactly as it is written. "preserve" is what keeps tsc from rewriting them.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": []
+  },
+  "include": ["src/renderer/**/*"],
+  "references": [
+    { "path": "./tsconfig.shared.json" },
+    { "path": "./tsconfig.main.json" }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  // src/shared/ is a project of its own, and it is two things at once.
+  //
+  // It emits: ES modules into out/shared/, which is the one format both
+  // consumers can take. The renderer imports them as the browser modules they
+  // are, and main and the tests require() them -- Node has been able to
+  // require an ES module since 22.12, and both the test runner (22.20) and
+  // Electron 43's Node (24.18) were checked before this was written.
+  //
+  // And it is a rule. src/shared/ is read by three consumers now and four when
+  // the mobile client lands, so a file in here that reaches for `fs` or for
+  // `document` breaks one of them. With no `types` and no DOM lib, reaching
+  // for either stops compiling -- what used to be a paragraph in CLAUDE.md
+  // that somebody had to remember.
+  //
+  // strict, unlike the other two projects: 159 tests sit on exactly these
+  // files, so the edits the compiler asks for have something to catch them.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    // Inside out/, not beside the config. A composite project skips emitting
+    // when this file says it is up to date, so leaving it outside means
+    // `rm -rf out` produces an empty out/ and no error -- the build reports
+    // success and the app has no shared/ in it.
+    "tsBuildInfoFile": "out/.tsbuildinfo-shared",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "types": [],
+    "lib": ["ES2022"]
+  },
+  "include": ["src/shared/**/*"]
+}
