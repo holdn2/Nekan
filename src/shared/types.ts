@@ -1,11 +1,10 @@
 /**
  * The vocabulary the rest of src/shared/ is written in.
  *
- * A module of its own rather than part of core, because core is still the one
- * file the renderer loads as a classic <script> and a script may not import
- * anything. When core-bridge goes and core becomes a real module, these can
- * move in beside the functions that produce them -- until then this is the one
- * place that names them, which is the part that matters.
+ * A module of its own rather than part of core, so that a file needing only
+ * the vocabulary -- main/window.ts wants Point, the tests want Task -- does not
+ * pull in the logic to get it. core re-exports them, so a consumer that wants
+ * both still writes one import.
  *
  * Types only. Nothing here emits, so importing it costs nothing at runtime.
  */

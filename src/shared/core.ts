@@ -1,13 +1,11 @@
 /**
  * Pure logic shared by the main process, the renderer and the tests.
  *
- * It is loaded two different ways, so it must stay free of Node APIs, DOM
- * APIs and side effects:
- *   - main process / tests: `require('./shared/core')`
- *   - renderer: a plain <script> tag before the module graph, which publishes
- *     the export list as `window.EM_CORE` for renderer/core-bridge.js to
- *     re-export. Renderer modules have their own scope, so they may reuse these
- *     names freely — they just have to import them rather than read globals.
+ * One ES module, read by three runtimes and soon a fourth: the renderer
+ * imports it as a browser module, main and the tests require() it -- Node has
+ * been able to require an ES module since 22.12 -- and the mobile client will
+ * read this source directly. So it must stay free of Node APIs, DOM APIs and
+ * side effects, which tsconfig.shared.json now enforces rather than asks for.
  */
 
 import type {

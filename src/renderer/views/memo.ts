@@ -100,7 +100,7 @@ function memoSaveState() {
   return { value, original, canSave: Boolean(value) && value !== original };
 }
 
-/** Enable/disable 저장 as the textarea changes. */
+/** Enable or disable the save button as the textarea changes. */
 function syncMemoSave() {
   $<HTMLButtonElement>("#memoSave").disabled = !memoSaveState().canSave;
 }

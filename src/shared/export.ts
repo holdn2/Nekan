@@ -137,9 +137,9 @@ export function defaultFileName(
 function exportItem(task: Task, now: Date, { t, locale }: I18n): ExportItem {
   const info = dueInfo(task.dueDate, now);
   // formatDue answers null for a null info and only then, so the two are
-  // present or absent together. Tested rather than asserted, because the pair
-  // is a promise core.js makes and this file cannot see it yet -- core is
-  // still plain JavaScript until core-bridge goes.
+  // present or absent together. Written as a test rather than leaned on,
+  // because that pairing is core's promise and nothing here would notice it
+  // being broken.
   const due = info ? formatDue(info, t, locale) : null;
   return {
     text: task.text,

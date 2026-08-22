@@ -126,7 +126,7 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   `normalizeTasks()`에서 기본값을 채워줘야 한다. 마이그레이션 코드 없이 필드를 읽으면 기존
   사용자 데이터에서 `undefined`가 된다. **값이 이상하면 화면에서 사라지는 필드**(`quadrant`
   처럼 렌더링 분기에 쓰이는 것)는 기본값만이 아니라 유효성까지 여기서 잡아준다.
-- **저장은 temp write + rename** (`shared/store-io.ts` `writeStore`). 이 패턴을 단순
+- **저장은 temp write + rename** (`main/store-io.ts` `writeStore`). 이 패턴을 단순
   `writeFileSync`로 바꾸지 말 것 — 쓰다 끊기면 전체 할 일이 사라진다.
 - IPC를 새로 추가할 때는 **세 곳을 모두** 건드려야 한다: `main/ipc.ts`의 `ipcMain.handle`,
   `preload.ts`의 `exposeInMainWorld`, 렌더러의 `window.api.*` 호출.
@@ -492,8 +492,8 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
 - 언어 선택은 `.switch`가 아니라 `<select>`다. 알약이 `calc(50% - 2px)` + `translateX(100%)`라
   **정확히 두 칸일 때만 맞는다** — 세 번째 언어를 넣는 날 깨진다.
 - **`dueInfo()`는 계산만 한다** — `{ date, days, state, otherYear }`. 문자열은
-  `formatDue(info, t, locale)`가 만들고, **`t`를 인자로 받는다**: `core.ts`는 고전 `<script>`로도
-  로드돼서 카탈로그를 가질 수 없다. `state`는 CSS가 쓰는 값이라 계산 쪽에 남는다. 요일은
+  `formatDue(info, t, locale)`가 만들고, **`t`를 인자로 받는다**: `shared/`는 카탈로그를 들 수
+  없다 — i18next 초기화는 메인과 렌더러가 각자 하고, `shared/`는 그 둘을 모른다. `state`는 CSS가 쓰는 값이라 계산 쪽에 남는다. 요일은
   카탈로그가 아니라 `Intl`이 만든다(언어마다 일곱 개를 손으로 적을 이유가 없다) — 나머지
   모양은 `Intl`이 아니다. 한국어 전체 형식은 `8. 3. (월)`이라 칩보다 넓고 원래 `8/3`과 다르다.
 - **`shared/export.ts`에는 카탈로그도 `t`도 없다.** `buildSnapshot(tasks, now, space, {t, locale})`이

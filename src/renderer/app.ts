@@ -5,8 +5,8 @@
  *
  * The dependency graph runs one way and ends here:
  *
- *   core-bridge ─→ store ─→ views/* ─┐
- *          └─────→ dom  ─→ components/*  ├─→ app.js
+ *   shared/core ─→ store ─→ views/* ─┐
+ *          └─────→ dom  ─→ components/*  ├─→ app.ts
  *                       render-bus ──────┘
  *
  * Nothing imports this file, which is what lets every other module be read on
