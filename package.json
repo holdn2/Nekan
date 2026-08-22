@@ -32,7 +32,9 @@
     "productName": "Nekan",
     "files": [
       "out/**/*",
-      "package.json"
+      "package.json",
+      "!out/**/*.d.ts",
+      "!out/.tsbuildinfo-*"
     ],
     "directories": {
       "output": "dist"
