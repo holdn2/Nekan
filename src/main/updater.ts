@@ -19,8 +19,8 @@
  * stays quiet.
  */
 
-const { app } = require("electron");
-const { autoUpdater } = require("electron-updater");
+import { app } from "electron";
+import { autoUpdater } from "electron-updater";
 
 /** Long enough after startup that the first paint has the machine to itself. */
 const FIRST_CHECK_MS = 10 * 1000;
@@ -54,7 +54,7 @@ const MIN_GAP_MS = 30 * 60 * 1000;
  * a sentence in a tab someone opened on purpose is not.
  */
 let status = { state: "idle", version: null, checkedAt: null };
-let notify = () => {};
+let notify: (status: any) => void = () => {};
 /**
  * When we last *asked*, which is not `status.checkedAt` — that only moves when
  * an answer comes back, so a run of failed checks would leave it still and let
@@ -131,9 +131,14 @@ function initUpdater(onStatus) {
 
   // A version already downloaded outranks anything a later check says: it is on
   // disk and installable, and a check that fails afterwards cannot take it back.
-  const unlessReady = (fn) => (info) => {
-    if (status.state !== "ready") fn(info);
-  };
+  // `info` is electron-updater's UpdateInfo, and the only field read from it
+  // is `version`. Typed loosely on purpose: the shape is the library's, and
+  // pinning it here would tie this file to a version of that package.
+  type UpdateInfo = { version?: string } | undefined;
+  const unlessReady =
+    (fn: (info?: UpdateInfo) => void) => (info?: UpdateInfo) => {
+      if (status.state !== "ready") fn(info);
+    };
 
   autoUpdater.on(
     "checking-for-update",
@@ -199,4 +204,4 @@ function installUpdate() {
   return true;
 }
 
-module.exports = { initUpdater, getUpdateStatus, installUpdate };
+export { initUpdater, getUpdateStatus, installUpdate };

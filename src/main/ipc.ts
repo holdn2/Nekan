@@ -10,7 +10,7 @@
  * the logic lives in those modules, not here.
  */
 
-const { app, ipcMain, shell } = require("electron");
+import { app, ipcMain, shell } from "electron";
 
 /** Where the guide tab's link goes. */
 const RELEASES_URL = "https://github.com/holdn2/Nekan/releases";
@@ -27,8 +27,8 @@ const PRIVACY_URL = {
   en: "https://holdn2.github.io/Nekan/privacy/en/",
 };
 
-const { sanitizeLayout, sanitizeSpace } = require("../shared/core");
-const {
+import { sanitizeLayout, sanitizeSpace } from "../shared/core";
+import {
   backupStore,
   getSettings,
   getStore,
@@ -36,27 +36,22 @@ const {
   persist,
   persistNow,
   setTasks,
-} = require("./store");
-const { collapse, expand, getMode, getWindow } = require("./window");
-const { revealExport, runExport } = require("./export-service");
-const { getUpdateStatus, installUpdate } = require("./updater");
-const { language, setMainLanguage } = require("./i18n");
-const { storedLanguage } = require("../shared/i18n/locales");
-const {
+} from "./store";
+import { collapse, expand, getMode, getWindow } from "./window";
+import { revealExport, runExport } from "./export-service";
+import { getUpdateStatus, installUpdate } from "./updater";
+import { language, setMainLanguage } from "./i18n";
+import { storedLanguage } from "../shared/i18n/locales";
+import {
   deleteAccount,
   getClockOffset,
   getPublicSession,
   login,
   loginWithGoogle,
   logout,
-} = require("./api-client");
-const { cancelSignIn } = require("./oauth");
-const {
-  announceTasks,
-  getSyncStatus,
-  syncAccount,
-  syncSoon,
-} = require("./sync");
+} from "./api-client";
+import { cancelSignIn } from "./oauth";
+import { announceTasks, getSyncStatus, syncAccount, syncSoon } from "./sync";
 
 /** Where a sign-in puts the local tasks it was asked not to merge. */
 const PRE_LOGIN_BACKUP = "data.before-login.json";
@@ -328,4 +323,4 @@ function registerIpc() {
   });
 }
 
-module.exports = { registerIpc };
+export { registerIpc };

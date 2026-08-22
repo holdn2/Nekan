@@ -10,13 +10,13 @@
  * Anything that must not be lost (quit, close) calls persistNow() instead.
  */
 
-const fs = require("fs");
-const path = require("path");
-const { app } = require("electron");
+import fs from "fs";
+import path from "path";
+import { app } from "electron";
 
-const { loadStore, writeStore } = require("./store-io");
-const { dropExpiredTombstones } = require("../shared/core");
-const { stamp } = require("../shared/sync");
+import { loadStore, writeStore } from "./store-io";
+import { dropExpiredTombstones } from "../shared/core";
+import { stamp } from "../shared/sync";
 
 let store = null;
 let saveTimer = null;
@@ -78,9 +78,14 @@ function setTasks(tasks) {
  * a timestamp, so there is no such thing as a save that legitimately drops a
  * row. Ties go to the renderer: it is the copy the user is looking at.
  */
-function mergeRendererTasks(tasks) {
-  const incoming = Array.isArray(tasks) ? tasks : [];
-  const byId = new Map(store.tasks.map((t) => [String(t.id), t]));
+function mergeRendererTasks(tasks: unknown) {
+  // Rows straight off the wire from the renderer: shaped like tasks, but
+  // normalizeTasks has not been over them yet.
+  type Incoming = { id: unknown; updatedAt?: unknown };
+  const incoming: Incoming[] = Array.isArray(tasks) ? tasks : [];
+  const byId = new Map<string, Incoming>(
+    store.tasks.map((t: Incoming) => [String(t.id), t]),
+  );
   for (const task of incoming) {
     const id = String(task.id);
     const mine = byId.get(id);
@@ -145,7 +150,7 @@ function persistNow() {
   return save();
 }
 
-module.exports = {
+export {
   storePath,
   legacyStorePaths,
   load,

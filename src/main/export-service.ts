@@ -9,20 +9,20 @@
  * dialog, which makes the dialog's file-type dropdown the whole format picker.
  */
 
-const fs = require("fs");
-const path = require("path");
-const { pathToFileURL } = require("url");
-const { BrowserWindow, app, dialog, shell } = require("electron");
+import fs from "fs";
+import path from "path";
+import { pathToFileURL } from "url";
+import { BrowserWindow, app, dialog, shell } from "electron";
 
-const { sanitizeSpace } = require("../shared/core");
-const {
+import { sanitizeSpace } from "../shared/core";
+import {
   buildSnapshot,
   defaultFileName,
   toHtml,
   toMarkdown,
-} = require("../shared/export");
-const { getSettings, getStore } = require("./store");
-const { language, t } = require("./i18n");
+} from "../shared/export";
+import { getSettings, getStore } from "./store";
+import { language, t } from "./i18n";
 
 /** Rebuilt per export: the dropdown is written when the dialog opens, and the
  *  language can have changed since the last one. */
@@ -126,4 +126,4 @@ function revealExport(target) {
   if (typeof target === "string" && target) shell.showItemInFolder(target);
 }
 
-module.exports = { runExport, revealExport };
+export { runExport, revealExport };

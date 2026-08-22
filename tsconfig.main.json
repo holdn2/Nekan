@@ -4,8 +4,8 @@
   // preload both load -- see the preload note in CLAUDE.md.
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "module": "node16",
-    "moduleResolution": "node16",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "types": ["node"],
     "esModuleInterop": true
   },

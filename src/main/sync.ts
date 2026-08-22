@@ -13,7 +13,7 @@
  * to keep working when the server does not.
  */
 
-const {
+import {
   PAGE_SIZE,
   hasMore,
   mergeIncoming,
@@ -22,9 +22,9 @@ const {
   pushedThrough,
   toRow,
   unsentChanges,
-} = require("../shared/sync");
-const { getAccessToken, getPublicSession, request } = require("./api-client");
-const { getSettings, getStore, persist, setTasks } = require("./store");
+} from "../shared/sync";
+import { getAccessToken, getPublicSession, request } from "./api-client";
+import { getSettings, getStore, persist, setTasks } from "./store";
 
 /** After a local change. Long enough to collect a burst of typing into one push. */
 const SOON_MS = 3000;
@@ -38,8 +38,13 @@ const RECONCILE_MS = 6 * 60 * 60 * 1000;
 const MAX_PAGES = 400;
 
 /** Set by initSync: how a merged list and a status reach the window. */
-let onTasks = () => {};
-let onStatus = () => {};
+/** Set by initSync. This module never learns what a BrowserWindow is. */
+type Handlers = {
+  onTasks?: (tasks: unknown[], overwritten?: unknown) => void;
+  onStatus?: (status: any) => void;
+};
+let onTasks: NonNullable<Handlers["onTasks"]> = () => {};
+let onStatus: NonNullable<Handlers["onStatus"]> = () => {};
 let timer = null;
 let running = false;
 let failures = 0;
@@ -311,7 +316,7 @@ function useAccount(userId) {
  * `onTasks` is how merged rows reach the window; this module does not know what
  * a BrowserWindow is, for the same reason updater.js does not.
  */
-function initSync(handlers = {}) {
+function initSync(handlers: Handlers = {}) {
   onTasks = handlers.onTasks || (() => {});
   onStatus = handlers.onStatus || (() => {});
   if (getPublicSession()) report({ state: "syncing", unsent: countUnsent() });
@@ -367,10 +372,4 @@ function syncAccount(userId) {
   }
 }
 
-module.exports = {
-  initSync,
-  getSyncStatus,
-  announceTasks,
-  syncSoon,
-  syncAccount,
-};
+export { initSync, getSyncStatus, announceTasks, syncSoon, syncAccount };

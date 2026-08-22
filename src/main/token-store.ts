@@ -10,11 +10,11 @@
  * here may run before whenReady.
  */
 
-const fs = require("fs");
-const path = require("path");
-const { app, safeStorage } = require("electron");
+import fs from "fs";
+import path from "path";
+import { app, safeStorage } from "electron";
 
-const { sessionFromStored } = require("../shared/auth");
+import { sessionFromStored } from "../shared/auth";
 
 /** Bumped only if the stored shape changes; an unknown version is discarded. */
 const FORMAT = 1;
@@ -87,10 +87,4 @@ function clearSession() {
   }
 }
 
-module.exports = {
-  authPath,
-  canStore,
-  readSession,
-  writeSession,
-  clearSession,
-};
+export { authPath, canStore, readSession, writeSession, clearSession };

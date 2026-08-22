@@ -17,16 +17,17 @@
  *     until 2026-08-21; docs/DECISIONS.md says why that stopped.
  */
 
-const path = require("path");
-const { BrowserWindow, screen } = require("electron");
+import path from "path";
+import { BrowserWindow, screen } from "electron";
 
-const { getSettings, persist } = require("./store");
-const {
+import { getSettings, persist } from "./store";
+import {
   expandOrigin,
   collapseOrigin,
   needsStartupChoice,
-} = require("../shared/core");
-const { SUPPORTED } = require("../shared/i18n/locales");
+} from "../shared/core";
+import type { Point } from "../shared/types";
+import { SUPPORTED } from "../shared/i18n/locales";
 
 /** Where preload.js, the renderer and the icon live, from this folder. */
 const SRC = path.join(__dirname, "..");
@@ -182,7 +183,7 @@ function createWindow() {
  * Answers whether the window is now a bar, which ready-to-show needs: a refusal
  * leaves `switching` for that caller to clear.
  */
-function collapse(at) {
+function collapse(at?: Point | null) {
   if (!win || mode === "collapsed") return false;
   const settings = getSettings();
   // Not while the first-run question is up. That screen covers the window, so a
@@ -258,12 +259,4 @@ function expand() {
   win.webContents.send("win:mode", mode);
 }
 
-module.exports = {
-  EXPANDED,
-  BAR,
-  createWindow,
-  collapse,
-  expand,
-  getWindow,
-  getMode,
-};
+export { EXPANDED, BAR, createWindow, collapse, expand, getWindow, getMode };

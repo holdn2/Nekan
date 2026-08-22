@@ -15,11 +15,11 @@
  * there stays exactly one file that owns credentials.
  */
 
-const crypto = require("crypto");
-const http = require("http");
-const { app, shell } = require("electron");
+import crypto from "crypto";
+import http from "http";
+import { app, shell } from "electron";
 
-const { language, t } = require("./i18n");
+import { language, t } from "./i18n";
 
 /** Long enough that a user can read a consent screen, short enough to give up. */
 const WINDOW_MS = 5 * 60 * 1000;
@@ -72,7 +72,12 @@ p{margin:0}</style></head><body><p>${message}</p></body></html>`;
  * `buildUrl` is handed the redirect URI once the port is known, because the
  * port is not known until the listener is up.
  */
-function loopbackCode(buildUrl) {
+/** Either the code the browser came back with, or why it did not. */
+type LoopbackResult = { ok: true; code: string } | { ok: false; error: string };
+
+function loopbackCode(
+  buildUrl: (redirect: string) => string,
+): Promise<LoopbackResult> {
   if (pending) pending.abandon("replaced");
 
   // Proof that a callback is answering *our* request. Without it, anything
@@ -81,14 +86,14 @@ function loopbackCode(buildUrl) {
   // verification procedure in CLAUDE.md does exactly that on purpose.
   const state = base64url(crypto.randomBytes(16));
 
-  return new Promise((resolve) => {
+  return new Promise<LoopbackResult>((resolve) => {
     let settled = false;
-    let timer = null;
+    let timer: NodeJS.Timeout | null = null;
 
-    const finish = (result) => {
+    const finish = (result: LoopbackResult) => {
       if (settled) return;
       settled = true;
-      clearTimeout(timer);
+      if (timer) clearTimeout(timer);
       pending = null;
       server.close();
       resolve(result);
@@ -142,7 +147,9 @@ function loopbackCode(buildUrl) {
     pending = { abandon: (why) => finish({ ok: false, error: why }) };
 
     server.listen(0, "127.0.0.1", () => {
-      const { port } = server.address();
+      // listen() has run, so this is an AddressInfo and not the string a
+      // Unix-socket server would answer with.
+      const { port } = server.address() as import("net").AddressInfo;
       timer = setTimeout(
         () => finish({ ok: false, error: "timeout" }),
         WINDOW_MS,
@@ -164,4 +171,4 @@ function cancelSignIn() {
   if (pending) pending.abandon("cancelled");
 }
 
-module.exports = { pkcePair, loopbackCode, cancelSignIn };
+export { pkcePair, loopbackCode, cancelSignIn };

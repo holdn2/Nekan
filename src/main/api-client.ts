@@ -12,19 +12,15 @@
  * this shape anyway -- it is just as well that it is also the right one.
  */
 
-const {
-  needsRefresh,
-  publicSession,
-  sessionFromToken,
-} = require("../shared/auth");
-const { clockOffset, nextOffset } = require("../shared/sync");
-const {
+import { needsRefresh, publicSession, sessionFromToken } from "../shared/auth";
+import { clockOffset, nextOffset } from "../shared/sync";
+import {
   canStore,
   clearSession,
   readSession,
   writeSession,
-} = require("./token-store");
-const { loopbackCode, pkcePair } = require("./oauth");
+} from "./token-store";
+import { loopbackCode, pkcePair } from "./oauth";
 
 /**
  * The project. Both values are public by design: the anon key is a JWT whose
@@ -74,9 +70,27 @@ let skew = 0;
  * DNS failure, the timeout above. Callers treat that differently from a 400,
  * because only one of the two means the credentials are wrong.
  */
-async function request(pathname, { method = "GET", body, token, prefer } = {}) {
+/** What a caller may set on one request. `token` swaps the anon key out. */
+interface RequestOptions {
+  method?: string;
+  body?: unknown;
+  token?: string | null;
+  prefer?: string;
+}
+
+/** What every call gets back. `body` is whatever JSON came, if any came. */
+interface Reply {
+  ok: boolean;
+  status: number;
+  body: any;
+}
+
+async function request(
+  pathname: string,
+  { method = "GET", body, token, prefer }: RequestOptions = {},
+): Promise<Reply> {
   try {
-    const headers = {
+    const headers: Record<string, string> = {
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${token || SUPABASE_ANON_KEY}`,
       "Content-Type": "application/json",
@@ -281,7 +295,7 @@ async function loginWithGoogle() {
       `&redirect_to=${encodeURIComponent(redirect)}` +
       `&code_challenge=${challenge}&code_challenge_method=s256`,
   );
-  if (!back.ok) return { ok: false, error: back.error };
+  if (back.ok !== true) return { ok: false, error: back.error };
 
   const res = await request("/auth/v1/token?grant_type=pkce", {
     method: "POST",
@@ -447,7 +461,7 @@ async function deleteAccount() {
   return { ok: true, signedOut: stillOurs };
 }
 
-module.exports = {
+export {
   SUPABASE_URL,
   request,
   initAuth,

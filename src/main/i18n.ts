@@ -12,16 +12,16 @@
  * breaks the renderer the moment it is added.
  */
 
-const i18next = require("i18next");
+import i18next from "i18next";
 
-const ko = require("../shared/i18n/ko.json");
-const en = require("../shared/i18n/en.json");
-const { FALLBACK } = require("../shared/i18n/locales");
+import ko from "../shared/i18n/ko.json";
+import en from "../shared/i18n/en.json";
+import { FALLBACK } from "../shared/i18n/locales";
 
 let ready = false;
 
 /** Called once from main.js, after the language has been settled. */
-function initI18n(lng) {
+function initI18n(lng?: string | null) {
   i18next.init({
     lng: lng || FALLBACK,
     fallbackLng: FALLBACK,
@@ -38,7 +38,7 @@ function initI18n(lng) {
  * an export written while the panel is closed still has to come out in the
  * language the user picked.
  */
-function setMainLanguage(language) {
+function setMainLanguage(language: string) {
   if (ready) i18next.changeLanguage(language);
 }
 
@@ -52,18 +52,25 @@ function ensure() {
   if (!ready) initI18n(FALLBACK);
 }
 
-const t = (key, params) => {
-  ensure();
-  return i18next.t(key, params);
-};
+/**
+ * i18next's own `t` is typed as a union -- it can answer with objects when a
+ * key holds a tree, and with a details record when asked to. Nothing here does
+ * either, and every caller in this process puts the answer straight into a
+ * filename, a dialog title or a printed document. Saying `string` once here is
+ * what keeps that from being cast at each of them.
+ */
+const t = (key: string, params?: Record<string, unknown>): string => (
+  ensure(),
+  i18next.t(key, params) as string
+);
 
 /**
  * Which language main is writing in. `shared/core.js` formats dates through
  * `Intl`, which wants the tag rather than the catalogue.
  */
-function language() {
+function language(): string {
   ensure();
   return i18next.language;
 }
 
-module.exports = { initI18n, setMainLanguage, t, language };
+export { initI18n, setMainLanguage, t, language };

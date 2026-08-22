@@ -3,10 +3,10 @@
  * Paths come from the caller (main.js knows where userData lives).
  */
 
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
 
-const { DEFAULT_LAYOUT, DEFAULT_SPACE } = require("../shared/core");
+import { DEFAULT_LAYOUT, DEFAULT_SPACE } from "../shared/core";
 
 /** A first-run store: no tasks, and the settings every reader assumes exist. */
 function defaultStore() {
@@ -105,4 +105,4 @@ function writeStore(target, store) {
   }
 }
 
-module.exports = { defaultStore, migrateLegacyStore, loadStore, writeStore };
+export { defaultStore, migrateLegacyStore, loadStore, writeStore };

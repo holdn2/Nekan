@@ -7,16 +7,16 @@
  * out.
  */
 
-const { BrowserWindow, app } = require("electron");
+import { BrowserWindow, app } from "electron";
 
-const { getSettings, load, persistNow } = require("./main/store");
-const { initI18n } = require("./main/i18n");
-const { pickLanguage, storedLanguage } = require("./shared/i18n/locales");
-const { createWindow, getWindow } = require("./main/window");
-const { registerIpc } = require("./main/ipc");
-const { initUpdater } = require("./main/updater");
-const { getClockOffset, initAuth } = require("./main/api-client");
-const { initSync } = require("./main/sync");
+import { getSettings, load, persistNow } from "./main/store";
+import { initI18n } from "./main/i18n";
+import { pickLanguage, storedLanguage } from "./shared/i18n/locales";
+import { createWindow, getWindow } from "./main/window";
+import { registerIpc } from "./main/ipc";
+import { initUpdater } from "./main/updater";
+import { getClockOffset, initAuth } from "./main/api-client";
+import { initSync } from "./main/sync";
 
 // Keep the data folder identical between `npm start` and the packaged build.
 // Without it the two read different data.json files.
