@@ -8,12 +8,11 @@
     "target": "ES2022",
     "lib": ["ES2022"],
 
-    // The migration runs file by file, so `src` is a mix of .ts and .js for as
-    // long as it takes. allowJs carries the ones not converted yet through to
-    // `out` untouched, which is what keeps `out` a complete, runnable app at
-    // every commit rather than only at the end.
-    "allowJs": true,
-    "checkJs": false,
+    // Off since the migration finished (#70): there is no .js under src any
+    // more, and a new one appearing should be a build error rather than a file
+    // that sails through unchecked. It was on while src was a mix, which is
+    // what kept `out` a complete, runnable app at every commit of that work.
+    "allowJs": false,
 
     "rootDir": "src",
     "outDir": "out",

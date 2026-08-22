@@ -14,6 +14,10 @@
   // what is emitted.
   "files": [],
   "references": [
+    // First on purpose: a file that appears in both renderer projects should be
+    // judged in the editor by the strict one, so the rule shows up while it is
+    // being written rather than in a later typecheck.
+    { "path": "./tsconfig.renderer.strict.json" },
     { "path": "./tsconfig.shared.json" },
     { "path": "./tsconfig.main.json" },
     { "path": "./tsconfig.renderer.json" },

@@ -1,0 +1,42 @@
+{
+  // The strict frontier.
+  //
+  // The renderer is being rewritten in React (#73), and its old imperative
+  // files carry 207 implicit-any errors that turning `strict` on would demand
+  // be fixed -- in code that is going to be deleted anyway. Fixing it would be
+  // work thrown away, and leaving `strict` off for the whole directory would
+  // mean the React files being written *now* inherit the same debt.
+  //
+  // So the frontier is a list. A file that has moved to React goes in `files`
+  // in the same commit that moves it, and from then on the compiler holds it to
+  // the same standard as src/shared/. The list only grows; when the last view
+  // has crossed, this config and tsconfig.renderer.json are the same thing and
+  // one of them goes away.
+  //
+  // Checking nothing else here is deliberate: `files` does not pull in the
+  // imports' own files for checking, so a strict file that imports a loose one
+  // is still checked strictly itself.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": [],
+
+    // The point of this file.
+    "strict": true,
+    // Nothing under src/ is JavaScript any more, and a new .js appearing here
+    // should be a build error rather than something that silently sails past
+    // unchecked.
+    "allowJs": false,
+
+    // Vite emits the renderer; this project exists to read it.
+    "noEmit": true
+  },
+  "files": ["src/renderer/components/toast.tsx"],
+  "references": [
+    { "path": "./tsconfig.shared.json" },
+    { "path": "./tsconfig.main.json" }
+  ]
+}
