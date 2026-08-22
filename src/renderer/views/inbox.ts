@@ -81,7 +81,7 @@ export function focusInbox() {
 
 /** Header toggle, the add form, and the paste-a-list shortcut. */
 export function wireInbox() {
-  const input = $("#inboxInput");
+  const input = $<HTMLTextAreaElement>("#inboxInput");
 
   $("#inboxToggle").addEventListener("click", () => {
     applyInboxOpen(!inboxOpen);

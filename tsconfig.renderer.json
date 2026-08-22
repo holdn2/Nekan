@@ -10,5 +10,8 @@
     "types": []
   },
   "include": ["src/renderer/**/*"],
-  "references": [{ "path": "./tsconfig.shared.json" }]
+  "references": [
+    { "path": "./tsconfig.shared.json" },
+    { "path": "./tsconfig.main.json" }
+  ]
 }

@@ -18,7 +18,33 @@ let devLogin = false;
 /** Guards a second press while the browser is still open. */
 let signingIn = false;
 
-const els = {};
+/** The account panel's elements, by the id each one has in index.html. */
+interface AccountEls {
+  gear: HTMLButtonElement;
+  out: HTMLElement;
+  in: HTMLElement;
+  google: HTMLButtonElement;
+  adopt: HTMLElement;
+  adoptBox: HTMLInputElement;
+  adoptText: HTMLElement;
+  adoptHint: HTMLElement;
+  dev: HTMLFormElement;
+  email: HTMLElement;
+  state: HTMLElement;
+  logout: HTMLButtonElement;
+  danger: HTMLElement;
+  leave: HTMLButtonElement;
+  leaveConfirm: HTMLElement;
+  leaveCancel: HTMLButtonElement;
+  leaveGo: HTMLButtonElement;
+  msg: HTMLElement;
+}
+
+// Looked up once and kept, because a push from main can arrive before the
+// wiring has run. Named rather than a bag of HTMLElement, because a handful of
+// these are form controls and the code reads `value`, `checked` and `disabled`
+// off exactly those.
+const els = {} as AccountEls;
 
 /**
  * Both apply functions can be reached by a push that beat wireAccount(), so
@@ -297,8 +323,8 @@ export function wireAccount() {
     if (signingIn) return;
     finish(
       window.api.devLogin(
-        $("#devEmail").value,
-        $("#devPassword").value,
+        $<HTMLInputElement>("#devEmail").value,
+        $<HTMLInputElement>("#devPassword").value,
         adoptMode(),
       ),
     );

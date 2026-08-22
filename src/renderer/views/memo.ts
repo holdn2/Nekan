@@ -95,14 +95,14 @@ export function clearSelectionSilently() {
 function memoSaveState() {
   const task = selectedTask();
   if (!task) return { value: null, original: null, canSave: false };
-  const value = clampMemo($("#memoInput").value);
+  const value = clampMemo($<HTMLTextAreaElement>("#memoInput").value);
   const original = task.memo || null;
   return { value, original, canSave: Boolean(value) && value !== original };
 }
 
 /** Enable/disable 저장 as the textarea changes. */
 function syncMemoSave() {
-  $("#memoSave").disabled = !memoSaveState().canSave;
+  $<HTMLButtonElement>("#memoSave").disabled = !memoSaveState().canSave;
 }
 
 /** Draw the panel for the selected task, or hide it when there is none. */
@@ -132,7 +132,7 @@ export function renderMemo() {
   // Only reseed the textarea when the panel actually changes what it is
   // showing; an unrelated re-render must not wipe what is being typed.
   const key = `${task.id}:${editing}`;
-  const input = $("#memoInput");
+  const input = $<HTMLTextAreaElement>("#memoInput");
   if (panel.dataset.key !== key) {
     panel.dataset.key = key;
     if (editing) {
@@ -182,7 +182,7 @@ function deleteMemo() {
 
 /** Bind the panel's own controls. The rows are wired by wireRowSelection. */
 export function wireMemo() {
-  const input = $("#memoInput");
+  const input = $<HTMLTextAreaElement>("#memoInput");
   input.addEventListener("input", syncMemoSave);
   input.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {

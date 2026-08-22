@@ -10,6 +10,7 @@
  */
 
 import { QUADS, isCrowded } from "../../shared/core.js";
+import type { Place } from "../../shared/types.js";
 import { currentLanguage, t } from "../i18n.js";
 import { $, $$, numEl } from "../dom.js";
 import { dueChip } from "../components/due-chip.js";
@@ -170,7 +171,7 @@ export function renderMatrix() {
  */
 export function wireAddForms() {
   $$(".add:not(.inbox-add)").forEach((form) => {
-    const input = $('input[type="text"]', form);
+    const input = $<HTMLInputElement>('input[type="text"]', form);
     const chip = dueChip(null, () => {});
     addChips.push(chip);
     const submit = $('button[type="submit"]', form);
@@ -181,7 +182,7 @@ export function wireAddForms() {
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      addTask(form.dataset.add, input.value, chip.input.value);
+      addTask(form.dataset.add as Place, input.value, chip.input.value);
       input.value = "";
       chip.apply("");
       input.focus();

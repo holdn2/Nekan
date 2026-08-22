@@ -24,8 +24,25 @@ const words = (info) => formatDue(info, t, currentLanguage());
  *
  * `onChange` receives the new 'YYYY-MM-DD' string, or null when it is cleared.
  */
-export function dueChip(value, onChange) {
-  const box = document.createElement("span");
+/**
+ * The wrapper dueChip returns, with the two extras it hangs off the element.
+ *
+ * A row's chip is thrown away and rebuilt on every redraw, but the one in an
+ * add form is built once and lives for the run -- so the form needs to read the
+ * value it holds before a task exists, and to repaint it after submitting.
+ * Declared rather than left implicit because these two are the only reason
+ * callers keep a reference to the element at all.
+ */
+export interface DueChip extends HTMLSpanElement {
+  input: HTMLInputElement;
+  apply: (next: string | null | undefined) => void;
+}
+
+export function dueChip(
+  value: string | null | undefined,
+  onChange: (next: string | null) => void,
+): DueChip {
+  const box = document.createElement("span") as DueChip;
   const chip = document.createElement("span");
   chip.className = "due";
 
@@ -51,7 +68,7 @@ export function dueChip(value, onChange) {
    * in an add form is built once by wireAddForms() and lives for the run, and
    * with the labels set above it kept saying "마감일 지정" in an English window.
    */
-  const apply = (next) => {
+  const apply = (next: string | null | undefined) => {
     input.value = next || "";
     input.setAttribute("aria-label", t("due.field"));
     const info = dueInfo(next);
@@ -85,7 +102,7 @@ export function dueChip(value, onChange) {
  * was set rather than something to change. Returns null when there is no date,
  * so the caller can simply skip appending it.
  */
-export function dueBadge(value) {
+export function dueBadge(value: string | null | undefined) {
   const info = dueInfo(value);
   if (!info) return null;
   const { text, hint } = words(info);

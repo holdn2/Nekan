@@ -10,7 +10,7 @@
  * on document (for the rows, which are rebuilt on every render).
  */
 
-import { $, $$ } from "../dom.js";
+import { $, $$, target } from "../dom.js";
 import { moveTask } from "../store.js";
 
 /** The row the dragged one should be inserted before, or undefined for last. */
@@ -30,7 +30,7 @@ export function wireDragAndDrop() {
   let draggingId = null;
 
   document.addEventListener("dragstart", (e) => {
-    const item = e.target.closest?.(".item");
+    const item = target(e).closest?.(".item") as HTMLElement | null;
     if (!item) return;
     draggingId = item.dataset.id;
     item.classList.add("dragging");
@@ -39,7 +39,7 @@ export function wireDragAndDrop() {
   });
 
   document.addEventListener("dragend", (e) => {
-    e.target.closest?.(".item")?.classList.remove("dragging");
+    target(e).closest?.(".item")?.classList.remove("dragging");
     dropZones().forEach((z) => z.classList.remove("drop"));
     draggingId = null;
   });
@@ -59,7 +59,8 @@ export function wireDragAndDrop() {
     });
 
     zone.addEventListener("dragleave", (e) => {
-      if (!zone.contains(e.relatedTarget)) zone.classList.remove("drop");
+      if (!zone.contains(e.relatedTarget as Node))
+        zone.classList.remove("drop");
     });
 
     zone.addEventListener("drop", (e) => {

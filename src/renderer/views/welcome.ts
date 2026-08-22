@@ -16,7 +16,7 @@ import { activeCount } from "../store.js";
 import { t, tNodes, wireLanguageSelect } from "../i18n.js";
 
 /** Set by app.js: how a finished choice reaches the rest of the startup. */
-let onDone = () => {};
+let onDone: (choice: string) => void = () => {};
 let busy = false;
 /**
  * Whether the Google half already succeeded.
@@ -26,7 +26,22 @@ let busy = false;
  * must not send someone through a consent screen they have already passed.
  */
 let signedIn = false;
-const els = {};
+/** The first-run card's elements, by the id each one has in index.html. */
+interface WelcomeEls {
+  root: HTMLElement;
+  sync: HTMLButtonElement;
+  local: HTMLButtonElement;
+  adopt: HTMLElement;
+  adoptBox: HTMLInputElement;
+  adoptText: HTMLElement;
+  msg: HTMLElement;
+}
+
+// Looked up once and kept, because a push from main can arrive before the
+// wiring has run. Named rather than a bag of HTMLElement, because a handful of
+// these are form controls and the code reads `value`, `checked` and `disabled`
+// off exactly those.
+const els = {} as WelcomeEls;
 
 /**
  * Failures worth naming. Anything else falls through as its own code, which is

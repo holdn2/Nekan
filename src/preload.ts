@@ -21,7 +21,15 @@ const flag = (name) => {
 const language = flag("lang") || null;
 const languages = flag("langs").split(",").filter(Boolean);
 
-contextBridge.exposeInMainWorld("api", {
+/**
+ * Everything the renderer is allowed to reach, and the only thing it can.
+ *
+ * Named rather than passed straight in so its type can be handed across: the
+ * renderer declares `window.api` as `typeof api`, which means the boundary is
+ * described once. A channel added here shows up over there without anybody
+ * writing it down twice -- the mistake core-bridge used to invite.
+ */
+const api = {
   language,
   languages,
   setLanguage: (next) => ipcRenderer.invoke("settings:language", next),
@@ -71,4 +79,9 @@ contextBridge.exposeInMainWorld("api", {
     ),
   onSyncStatus: (cb) =>
     ipcRenderer.on("sync:status", (_e, status) => cb(status)),
-});
+};
+
+contextBridge.exposeInMainWorld("api", api);
+
+/** The shape of window.api, for the renderer's global declaration. */
+export type NekanApi = typeof api;

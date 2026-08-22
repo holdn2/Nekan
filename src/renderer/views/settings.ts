@@ -9,13 +9,24 @@
  * only moved house. This file is the panel around it.
  */
 
-import { $ } from "../dom.js";
+import { $, target } from "../dom.js";
 import { wireLanguageSelect } from "../i18n.js";
 import { getMode, toggleTheme } from "../window/chrome.js";
 import { exportBoard } from "../window/export-ui.js";
 
 let open = false;
-const els = {};
+/** The settings panel's elements, by the id each one has in index.html. */
+interface SettingsEls {
+  panel: HTMLElement;
+  backdrop: HTMLElement;
+  gear: HTMLButtonElement;
+}
+
+// Looked up once and kept, because a push from main can arrive before the
+// wiring has run. Named rather than a bag of HTMLElement, because a handful of
+// these are form controls and the code reads `value`, `checked` and `disabled`
+// off exactly those.
+const els = {} as SettingsEls;
 
 export function isSettingsOpen() {
   return open;
@@ -76,7 +87,7 @@ export function wireSettings() {
   wireLanguageSelect($("#languageSelect"));
 
   $("#themeSeg").addEventListener("click", (e) => {
-    const btn = e.target.closest(".switch-btn");
+    const btn = target(e).closest<HTMLElement>(".switch-btn");
     // Both halves are always on screen, so a click means "make it this one"
     // rather than "flip" -- pressing the active one is not a request.
     if (!btn || btn.classList.contains("active")) return;

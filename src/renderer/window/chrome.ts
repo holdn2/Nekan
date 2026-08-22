@@ -14,7 +14,7 @@
 
 import { QUADS, isCrowded } from "../../shared/core.js";
 import { t } from "../i18n.js";
-import { $, $$, labelBtn } from "../dom.js";
+import { $, $$, labelBtn, target } from "../dom.js";
 import { notify } from "../render-bus.js";
 import { toast } from "../components/toast.js";
 import {
@@ -284,7 +284,7 @@ export function wireChrome() {
   );
 
   $("#spaceSwitch").addEventListener("click", (e) => {
-    const btn = e.target.closest(".switch-btn");
+    const btn = target(e).closest<HTMLElement>(".switch-btn");
     if (!btn || btn.dataset.space === getSpace()) return;
     applySpace(btn.dataset.space);
     notify();
@@ -316,7 +316,7 @@ export function wireChrome() {
   });
 
   $("#barSummary").addEventListener("click", (e) => {
-    const chip = e.target.closest(".chip");
+    const chip = target(e).closest<HTMLElement>(".chip");
     if (!chip || mode !== "collapsed") return;
     window.api.expand();
     setTab("matrix");
@@ -327,7 +327,7 @@ export function wireChrome() {
   });
 
   $(".titlebar").addEventListener("dblclick", (e) => {
-    if (e.target.closest("button")) return;
+    if (target(e).closest("button")) return;
     toggleSize();
   });
 }

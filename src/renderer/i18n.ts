@@ -36,11 +36,18 @@ i18next.init({
   interpolation: { escapeValue: false },
 });
 
-/** The one way a string reaches the screen. */
-export const t = (key, params) => i18next.t(key, params);
+/**
+ * The one way a string reaches the screen.
+ *
+ * i18next types `t` as a union -- it can answer with an object when a key holds
+ * a tree -- and no caller here wants that. Saying `string` once is what keeps
+ * three hundred call sites from each needing a cast.
+ */
+export const t = (key: string, params?: Record<string, unknown>): string =>
+  i18next.t(key, params) as string;
 
 /** Which language is on screen right now. */
-export const currentLanguage = () => i18next.language;
+export const currentLanguage = (): string => i18next.language;
 
 /**
  * The inline emphasis a catalogue string is allowed to carry.
@@ -58,9 +65,9 @@ export const currentLanguage = () => i18next.language;
 const INLINE = /<(b|em|code)>([\s\S]*?)<\/\1>/g;
 
 /** A translated string as DOM nodes, with its <b> / <em> / <code> made real. */
-export function tNodes(key, params) {
+export function tNodes(key: string, params?: Record<string, unknown>): Node[] {
   const text = t(key, params);
-  const out = [];
+  const out: Node[] = [];
   let at = 0;
   for (const match of text.matchAll(INLINE)) {
     if (match.index > at) {
@@ -88,9 +95,9 @@ export function tNodes(key, params) {
  * on screen -- reviewing by eye leaves them behind, so they get the same pass
  * as the visible text.
  */
-export function applyStaticStrings(root = document) {
-  root.querySelectorAll("[data-i18n]").forEach((el) => {
-    const key = el.dataset.i18n;
+export function applyStaticStrings(root: ParentNode = document) {
+  root.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
+    const key = el.dataset.i18n as string;
     const attrs = el.dataset.i18nAttr;
     if (attrs) {
       attrs.split(",").forEach((entry) => {
@@ -125,7 +132,7 @@ export function setLanguage(next) {
 }
 
 /** Every language <select> on screen, so switching one moves the others. */
-const pickers = new Set();
+const pickers = new Set<HTMLSelectElement>();
 
 /**
  * Fill a <select> with the languages this build has, and make it switch.

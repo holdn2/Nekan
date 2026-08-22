@@ -7,7 +7,7 @@
  * into play (되돌리기 / 복원) or thrown further away, and that is all.
  */
 
-import { $, $$, actionBtn, numEl } from "../dom.js";
+import { $, $$, actionBtn, numEl, target } from "../dom.js";
 import { currentLanguage, t } from "../i18n.js";
 import { dueBadge } from "../components/due-chip.js";
 import { memoLine } from "../components/memo-mark.js";
@@ -256,13 +256,13 @@ export function wireArchive() {
   // Typing changes which rows these are, so the count of them starts over too.
   // Carrying it across would leave a two-character search rendering thousands.
   $("#historySearch").addEventListener("input", (e) => {
-    historyQuery = e.target.value;
+    historyQuery = target<HTMLInputElement>(e).value;
     historyShown = PAGE;
     renderHistory();
   });
 
   $("#trashSearch").addEventListener("input", (e) => {
-    trashQuery = e.target.value;
+    trashQuery = target<HTMLInputElement>(e).value;
     trashShown = PAGE;
     renderTrash();
   });

@@ -24,6 +24,7 @@ import {
   clampMemoPanel,
   sanitizeLayout,
 } from "../../shared/core.js";
+import type { Layout } from "../../shared/types.js";
 import { $ } from "../dom.js";
 
 /**
@@ -222,7 +223,7 @@ export function wireQuadEdges() {
   /** Pointer position → the ratios for whichever axes are being dragged. */
   const ratiosAt = (ev) => {
     const m = metrics();
-    const next = {};
+    const next: Partial<Layout> = {};
     if (dragging !== "row") {
       const span = m.width - GUTTER;
       const raw = (ev.clientX - m.left - GUTTER / 2) / span;
