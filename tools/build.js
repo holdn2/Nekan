@@ -28,6 +28,7 @@ const PROJECTS = [
   "tsconfig.shared.json",
   "tsconfig.main.json",
   "tsconfig.renderer.json",
+  "tsconfig.test.json",
 ];
 
 /** Copied as-is. Anything the compilers do not emit has to be in this list. */

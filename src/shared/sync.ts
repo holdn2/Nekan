@@ -191,7 +191,9 @@ export function pushedThrough(
  * and make it replay everything.
  */
 export function nextCursor(
-  rows: Row[] | null | undefined,
+  // Only server_seq is read, so a caller with half a row -- the tests, and a
+  // reply that carried nothing else -- is answering the question fully.
+  rows: ReadonlyArray<{ server_seq?: unknown }> | null | undefined,
   cursor: unknown,
 ): number {
   return (rows || []).reduce(

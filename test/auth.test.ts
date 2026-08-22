@@ -1,13 +1,14 @@
-const test = require("node:test");
-const assert = require("node:assert/strict");
+import test from "node:test";
+import assert from "node:assert/strict";
 
-const {
+import {
   REFRESH_SKEW_MS,
   sessionFromToken,
   sessionFromStored,
   needsRefresh,
   publicSession,
-} = require("../out/shared/auth");
+} from "#shared/auth.js";
+import type { Session } from "#shared/types.js";
 
 /** What Supabase's token endpoint actually answers, trimmed to what we read. */
 function reply(over = {}) {
@@ -131,10 +132,12 @@ test("publicSession hands over the identity and nothing else", () => {
 test("no field of a session reaches the renderer unless it was named", () => {
   // The real check is this one: publicSession picks, so a field added to the
   // session later cannot escape by being forgotten in a delete list.
+  // The extra field is the experiment, so the literal has to be allowed to
+  // carry it -- an excess-property check would refuse it otherwise.
   const shown = publicSession({
     ...sessionFromToken(reply(), 0),
     somethingAddedLater: "secret",
-  });
+  } as Partial<Session>);
 
   assert.deepEqual(Object.keys(shown).sort(), ["email", "userId"]);
   assert.equal(JSON.stringify(shown).includes("access-1"), false);

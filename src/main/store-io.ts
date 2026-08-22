@@ -56,7 +56,7 @@ function defaultStore() {
  * Never copies over an existing target — that would overwrite live data with
  * a stale copy on every launch.
  */
-function migrateLegacyStore(target, legacy) {
+function migrateLegacyStore(target: string, legacy: string | string[]) {
   const sources = (Array.isArray(legacy) ? legacy : [legacy]).filter(Boolean);
   try {
     if (fs.existsSync(target)) return;
@@ -74,7 +74,7 @@ function migrateLegacyStore(target, legacy) {
  * Merging settings over the defaults is what lets a new setting be added
  * without an older file losing it.
  */
-function loadStore(target, legacy) {
+function loadStore(target: string, legacy?: string | string[]) {
   if (legacy && legacy.length) migrateLegacyStore(target, legacy);
   try {
     const parsed = JSON.parse(fs.readFileSync(target, "utf8"));

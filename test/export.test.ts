@@ -1,15 +1,15 @@
-const test = require("node:test");
-const assert = require("node:assert/strict");
+import test from "node:test";
+import assert from "node:assert/strict";
 
-const {
+import {
   buildSnapshot,
   toMarkdown,
   toHtml,
   defaultFileName,
   isoDay,
-} = require("../out/shared/export");
-const { initI18n, setMainLanguage, t } = require("../out/main/i18n");
-const { orderKeyBetween } = require("../out/shared/core");
+} from "#shared/export.js";
+import { initI18n, setMainLanguage, t } from "#main/i18n.js";
+import { orderKeyBetween } from "#shared/core.js";
 
 const NOW = new Date(2026, 7, 2, 14, 30); // 2026-08-02 14:30, local
 
@@ -21,11 +21,16 @@ initI18n("ko");
 const inKorean = { t, locale: "ko" };
 
 /** buildSnapshot with the language bound, so the cases below stay readable. */
-const snapshotOf = (tasks, now = NOW, space, i18n = inKorean) =>
-  buildSnapshot(tasks, now, space, i18n);
+const snapshotOf = (
+  tasks: unknown,
+  now: Date = NOW,
+  space?: unknown,
+  i18n = inKorean,
+) => buildSnapshot(tasks, now, space, i18n);
 
 /** Same, for the one function that names a file rather than filling it. */
-const nameOf = (now, ext, space) => defaultFileName(now, ext, space, t);
+const nameOf = (now: Date, ext: string, space?: unknown) =>
+  defaultFileName(now, ext, space, t);
 
 const task = (over = {}) => ({
   id: Math.random().toString(36).slice(2),

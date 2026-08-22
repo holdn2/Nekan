@@ -65,8 +65,10 @@ export const FALLBACK_QUAD: Quadrant = "q4";
 export const CROWDED: Partial<Record<Place, number>> = { q1: 5 };
 
 /** True when `count` is past the point that quadrant stops meaning anything. */
-export const isCrowded = (quadrant: Place, count: unknown) =>
-  Number(count) > (CROWDED[quadrant] ?? Infinity);
+// `quadrant` is whatever the caller has, including nothing: the bar asks about
+// places that may not be quadrants at all, and the answer for those is false.
+export const isCrowded = (quadrant: Place | undefined, count: unknown) =>
+  Number(count) > (CROWDED[quadrant as Place] ?? Infinity);
 
 /**
  * The two matrices the header toggle switches between. This is a property of

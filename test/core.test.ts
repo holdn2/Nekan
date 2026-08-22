@@ -1,7 +1,7 @@
-const test = require("node:test");
-const assert = require("node:assert/strict");
+import test from "node:test";
+import assert from "node:assert/strict";
 
-const {
+import {
   QUADS,
   INBOX,
   PLACES,
@@ -42,20 +42,21 @@ const {
   clampMemoPanel,
   expandOrigin,
   collapseOrigin,
-} = require("../out/shared/core");
+} from "#shared/core.js";
+import type { Place, Task } from "#shared/types.js";
 
 /** A 1920x1080 display starting at the origin, minus nothing. */
 const SCREEN = { x: 0, y: 0, width: 1920, height: 1080 };
 const BAR = { width: 600, height: 48 };
 const WIN = { width: 1000, height: 700 };
 
-const { initI18n, setMainLanguage, t } = require("../out/main/i18n");
+import { initI18n, setMainLanguage, t } from "#main/i18n.js";
 
 /** Local 'YYYY-MM-DD' for a day offset from a base day, the way the UI writes it. */
-function dayString(offset, base) {
+function dayString(offset: number, base?: Date) {
   const d = startOfToday(base);
   d.setDate(d.getDate() + offset);
-  const pad = (n) => String(n).padStart(2, "0");
+  const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
@@ -88,7 +89,10 @@ test("normalizeTasks rescues an unknown quadrant", () => {
     { id: "d", text: "d", quadrant: "INBOX" },
   ];
   for (const task of normalizeTasks(bad)) {
-    assert.ok(QUADS.includes(task.quadrant), `${task.id} landed outside QUADS`);
+    assert.ok(
+      (QUADS as Place[]).includes(task.quadrant),
+      `${task.id} landed outside QUADS`,
+    );
   }
 });
 
@@ -98,7 +102,10 @@ test("normalizeTasks keeps a task parked in the inbox there", () => {
   const [task] = normalizeTasks([{ id: "a", text: "x", quadrant: INBOX }]);
   assert.equal(task.quadrant, INBOX);
   assert.ok(PLACES.includes(INBOX));
-  assert.ok(!QUADS.includes(INBOX), "the grid loops must not walk the inbox");
+  assert.ok(
+    !(QUADS as Place[]).includes(INBOX),
+    "the grid loops must not walk the inbox",
+  );
 });
 
 test("normalizeTasks puts a save from before the split on a board", () => {
@@ -142,7 +149,7 @@ test("the inbox belongs to no board, so both matrices show it", () => {
 test("only q1 is ever crowded — a full q2 is the point of the method", () => {
   assert.equal(isCrowded("q1", CROWDED.q1), false);
   assert.equal(isCrowded("q1", CROWDED.q1 + 1), true);
-  for (const q of ["q2", "q3", "q4", INBOX]) {
+  for (const q of ["q2", "q3", "q4", INBOX] as Place[]) {
     assert.equal(isCrowded(q, 9999), false, q);
   }
 });
@@ -689,7 +696,12 @@ test("tombstones are dropped only once they are older than the TTL", () => {
 
 test("dropExpiredTombstones ignores a rubbish purgedAt", () => {
   const now = 1_000_000_000_000;
-  const list = [{ id: "a", purgedAt: "yesterday" }, { id: "b" }];
+  // Deliberately rubbish: the point is that a purgedAt nothing can parse is
+  // kept rather than dropped, so the fixture has to be allowed to say it.
+  const list = [
+    { id: "a", purgedAt: "yesterday" },
+    { id: "b" },
+  ] as unknown as Partial<Task>[];
   assert.equal(dropExpiredTombstones(list, now).length, 2);
   assert.deepEqual(dropExpiredTombstones(null, now), []);
 });

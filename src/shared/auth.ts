@@ -94,13 +94,17 @@ export function sessionFromStored(parsed: unknown): Session | null {
 
 /** Is this session too old to send? Missing and unparseable both count as yes. */
 export function needsRefresh(
-  session: Session | null | undefined,
+  // Partial on purpose: the case this decides is "there is not enough of a
+  // session left to send", and a file that lost its access token is exactly
+  // that. test/auth.test.ts passes one.
+  session: Partial<Session> | null | undefined,
   now: number,
   skew: number = REFRESH_SKEW_MS,
 ): boolean {
   if (!session || !text(session.accessToken)) return true;
-  // Written as a negated `>` so a NaN deadline answers yes rather than no.
-  return !(session.expiresAt - skew > now);
+  // Written as a negated `>` so a NaN deadline -- or a missing one -- answers
+  // yes rather than no.
+  return !((session.expiresAt as number) - skew > now);
 }
 
 /**
@@ -111,7 +115,10 @@ export function needsRefresh(
  * because nobody remembered to exclude it.
  */
 export function publicSession(
-  session: Session | null | undefined,
+  // Wider than Session, and that is the point being made: a field added to the
+  // session later must not escape because nobody remembered to exclude it, so
+  // this has to accept an object carrying fields it has never heard of.
+  session: Partial<Session> | null | undefined,
 ): PublicSession | null {
   if (!session) return null;
   return { email: session.email || null, userId: session.userId || null };

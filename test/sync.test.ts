@@ -1,7 +1,7 @@
-const test = require("node:test");
-const assert = require("node:assert/strict");
+import test from "node:test";
+import assert from "node:assert/strict";
 
-const {
+import {
   CLOCK_TOLERANCE_MS,
   PAGE_SIZE,
   clockOffset,
@@ -15,9 +15,11 @@ const {
   pushedThrough,
   nextCursor,
   hasMore,
-} = require("../out/shared/sync");
+} from "#shared/sync.js";
+import type { LooseTask } from "#shared/sync.js";
+import type { Place, Task } from "#shared/types.js";
 
-function task(over = {}) {
+function task(over: Partial<Task> = {}): Task {
   return {
     id: "t1",
     text: "할 일",
@@ -52,7 +54,12 @@ test("toRow renames every field and keeps the values", () => {
 });
 
 test("toRow never sends server_seq — the server stamps it", () => {
-  const row = toRow({ ...task(), server_seq: 999, serverSeq: 999 }, "u1");
+  // Fields toRow has never heard of, on purpose: the point is that it sends
+  // the columns FIELDS names and not whatever a caller happened to attach.
+  const row = toRow(
+    { ...task(), server_seq: 999, serverSeq: 999 } as LooseTask,
+    "u1",
+  );
   assert.equal("server_seq" in row, false);
 });
 
@@ -65,8 +72,11 @@ test("toRow turns a missing field into null rather than dropping it", () => {
 test("toRow never sends a null updated_at — the column refuses it", () => {
   // Not hypothetical: the server answers 23502 and rejects the *whole* batch,
   // so one task like this would wedge every sync behind it.
-  for (const bad of [{}, { updatedAt: null }, { updatedAt: "어제" }]) {
-    const row = toRow({ id: "t1", ...bad }, "u1");
+  // Rubbish stamps, which is exactly the case being tested -- a row that never
+  // went through normalizeTasks would carry one.
+  const bads = [{}, { updatedAt: null }, { updatedAt: "어제" }] as unknown[];
+  for (const bad of bads) {
+    const row = toRow({ id: "t1", ...(bad as object) } as LooseTask, "u1");
     assert.equal(typeof row.updated_at, "number", JSON.stringify(bad));
   }
   assert.equal(toRow({ id: "t1", updatedAt: 5 }, "u1").updated_at, 5);
@@ -202,7 +212,9 @@ test("a quadrant row arriving without a space is given one", () => {
 });
 
 test("a row with an impossible quadrant is filed somewhere real", () => {
-  const rows = [toRow(task({ id: "bad", quadrant: "q9" }), "u1")];
+  // "q9" is not a place, which is the whole point: the merge has to file it
+  // somewhere real rather than keep it.
+  const rows = [toRow(task({ id: "bad", quadrant: "q9" as Place }), "u1")];
   const merged = mergeIncoming([], rows).tasks[0];
   assert.notEqual(merged.quadrant, "q9");
 });
