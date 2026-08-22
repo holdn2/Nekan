@@ -51,7 +51,7 @@ electron-builder가 싣는 것도 거기다. `npm start`·`npm test`·`npm run d
 있어 평소에는 의식할 일이 없지만, **`src/`를 고치고 앱만 다시 띄우면 옛 코드가 돈다.**
 `npm run build:watch`가 두 컴파일러를 watch로 띄우고 자산도 따라 복사한다.
 
-**tsconfig가 넷이고 각자 이유가 있다.**
+**tsconfig가 다섯이고 각자 이유가 있다. 그중 하나는 빌드가 아니라 에디터의 것이다.**
 
 - `tsconfig.shared.json` — `src/shared/`를 **ES 모듈로** 내보낸다. 그리고 **규칙이다**:
   `types: []` + DOM lib 없음이라 여기서 `fs`나 `document`를 만지면 **컴파일이 죽는다.**
@@ -59,11 +59,30 @@ electron-builder가 싣는 것도 거기다. `npm start`·`npm test`·`npm run d
   수정에 안전망이 있다.
 - `tsconfig.main.json` — 메인과 preload. CommonJS. `composite`이라 선언 파일을 내보내고,
   렌더러가 그걸로 `window.api`의 타입을 얻는다.
-- `tsconfig.renderer.json` — `module: "preserve"`. **import 경로를 tsc가 다시 쓰지 않게
-  하는 것이 이 설정의 전부다** — 번들러가 없어 브라우저가 적힌 그대로 읽는다.
+- `tsconfig.renderer.json` — **Vite가 내보내고 tsc는 읽기만 한다**(`noEmit`).
+  `module: "preserve"`로 import 경로를 tsc가 다시 쓰지 않게 두는데, 이제 그 경로를 읽는 것은
+  브라우저가 아니라 번들러다 — `.js`라고 적힌 것을 옆의 `.ts`·`.tsx`에 이어주는 일은
+  `vite.config.ts`의 플러그인이 한다. **`noEmit`을 빼면 `tsc -b`가 번들 옆에 렌더러를 한 벌 더
+  뱉는다** — `out/renderer/app.js`, 번들러가 생기기 전에 `index.html`이 읽던 바로 그 이름이다.
 - `tsconfig.test.json` — `out/test/`로 나간다. 테스트는 `#shared/*`·`#main/*`로 import한다
   (`package.json`의 `imports`). `test/`가 `src/`보다 한 겹 위라 **소스와 산출물 양쪽에서
   맞는 상대 경로가 없기 때문이다.**
+- `tsconfig.json` — **아무것도 컴파일하지 않는다.** `files: []`에 위 넷을 `references`로만 적은
+  파일이고, 있는 이유는 하나다: **언어 서버는 정확히 `tsconfig.json`이라는 이름만 찾는다.**
+  이게 없으면 VS Code는 프로젝트를 못 찾아 모든 파일을 기본 설정으로 열고, **빌드에는 없는
+  오류를 뿌린다** — `window.api`를 모르고, `.tsx`에 JSX 플래그가 없다고 하고,
+  `node:test`를 default import 할 수 없다고 한다. 2026-08-23에 실측했다: 언어 서버 기준
+  `app.ts` 5개·`toast.tsx` 1개·`core.test.ts` 5개였고(`tsc`에 프로젝트 없이 물으면 `app.ts`
+  하나가 **254개**), 이 파일을 놓자 **46개 파일 전부 0개**가 됐다.
+  **그러니 "에디터가 빨간 줄을 뿌린다"는 신고를 받으면 `npm run typecheck`부터 돌리지 말 것** —
+  그 둘은 다른 질문이고, 통과해도 에디터는 계속 틀릴 수 있다.
+
+**에디터와 빌드는 아예 다른 컴파일러를 쓴다.** 저장소의 TypeScript는 7.0.2인데 **그 패키지에는
+`tsc`밖에 없다** — `tsserver`가 없어서(`bin`이 `{"tsc": ...}` 하나뿐) VS Code는 워크스페이스
+버전을 쓸 수 없고 자기 안에 든 5.x로 판정한다. `typescript.tsdk`를 `node_modules/typescript/lib`로
+돌리면 **언어 서버가 아예 안 뜬다.** 지금은 둘의 판정이 같지만(위 46개 파일 0개), 언젠가
+7만 아는 문법을 쓰면 **빌드는 통과하는데 에디터만 빨개지는** 형태로 갈라진다. 그때 고칠 곳은
+코드가 아니다.
 
 **`shared/`는 ESM 한 벌이고 메인·테스트는 그것을 `require`한다.** Node 22.12부터 되는 일이고
 (테스트 러너 22.20 · Electron 43의 24.18 양쪽에서 확인), `out/shared/package.json`에

@@ -1,0 +1,22 @@
+{
+  // For the editor, not for the build.
+  //
+  // The four real configs are named tsconfig.<part>.json, and an editor's
+  // language server only ever looks for a file called exactly tsconfig.json.
+  // Without this one it finds nothing, opens every file with default options,
+  // and reports errors the build does not have: window.api unknown, JSX not
+  // enabled, node:test not default-importable. All of that is the absence of a
+  // project, not a fault in the code.
+  //
+  // "files": [] plus references is the solution-style layout: it compiles
+  // nothing itself, and points the server at the config that owns each file.
+  // Every build command still names its own config, so nothing here changes
+  // what is emitted.
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.shared.json" },
+    { "path": "./tsconfig.main.json" },
+    { "path": "./tsconfig.renderer.json" },
+    { "path": "./tsconfig.test.json" }
+  ]
+}
