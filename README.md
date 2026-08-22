@@ -110,8 +110,10 @@ Claude 계열의 밝은 베이지 테마 + 다크 테마를 지원합니다.
 
 ```powershell
 npm install   # 최초 1회
-npm start
-npm test      # 저장·정규화·날짜 로직 단위 테스트 (선택)
+npm start          # 빌드한 뒤 앱을 띄웁니다
+npm test           # 빌드한 뒤 단위 테스트 (저장·정규화·날짜·동기화 판정)
+npm run build      # src/ → out/ 컴파일만
+npm run build:watch # 고치는 동안 계속 컴파일
 ```
 
 **설치 파일 빌드**
@@ -198,7 +200,7 @@ npm run release   # 빌드 + GitHub Release에 업로드 (아래 GH_TOKEN 참고
 - **완료 항목과 휴지통은 포함되지 않습니다.** 지금 살아 있는 할 일만 나갑니다.
 - HTML은 외부 파일을 전혀 참조하지 않는 파일 하나라 그대로 보내도 됩니다.
 - PDF는 항상 **라이트 팔레트**로 만들어집니다 (다크 테마로 인쇄하면 검은 판이 되므로).
-- 문서는 렌더러가 아니라 메인 프로세스가 만듭니다. 인쇄물 모양을 바꿀 곳은 `src/shared/export.js` 하나뿐이고 `src/renderer/styles/`와는 무관합니다.
+- 문서는 렌더러가 아니라 메인 프로세스가 만듭니다. 인쇄물 모양을 바꿀 곳은 `src/shared/export.ts` 하나뿐이고 `src/renderer/styles/`와는 무관합니다.
 
 ### 히스토리 탭 · 휴지통 탭
 
@@ -250,39 +252,40 @@ tools/make-icon.ps1    # 아이콘 생성 스크립트
 tools/seed-dev-data.js # 대량 더미 데이터 생성 (성능 확인용)
 tools/check-release.js # 릴리스 draft 검사·복구 (release 스크립트가 부름)
 tools/find-untranslated.js # 소스에 남은 한글 줄 수를 셈
-src/
-  main.js              # 앱 생명주기와 조립
-  preload.js           # contextBridge 기반 IPC 브리지
+src/                   # 쓰는 곳 (TypeScript)
+  main.ts              # 앱 생명주기와 조립
+  preload.ts           # contextBridge 기반 IPC 브리지
   assets/icon.*        # 런타임에서 쓰는 아이콘 사본
   main/
-    store.js           # data.json 메모리 사본 + 디바운스 저장
-    window.js          # 창 생성, 확장/바 모드, 메모 패널 높이 회계
-    export-service.js  # PDF·HTML·MD 쓰기
-    updater.js         # GitHub Releases 확인 · 백그라운드 다운로드
-    api-client.js      # Supabase와 말하는 유일한 곳
-    token-store.js     # 세션을 암호화해 auth.json에 보관
-    sync.js            # 당기고 밀고 다시 시도하는 루프
-    oauth.js           # Google 로그인의 브라우저 쪽 (PKCE + loopback)
-    i18n.js            # 메인 프로세스의 문자열
-    ipc.js             # ipcMain 핸들러 전부
-  shared/
-    core.js            # 날짜·정규화·레이아웃 비율·업무/일상 규칙 (메인·렌더러·테스트 공용)
-    store-io.js        # data.json 읽기/쓰기 (temp write + rename)
-    export.js          # 내보내기 문서 생성 (Markdown / 인쇄용 HTML → PDF)
-    sync.js            # 동기화 판정 (LWW·행 변환·커서·시계 오차)
-    auth.js            # 세션 모양과 만료 판정
-    i18n/              # ko.json · en.json · GLOSSARY.md · locales.js
-  renderer/            # ES 모듈 (번들러 없음)
+    store.ts           # data.json 메모리 사본 + 디바운스 저장
+    store-io.ts        # data.json 읽기/쓰기 (temp write + rename)
+    window.ts          # 창 생성, 확장/바 모드
+    export-service.ts  # PDF·HTML·MD 쓰기
+    updater.ts         # GitHub Releases 확인 · 백그라운드 다운로드
+    api-client.ts      # Supabase와 말하는 유일한 곳
+    token-store.ts     # 세션을 암호화해 auth.json에 보관
+    sync.ts            # 당기고 밀고 다시 시도하는 루프
+    oauth.ts           # Google 로그인의 브라우저 쪽 (PKCE + loopback)
+    i18n.ts            # 메인 프로세스의 문자열
+    ipc.ts             # ipcMain 핸들러 전부
+  shared/              # 메인·렌더러·테스트 공용. Node도 DOM도 쓰지 않는다
+    types.ts           # Task · Place · Space · Layout · Session 등 어휘
+    core.ts            # 날짜·정규화·레이아웃 비율·업무/일상 규칙
+    export.ts          # 내보내기 문서 생성 (Markdown / 인쇄용 HTML → PDF)
+    sync.ts            # 동기화 판정 (LWW·행 변환·커서·시계 오차)
+    auth.ts            # 세션 모양과 만료 판정
+    i18n/              # ko.json · en.json · GLOSSARY.md · locales.ts
+  renderer/            # ES 모듈 (번들러 없음 — import에 .js 확장자를 쓴다)
     index.html
-    app.js             # 진입점: 렌더 디스패처, 단축키, 초기화
-    store.js           # 할 일 배열과 모든 변경 (DOM을 모름)
-    render-bus.js      # "다시 그려라" 신호
-    core-bridge.js     # shared/core.js를 named export로
-    i18n.js            # 렌더러의 문자열
-    dom.js             # 공통 DOM 헬퍼
+    app.ts             # 진입점: 렌더 디스패처, 단축키, 초기화
+    store.ts           # 할 일 배열과 모든 변경 (DOM을 모름)
+    render-bus.ts      # "다시 그려라" 신호
+    i18n.ts            # 렌더러의 문자열
+    dom.ts             # 공통 DOM 헬퍼
     components/        # 아이콘, 마감일 칩, 메모 표시, 토스트
     views/             # 4분면 · 다 꺼내기 · 히스토리/휴지통 · 메모 패널 · 계정 · 설정 · 첫 실행
     window/            # 타이틀바·탭 · 분면 경계 드래그 · 드래그앤드롭 · 내보내기
     styles/            # 영역별 15개 (라이트/다크 팔레트는 base.css, 공용 토글은 switch.css)
-test/                  # node --test 단위 테스트
+out/                   # `npm run build`가 만든다. 앱이 실제로 읽는 것
+test/                  # node --test 단위 테스트 (TypeScript)
 ```
