@@ -42,7 +42,13 @@ const exportFilters = () => [
  */
 const fontUrl = () =>
   pathToFileURL(
-    path.join(__dirname, "..", "assets", "fonts", "PretendardVariable.woff2"),
+    path.join(
+      __dirname,
+      "..",
+      "renderer",
+      "assets",
+      "PretendardVariable.woff2",
+    ),
   ).href;
 
 /**

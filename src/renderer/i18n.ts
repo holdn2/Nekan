@@ -13,14 +13,14 @@
  * i18next is initialised with the catalogues already in hand for the same
  * reason -- a backend plugin would make this asynchronous again.
  *
- * The import path reaches out of src/ into node_modules. That was checked
- * inside a packaged asar rather than assumed: `npm start` proves nothing here
- * because node_modules is sitting right there either way.
+ * i18next is imported by name. It used to be reached by a path into
+ * node_modules, because the browser resolved these specifiers itself and had
+ * no other way to find it; the bundler added in #73 removes that special case.
  */
 
-import i18next from "../../node_modules/i18next/dist/esm/i18next.js";
-import ko from "../shared/i18n/ko.json" with { type: "json" };
-import en from "../shared/i18n/en.json" with { type: "json" };
+import i18next from "i18next";
+import ko from "../shared/i18n/ko.json";
+import en from "../shared/i18n/en.json";
 import { notify } from "./render-bus.js";
 
 /** What preload read out of argv, or the fallback if it somehow was not there. */

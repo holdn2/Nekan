@@ -22,14 +22,20 @@
   },
   "dependencies": {
     "electron-updater": "^6.8.9",
-    "i18next": "^26.3.6"
+    "i18next": "^26.3.6",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
     "electron": "^43.2.0",
     "electron-builder": "^26.15.3",
     "prettier": "^3.9.6",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
   },
   "build": {
     "appId": "com.makersfarm.nekan",
