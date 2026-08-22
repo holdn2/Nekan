@@ -657,6 +657,30 @@ npx electron . --user-data-dir=<임시폴더>
 
 진짜 데이터 폴더를 가리키면 거부한다.
 
+**빌드가 있으니, 재는 것이 방금 고친 코드인지부터 본다.** `npm start`·`npm test`·`npm run dist`는
+앞에 빌드가 붙어 있지만 **손으로 `npx electron .`을 부르면 붙지 않는다.** 옛 `out/`이 돈다.
+
+**`.tsbuildinfo`는 `out/` 안에 있어야 한다.** composite 프로젝트는 그 파일이 "최신"이라고 하면
+emit을 건너뛴다. 밖에 두면 `rm -rf out` 뒤의 빌드가 **오류 없이 빈 `out/`을 만들고**
+"built out/"이라고 찍는다 (2026-08-22 실측).
+
+**`node --test <디렉터리>`가 이 환경에서 동작하지 않는다** — `Cannot find module`로 죽는다.
+`node --test "out/test/**/*.test.js"`처럼 glob을 준다. 인자를 아예 빼면 하위를 훑어 소스와
+산출물이 둘 다 잡힌다.
+
+**테스트를 `.ts`로 바꾸는 것만으로는 아무것도 검사되지 않는다.** `require()`는 `any`를 주므로
+이름만 TypeScript인 파일이 된다. `import`로 바꿔야 타입이 흐른다. **확인법**: 일부러 틀린 줄을
+심고 `npm test`가 **0이 아닌 코드로 죽는지** 본다. 2026-08-22에 심은 줄이 그냥 통과했고,
+그게 `require` 때문이었다.
+
+**내보내기 대화상자는 백그라운드에서 포커스를 못 준다.** `SetForegroundWindow`가 거절당한다.
+대화상자 자체는 `EnumWindows`로 클래스 `#32770`을 찾아 확인할 수 있고(제목이 곧 `t()`가
+만든 문자열이다), `PostMessage(WM_CLOSE)`로 닫으면 `export:run`이 `canceled`를 돌려준다.
+**쓰는 쪽은 작은 Electron 하니스로 확인한다** — `out/shared/export.js`와 `out/main/i18n.js`를
+require해서 `buildSnapshot` → `toMarkdown`/`toHtml` → 숨은 창에서 `printToPDF`까지 그대로 돌린다.
+2026-08-22 실측: md 508B · html 4.8KB · **pdf 180KB**(글꼴이 박혔다는 뜻), 저장본 html에
+`file://`이 **없다**(그게 규칙이다).
+
 **테스트 프로필의 `data.json`을 PowerShell로 쓰지 말 것.** 5.1의 `Set-Content -Encoding utf8`은
 **BOM을 붙이고**, `JSON.parse`가 그 파일을 거절하면 `load()`의 손상 파일 폴백이 조용히 **빈
 보드**를 준다 — 앱은 아무 말도 하지 않고 할 일이 0개인 화면이 뜬다(2026-08-21 실측:
