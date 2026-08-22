@@ -34,7 +34,11 @@
     // Vite emits the renderer; this project exists to read it.
     "noEmit": true
   },
-  "files": ["src/renderer/components/toast.tsx"],
+  "files": [
+    "src/renderer/components/toast.tsx",
+    "src/renderer/render-bus.ts",
+    "src/renderer/react/use-store.ts"
+  ],
   "references": [
     { "path": "./tsconfig.shared.json" },
     { "path": "./tsconfig.main.json" }
