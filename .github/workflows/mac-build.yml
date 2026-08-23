@@ -31,9 +31,9 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -58,7 +58,7 @@ jobs:
 
       # Named without a hash so the log is readable, and kept short because an
       # unsigned build is only good for inspection.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: mac-unsigned
           retention-days: 7

@@ -1,5 +1,5 @@
 /**
- * Types for the one function check-release.js exports.
+ * Types for what check-release.js exports.
  *
  * This file also keeps `tools/` out of the build. Without it, importing the
  * .js from a test pulls it into the test project as an input, and tsc stops
@@ -20,4 +20,13 @@ export interface ReleaseAudit {
   unexpected: string[];
 }
 
-export function auditAssets(names: string[]): ReleaseAudit;
+/** The architectures `build.mac.target` ships, so the check cannot drift from the config. */
+export function macArches(pkg?: unknown): string[];
+
+/**
+ * Judge a list of release asset names.
+ *
+ * `arches` defaults to what package.json declares; pass it to test the rules
+ * against a configuration other than this repository's.
+ */
+export function auditAssets(names: string[], arches?: string[]): ReleaseAudit;

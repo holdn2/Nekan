@@ -21,6 +21,25 @@ const path = require("path");
 const REPO = "holdn2/Nekan";
 
 /**
+ * Which architectures the mac build ships, read from the config that decides
+ * it rather than written down a second time here.
+ *
+ * `build.mac.target` is the only place that says arm64 and x64. A check
+ * carrying its own copy of that list passes the day someone switches to a
+ * universal binary and the per-arch files stop existing -- or, worse, keeps
+ * passing when an arch is added and never checked.
+ */
+function macArches(pkg = require("../package.json")) {
+  const target = pkg.build && pkg.build.mac && pkg.build.mac.target;
+  const entries = Array.isArray(target) ? target : target ? [target] : [];
+  const arches = new Set();
+  for (const entry of entries) {
+    for (const arch of (entry && entry.arch) || []) arches.add(arch);
+  }
+  return [...arches];
+}
+
+/**
  * What a complete release looks like, one entry per platform.
  *
  * Windows is `always` because `npm run release` builds it and this script runs
@@ -36,57 +55,67 @@ const REPO = "holdn2/Nekan";
  * there was one platform. Naming who owns each file says the same thing
  * without breaking the day a second one arrives.
  */
-const PLATFORMS = [
-  {
-    name: "windows",
-    always: true,
-    owns: (n) => n === "latest.yml" || /\.exe(\.blockmap)?$/.test(n),
-    required: [
-      ["installer (.exe)", (n) => n.endsWith(".exe")],
-      // Specifically the installer's. A mac blockmap used to satisfy this,
-      // back when the test was any name ending in .blockmap.
-      ["installer blockmap", (n) => n.endsWith(".exe.blockmap")],
-      ["latest.yml", (n) => n === "latest.yml"],
-    ],
-  },
-  {
-    name: "mac",
-    always: false,
-    owns: (n) => n === "latest-mac.yml" || /\.(dmg|zip)(\.blockmap)?$/.test(n),
-    required: [
-      // The zip is the one electron-updater reads. A release with only the
-      // .dmg installs fine by hand and then never updates again.
-      ["zip", (n) => n.endsWith(".zip")],
-      ["dmg", (n) => n.endsWith(".dmg")],
-      ["latest-mac.yml", (n) => n === "latest-mac.yml"],
-    ],
-  },
-];
+function platforms(arches) {
+  return [
+    {
+      name: "windows",
+      always: true,
+      owns: (n) => n === "latest.yml" || /\.exe(\.blockmap)?$/.test(n),
+      required: [
+        ["installer (.exe)", (n) => n.endsWith(".exe")],
+        // Specifically the installer's. A mac blockmap used to satisfy this,
+        // back when the test was any name ending in .blockmap.
+        ["installer blockmap", (n) => n.endsWith(".exe.blockmap")],
+        ["latest.yml", (n) => n === "latest.yml"],
+      ],
+    },
+    {
+      name: "mac",
+      always: false,
+      owns: (n) =>
+        n === "latest-mac.yml" || /\.(dmg|zip)(\.blockmap)?$/.test(n),
+      required: [
+        // Per architecture, because "some .zip exists" passes on a release
+        // that shipped arm64 and nothing else -- and an Intel Mac then finds
+        // no file it can run. The first CI build produced all of these.
+        ...arches.flatMap((arch) => [
+          [`${arch} dmg`, (n) => n.endsWith(`-${arch}.dmg`)],
+          // The zip is the one electron-updater reads. A release with only the
+          // .dmg installs fine by hand and then never updates again.
+          [`${arch} zip`, (n) => n.endsWith(`-${arch}.zip`)],
+          // Without it that architecture downloads the whole app every time.
+          [`${arch} zip blockmap`, (n) => n.endsWith(`-${arch}.zip.blockmap`)],
+        ]),
+        ["latest-mac.yml", (n) => n === "latest-mac.yml"],
+      ],
+    },
+  ];
+}
 
 /**
- * Judge a list of asset names. Pure, so the rules above can be tested without
- * a GitHub draft to point at.
+ * Judge a list of asset names. Pure -- `arches` is a parameter so the rules can
+ * be tested without a GitHub draft or a particular package.json to point at.
  *
  * Returns the platforms it saw, what each is missing, and any file no platform
  * claims -- an unclaimed file means either a target nobody wrote a rule for or
  * something that does not belong in the release, and both are worth stopping
- * for.
+ * for. The .dmg blockmaps land in that first group deliberately: the build
+ * makes them, but nothing reads them, since mac updates come from the zip.
  */
-function auditAssets(names) {
-  const present = PLATFORMS.filter(
-    (p) => p.always || names.some((n) => p.owns(n)),
-  );
+function auditAssets(names, arches = macArches()) {
+  const all = platforms(arches);
+  const present = all.filter((p) => p.always || names.some((n) => p.owns(n)));
   const missing = [];
   for (const platform of present) {
     for (const [label, test] of platform.required) {
       if (!names.some(test)) missing.push(`${platform.name}: ${label}`);
     }
   }
-  const unexpected = names.filter((n) => !PLATFORMS.some((p) => p.owns(n)));
+  const unexpected = names.filter((n) => !all.some((p) => p.owns(n)));
   return { platforms: present.map((p) => p.name), missing, unexpected };
 }
 
-module.exports = { auditAssets };
+module.exports = { auditAssets, macArches };
 
 // Everything below talks to GitHub. Guarded so that requiring this file for
 // the function above does not start a release check -- and, without a token,
@@ -128,12 +157,26 @@ if (require.main === module) {
     return body;
   };
 
-  /** Re-upload a file this run built, since assets cannot be moved between releases. */
+  /**
+   * Re-upload a file this run built, since assets cannot be moved between
+   * releases -- only their bytes can, and the only copy this script can reach
+   * is the one in dist/.
+   *
+   * That is a real limit once mac ships: the mac build comes off a different
+   * machine, and if its upload splits into a draft of its own there is nothing
+   * in this dist/ to fold with. Fetching the bytes back down from GitHub would
+   * paper over it, but folding across machines is not what this repair is --
+   * the race it exists for happens inside one electron-builder run, between
+   * that run's own parallel uploads. Two machines landing in two drafts is a
+   * publishing question, not a race to repair, so it says so and stops.
+   */
   const attach = async (releaseId, name) => {
     const file = path.join("dist", name);
     if (!fs.existsSync(file)) {
       throw new Error(
-        `${name} is missing from dist/ -- rebuild before repairing`,
+        `${name} is in a split draft but not in this machine's dist/.\n` +
+          `  Assets move only by re-uploading their bytes, and this run did not build that file.\n` +
+          `  If another machine built it, fold the drafts there -- or publish every target from one place.`,
       );
     }
     await api(
