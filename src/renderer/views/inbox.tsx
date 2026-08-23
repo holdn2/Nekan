@@ -26,7 +26,7 @@ import {
 } from "../store.js";
 import { notify } from "../render-bus.js";
 import { EditableText } from "../components/editable-text.js";
-import { plusIcon } from "../components/icons.js";
+import { AddForm } from "../components/add-form.js";
 import { CloseIcon } from "../react/icons.js";
 import { useRenderSignal } from "../react/use-store.js";
 
@@ -122,46 +122,47 @@ function InboxCount() {
   return <>{inboxTasks().length}</>;
 }
 
-/**
- * The header toggle and the add form.
- *
- * The form stays hand-built for now: it is the same shape as the four in the
- * quadrants (wireAddForms), and converting one of five would leave two ways of
- * writing the same control. They go together when the matrix does.
- */
+/** The header toggle. Everything below it is React's. */
 export function wireInbox() {
-  const input = $<HTMLInputElement>("#inboxInput");
-
   $("#inboxToggle").addEventListener("click", () => {
     applyInboxOpen(!inboxOpen);
-    if (inboxOpen) input.focus();
+    if (inboxOpen) $<HTMLInputElement>("#inboxInput")?.focus();
   });
+}
 
-  $('#inboxAdd button[type="submit"]').replaceChildren(plusIcon());
-  $("#inboxAdd").addEventListener("submit", (e) => {
-    e.preventDefault();
-    addTask(INBOX, input.value, null);
-    input.value = "";
-    input.focus();
-  });
-
-  // Most brain dumps are already written down somewhere else. Pasting a block
-  // of lines should give one item per line, not a single item with newlines
-  // flattened into it.
-  input.addEventListener("paste", (e) => {
-    const raw = e.clipboardData?.getData("text") ?? "";
-    if (!raw.includes("\n")) return;
-    e.preventDefault();
-    // Splice the paste into whatever is already typed before cutting on
-    // newlines, so a half-finished line in the box becomes the first item
-    // instead of being silently dropped.
-    const merged =
-      input.value.slice(0, input.selectionStart ?? 0) +
-      raw +
-      input.value.slice(input.selectionEnd ?? 0);
-    addTasks(INBOX, splitBulkText(merged));
-    input.value = "";
-  });
+/**
+ * The brain dump's add box.
+ *
+ * The same component as a quadrant's, minus the date -- when something goes
+ * here it is because nothing about it has been decided yet, and that includes
+ * when it is due.
+ */
+function InboxAdd() {
+  useRenderSignal();
+  return (
+    <AddForm
+      place={INBOX}
+      placeholderKey="inbox.placeholder"
+      onPaste={(e, text) => {
+        // Most brain dumps are already written down somewhere else. Pasting a
+        // block of lines should give one item per line, not a single item with
+        // the newlines flattened out of it.
+        const raw = e.clipboardData?.getData("text") ?? "";
+        if (!raw.includes(String.fromCharCode(10))) return false;
+        e.preventDefault();
+        // Splice the paste into whatever is already typed before cutting on
+        // newlines, so a half-finished line in the box becomes the first item
+        // instead of being silently dropped.
+        const el = e.currentTarget;
+        const merged =
+          text.slice(0, el.selectionStart ?? 0) +
+          raw +
+          text.slice(el.selectionEnd ?? 0);
+        addTasks(INBOX, splitBulkText(merged));
+        return true;
+      }}
+    />
+  );
 }
 
 /** Fill the three places index.html left empty. Called once, from init(). */
@@ -170,4 +171,6 @@ export function mountInbox() {
   if (list) createRoot(list).render(<InboxList />);
   const count = document.getElementById("inboxCount");
   if (count) createRoot(count).render(<InboxCount />);
+  const add = document.getElementById("inboxAddHost");
+  if (add) createRoot(add).render(<InboxAdd />);
 }

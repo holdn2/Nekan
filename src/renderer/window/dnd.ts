@@ -52,7 +52,6 @@ export function wireDragAndDrop() {
     // sent back up while the list is folded. afterElement then measures hidden
     // rows as zero-height and finds no insertion point, which lands the task at
     // the end — the right answer for a drop on a collapsed header.
-    const list = $(".list, .inbox-list", zone);
 
     zone.addEventListener("dragover", (e) => {
       if (!draggingId) return;
@@ -71,6 +70,10 @@ export function wireDragAndDrop() {
       zone.classList.remove("drop");
       const id = draggingId || e.dataTransfer?.getData("text/plain");
       if (!id) return;
+      // Resolved here rather than when the handler was bound: the lists are
+      // React's now, and an element captured at startup would be the one it
+      // replaced -- a drop would then measure nothing and land at the end.
+      const list = $(".list, .inbox-list", zone);
       const before = afterElement(list, e.clientY);
       // The drop zone names its quadrant in the markup, so this is only ever
       // one of the five -- but it arrives as whatever the DOM has, and writing

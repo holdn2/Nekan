@@ -338,25 +338,8 @@
           data-i18n-attr="data-empty"
           data-i18n-attr-only
         ></ul>
-        <form class="add inbox-add" id="inboxAdd">
-          <input
-            type="text"
-            id="inboxInput"
-            placeholder="Write anything (paste several lines to add one task per line)"
-            maxlength="200"
-            autocomplete="off"
-            data-i18n="inbox.placeholder"
-            data-i18n-attr="placeholder"
-            data-i18n-attr-only
-          />
-          <button
-            type="submit"
-            title="Add"
-            data-i18n="common.add"
-            data-i18n-attr="title"
-            data-i18n-attr-only
-          ></button>
-        </form>
+        <!-- Filled by views/inbox.tsx -->
+        <div id="inboxAddHost"></div>
       </div>
     </section>
 
@@ -364,139 +347,23 @@
          quadrant edges, so there are no separate splitter elements. -->
     <main id="matrixView" class="view matrix">
       <section class="quad q1" data-quad="q1">
-        <header>
-          <span class="dot q1"></span>
-          <h2 data-i18n="quad.q1.title">Urgent &amp; Important</h2>
-          <span class="sub" data-i18n="quad.q1.action">Do it now</span>
-          <span class="count" data-count="q1">0</span>
-        </header>
-        <ul
-          class="list"
-          data-list="q1"
-          data-i18n="matrix.empty"
-          data-i18n-attr="data-empty"
-          data-i18n-attr-only
-        ></ul>
-        <form class="add" data-add="q1">
-          <input
-            type="text"
-            placeholder="Add a task…"
-            maxlength="200"
-            autocomplete="off"
-            data-i18n="matrix.addPlaceholder"
-            data-i18n-attr="placeholder"
-            data-i18n-attr-only
-          />
-          <button
-            type="submit"
-            title="Add"
-            data-i18n="common.add"
-            data-i18n-attr="title"
-            data-i18n-attr-only
-          ></button>
-        </form>
+        <!-- Filled by views/matrix.tsx. The section stays here because
+             window/dnd.ts binds a drop zone to it. -->
       </section>
 
       <section class="quad q2" data-quad="q2">
-        <header>
-          <span class="dot q2"></span>
-          <h2 data-i18n="quad.q2.title">Important &amp; Not Urgent</h2>
-          <span class="sub" data-i18n="quad.q2.action">Plan it</span>
-          <span class="count" data-count="q2">0</span>
-        </header>
-        <ul
-          class="list"
-          data-list="q2"
-          data-i18n="matrix.empty"
-          data-i18n-attr="data-empty"
-          data-i18n-attr-only
-        ></ul>
-        <form class="add" data-add="q2">
-          <input
-            type="text"
-            placeholder="Add a task…"
-            maxlength="200"
-            autocomplete="off"
-            data-i18n="matrix.addPlaceholder"
-            data-i18n-attr="placeholder"
-            data-i18n-attr-only
-          />
-          <button
-            type="submit"
-            title="Add"
-            data-i18n="common.add"
-            data-i18n-attr="title"
-            data-i18n-attr-only
-          ></button>
-        </form>
+        <!-- Filled by views/matrix.tsx. The section stays here because
+             window/dnd.ts binds a drop zone to it. -->
       </section>
 
       <section class="quad q3" data-quad="q3">
-        <header>
-          <span class="dot q3"></span>
-          <h2 data-i18n="quad.q3.title">Urgent &amp; Not Important</h2>
-          <span class="sub" data-i18n="quad.q3.action">Delegate it</span>
-          <span class="count" data-count="q3">0</span>
-        </header>
-        <ul
-          class="list"
-          data-list="q3"
-          data-i18n="matrix.empty"
-          data-i18n-attr="data-empty"
-          data-i18n-attr-only
-        ></ul>
-        <form class="add" data-add="q3">
-          <input
-            type="text"
-            placeholder="Add a task…"
-            maxlength="200"
-            autocomplete="off"
-            data-i18n="matrix.addPlaceholder"
-            data-i18n-attr="placeholder"
-            data-i18n-attr-only
-          />
-          <button
-            type="submit"
-            title="Add"
-            data-i18n="common.add"
-            data-i18n-attr="title"
-            data-i18n-attr-only
-          ></button>
-        </form>
+        <!-- Filled by views/matrix.tsx. The section stays here because
+             window/dnd.ts binds a drop zone to it. -->
       </section>
 
       <section class="quad q4" data-quad="q4">
-        <header>
-          <span class="dot q4"></span>
-          <h2 data-i18n="quad.q4.title">Not Urgent &amp; Not Important</h2>
-          <span class="sub" data-i18n="quad.q4.action">Drop it</span>
-          <span class="count" data-count="q4">0</span>
-        </header>
-        <ul
-          class="list"
-          data-list="q4"
-          data-i18n="matrix.empty"
-          data-i18n-attr="data-empty"
-          data-i18n-attr-only
-        ></ul>
-        <form class="add" data-add="q4">
-          <input
-            type="text"
-            placeholder="Add a task…"
-            maxlength="200"
-            autocomplete="off"
-            data-i18n="matrix.addPlaceholder"
-            data-i18n-attr="placeholder"
-            data-i18n-attr-only
-          />
-          <button
-            type="submit"
-            title="Add"
-            data-i18n="common.add"
-            data-i18n-attr="title"
-            data-i18n-attr-only
-          ></button>
-        </form>
+        <!-- Filled by views/matrix.tsx. The section stays here because
+             window/dnd.ts binds a drop zone to it. -->
       </section>
     </main>
 

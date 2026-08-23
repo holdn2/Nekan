@@ -37,18 +37,15 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
                    횟수도 센다 — React가 비교할 스냅샷이 그 숫자다
     selection.ts   어느 task의 메모를 보고 있나. 매트릭스·타이틀바가 뷰를 import하지
                    않고 이걸 본다
-    react/         React 쪽 배관. use-store.ts가 render-bus를 구독하는 훅 하나,
-                   icons.tsx는 components/icons.ts와 도형 수치를 공유하고,
-                   testing.tsx는 컴포넌트 테스트의 mount/flush/find
-    dom.ts         $ · $$ · target · numEl · actionBtn · labelBtn
+    dom.ts         $ · $$ · target · labelBtn
     window-api.d.ts  window.api를 preload의 `typeof api`에서 받아 전역으로 선언
-    components/    icons · due-chip · memo-mark · toast · due-badge · memo-line ·
-                   editable-text (task를 모르는 조각들). 뒤의 넷이 .tsx이고,
-                   due-chip/memo-mark는 아직 손으로 만드는 matrix가 쓴다 —
-                   **잎은 마지막 명령형 호출자가 옮겨간 뒤에 옮긴다**
+    components/    toast · due-chip · due-badge · memo-mark · memo-line ·
+                   editable-text · add-form (task를 모르는 조각들). 전부 .tsx다
+    react/         React 쪽 배관 — icons.tsx가 아이콘 전부, use-store.ts가 훅,
+                   testing.tsx가 컴포넌트 테스트의 mount/flush/find
     views/         matrix · inbox · archive · memo · inline-edit · account · settings · welcome
-                   memo · settings · archive · inbox가 .tsx다 (#73).
-                   나머지는 아직 손으로 만든다
+                   matrix · memo · settings · archive · inbox가 .tsx다 (#73).
+                   inline-edit는 없어졌다 — components/editable-text.tsx가 그 일을 한다
     window/        chrome(타이틀바·탭·모드) · layout(분면 경계) · dnd · export-ui
     styles/        base부터 scrollbars까지 15개. index.html의 <link> 순서가 캐스케이드
                    switch.css만 영역이 아니라 부품이다 — 두 곳이 쓰므로 base 바로 뒤

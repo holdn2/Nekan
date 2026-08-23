@@ -30,7 +30,7 @@ import { subscribe } from "./render-bus.js";
 import { applyStaticStrings, currentLanguage, t } from "./i18n.js";
 import { $ } from "./dom.js";
 import { toast } from "./components/toast.js";
-import { relabelAddForms, renderMatrix, wireAddForms } from "./views/matrix.js";
+import { mountMatrix } from "./views/matrix.js";
 import {
   applyInboxOpen,
   focusInbox,
@@ -92,7 +92,6 @@ function render() {
   // Same reason, one tab further in: the add forms' due chips are built once and
   // never rebuilt, so they would keep the old language until the matrix tab
   // happened to redraw.
-  relabelAddForms();
   // Same again, one screen further out: the first-run card is built once and
   // sits above everything, so its merge line keeps the language and the count
   // it was born with. A no-op while the card is not showing.
@@ -102,9 +101,6 @@ function render() {
   renderAccount();
   // A bar shows nothing but its chips, and renderCounts already did those.
   if (getMode() === "collapsed") return;
-  if (getTab() === "matrix") {
-    renderMatrix();
-  }
   // Everything else on screen draws itself. The guide tab is static markup;
   // the history and trash tabs and the memo panel are React and subscribe to
   // the same signal this render() does -- each of those checks the tab or the
@@ -300,9 +296,9 @@ async function init() {
   applySyncStatus(pushedSync || state.sync);
 
   wireChrome();
-  wireAddForms();
   wireInbox();
   mountInbox();
+  mountMatrix();
   mountArchive();
   mountMemo();
   wireShortcuts();

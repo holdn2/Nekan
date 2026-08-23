@@ -39,34 +39,6 @@ export const target = <T extends HTMLElement = HTMLElement>(e: Event): T =>
   e.target as T;
 
 /**
- * The "1." "2." ordinal that opens every list row. The number is the position
- * in the list on screen, not anything stored on the task — history and trash
- * restart it inside each day group.
- */
-export function numEl(index: number): HTMLSpanElement {
-  const el = document.createElement("span");
-  el.className = "num";
-  el.textContent = `${index + 1}.`;
-  return el;
-}
-
-/**
- * A text button for the history / trash rows. `danger` is for the ones that
- * throw something away (삭제 / 영구 삭제), which the stylesheet tints red.
- */
-export function actionBtn(
-  label: string,
-  onClick: (e: MouseEvent) => void,
-  danger = false,
-): HTMLButtonElement {
-  const btn = document.createElement("button");
-  btn.className = danger ? "act danger" : "act";
-  btn.textContent = label;
-  btn.addEventListener("click", onClick);
-  return btn;
-}
-
-/**
  * Title and accessible name always move together on the icon-only buttons —
  * they carry no text, so a screen reader would otherwise just say "button".
  */
