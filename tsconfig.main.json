@@ -28,6 +28,6 @@
   ],
   // Same reason as in tsconfig.shared.json: the tests beside main are
   // tsconfig.test.json's, not part of what is emitted into out/main/.
-  "exclude": ["src/main/test/**"],
+  "exclude": ["src/main/**/test/**"],
   "references": [{ "path": "./tsconfig.shared.json" }]
 }

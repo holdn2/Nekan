@@ -34,5 +34,5 @@
   // globals, which this project deliberately does not have, and emitting them
   // into out/shared/ would put them inside the app. tsconfig.test.json takes
   // them instead.
-  "exclude": ["src/shared/test/**"]
+  "exclude": ["src/shared/**/test/**"]
 }
