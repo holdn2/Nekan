@@ -14,13 +14,6 @@
  */
 
 import { normalizeTasks } from "../shared/core.js";
-import type { Task } from "../shared/types.js";
-
-/** The two shapes main pushes. Read off window.api so they cannot drift. */
-type UpdateStatus = Parameters<
-  Parameters<typeof window.api.onUpdateStatus>[0]
->[0];
-type SyncStatus = Parameters<Parameters<typeof window.api.onSyncStatus>[0]>[0];
 import { setClockOffset, setTasks } from "./store.js";
 import { subscribe } from "./render-bus.js";
 import { scheduleDayRollover, watchForDayChange } from "./app/day-rollover.js";
@@ -61,7 +54,6 @@ import {
   applyVersion,
   mountChrome,
 } from "./window/chrome.js";
-import { applyMode, getMode, toggleSize } from "./window/mode.js";
 import { setLayout, wireMemoEdge, wireQuadEdges } from "./window/layout.js";
 import { wireDragAndDrop } from "./window/dnd.js";
 

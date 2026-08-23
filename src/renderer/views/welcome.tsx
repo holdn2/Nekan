@@ -10,12 +10,13 @@
  * is not final either; the same two options live in the settings panel.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { messageOf } from "../../shared/errors.js";
-import { t, wireLanguageSelect } from "../i18n.js";
+import { t } from "../i18n.js";
 import { activeCount } from "../store.js";
 import { useRenderSignal } from "../react/use-store.js";
+import { LanguageSelect } from "../components/language-select.js";
 import { WelcomeChoices } from "./welcome/choices.js";
 import {
   isWelcomeVisible,
@@ -45,15 +46,6 @@ export function Welcome() {
     error: boolean;
   } | null>(null);
   const [adopt, setAdopt] = useState(true);
-  const picker = useRef<HTMLSelectElement>(null);
-
-  // The gear is behind this overlay, so this is the only way to change language
-  // before the question is answered. Switching here moves the settings panel's
-  // picker too -- see wireLanguageSelect.
-  useEffect(() => {
-    if (picker.current) wireLanguageSelect(picker.current);
-  }, []);
-
   // The overlay itself is index.html's -- it covers the window, title bar
   // included, and the stylesheet hides it by class.
   useEffect(() => {
@@ -175,11 +167,12 @@ export function Welcome() {
 
   return (
     <>
-      <select
-        ref={picker}
+      {/* The gear is behind this overlay, so this is the only way to change
+          language before the question on it is answered. */}
+      <LanguageSelect
         className="settings-select welcome-lang"
         id="welcomeLanguage"
-        aria-label={t("settings.language")}
+        ariaLabel={t("settings.language")}
       />
       <div className="welcome-card">
         <img className="welcome-logo" src="../assets/icon.png" alt="" />

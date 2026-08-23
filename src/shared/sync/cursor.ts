@@ -9,7 +9,7 @@
  */
 
 import { stamp } from "./rows.js";
-import type { LooseTask, Row } from "./rows.js";
+import type { LooseTask } from "./rows.js";
 
 /**
  * What still has to go up.

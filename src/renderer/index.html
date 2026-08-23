@@ -47,18 +47,10 @@
          it takes its height from the matrix, capped so the quadrants always
          keep the larger share. The whole section is a drop target, header
          included, so a task can be sent back up while the list is folded. -->
-    <section id="inboxPanel" class="inbox" data-quad="inbox">
-      <header class="inbox-head">
-        <!-- Filled by views/inbox.tsx -->
-      </header>
-      <div class="inbox-body" id="inboxBody">
-        <!-- data-empty is what the stylesheet writes into an empty list; the
-             component sets it, because :empty still has to match. -->
-        <ul class="inbox-list" id="inboxList"></ul>
-        <!-- Filled by views/inbox.tsx -->
-        <div id="inboxAddHost"></div>
-      </div>
-    </section>
+    <!-- The section is here because it is a drop zone, a flex child the
+         layout measures, and the element whose `open` class sets the panel's
+         height. Everything inside it is views/inbox.tsx's. -->
+    <section id="inboxPanel" class="inbox" data-quad="inbox"></section>
 
     <!-- A 2×2 grid: the shared row/column lines are dragged straight from the
          quadrant edges, so there are no separate splitter elements. -->

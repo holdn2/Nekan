@@ -15,7 +15,7 @@ import {
   normalizeTasks,
   sanitizeSpace,
 } from "../core.js";
-import type { Place, Space, Task } from "../types.js";
+import type { Place, Task } from "../types.js";
 import type { ExportItem, ExportSection, I18n, Snapshot } from "./types.js";
 
 /** Two-digit number for the date and time stamps. */
