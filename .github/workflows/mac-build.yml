@@ -23,6 +23,12 @@ on:
       - "tools/build.js"
       - ".github/workflows/mac-build.yml"
 
+# Read is all this needs: it builds and uploads an artifact, and never writes
+# to the repository. Without saying so the token inherits whatever the
+# repository or organisation defaults to, which is usually more.
+permissions:
+  contents: read
+
 concurrency:
   group: mac-build-${{ github.ref }}
   cancel-in-progress: true
@@ -32,6 +38,12 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          # checkout leaves the token in .git/config unless told not to, and
+          # the next step is `npm ci` -- which runs install scripts from every
+          # dependency in the tree. None of them has any business holding a
+          # credential for this repository.
+          persist-credentials: false
 
       - uses: actions/setup-node@v5
         with:
