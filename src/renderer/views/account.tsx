@@ -9,7 +9,6 @@
  */
 
 import { useEffect, useState } from "react";
-import { createRoot } from "react-dom/client";
 import { messageOf } from "../../shared/errors.js";
 import { t } from "../i18n.js";
 import { activeCount } from "../store.js";
@@ -39,7 +38,7 @@ export {
   announceOverwritten,
 } from "./account/status.js";
 
-function Account() {
+export function Account() {
   useRenderSignal();
   const [message, setMessage] = useState<Message>(null);
   const [busy, setBusy] = useState(false);
@@ -224,10 +223,4 @@ function Account() {
       ) : null}
     </>
   );
-}
-
-/** Fill the block index.html left empty. Called once, from init(). */
-export function mountAccount() {
-  const host = document.getElementById("account");
-  if (host) createRoot(host).render(<Account />);
 }
