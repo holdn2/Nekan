@@ -37,7 +37,7 @@ import {
   renderInbox,
   wireInbox,
 } from "./views/inbox.js";
-import { renderHistory, renderTrash, wireArchive } from "./views/archive.js";
+import { mountArchive } from "./views/archive.js";
 import {
   announceOverwritten,
   applySession,
@@ -102,18 +102,18 @@ function render() {
   renderAccount();
   // A bar shows nothing but its chips, and renderCounts already did those.
   if (getMode() === "collapsed") return;
-  const tab = getTab();
-  if (tab === "matrix") {
+  if (getTab() === "matrix") {
     renderInbox();
     renderMatrix();
-  } else if (tab === "history") renderHistory();
-  else if (tab === "trash") renderTrash();
-  // the guide tab is static markup — nothing to render
-  // The memo panel is not drawn from here any more: it is a React component
-  // and subscribes to the same signal this render() does. It has no ordering
-  // dependency on the line above either -- selectedTask() answers null for a
-  // task that has just been completed or trashed, so the panel closes on the
-  // state rather than on dropStaleSelection having run first.
+  }
+  // Everything else on screen draws itself. The guide tab is static markup;
+  // the history and trash tabs and the memo panel are React and subscribe to
+  // the same signal this render() does -- each of those checks the tab or the
+  // selection for itself rather than being dispatched to from here.
+  //
+  // No ordering dependency on dropStaleSelection above, either: selectedTask()
+  // answers null for a task that has just been completed or trashed, so the
+  // panel closes on the state rather than on that call having run first.
 }
 
 /* --------------------------------------------------------- day rollover */
@@ -303,7 +303,7 @@ async function init() {
   wireChrome();
   wireAddForms();
   wireInbox();
-  wireArchive();
+  mountArchive();
   mountMemo();
   wireShortcuts();
   wireDragAndDrop();

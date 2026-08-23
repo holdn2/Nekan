@@ -104,25 +104,3 @@ export function dueChip(
   box.apply = apply;
   return box;
 }
-
-/**
- * Read-only version for history / trash rows, where a date is a record of what
- * was set rather than something to change. Returns null when there is no date,
- * so the caller can simply skip appending it.
- */
-export function dueBadge(value: string | null | undefined) {
-  const info = dueInfo(value);
-  if (!info) return null;
-  const { text, hint } = words(info);
-  const box = document.createElement("span");
-  box.className = `duebox set ${info.state} static`;
-  const chip = document.createElement("span");
-  chip.className = "due";
-  chip.title = t("due.chip", { date: text, hint });
-  const face = document.createElement("span");
-  face.className = "face";
-  face.textContent = text;
-  chip.append(face);
-  box.append(chip);
-  return box;
-}

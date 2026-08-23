@@ -500,56 +500,13 @@
     </main>
 
     <section id="historyView" class="view history hidden">
-      <div class="history-bar">
-        <input
-          type="search"
-          id="historySearch"
-          placeholder="Search completed tasks…"
-          autocomplete="off"
-          data-i18n="history.search"
-          data-i18n-attr="placeholder"
-          data-i18n-attr-only
-        />
-        <button
-          class="ghost danger"
-          id="clearHistory"
-          data-i18n="history.clearAll"
-        >
-          Move all to the trash
-        </button>
-      </div>
-      <div class="history-scroll">
-        <ul class="history-list" id="historyList"></ul>
-        <p class="empty" id="historyEmpty" data-i18n="archive.historyEmpty">
-          Nothing completed yet.
-        </p>
-      </div>
+      <!-- Filled by views/archive.tsx. The section stays here because
+           window/chrome shows and hides it when the tab changes. -->
     </section>
 
     <section id="trashView" class="view history hidden">
-      <div class="history-bar">
-        <input
-          type="search"
-          id="trashSearch"
-          placeholder="Search deleted tasks…"
-          autocomplete="off"
-          data-i18n="trash.search"
-          data-i18n-attr="placeholder"
-          data-i18n-attr-only
-        />
-        <button class="ghost" id="restoreAll" data-i18n="trash.restoreAll">
-          Restore all
-        </button>
-        <button class="ghost danger" id="emptyTrash" data-i18n="trash.empty">
-          Empty the trash
-        </button>
-      </div>
-      <div class="history-scroll">
-        <ul class="history-list" id="trashList"></ul>
-        <p class="empty" id="trashEmpty" data-i18n="archive.trashEmpty">
-          The trash is empty.
-        </p>
-      </div>
+      <!-- Filled by views/archive.tsx. The section stays here because
+           window/chrome shows and hides it when the tab changes. -->
     </section>
 
     <!-- Prose, not labels. Every paragraph is one key: a language breaks a

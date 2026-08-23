@@ -12,7 +12,7 @@
  * the drawing -- hence aria-hidden.
  */
 
-import { CLOSE } from "../components/icons.js";
+import { CLOSE, NOTE } from "../components/icons.js";
 
 export function CloseIcon() {
   return (
@@ -26,6 +26,31 @@ export function CloseIcon() {
         d={CLOSE.d}
         stroke="currentColor"
         strokeWidth={CLOSE.strokeWidth}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function NoteIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={NOTE.size}
+      height={NOTE.size}
+      aria-hidden="true"
+    >
+      <path
+        d={NOTE.page}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={NOTE.strokeWidth}
+        strokeLinejoin="round"
+      />
+      <path
+        d={NOTE.lines}
+        stroke="currentColor"
+        strokeWidth={NOTE.strokeWidth}
         strokeLinecap="round"
       />
     </svg>

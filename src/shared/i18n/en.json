@@ -337,7 +337,6 @@
     "quadQ3": "Urgent",
     "quadOther": "Neither",
     "more": "Show more ({{count}} left)",
-    "expand": "Show all",
     "noResults": "Nothing matches that search.",
     "historyEmpty": "Nothing completed yet.",
     "trashEmpty": "The trash is empty.",

@@ -101,21 +101,29 @@ export function closeIcon() {
 }
 
 /** The "this task has a memo" marker, on matrix rows and archive rows alike. */
+/** The page, as numbers. Shared with react/icons.tsx -- see CLOSE. */
+export const NOTE = {
+  size: 11,
+  page: "M3.4 2.2h9.2v11.6H3.4z",
+  lines: "M5.6 5.4h4.8M5.6 8h4.8M5.6 10.6h3",
+  strokeWidth: 1.3,
+};
+
 export function noteIcon() {
-  const svg = svgRoot(11);
+  const svg = svgRoot(NOTE.size);
   svg.setAttribute("aria-hidden", "true");
   svg.append(
     shape("path", {
-      d: "M3.4 2.2h9.2v11.6H3.4z",
+      d: NOTE.page,
       fill: "none",
       stroke: "currentColor",
-      "stroke-width": "1.3",
+      "stroke-width": String(NOTE.strokeWidth),
       "stroke-linejoin": "round",
     }),
     shape("path", {
-      d: "M5.6 5.4h4.8M5.6 8h4.8M5.6 10.6h3",
+      d: NOTE.lines,
       stroke: "currentColor",
-      "stroke-width": "1.3",
+      "stroke-width": String(NOTE.strokeWidth),
       "stroke-linecap": "round",
     }),
   );

@@ -42,9 +42,11 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
                    testing.tsx는 컴포넌트 테스트의 mount/flush/find
     dom.ts         $ · $$ · target · numEl · actionBtn · labelBtn
     window-api.d.ts  window.api를 preload의 `typeof api`에서 받아 전역으로 선언
-    components/    icons · due-chip · memo-mark · toast (task를 모르는 조각들)
+    components/    icons · due-chip · memo-mark · toast · due-badge · memo-line
+                   (task를 모르는 조각들). 뒤의 셋이 .tsx이고, due-chip/memo-mark는
+                   아직 손으로 만드는 matrix가 쓴다 — 잎은 마지막 호출자가 옮겨간 뒤에 옮긴다
     views/         matrix · inbox · archive · memo · inline-edit · account · settings · welcome
-                   memo만 .tsx다 — React로 옮긴 첫 뷰 (#73). 나머지는 아직 손으로 만든다
+                   memo · settings · archive가 .tsx다 (#73). 나머지는 아직 손으로 만든다
     window/        chrome(타이틀바·탭·모드) · layout(분면 경계) · dnd · export-ui
     styles/        base부터 scrollbars까지 15개. index.html의 <link> 순서가 캐스케이드
                    switch.css만 영역이 아니라 부품이다 — 두 곳이 쓰므로 base 바로 뒤
