@@ -4,8 +4,8 @@
  */
 
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { flush, find, hidden } from "../react/testing.js";
-import { toast } from "./toast.js";
+import { flush, find, hidden } from "../../react/testing.js";
+import { toast } from "../toast.js";
 
 beforeEach(() => {
   vi.useFakeTimers();

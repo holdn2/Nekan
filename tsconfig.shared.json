@@ -29,5 +29,10 @@
     "types": [],
     "lib": ["ES2022"]
   },
-  "include": ["src/shared/**/*"]
+  "include": ["src/shared/**/*"],
+  // The tests that sit in here are not part of what ships. They want node's
+  // globals, which this project deliberately does not have, and emitting them
+  // into out/shared/ would put them inside the app. tsconfig.test.json takes
+  // them instead.
+  "exclude": ["src/shared/test/**"]
 }

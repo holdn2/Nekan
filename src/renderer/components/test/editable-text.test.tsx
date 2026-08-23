@@ -6,8 +6,8 @@
  */
 
 import { expect, test, vi } from "vitest";
-import { find, mount } from "../react/testing.js";
-import { EditableText } from "./editable-text.js";
+import { find, mount } from "../../react/testing.js";
+import { EditableText } from "../editable-text.js";
 
 const dbl = () =>
   find(".text").dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));

@@ -5,12 +5,12 @@
  */
 
 import { beforeEach, expect, test, vi } from "vitest";
-import type { Task } from "../../shared/types.js";
-import { setTasks } from "../store.js";
-import { clearSelectionSilently, setSelected } from "../selection.js";
-import { setLanguage } from "../i18n.js";
-import { find, hidden, mount } from "../react/testing.js";
-import { MemoPanel } from "./memo.js";
+import type { Task } from "../../../shared/types.js";
+import { setTasks } from "../../store.js";
+import { clearSelectionSilently, setSelected } from "../../selection.js";
+import { setLanguage } from "../../i18n.js";
+import { find, hidden, mount } from "../../react/testing.js";
+import { MemoPanel } from "../memo.js";
 
 const task = (over: Partial<Task> = {}): Task => ({
   id: "t1",

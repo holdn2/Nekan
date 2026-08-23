@@ -23,7 +23,6 @@ const { spawn, spawnSync } = require("child_process");
 
 const ROOT = path.join(__dirname, "..");
 const SRC = path.join(ROOT, "src");
-const TEST = path.join(ROOT, "test");
 const OUT = path.join(ROOT, "out");
 const RENDERER = path.join(SRC, "renderer");
 const PROJECTS = [
@@ -105,9 +104,10 @@ function markSharedAsEsm() {
 /**
  * Is there still something behind this file in out/?
  *
- * Three kinds of thing live there and only one of them comes from src/:
- * out/test/ is compiled from test/, and the compilers' own bookkeeping --
- * declarations and .tsbuildinfo -- comes from nowhere at all. Getting this
+ * Three kinds of thing live there and only one of them comes from src/ at the
+ * same path: out/test/ mirrors src/ under a directory of its own, and the
+ * compilers' own bookkeeping -- declarations and .tsbuildinfo -- comes from
+ * nowhere at all. Getting this
  * wrong is not loud: an over-eager sweep just deletes the incremental cache
  * and the .d.ts files that the project references read, and every build
  * silently becomes a full one.
@@ -127,9 +127,11 @@ function hasSource(rel, produced) {
   // exists to remove, wearing the face of a source file.
   if (ASSET_EXT.has(path.extname(rel))) return produced.has(rel);
 
-  const fromTest = rel.startsWith("test/");
-  const root = fromTest ? TEST : SRC;
-  const sub = fromTest ? rel.slice("test/".length) : rel;
+  // out/test/ is the same tree one level down: tsconfig.test.json has a
+  // rootDir of src/ and an outDir of out/test/, so out/test/shared/test/x.js
+  // came from src/shared/test/x.ts. Strip the prefix and ask src/ as usual.
+  const sub = rel.startsWith("test/") ? rel.slice("test/".length) : rel;
+  const root = SRC;
   // A .js or a .d.ts in out/ was produced by the .ts or .js of the same name;
   // anything else was copied verbatim and keeps its name.
   const stem = sub.replace(/\.d\.ts$/, "").replace(/\.js$/, "");

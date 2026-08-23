@@ -3,9 +3,15 @@
   // `node --test` loads them as, and they require the same built modules main
   // does -- out/shared/ is ES modules and require() reaches it the same way.
   //
-  // A project of its own so it lands in out/test/ with a rootDir of its own.
-  // Folding it into the main project would put it under out/src/ and move
-  // every relative path in it.
+  // A project of its own so it lands in out/test/, away from the app it
+  // tests: `files` in package.json drops out/test/** from the package, and
+  // out/shared/ is ES modules while these are not.
+  //
+  // The sources sit beside what they cover -- src/shared/test/, src/main/test/
+  // -- so a rule and its test are in the same place. That works only because
+  // they import through #shared/* and #main/*, which name the built module
+  // from the package root: a relative path would follow the file here and
+  // point at nothing once the output moves to out/test/.
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     // The one place that is not strict, and on purpose. Its 79 complaints are
@@ -14,14 +20,14 @@
     // the whole job of the file. Tightening it would buy a safety net for the
     // safety net.
     "strict": false,
-    "rootDir": "test",
+    "rootDir": "src",
     "outDir": "out/test",
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "types": ["node"],
     "esModuleInterop": true
   },
-  "include": ["test/**/*"],
+  "include": ["src/**/test/**/*.ts"],
   "references": [
     { "path": "./tsconfig.shared.json" },
     { "path": "./tsconfig.main.json" }

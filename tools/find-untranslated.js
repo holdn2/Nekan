@@ -12,7 +12,9 @@
  *
  * Comments are skipped: this repo writes them in English, except in index.html
  * where they are Korean and are not shipped to anybody. The catalogues are
- * skipped too, for the obvious reason.
+ * skipped too, for the obvious reason, and so are the test/ directories --
+ * a fixture saying "장 보기" is the test naming a task, not a string on its
+ * way to a user, and nothing in there is in the build.
  *
  * `.ts` counts as well as `.js`. While src/ was being converted this tool went
  * on reporting zero for files it had simply stopped looking at, which is the
@@ -38,7 +40,7 @@ const path = require("path");
 
 const ROOT = path.join(__dirname, "..", "src");
 const HANGUL = /[ㄱ-ㆎ가-힣]/;
-const SKIP = new Set(["i18n"]);
+const SKIP = new Set(["i18n", "test"]);
 
 /** Blank out comments so their Korean does not count as work left to do. */
 function stripComments(text, ext) {
