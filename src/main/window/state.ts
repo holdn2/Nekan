@@ -17,7 +17,11 @@ import { BrowserWindow, screen } from "electron";
 import type { Point, Rect } from "../../shared/types";
 import { getSettings, persist } from "../store";
 
-const SRC = path.join(__dirname, "..");
+// Two levels, not one: this file is out/main/window/state.js, so the app root
+// is two directories up. It was one while this lived at out/main/window.js --
+// which typechecks and tests exactly the same either way, and shows up as a
+// blank window with ERR_FILE_NOT_FOUND the first time the app is launched.
+const SRC = path.join(__dirname, "..", "..");
 
 const EXPANDED = { width: 1000, height: 700, minWidth: 760, minHeight: 520 };
 // Wide enough for the whole bar row at comfortable sizes: icon, both halves of
