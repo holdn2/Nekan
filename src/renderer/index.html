@@ -797,62 +797,8 @@
       data-i18n-attr="aria-label"
       data-i18n-attr-only
     >
-      <div class="memo-card">
-        <header class="memo-head">
-          <span class="dot" id="memoDot"></span>
-          <span class="memo-title" id="memoTitle"></span>
-          <button
-            class="memo-x"
-            id="memoClose"
-            title="Close the note"
-            aria-label="Close the note"
-            data-i18n="memo.close"
-            data-i18n-attr="title,aria-label"
-            data-i18n-attr-only
-          >
-            ✕
-          </button>
-        </header>
-        <div class="memo-body">
-          <p
-            class="memo-text"
-            id="memoText"
-            title="Double-click to edit"
-            data-i18n="memo.edit"
-            data-i18n-attr="title"
-            data-i18n-attr-only
-          ></p>
-          <!-- Two strings on one element: what the empty box invites, and what
-               a screen reader calls it. `attr=key` is how the second one gets
-               its own entry without a wrapper the stylesheet would trip on. -->
-          <textarea
-            id="memoInput"
-            placeholder="Write a note…"
-            aria-label="Note text"
-            maxlength="2000"
-            spellcheck="false"
-            data-i18n="memo.placeholder"
-            data-i18n-attr="placeholder,aria-label=memo.field"
-            data-i18n-attr-only
-          ></textarea>
-        </div>
-        <footer class="memo-foot">
-          <span class="memo-hint" id="memoHint"></span>
-          <button
-            class="ghost danger"
-            id="memoDelete"
-            data-i18n="common.delete"
-          >
-            Delete
-          </button>
-          <button class="ghost" id="memoCancel" data-i18n="common.cancel">
-            Cancel
-          </button>
-          <button class="primary" id="memoSave" data-i18n="common.save">
-            Save
-          </button>
-        </footer>
-      </div>
+      <!-- Filled by views/memo.tsx. The section stays here because the
+           layout sizes it and window/layout.js drags its top edge. -->
     </section>
 
     <!-- Everything that is set once rather than used constantly: the theme, the

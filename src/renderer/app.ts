@@ -39,7 +39,7 @@ import {
   setDevLogin,
   wireAccount,
 } from "./views/account.js";
-import { renderMemo, wireMemo } from "./views/memo.js";
+import { mountMemo } from "./views/memo.js";
 import { dropStaleSelection } from "./selection.js";
 import { closeSettings, wireSettings } from "./views/settings.js";
 import {
@@ -102,7 +102,11 @@ function render() {
   } else if (tab === "history") renderHistory();
   else if (tab === "trash") renderTrash();
   // the guide tab is static markup — nothing to render
-  renderMemo();
+  // The memo panel is not drawn from here any more: it is a React component
+  // and subscribes to the same signal this render() does. It has no ordering
+  // dependency on the line above either -- selectedTask() answers null for a
+  // task that has just been completed or trashed, so the panel closes on the
+  // state rather than on dropStaleSelection having run first.
 }
 
 /* --------------------------------------------------------- day rollover */
@@ -293,7 +297,7 @@ async function init() {
   wireAddForms();
   wireInbox();
   wireArchive();
-  wireMemo();
+  mountMemo();
   wireShortcuts();
   wireDragAndDrop();
   wireQuadEdges();

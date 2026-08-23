@@ -9,7 +9,7 @@
 const NS = "http://www.w3.org/2000/svg";
 
 /** `<svg>` with a 16×16 viewBox, sized in px by the caller. */
-function svgRoot(size) {
+function svgRoot(size: number) {
   const svg = document.createElementNS(NS, "svg");
   svg.setAttribute("viewBox", "0 0 16 16");
   svg.setAttribute("width", String(size));
@@ -18,7 +18,7 @@ function svgRoot(size) {
 }
 
 /** One stroked child element; `attrs` is applied as-is. */
-function shape(tag, attrs) {
+function shape(tag: string, attrs: Record<string, string>) {
   const el = document.createElementNS(NS, tag);
   Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
   return el;
@@ -67,7 +67,7 @@ export function plusIcon() {
 }
 
 /**
- * The delete mark on a task row.
+ * The cross: the delete mark on a task row, and the memo panel's close button.
  *
  * Drawn rather than typed. As the × character it sat 1.36px below the middle of
  * its button, because that glyph centres on the font's maths axis and not on
@@ -75,15 +75,25 @@ export function plusIcon() {
  * off. The fix was a padding tuned by measurement, which is a number that
  * quietly stops being right the moment the font or the size changes. Two lines
  * crossing at the centre of the viewBox are centred by construction.
+ *
+ * Kept as numbers because react/icons.tsx draws the same cross. While a
+ * hand-built and a rendered version of this app both exist, one geometry has to
+ * serve both or the two crosses drift apart.
  */
+export const CLOSE = {
+  size: 10,
+  d: "M4.5 4.5l7 7M11.5 4.5l-7 7",
+  strokeWidth: 1.5,
+};
+
 export function closeIcon() {
-  const svg = svgRoot(10);
+  const svg = svgRoot(CLOSE.size);
   svg.setAttribute("aria-hidden", "true");
   svg.append(
     shape("path", {
-      d: "M4.5 4.5l7 7M11.5 4.5l-7 7",
+      d: CLOSE.d,
       stroke: "currentColor",
-      "stroke-width": "1.5",
+      "stroke-width": String(CLOSE.strokeWidth),
       "stroke-linecap": "round",
     }),
   );

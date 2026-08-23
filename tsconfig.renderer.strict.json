@@ -13,9 +13,12 @@
   // has crossed, this config and tsconfig.renderer.json are the same thing and
   // one of them goes away.
   //
-  // Checking nothing else here is deliberate: `files` does not pull in the
-  // imports' own files for checking, so a strict file that imports a loose one
-  // is still checked strictly itself.
+  // `files` is not a fence. TypeScript checks what these files import as well,
+  // so the frontier grows to cover whatever the React code leans on -- which
+  // turned out to be the right shape anyway: the store, the selection, the
+  // translations and the icon geometry are the parts the rewrite keeps, so
+  // typing them is durable rather than thrown away. Only the view code being
+  // replaced stays outside.
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "module": "preserve",
@@ -35,9 +38,12 @@
     "noEmit": true
   },
   "files": [
+    "src/renderer/window-api.d.ts",
     "src/renderer/components/toast.tsx",
     "src/renderer/render-bus.ts",
-    "src/renderer/react/use-store.ts"
+    "src/renderer/react/use-store.ts",
+    "src/renderer/react/icons.tsx",
+    "src/renderer/views/memo.tsx"
   ],
   "references": [
     { "path": "./tsconfig.shared.json" },

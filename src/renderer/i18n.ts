@@ -121,7 +121,7 @@ export function applyStaticStrings(root: ParentNode = document) {
  * normal redraw, and the static markup is re-applied here because nothing else
  * ever touches it again.
  */
-export function setLanguage(next) {
+export function setLanguage(next: string) {
   if (next === i18next.language) return;
   i18next.changeLanguage(next);
   document.documentElement.lang = next;
@@ -148,7 +148,7 @@ const pickers = new Set<HTMLSelectElement>();
  * their own is looking for a word they recognise, not for its name written in a
  * script they cannot read — which is exactly the state they are in here.
  */
-export function wireLanguageSelect(select) {
+export function wireLanguageSelect(select: HTMLSelectElement) {
   (window.api.languages || []).forEach((code) => {
     const option = document.createElement("option");
     option.value = code;

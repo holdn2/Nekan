@@ -10,6 +10,7 @@
  * on document (for the rows, which are rebuilt on every render).
  */
 
+import { isPlace } from "../../shared/core.js";
 import { $, $$, target } from "../dom.js";
 import { moveTask } from "../store.js";
 
@@ -69,7 +70,12 @@ export function wireDragAndDrop() {
       const id = draggingId || e.dataTransfer.getData("text/plain");
       if (!id) return;
       const before = afterElement(list, e.clientY);
-      moveTask(id, zone.dataset.quad, before ? before.dataset.id : null);
+      // The drop zone names its quadrant in the markup, so this is only ever
+      // one of the five -- but it arrives as whatever the DOM has, and writing
+      // an unknown one into a task would take that task off the screen.
+      const quad = zone.dataset.quad;
+      if (!isPlace(quad)) return;
+      moveTask(id, quad, before?.dataset.id ?? null);
     });
   });
 }

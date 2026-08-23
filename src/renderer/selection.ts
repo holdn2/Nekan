@@ -13,24 +13,25 @@
  */
 
 import { INBOX } from "../shared/core.js";
+import type { Task } from "../shared/types.js";
 import { findTask, inSpace } from "./store.js";
 import { notify } from "./render-bus.js";
 
-let selectedId = null;
+let selectedId: string | null = null;
 /** Whether the textarea is up. A task with no memo yet always starts there. */
 let memoEditing = false;
 /** Long enough for the second click of a double-click to arrive first. */
 const CLICK_DELAY = 220;
-let clickTimer = null;
+let clickTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** Does this row get the selected styling? */
-export const isSelected = (id) => id === selectedId;
+export const isSelected = (id: string) => id === selectedId;
 
 /** Whether the panel is showing its editor rather than the note. */
 export const isMemoEditing = () => memoEditing;
 
 /** Switch the panel between reading and editing. Redraws. */
-export function setMemoEditing(next) {
+export function setMemoEditing(next: boolean) {
   if (next === memoEditing) return;
   memoEditing = next;
   notify();
@@ -42,18 +43,24 @@ export function setMemoEditing(next) {
  * wait, a double-click would toggle the selection twice and the window would
  * grow and shrink under the cursor.
  */
-export function wireRowSelection(li, textEl, task) {
-  li.addEventListener("click", (e) => {
+export function wireRowSelection(
+  li: HTMLElement,
+  textEl: HTMLElement,
+  task: Task,
+) {
+  li.addEventListener("click", (e: MouseEvent) => {
     if (e.detail > 1) return;
-    if (e.target.closest("button, .duebox")) return;
+    if ((e.target as HTMLElement).closest("button, .duebox")) return;
     if (textEl.isContentEditable) return;
-    clearTimeout(clickTimer);
+    if (clickTimer) clearTimeout(clickTimer);
     clickTimer = setTimeout(
       () => setSelected(isSelected(task.id) ? null : task.id),
       CLICK_DELAY,
     );
   });
-  li.addEventListener("dblclick", () => clearTimeout(clickTimer));
+  li.addEventListener("dblclick", () => {
+    if (clickTimer) clearTimeout(clickTimer);
+  });
 }
 
 /**
@@ -74,7 +81,7 @@ export function selectedTask() {
   return task;
 }
 
-export function setSelected(id) {
+export function setSelected(id: string | null) {
   if (id === selectedId) return;
   selectedId = id;
   memoEditing = false;
