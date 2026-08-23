@@ -11,31 +11,42 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
   main/
     store.ts       메모리 위의 data.json + 디바운스 저장 (persist / persistNow)
     store-io.ts    data.json 읽기/쓰기. fs를 쓰므로 shared가 아니라 여기 있다
-    window.ts      창 생성과 expanded/collapsed 전환. 패널 두 개는 모른다
+    window.ts      + window/  state(창·모드·switching 플래그) · create · fold
+                   패널 두 개는 모른다. switching이 셋을 한 파일에 묶어 두는 이유다
     export-service.ts  PDF·HTML·MD 쓰기 (숨은 창에서 printToPDF)
     updater.ts     electron-updater. 창을 모르고, main.ts가 넘긴 콜백으로만 알린다
-    api-client.ts  Supabase와 말하는 유일한 곳. URL·anon key·로그인·토큰 갱신·시계 오차
+    api-client.ts  + api/  http · session · sign-in · account
+                   Supabase와 말하는 유일한 곳. **배럴이 export *가 아니다** —
+                   살아 있는 세션을 api/ 밖으로 내보내지 않으려고 이름을 손으로 적는다
     token-store.ts 세션을 safeStorage로 암호화해 userData/auth.json에 (data.json 아님)
-    sync.ts        당기고 밀고 다시 시도하는 루프. 판정은 안 하고 일정만 잡는다
+    sync.ts        + sync/  status(밖에 알리는 것·북마크) · transfer(pull·push) · loop(일정)
     oauth.ts       Google 로그인의 브라우저 쪽 (PKCE + loopback). 세션은 모른다
-    ipc.ts         ipcMain.handle 전부. 새 채널을 만들 때 첫 번째로 여는 파일
+    ipc.ts         + ipc/  state · window · settings · shell · auth
+                   새 채널을 만들 때 첫 번째로 여는 곳. 배럴이 다섯을 순서대로 부른다
     i18n.ts        메인 쪽 i18next. 렌더러와 따로 산다 (프로세스가 다르다)
+    test/          store-io 단위 테스트 (node --test)
   preload.ts       contextBridge → window.api. 그 객체의 `typeof`가 렌더러의 타입이다
   shared/          메인·렌더러·테스트가 공유. 여기만 테스트가 덮는다
     types.ts       Task · Place · Space · Layout · Session · DueInfo · Rect 등 어휘
-    core.ts        날짜·정규화·space 규칙·레이아웃 비율 등 순수 로직
-    export.ts      내보내기 문서 생성 (마크다운·인쇄용 HTML). 메인·테스트만 쓴다
-    sync.ts        동기화 판정 (LWW·행 변환·커서·시계 오차). main/sync.ts가 쓴다
+    core.ts        + core/  places · text · dates · order · tasks · layout · placement
+                   순수 로직. 배럴은 `export *`이고, 26곳이 여전히 core.js를 부른다
+    export.ts      + export/  types · snapshot · markdown · html
+    sync.ts        + sync/  rows · merge · cursor · clock. main/sync/가 쓴다
     auth.ts        세션 모양과 만료 판정. 렌더러에 나갈 필드를 여기서 고른다
     i18n/          ko.json · en.json · GLOSSARY.md · locales.ts (지원 목록과 기본값)
+    */test/        각 폴더가 자기 test/를 갖는다 (core/test · export/test · sync/test ·
+                   shared/test는 auth 하나)
   renderer/        React. Vite가 묶는다 — import 경로에는 여전히 `.js`를 쓰고
                    (`vite.config.mts`의 플러그인이 옆의 `.ts`/`.tsx`로 잇는다)
     index.html     껍데기와 가이드 탭. <link> 15개, <script> 하나, 그리고 React가
                    채울 빈 host들. 가이드 88문단만 아직 마크업이다
-    app.ts         진입점. 조립과 전역 단축키. render()는 한 줄이 됐다
+    app.ts         진입점. 조립뿐이다 + app/  day-rollover · shortcuts · pushes
+                   (pushes는 첫 await 앞에 등록해야 하는 넷을 들고 있다)
     i18n.ts        렌더러 쪽 i18next. t · tNodes · applyStaticStrings · setLanguage
                    (React 쪽 마크업 문자열은 react/rich-text.tsx)
-    store.ts       tasks 배열과 모든 변경. DOM을 모른다 → commit()이 저장+notify
+    store.ts       + store/  state · selectors · mutations · bulk
+                   DOM을 모른다 → commit()이 저장+notify. **배럴이 export *가 아니다** —
+                   배열 자체(allTasks)는 store/ 밖으로 안 나간다
     render-bus.ts  "다시 그려라" 신호 하나. store·view → app 순환을 막는 장치
                    횟수도 센다 — React가 비교할 스냅샷이 그 숫자다
     selection.ts   어느 task의 메모를 보고 있나. 매트릭스·타이틀바가 뷰를 import하지
@@ -49,18 +60,20 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
     react/         React 쪽 배관 — icons.tsx(아이콘)·window-icons.tsx(창 버튼)·
                    brand-icons.tsx(구글 마크) · use-store.ts(훅) ·
                    rich-text.tsx(문자열 속 <b>) · testing.tsx(테스트 헬퍼)
-    views/         matrix · inbox · archive · memo · account · settings · welcome
+    views/         matrix · inbox · memo · settings · welcome, 그리고 폴더가 된 둘:
+                   archive.tsx + archive/(paging·row·tab) ·
+                   account.tsx + account/(status·dev-sign-in·delete-account)
                    **전부 .tsx다** (#73). inline-edit는 없어졌다 —
                    components/editable-text.tsx가 그 일을 한다
-    window/        chrome.tsx(타이틀바·탭) · mode.ts(바/창) ·
-                   layout.ts · dnd.ts · export-ui.ts — 뒤의 셋은 React가 아니고
-                   그게 맞다: 그릴 마크업이 없고 기하·이벤트·한 번의 호출이다
+    window/        chrome.tsx + chrome/(state·title-bar·tabs) · mode.ts(바/창) ·
+                   layout.ts + layout/(grid·quad-edges·memo-edge) ·
+                   dnd.ts · export-ui.ts — 뒤의 둘은 React가 아니고 그게 맞다:
+                   그릴 마크업이 없고 이벤트와 한 번의 호출이다
     styles/        base부터 scrollbars까지 15개. index.html의 <link> 순서가 캐스케이드
                    switch.css만 영역이 아니라 부품이다 — 두 곳이 쓰므로 base 바로 뒤
-src/renderer/**/*.test.tsx  vitest용 컴포넌트 테스트 (소스 옆에 둔다)
-test/              node --test 용 단위 테스트 (shared/ 와 store-io만 커버)
+    */test/        컴포넌트 테스트도 같은 규칙 (components/test · views/test)
 out/               `npm run build`가 만든다. 앱이 실제로 읽는 것은 전부 여기다
-tools/build.js     tsc 네 번 + 자산 22개 복사 + 고아 산출물 삭제
+tools/build.js     tsc 세 번 + vite 한 번 + 자산 복사 + 고아 산출물 삭제
 ```
 
 **빌드가 있다.** `src/`는 쓰는 곳이고 **도는 것은 `out/`이다** — `package.json`의 `main`도,
@@ -88,9 +101,16 @@ electron-builder가 싣는 것도 거기다. `npm start`·`npm test`·`npm run d
   뱉는다** — `out/renderer/app.js`, 번들러가 생기기 전에 `index.html`이 읽던 바로 그 이름이다.
 - `tsconfig.test.json` — `out/test/`로 나간다. **`strict`가 꺼진 유일한 곳이고 의도한 것이다**:
   79개 중 대부분이 "테스트가 방금 만들어 곧바로 단언할 값이 null일 수 있다"는 지적인데,
-  거기서 null이면 테스트가 요란하게 실패한다 — 그게 그 파일이 하는 일이다. 테스트는 `#shared/*`·`#main/*`로 import한다
-  (`package.json`의 `imports`). `test/`가 `src/`보다 한 겹 위라 **소스와 산출물 양쪽에서
-  맞는 상대 경로가 없기 때문이다.**
+  거기서 null이면 테스트가 요란하게 실패한다 — 그게 그 파일이 하는 일이다.
+  **테스트 소스는 `src/` 안에, 각 폴더의 `test/`에 있고 산출물만 `out/test/`로 빠진다**
+  (`rootDir: "src"`, `include: ["src/**/test/**/*.ts"]`). 그래서 테스트는 반드시
+  `#shared/*`·`#main/*`로 import한다(`package.json`의 `imports`) — 상대 경로는 파일을 따라가는데
+  산출물은 `out/test/` 아래로 떨어져 **소스와 산출물 양쪽에서 맞는 상대 경로가 없다.**
+  나가는 곳을 가르는 이유는 둘이다: `files`가 `out/test/**`를 패키지에서 빼고,
+  `out/shared/`는 ES 모듈인데 이 파일들은 아니다.
+  **`tsconfig.shared.json`·`tsconfig.main.json`의 `exclude`는 디렉터리 이름이 아니라 패턴이어야
+  한다** (`src/shared/**/test/**`) — 한 겹 더 깊은 `core/test/`가 생기던 날 `src/shared/test/**`가
+  안 걸려서, shared 프로젝트가 node 전역을 원하는 파일을 앱 안으로 컴파일했다.
 - `tsconfig.json` — **아무것도 컴파일하지 않는다.** `files: []`에 위 넷을 `references`로만 적은
   파일이고, 있는 이유는 하나다: **언어 서버는 정확히 `tsconfig.json`이라는 이름만 찾는다.**
   이게 없으면 VS Code는 프로젝트를 못 찾아 모든 파일을 기본 설정으로 열고, **빌드에는 없는
@@ -143,7 +163,7 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   `normalizeTasks()`의 검사에만 쓴다. 새 위치를 추가한다면 이 구분을 그대로 지킬 것.
 - **`space`는 "어느 매트릭스"이고 `quadrant`와 직교한다.** 업무/일상은 파일이 아니라 task의
   필드로 나뉘어 있고(`SPACES`), 값은 `spaceFor(quadrant, space)` **한 곳에서만** 정해진다 —
-  `normalizeTasks()`와 `renderer/store.ts`의 `makeTask`/`moveTask`가 같은 함수를 부른다. 규칙은 하나뿐이다:
+  `normalizeTasks()`와 `renderer/store/mutations.ts`의 `makeTask`/`moveTask`가 같은 함수를 부른다. 규칙은 하나뿐이다:
   **`quadrant === INBOX`면 `space`는 반드시 `null`.** 인박스가 두 매트릭스의 공유 영역인 것이
   이 null에서 나오고(`inSpace()`가 null을 양쪽 통과로 본다), 인박스에서 분면으로 끌어내리는
   드롭이 소속을 정하는 유일한 순간이다. 인박스 행에 `space`를 남기면 그 항목이 한쪽에서만
@@ -171,7 +191,7 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   처럼 렌더링 분기에 쓰이는 것)는 기본값만이 아니라 유효성까지 여기서 잡아준다.
 - **저장은 temp write + rename** (`main/store-io.ts` `writeStore`). 이 패턴을 단순
   `writeFileSync`로 바꾸지 말 것 — 쓰다 끊기면 전체 할 일이 사라진다.
-- IPC를 새로 추가할 때는 **세 곳을 모두** 건드려야 한다: `main/ipc.ts`의 `ipcMain.handle`,
+- IPC를 새로 추가할 때는 **세 곳을 모두** 건드려야 한다: `main/ipc/`의 알맞은 파일에 `ipcMain.handle`,
   `preload.ts`의 `exposeInMainWorld`, 렌더러의 `window.api.*` 호출.
 - **`preload.ts`는 샌드박스라 로컬 파일을 `require`할 수 없다.** `require`가 주는 것은
   Electron 내장 모듈 몇 개뿐이고, `require("./shared/...")`를 넣는 순간 **preload가 통째로
@@ -183,7 +203,7 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   렌더러가 알 수 있는 것은 `state:load`의 `auth`(= `{ email, userId }`)뿐이고, 그 객체는
   `shared/auth.ts`의 `publicSession()`이 **필드를 골라서** 만든다 — 지우는 방식이 아니라
   고르는 방식인 이유가 있다. 세션에 필드를 추가해도 여기 이름을 적지 않는 한 새어나가지 않는다.
-- **렌더러의 `Date.now()`를 직접 쓰지 않는다.** `renderer/store.ts`의 `now()`가
+- **렌더러의 `Date.now()`를 직접 쓰지 않는다.** `renderer/store/state.ts`의 `now()`가
   `Date.now() + clockOffset`이고, 오프셋은 메인이 서버 응답의 `Date` 헤더로 재서 넘긴다.
   **`updatedAt`이 LWW의 기준이라, 시계가 10분 느린 기기는 그 기기의 모든 편집을 조용히 잃는다.**
   이 파일에 타임스탬프를 새로 쓸 일이 생기면 `now()`를 쓸 것 (`uid()`만 예외 — 비교용이 아니다).
@@ -195,7 +215,7 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   푸시 워터마크(`settings.sync`)만 비운다 — 계정이 바뀌면 남의 커서 때문에 행을 통째로 건너뛴다.
 - **커서는 진실이 아니라 최적화다.** `server_seq`는 트랜잭션 안에서 발급돼서, 먼저 커밋된 행이
   더 큰 번호를 가질 수 있다. 그 틈에 pull이 들어가면 행 하나를 영영 건너뛴다. 그래서
-  `main/sync.ts`가 **시작할 때와 6시간마다 커서를 버리고 전체를 다시 읽는다**(`RECONCILE_MS`).
+  `main/sync/loop.ts`가 **시작할 때와 6시간마다 커서를 버리고 전체를 다시 읽는다**(`RECONCILE_MS`).
   병합이 LWW라 여러 번 읽어도 값이 달라지지 않으니 대가는 요청 몇 번뿐이다. **이걸 없애면
   아주 가끔 할 일 하나가 조용히 사라진다** — 재현이 거의 불가능한 종류의 버그다.
 - **refresh_token은 갱신할 때마다 회전한다.** 그래서 두 규칙을 깨면 안 된다:
@@ -214,7 +234,7 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
 
 ## 알아두면 좋은 것
 
-- **비밀번호 로그인은 패키징된 빌드에 존재하지 않는다.** `main/ipc.ts`가 `auth:login`을
+- **비밀번호 로그인은 패키징된 빌드에 존재하지 않는다.** `main/ipc/auth.ts`가 `auth:login`을
   `!app.isPackaged`일 때만 등록한다. 사용자에게 열린 길은 Google 하나뿐이고, 비밀번호는
   **사람이 동의 화면을 누르지 않고도 동기화를 검증하기 위한** 개발용 통로다. 가이드의 개발용
   폼도 `state:load`의 `devLogin`을 보고 그때만 나온다. 이 통로를 없애면 **동기화를 자동으로
@@ -239,12 +259,12 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   덮으면 실행할 때마다 살아 있는 데이터가 옛 사본으로 되돌아간다.
   또 이름을 바꾼다면: 새 이름을 `setName()`에 넣고, **직전 이름을 배열 맨 앞에** 넣는다
   (배열은 최신순이고, 존재하는 첫 항목이 이긴다).
-- **창 크기는 expanded 모드의 것만 저장한다** (`main/window.ts`의 `rememberPlacement`). 바 크기가
+- **창 크기는 expanded 모드의 것만 저장한다** (`main/window/state.ts`의 `rememberPlacement`). 바 크기가
   저장돼버리면 다음 실행 때 640×48로 열린다. 바는 **위치만** `settings.barPosition`에 따로 남는다.
 - **`ready-to-show`는 렌더러의 `state:load`가 끝난 뒤에 온다.** 그래서 시작할 때의 접기
   (`settings.mode === "collapsed"`)를 렌더러가 볼 방법이 없다 — `state.mode`를 읽는 시점에는
   아직 `expanded`이고, 바는 그 뒤에 `win:mode` 푸시로 온다. **시작 모드에 조건을 걸 곳은
-  `main/window.ts`의 `ready-to-show` 한 곳뿐이다.** 첫 실행 선택 화면이 실제로 그랬다:
+  `main/window/create.ts`의 `ready-to-show` 한 곳뿐이다.** 첫 실행 선택 화면이 실제로 그랬다:
   렌더러에서 `window.api.expand()`를 부르는 조건이 **한 번도 참이 되지 않아**, 바 모드로
   종료했던 사용자가 업데이트 후 380px 카드를 **640×48 바 안에서** 만났다. 판정은
   `shared/core.ts`의 `needsStartupChoice()`에 있고 메인·렌더러가 같은 함수를 부른다.
@@ -272,7 +292,7 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   따라가지 않는다. **픽스처의 600을 앱의 값이라고 읽지 말 것.**
   토글할 때마다 위젯이 이동한다.
 - 분면 비율 `layout.cols/rows`는 0.15~0.85로 클램프된다. 상수와 클램프 함수는
-  `shared/core.ts` 한 곳에만 있고 `main/ipc.ts`와 `renderer/window/layout.ts`가 그걸 부른다.
+  `shared/core.ts` 한 곳에만 있고 `main/ipc/settings.ts`와 `renderer/window/layout/`이 그걸 부른다.
   드래그용 픽셀 클램프(`clampAxis`)와 `MIN_COL_PX`/`MIN_ROW_PX`도 **거기 있어야 한다.**
   이유가 둘이다: `clampAxis`의 상한을 `1 - MIN_RATIO`로 직접 쓰면 `MAX_RATIO`를 바꿔도
   드래그에 반영되지 않고, `MIN_COL_PX`는 드래그 클램프와 `applyLayout()`의 `minmax()`
@@ -316,7 +336,7 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   선언한다 — **패딩을 빼먹으면 border-box라 20px이 모자라** 여전히 넘친다.
   검증은 760×520(최소)과 1000×700(기본) **둘 다** 볼 것. 기본에서 인박스 목록 높이가 170px이
   아니면 회귀다.
-- **`main/window.ts`의 `BAR.width`는 타이틀바 내용이 정한다.** 원래 440px이었는데 업무/일상 토글이
+- **`main/window/state.ts`의 `BAR.width`는 타이틀바 내용이 정한다.** 원래 440px이었는데 업무/일상 토글이
   들어가면서 한 줄이 484px을 요구해 창 버튼이 오른쪽 밖으로 밀려났고, 업데이트 버튼이 들어가며
   600 → 640px이 됐고, 2026-08-15에 **660px**이 됐다 — 이번 것만은 자리가 모자라서가 아니라
   마지막 버튼에서 6px 만에 끝나 꽉 차 보여서다. **용량이 아니라 여백이다.**
@@ -386,7 +406,7 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   **빠지는 자리(`.title`·`.app-version`)에 넣으면 폭이 안 든다** — `#exportBtn`은 설정
   패널로 옮겨가면서 **DOM에서 아예 사라졌으니** 그 자리를 세지 말 것(2026-08-07 확인). 버전
   표시가 그렇게 들어갔고 그때도 실측 여유는 그대로였다. 늘 보일 필요가 없는 것은 이쪽을 먼저 볼 것.
-- **views/settings.ts`는 window/chrome.ts`를 import하지만 그 반대는 안 된다.** 테마 세그먼트
+- **views/settings.tsx`는 window/chrome`을 import하지만 그 반대는 안 된다.** 테마 세그먼트
   컨트롤을 반영하는 코드가 `applyTheme()` 안에 있는 이유다 — settings에 두면 순환이 된다.
   렌더러 그래프에 순환은 여기 말고 한 군데도 없다.
 - **`.switch`(`styles/switch.css`)는 업무/일상과 테마가 함께 쓴다.** 미끄러지는 알약은 컨테이너의
@@ -589,12 +609,17 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
 두지 않아도 된다. 설정은 `vitest.config.mts`, 헬퍼는 `src/renderer/react/testing.tsx`
 (`mount` · `flush` · `find` · `hidden`).
 
-**컴포넌트 테스트는 소스 옆에 둔다** (`src/renderer/**/*.test.tsx`). 진입점이 `index.html`이라
-거기서 닿지 않는 파일은 **번들에 들어가지 않는다** — 확인했다. 맞춰야 할 glob도 없다.
+**테스트는 자기가 덮는 코드 옆, 그 폴더의 `test/`에 둔다** — 렌더러도(`views/test/` ·
+`components/test/`) 나머지도(`shared/core/test/` · `main/test/`) 같다. 렌더러 쪽은 진입점이
+`index.html`이라 거기서 닿지 않는 파일이 **번들에 들어가지 않는다** — 확인했다.
+vitest의 `include`는 `**/*.test.tsx`라 폴더가 깊어져도 그대로 걸린다.
 
-**아직 React가 아닌 렌더러 코드(약 89%)는 여전히 커버되지 않는다.** 손으로 만든 DOM은 Electron을
-띄워야만 검사할 수 있고, 그래서 아래 CDP 절차가 그대로 필요하다. **뷰를 React로 옮길 때마다
-테스트를 함께 달 것** — 그게 이 마이그레이션이 주는 유일한 안전망이다.
+**렌더러는 전부 React지만 테스트가 덮는 것은 조각 다섯뿐이다** (toast · editable-text ·
+archive · matrix · memo). 나머지 뷰와 `window/`의 기하·드래그는 여전히 Electron을 띄워야만
+검사되고, 그래서 아래 CDP 절차가 그대로 필요하다. **뷰를 만질 때 테스트를 함께 달 것** —
+파일을 옮기기만 해도 지나가는 종류의 결함이 있다: 2026-08-23에 `main/window/`를 폴더로 가르며
+`__dirname/..`이 한 겹 모자라게 됐는데, 타입검사도 두 러너도 전부 통과하고 **띄워야만**
+빈 창과 `ERR_FILE_NOT_FOUND`로 나타났다.
 
 **사용자가 패키징된 exe를 띄워둔 채인 경우가 많고, 그러면 단일 인스턴스 락 때문에
 `npm start`가 조용히 죽는다.** 사용자 앱을 끄지 말고 데이터 폴더를 갈라서 띄울 것:
@@ -679,7 +704,7 @@ npx electron . --user-data-dir=<B> --remote-debugging-port=9334
 "스타일시트에 글꼴 이름이 남았나" 가드가 본문에 걸렸다. 검사는 `<style>` 블록으로 좁힌다.
 
 **메인 프로세스 코드는 `location.reload()`로 갱신되지 않는다.** 렌더러만 다시 그려질 뿐이고,
-`main/window.ts`의 상수를 고친 뒤 리로드해서 재면 **옛 값이 계속 나온다** — 2026-08-19에
+`main/window/state.ts`의 상수를 고친 뒤 리로드해서 재면 **옛 값이 계속 나온다** — 2026-08-19에
 `BAR.width`를 684로 바꾸고도 660이 나와서 한참 헤맸다. 메인을 건드렸으면 **앱을 다시 띄울 것.**
 
 **IME 경로는 한글로 눌러봐야만 보인다.** 조합 중의 `keydown`은 `isComposing: true`를 달고
@@ -724,7 +749,7 @@ PKCE 상태가 실제로 검사된다는 증거다. 남는 미검증 구간은 G
 
 **시계 오차는 오프셋이 0이면 아무것도 증명하지 못한다.** 개발 기기의 시계는 대개 정확해서
 `CLOCK_TOLERANCE_MS`(2초) 안에 들어오고, 그러면 배관이 끊겨 있어도 똑같이 0이 나온다.
-`api-client.ts`의 `skew = nextOffset(...)` 줄을 잠깐 `skew = 600_000`으로 바꿔 띄운 뒤
+`main/api/http.ts`의 `skew = nextOffset(...)` 줄을 잠깐 `skew = 600_000`으로 바꿔 띄운 뒤
 **새로 만든 항목의 `updatedAt`이 `Date.now()`보다 600초 앞서는지** 볼 것. 끝나면 되돌린다.
 
 렌더러·창 동작은 여전히 `npm start`로 직접 띄워서 확인한다. 최소 확인 항목:
@@ -778,7 +803,7 @@ require해서 `buildSnapshot` → `toMarkdown`/`toHtml` → 숨은 창에서 `pr
 성능은 **레이아웃까지 동기로 강제해서** 재야 한다
 (`document.body.offsetHeight`) — `requestAnimationFrame`은 창이 가려지면 아예 안 돌아서
 2ms 같은 값이 나온다. 실측 기준: 히스토리 행 하나가 약 180µs, 그래서 렌더 상한이 100이다
-(`renderer/views/archive.ts`의 `PAGE`). 검색은 한 글자마다 다시 그리므로 **한 번이 100ms 안**이어야 한다.
+(`renderer/views/archive/paging.ts`의 `PAGE`). 검색은 한 글자마다 다시 그리므로 **한 번이 100ms 안**이어야 한다.
 
 **업데이트 경로는 GitHub에 릴리스를 올리지 않고도 통째로 검증할 수 있다.** 설치본이 읽는
 피드를 localhost로 돌려놓으면 된다:
