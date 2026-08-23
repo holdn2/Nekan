@@ -43,7 +43,10 @@
     "src/renderer/render-bus.ts",
     "src/renderer/react/use-store.ts",
     "src/renderer/react/icons.tsx",
-    "src/renderer/views/memo.tsx"
+    "src/renderer/views/memo.tsx",
+    "src/renderer/react/testing.tsx",
+    "src/renderer/components/toast.test.tsx",
+    "src/renderer/views/memo.test.tsx"
   ],
   "references": [
     { "path": "./tsconfig.shared.json" },

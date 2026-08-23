@@ -38,7 +38,8 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
     selection.ts   어느 task의 메모를 보고 있나. 매트릭스·타이틀바가 뷰를 import하지
                    않고 이걸 본다
     react/         React 쪽 배관. use-store.ts가 render-bus를 구독하는 훅 하나,
-                   icons.tsx는 components/icons.ts와 도형 수치를 공유한다
+                   icons.tsx는 components/icons.ts와 도형 수치를 공유하고,
+                   testing.tsx는 컴포넌트 테스트의 mount/flush/find
     dom.ts         $ · $$ · target · numEl · actionBtn · labelBtn
     window-api.d.ts  window.api를 preload의 `typeof api`에서 받아 전역으로 선언
     components/    icons · due-chip · memo-mark · toast (task를 모르는 조각들)
@@ -550,9 +551,23 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
 
 ## 검증
 
-`npm test` (`node --test`, 추가 의존성 없음) 가 `src/shared/`의 순수 함수만 덮는다 —
-데이터가 날아가는 규칙(정규화 기본값, quadrant 유효성, temp+rename 저장, 손상 파일 폴백)이
-여기 들어 있으니 이 파일들을 건드렸으면 반드시 돌린다. UI는 커버되지 않는다.
+**`npm test`가 러너 둘을 돌린다.** `node --test`가 `out/test/`의 159개로 `src/shared/`의 순수
+함수를 덮고 — 데이터가 날아가는 규칙(정규화 기본값, quadrant 유효성, temp+rename 저장, 손상
+파일 폴백)이 거기 있으니 그 파일들을 건드렸으면 반드시 돌린다 — 이어서 `vitest run`이
+**React로 옮긴 렌더러 조각**을 덮는다.
+
+**러너가 둘인 이유**: 번들러가 생기면서 렌더러가 **Node가 require할 수 있는 파일로 존재하지
+않게 됐다.** Vite가 한 덩어리로 묶으니 모듈 단위로 import할 것이 없다. vitest는 그 Vite 파이프라인을
+그대로 지나므로 **테스트가 보는 코드가 실제로 나가는 코드**이고, 테스트 전용 컴파일 대상을 하나 더
+두지 않아도 된다. 설정은 `vitest.config.mts`, 헬퍼는 `src/renderer/react/testing.tsx`
+(`mount` · `flush` · `find` · `hidden`).
+
+**컴포넌트 테스트는 소스 옆에 둔다** (`src/renderer/**/*.test.tsx`). 진입점이 `index.html`이라
+거기서 닿지 않는 파일은 **번들에 들어가지 않는다** — 확인했다. 맞춰야 할 glob도 없다.
+
+**아직 React가 아닌 렌더러 코드(약 89%)는 여전히 커버되지 않는다.** 손으로 만든 DOM은 Electron을
+띄워야만 검사할 수 있고, 그래서 아래 CDP 절차가 그대로 필요하다. **뷰를 React로 옮길 때마다
+테스트를 함께 달 것** — 그게 이 마이그레이션이 주는 유일한 안전망이다.
 
 **사용자가 패키징된 exe를 띄워둔 채인 경우가 많고, 그러면 단일 인스턴스 락 때문에
 `npm start`가 조용히 죽는다.** 사용자 앱을 끄지 말고 데이터 폴더를 갈라서 띄울 것:

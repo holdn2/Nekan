@@ -29,7 +29,7 @@ import {
 import { useRenderSignal } from "../react/use-store.js";
 import { CloseIcon } from "../react/icons.js";
 
-function MemoPanel() {
+export function MemoPanel() {
   useRenderSignal();
   const task = selectedTask();
   const memo = task?.memo ?? "";
