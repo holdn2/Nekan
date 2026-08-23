@@ -8,6 +8,7 @@
  */
 
 import { $, $$, actionBtn, numEl, target } from "../dom.js";
+import type { Task } from "../../shared/types.js";
 import { currentLanguage, t } from "../i18n.js";
 import { dueBadge } from "../components/due-chip.js";
 import { memoLine } from "../components/memo-mark.js";
@@ -64,7 +65,7 @@ const QUAD_LABEL = {
 };
 
 /** Day header, in whatever the interface language says it looks like. */
-const dayLabel = (ts) =>
+const dayLabel = (ts: number) =>
   new Date(ts).toLocaleDateString(currentLanguage(), {
     year: "numeric",
     month: "long",
@@ -73,14 +74,14 @@ const dayLabel = (ts) =>
   });
 
 /** Time column on a row, to the minute. */
-const timeLabel = (ts) =>
+const timeLabel = (ts: number) =>
   new Date(ts).toLocaleTimeString(currentLanguage(), {
     hour: "2-digit",
     minute: "2-digit",
   });
 
 /** Case-insensitive substring match; an empty query matches everything. */
-const matches = (task, query) => {
+const matches = (task: Task, query: string) => {
   const q = query.trim().toLowerCase();
   return !q || task.text.toLowerCase().includes(q);
 };
@@ -92,7 +93,29 @@ const matches = (task, query) => {
  * `stamp` picks which timestamp the grouping and the time column use
  * (completedAt or deletedAt) and `actions` supplies the buttons for a row.
  */
-function renderArchive({
+interface ArchiveTab<T extends Task> {
+  /** The <ul> the rows go in, and the element shown when there are none. */
+  list: HTMLElement;
+  empty: HTMLElement;
+  items: T[];
+  query: string;
+  /**
+   * Which timestamp the day grouping and the time column read.
+   *
+   * Answers a number, not a nullable one: each tab is handed a list the store
+   * has already narrowed -- doneTasks() only contains rows with a completedAt
+   * -- and the generic carries that through instead of asking again here.
+   */
+  stamp: (task: T) => number;
+  emptyKey: string;
+  /** The buttons a row gets. Different on each tab; nothing else is. */
+  actions: (task: T) => HTMLElement[];
+  /** How many of `items` to build -- see PAGE. */
+  shown: number;
+  showMore: () => void;
+}
+
+function renderArchive<T extends Task>({
   list,
   empty,
   items,
@@ -102,7 +125,7 @@ function renderArchive({
   actions,
   shown,
   showMore,
-}) {
+}: ArchiveTab<T>) {
   list.replaceChildren();
   let lastDay = "";
   let index = 0;
@@ -125,7 +148,8 @@ function renderArchive({
 
     const dot = document.createElement("span");
     dot.className = `dot ${task.quadrant}`;
-    dot.title = QUAD_LABEL[task.quadrant]?.() || "";
+    dot.title =
+      (QUAD_LABEL as Record<string, () => string>)[task.quadrant]?.() || "";
 
     const text = document.createElement("span");
     text.className = "text";

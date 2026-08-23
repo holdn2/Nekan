@@ -12,7 +12,7 @@
   "scripts": {
     "build": "node tools/build.js",
     "build:watch": "node tools/build.js --watch",
-    "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.renderer.strict.json && tsc -p tsconfig.shared.json",
+    "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.shared.json",
     "test": "npm run build && node --test \"out/test/**/*.test.js\" && vitest run",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

@@ -11,7 +11,7 @@ import { noteIcon } from "./icons.js";
  * Matrix rows are one line tall, so the memo itself cannot be shown there: the
  * marker says it exists and the full text rides along as the tooltip.
  */
-export function memoMark(memo) {
+export function memoMark(memo: string) {
   const el = document.createElement("span");
   el.className = "memo-mark";
   el.title = t("memo.mark", { memo });
@@ -27,7 +27,7 @@ export function memoMark(memo) {
  * and that can only be measured once the row is in the document, so the archive
  * renderer flips the `clamped` class after insertion.
  */
-export function memoLine(memo) {
+export function memoLine(memo: string) {
   const box = document.createElement("div");
   box.className = "hmemo";
 

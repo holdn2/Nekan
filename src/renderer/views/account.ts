@@ -8,6 +8,22 @@
  * on -- the same test the update button had to pass.
  */
 
+import type { PublicSession } from "../../shared/types.js";
+import { messageOf } from "../errors.js";
+
+/** What a sign-in answers with: the session when it worked, a code when not. */
+interface SignInResult {
+  ok?: boolean;
+  error?: string;
+  session?: PublicSession | null;
+}
+
+/** What main reports on the sync channel. `pending` is worked out from it. */
+interface SyncStatus {
+  state: string;
+  unsent: number;
+  session?: PublicSession | null;
+}
 import { $ } from "../dom.js";
 import { toast } from "../components/toast.js";
 import { activeCount } from "../store.js";
@@ -111,8 +127,9 @@ const REASONS = {
 
 /** A failure code as a sentence. Unknown codes are shown as themselves — a code
  *  on screen is something a user can quote and I can search for. */
-function reasonFor(code, fallbackKey) {
-  if (code in REASONS) return REASONS[code] ? t(REASONS[code]) : "";
+function reasonFor(code: string, fallbackKey: string) {
+  const known = (REASONS as Record<string, string>)[code];
+  if (code in REASONS) return known ? t(known) : "";
   return t(fallbackKey, { code });
 }
 
@@ -125,10 +142,14 @@ function reasonFor(code, fallbackKey) {
  * while everything around it moved. A thunk carries the interpolated bits (an
  * email, an error code) along without this file having to store them.
  */
-let lastMessage = null;
+interface Message {
+  render: () => string;
+  isError: boolean;
+}
+let lastMessage: Message | null = null;
 
 /** `render` is a function returning the sentence, or null to clear the line. */
-function say(render, isError = false) {
+function say(render: (() => string) | null, isError = false) {
   ready();
   lastMessage = render ? { render, isError } : null;
   paintMessage();
@@ -144,7 +165,7 @@ function paintMessage() {
 /* ------------------------------------------------------------------ status */
 
 /** The last status main pushed, so a redraw can say it again in a new language. */
-let lastStatus = null;
+let lastStatus: SyncStatus | null = null;
 
 /** What the four states are called, in the settings panel. */
 const LABELS = {
@@ -160,7 +181,7 @@ const LABELS = {
  * waiting. Deciding it here keeps main's status to facts and leaves the
  * wording in one place.
  */
-function displayState(status) {
+function displayState(status: SyncStatus | null): string {
   if (!status || status.state === "off") return "off";
   if (status.state === "synced" && status.unsent > 0) return "pending";
   return status.state;
@@ -174,16 +195,16 @@ function displayState(status) {
  * mode this widget is usually left in, and therefore the one where "아직 안
  * 올라갔다" most needed saying. A dot costs no width, so it can stay.
  */
-export function applySyncStatus(status) {
+export function applySyncStatus(status: SyncStatus | null) {
   ready();
   lastStatus = status;
   const state = displayState(status);
-  const label = LABELS[state];
+  const label = (LABELS as Record<string, string | null>)[state];
 
   // `count` rather than the old %n placeholder: it is the name i18next reserves
   // for the number a sentence is about, so a language that needs a plural form
   // can grow one in the catalogue without this line changing.
-  const words = label ? t(label, { count: status.unsent }) : "";
+  const words = label ? t(label, { count: status?.unsent ?? 0 }) : "";
 
   els.state.textContent = words;
   // Only `pending` and `offline` colour the dot; settings.css hides it for the
@@ -200,7 +221,7 @@ export function applySyncStatus(status) {
 /* ----------------------------------------------------------------- session */
 
 /** Who is signed in, kept so a redraw can re-apply it without being told. */
-let session = null;
+let session: PublicSession | null = null;
 
 /**
  * Redraw the block from what is already known.
@@ -222,7 +243,7 @@ export function renderAccount() {
 }
 
 /** Show the signed-in half or the signed-out half, and the local-tasks offer. */
-export function applySession(next) {
+export function applySession(next: PublicSession | null) {
   ready();
   // Who this block was showing a moment ago. renderAccount() re-applies the
   // same session on every draw, so "changed" has to mean the identity moved,
@@ -240,7 +261,7 @@ export function applySession(next) {
   // new account an open "계정 삭제" that nobody there asked for.
   if (!inside || changed) closeConfirm();
 
-  if (inside) {
+  if (inside && session) {
     els.email.textContent = session.email;
     return;
   }
@@ -273,7 +294,7 @@ const adoptMode = () =>
     ? "merge"
     : "replace";
 
-async function finish(promise) {
+async function finish(promise: Promise<SignInResult>) {
   signingIn = true;
   els.google.disabled = true;
   say(() => t("account.finishInBrowser"));
@@ -282,17 +303,14 @@ async function finish(promise) {
     // not registered at all -- devLogin in a packaged build -- or when the
     // main handler throws. Uncaught it would be an unhandled rejection and the
     // panel would sit on "브라우저에서 로그인을 마쳐 주세요" forever.
-    const result = await promise.catch((err) => ({
+    const result = await promise.catch((err): SignInResult => ({
       ok: false,
-      error: String((err && err.message) || err),
+      error: messageOf(err),
     }));
     if (result && result.ok) {
-      applySession(result.session);
-      say(
-        result.session
-          ? () => t("account.signedIn", { email: result.session.email })
-          : null,
-      );
+      const signed = result.session ?? null;
+      applySession(signed);
+      say(signed ? () => t("account.signedIn", { email: signed.email }) : null);
       return;
     }
     const code = (result && result.error) || "unknown";
@@ -337,7 +355,7 @@ export function wireAccount() {
       // The session is main's to end, so a failure here means it did not. Said
       // out loud rather than swallowed: the screen would otherwise show a
       // logout that never happened.
-      const code = String((err && err.message) || err);
+      const code = messageOf(err);
       say(() => t("account.signOutFailed", { code }), true);
       return;
     }
@@ -369,7 +387,7 @@ export function wireAccount() {
       // signed in with no explanation of what happened.
       const result = await window.api.deleteAccount().catch((err) => ({
         ok: false,
-        error: String((err && err.message) || err),
+        error: messageOf(err),
       }));
       if (!result || !result.ok) {
         const code = (result && result.error) || "unknown";
@@ -397,7 +415,7 @@ export function wireAccount() {
 }
 
 /** Called once from init, before the first applySession. */
-export function setDevLogin(enabled) {
+export function setDevLogin(enabled: unknown) {
   devLogin = Boolean(enabled);
 }
 
@@ -408,7 +426,7 @@ export function setDevLogin(enabled) {
  * user cannot act on; this is the one sync outcome where something they wrote
  * is gone and they may want to write it again.
  */
-export function announceOverwritten(count) {
+export function announceOverwritten(count: number) {
   if (!count) return;
   toast(t("account.overwritten", { count }), { ms: 8000 });
 }

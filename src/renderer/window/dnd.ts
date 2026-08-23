@@ -15,7 +15,7 @@ import { $, $$, target } from "../dom.js";
 import { moveTask } from "../store.js";
 
 /** The row the dragged one should be inserted before, or undefined for last. */
-function afterElement(list, y) {
+function afterElement(list: HTMLElement, y: number) {
   const items = $$(".item:not(.dragging)", list);
   return items.find((el) => {
     const box = el.getBoundingClientRect();
@@ -28,11 +28,13 @@ const dropZones = () => [...$$(".quad"), $("#inboxPanel")];
 
 /** Bind the drag handlers. Called once; the zones outlive every render. */
 export function wireDragAndDrop() {
-  let draggingId = null;
+  let draggingId: string | null = null;
 
   document.addEventListener("dragstart", (e) => {
     const item = target(e).closest?.(".item") as HTMLElement | null;
-    if (!item) return;
+    // No id means no task to move, and no dataTransfer means this is not
+    // really a drag -- neither is worth starting one for.
+    if (!item?.dataset.id || !e.dataTransfer) return;
     draggingId = item.dataset.id;
     item.classList.add("dragging");
     e.dataTransfer.effectAllowed = "move";
@@ -55,7 +57,7 @@ export function wireDragAndDrop() {
     zone.addEventListener("dragover", (e) => {
       if (!draggingId) return;
       e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
+      if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
       zone.classList.add("drop");
     });
 
@@ -67,7 +69,7 @@ export function wireDragAndDrop() {
     zone.addEventListener("drop", (e) => {
       e.preventDefault();
       zone.classList.remove("drop");
-      const id = draggingId || e.dataTransfer.getData("text/plain");
+      const id = draggingId || e.dataTransfer?.getData("text/plain");
       if (!id) return;
       const before = afterElement(list, e.clientY);
       // The drop zone names its quadrant in the markup, so this is only ever

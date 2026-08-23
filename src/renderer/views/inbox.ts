@@ -12,6 +12,7 @@
  */
 
 import { INBOX, splitBulkText } from "../../shared/core.js";
+import type { Task } from "../../shared/types.js";
 import { $, numEl } from "../dom.js";
 import { closeIcon, plusIcon } from "../components/icons.js";
 import { t } from "../i18n.js";
@@ -28,7 +29,7 @@ let inboxOpen = false;
  * still soft-deletes — sorting out *what* a task is comes after getting it out
  * of your head, and dragging it into a quadrant is what does that.
  */
-function inboxItemEl(task, index) {
+function inboxItemEl(task: Task, index: number) {
   const li = document.createElement("li");
   li.className = "item inbox-item";
   li.dataset.id = task.id;
@@ -66,7 +67,7 @@ export function renderInbox() {
  * Fold or unfold the panel. `persist` is false while restoring the saved state
  * at startup, so replaying it does not write it straight back.
  */
-export function applyInboxOpen(open, persist = true) {
+export function applyInboxOpen(open: boolean, persist = true) {
   inboxOpen = Boolean(open);
   $("#inboxPanel").classList.toggle("open", inboxOpen);
   $("#inboxToggle").setAttribute("aria-expanded", String(inboxOpen));

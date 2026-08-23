@@ -11,6 +11,13 @@
     // React's own transform: no React import needed in a .tsx, and the JSX is
     // compiled by tsc and by Vite the same way.
     "jsx": "react-jsx",
+
+    // On since 2026-08-23, when the last of the 140 implicit anys went. It was
+    // off through the TypeScript migration (#70) because the risk there was
+    // never the renaming -- it was the edits made to satisfy the compiler, in
+    // code no test covers. The renderer has tests now, and the fourteen real
+    // findings this turned up are in the commit that switched it on.
+    "strict": true,
     // Vite emits this project; tsc only reads it. Without this, `tsc -b` from
     // the solution config writes a second copy of the renderer into out/
     // beside the bundle -- including an out/renderer/app.js, which is the file

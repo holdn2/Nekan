@@ -50,10 +50,19 @@ const inboxList = () => $("#inboxList");
 /** No edge to grab while it is folded: there is nothing between the two. */
 const dumpOpen = () => $("#inboxPanel")?.classList.contains("open");
 
+/** Which divider a pointer is on, or none. */
+type Edge = "inbox" | "col" | "row" | "both" | "memo" | null;
+/** Where a panel drag started: read once at pointerdown, never live. */
+interface DragStart {
+  y: number;
+  height: number;
+  room: number;
+}
+
 let layout = { ...DEFAULT_LAYOUT };
-let layoutTimer = null;
+let layoutTimer: ReturnType<typeof setTimeout> | null = null;
 /** The grid's own padding, measured once — applyLayout runs on every drag move. */
-let gridPadY = null;
+let gridPadY: number | null = null;
 
 /**
  * Ratios become grid tracks. The px floor in each minmax() is the same constant
@@ -61,7 +70,7 @@ let gridPadY = null;
  * shared/core.js rather than each keeping its own number.
  */
 function applyLayout() {
-  const track = (ratio, minPx) =>
+  const track = (ratio: number, minPx: number) =>
     `minmax(${minPx}px, ${(ratio * 100).toFixed(3)}fr) ` +
     `minmax(${minPx}px, ${((1 - ratio) * 100).toFixed(3)}fr)`;
 
@@ -133,7 +142,7 @@ function inboxRoom() {
  * each call would otherwise be an IPC round trip and a file write.
  */
 function saveLayout() {
-  clearTimeout(layoutTimer);
+  if (layoutTimer) clearTimeout(layoutTimer);
   layoutTimer = setTimeout(() => window.api.setLayout(layout), 150);
 }
 
@@ -162,7 +171,7 @@ function metrics() {
  * band, and asking about the quadrants first would make the corner of the
  * matrix ungrabbable.
  */
-function edgeAt(x, y) {
+function edgeAt(x: number, y: number): Edge {
   const grid = $("#matrixView");
   if (dumpOpen()) {
     const g = grid.getBoundingClientRect();
@@ -184,7 +193,7 @@ function edgeAt(x, y) {
 }
 
 /** Cursor on the grid, accent border on the two quadrants sharing the edge. */
-function markEdge(mode) {
+function markEdge(mode: Edge) {
   const grid = $("#matrixView");
   grid.classList.toggle("edge-inbox", mode === "inbox");
   grid.classList.toggle("edge-col", mode === "col");
@@ -215,13 +224,13 @@ function markEdge(mode) {
  */
 export function wireQuadEdges() {
   const grid = $("#matrixView");
-  let dragging = null;
+  let dragging: Edge = null;
 
   /** Set at pointerdown for a dump drag; see inboxRoom for why it is not live. */
-  let dumpStart = null;
+  let dumpStart: DragStart | null = null;
 
   /** Pointer position → the ratios for whichever axes are being dragged. */
-  const ratiosAt = (ev) => {
+  const ratiosAt = (ev: PointerEvent) => {
     const m = metrics();
     const next: Partial<Layout> = {};
     if (dragging !== "row") {
@@ -264,8 +273,8 @@ export function wireQuadEdges() {
     grid.setPointerCapture(e.pointerId);
     document.body.classList.add(`resizing-${mode}`);
 
-    const onMove = (ev) => {
-      if (dragging === "inbox") {
+    const onMove = (ev: PointerEvent) => {
+      if (dragging === "inbox" && dumpStart) {
         layout.inbox = clampInbox(
           dumpStart.height + (ev.clientY - dumpStart.y),
           dumpStart.room,
@@ -278,7 +287,7 @@ export function wireQuadEdges() {
     };
     // lostpointercapture is the backstop: however the drag ends — button
     // released off-window, capture stolen — the listeners come off.
-    const onUp = (ev) => {
+    const onUp = (ev: PointerEvent) => {
       dragging = null;
       dumpStart = null;
       document.body.classList.remove(
@@ -347,10 +356,10 @@ export function wireMemoEdge() {
   if (!panel) return;
 
   /** Set at pointerdown; see memoRoom for why it is not read live. */
-  let start = null;
+  let start: DragStart | null = null;
 
   const shown = () => !panel.classList.contains("hidden");
-  const onEdge = (y) =>
+  const onEdge = (y: number) =>
     shown() && Math.abs(y - panel.getBoundingClientRect().top) <= MEMO_HIT;
 
   panel.addEventListener("pointerdown", (e) => {
@@ -361,7 +370,8 @@ export function wireMemoEdge() {
     panel.setPointerCapture(e.pointerId);
     document.body.classList.add("resizing-memo");
 
-    const onMove = (ev) => {
+    const onMove = (ev: PointerEvent) => {
+      if (!start) return;
       // Up is taller: the divider is this panel's top, so the height it gains
       // is exactly how far the pointer has climbed.
       layout.memo = clampMemoPanel(
@@ -402,7 +412,7 @@ export function wireMemoEdge() {
  * same helper main.js uses, so a hand-edited data.json cannot produce a track
  * the grid refuses to lay out.
  */
-export function setLayout(saved) {
+export function setLayout(saved: unknown) {
   layout = sanitizeLayout(saved);
   applyLayout();
 }

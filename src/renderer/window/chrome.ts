@@ -29,14 +29,20 @@ import { resetArchivePaging } from "../views/archive.js";
 import { applyInboxOpen } from "../views/inbox.js";
 import { clearSelectionSilently, setSelected } from "../selection.js";
 
+/** What main reports about an available update. */
+interface UpdateStatus {
+  state?: string;
+  version?: string;
+}
+
 let mode = "expanded";
 let activeTab = "matrix";
 let theme = "light";
 /** The version already announced, so the toast fires once per download. */
-let announced = null;
+let announced: string | null = null;
 /** Last values pushed in, kept so relabelChrome() can rewrite them. */
 let pinned = true;
-let updateStatus = null;
+let updateStatus: UpdateStatus | null = null;
 
 /** 'expanded' | 'collapsed'. The render dispatcher skips the lists in a bar. */
 export const getMode = () => mode;
@@ -57,7 +63,7 @@ export function renderCounts() {
     // into it — the chip is all that is on screen there.
     $(`#c${i + 1}`)
       .closest(".chip")
-      .classList.toggle("crowded", isCrowded(q, count));
+      ?.classList.toggle("crowded", isCrowded(q, count));
   });
   // The bar chip stays out of the way until there is something unclassified, so
   // seeing it at all is the signal.
@@ -88,7 +94,7 @@ function syncSpaceSwitch() {
 }
 
 /** Switch boards. `persist` is false while replaying the saved choice. */
-export function applySpace(next, persist = true) {
+export function applySpace(next: unknown, persist = true) {
   const space = setSpace(next);
   syncSpaceSwitch();
   if (persist) window.api.setSpace(space);
@@ -97,7 +103,7 @@ export function applySpace(next, persist = true) {
 /* ------------------------------------------------------------------- tabs */
 
 /** Show one view and hide the rest, then redraw whatever it needs. */
-export function setTab(tab) {
+export function setTab(tab: string) {
   // The panel belongs to the matrix; leaving the tab closes it (and gives the
   // window its height back) rather than leaving it pointing at a hidden row.
   if (tab !== "matrix") setSelected(null);
@@ -120,18 +126,17 @@ export function setTab(tab) {
 
 /* ------------------------------------------------------------ theme / pin */
 
+/** Which palette is on. The settings panel draws its segment from this. */
+export const getTheme = () => theme;
+
 /** Swap the palette. The stylesheet keys off data-theme on <html>. */
-export function applyTheme(next, persist = true) {
+export function applyTheme(next: string, persist = true) {
   theme = next === "dark" ? "dark" : "light";
   document.documentElement.dataset.theme = theme;
-  // The control moved into the settings panel, but reflecting it stays here:
-  // views/settings.js already imports this file, and importing back would
-  // close a cycle the renderer graph does not have anywhere else.
-  $$("#themeSeg .switch-btn").forEach((btn) => {
-    const on = btn.dataset.theme === theme;
-    btn.classList.toggle("active", on);
-    btn.setAttribute("aria-pressed", String(on));
-  });
+  // The segment used to be updated from here, by hand, because settings
+  // imports this file and importing back would have closed a cycle. It reads
+  // getTheme() now instead, so the reflecting went away with the cycle.
+  notify();
   if (persist) window.api.setTheme(theme);
 }
 
@@ -141,7 +146,7 @@ export function toggleTheme() {
 }
 
 /** Reflect the always-on-top state main.js reports back. */
-export function applyPinned(on) {
+export function applyPinned(on: boolean) {
   pinned = on;
   $("#pinBtn").classList.toggle("on", on);
   labelBtn("#pinBtn", t(on ? "titlebar.unpin" : "titlebar.pin"));
@@ -156,7 +161,7 @@ export function applyPinned(on) {
  * guide next to the update state. The title bar one is hidden in bar mode along
  * with the name, so it costs the bar no width at all.
  */
-export function applyVersion(version) {
+export function applyVersion(version: string | null) {
   $("#appVersion").textContent = version || "—";
   $("#titleVersion").textContent = version || "";
 }
@@ -194,7 +199,10 @@ const UPDATE_TEXT = {
  * renderer asking for it has either just started or just reloaded. The button
  * belongs to both; the toast belongs only to the first.
  */
-export function applyUpdateStatus(status, { announce = false } = {}) {
+export function applyUpdateStatus(
+  status: UpdateStatus | null,
+  { announce = false } = {},
+) {
   updateStatus = status;
   const ready = status?.state === "ready";
   $("#updateBtn").classList.toggle("hidden", !ready);
@@ -205,7 +213,7 @@ export function applyUpdateStatus(status, { announce = false } = {}) {
   // travels with the number so the sentence closes up when there is none.
   const version = status?.version ? ` ${status.version}` : "";
 
-  const key = UPDATE_TEXT[status?.state];
+  const key = (UPDATE_TEXT as Record<string, string>)[status?.state ?? ""];
   $("#updateState").textContent = key ? t(key, { version }) : "";
 
   if (!ready) return;
@@ -215,8 +223,8 @@ export function applyUpdateStatus(status, { announce = false } = {}) {
   // `announced` is the guard against the same news arriving twice; it is module
   // state and a reload clears it, which is exactly why the reload path above
   // must not announce in the first place.
-  if (!announce || announced === status.version) return;
-  announced = status.version;
+  if (!announce || announced === status?.version) return;
+  announced = status?.version ?? null;
   // No toast in a bar — collapsed.css hides it — but the button is there, and
   // the update lands on the next quit regardless.
   toast(t("update.toast", { version: version && ` (${status.version})` }), {
@@ -234,7 +242,7 @@ export function applyUpdateStatus(status, { announce = false } = {}) {
  * Follow the main process into or out of bar mode. Only main.js decides the
  * mode — this repaints for whatever it decided.
  */
-export function applyMode(next) {
+export function applyMode(next: string) {
   mode = next;
   // collapse() already dropped the panel's height on its way to the bar, so
   // clear the selection here without asking for another resize.
@@ -280,7 +288,9 @@ export function toggleSize() {
 /** Bind the title bar and the tab strip. Called once at startup. */
 export function wireChrome() {
   $$(".tab").forEach((btn) =>
-    btn.addEventListener("click", () => setTab(btn.dataset.tab)),
+    btn.addEventListener("click", () => {
+      if (btn.dataset.tab) setTab(btn.dataset.tab);
+    }),
   );
 
   $("#spaceSwitch").addEventListener("click", (e) => {

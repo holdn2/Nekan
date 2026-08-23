@@ -10,10 +10,11 @@
  */
 
 import { QUADS, isCrowded } from "../../shared/core.js";
-import type { Place } from "../../shared/types.js";
+import type { Place, Task } from "../../shared/types.js";
 import { currentLanguage, t } from "../i18n.js";
 import { $, $$, numEl } from "../dom.js";
 import { dueChip } from "../components/due-chip.js";
+import type { DueChip } from "../components/due-chip.js";
 import { memoMark } from "../components/memo-mark.js";
 import { closeIcon, plusIcon } from "../components/icons.js";
 import {
@@ -33,7 +34,7 @@ const REMOVE_MS = 160;
  * One quadrant row: complete, text, memo marker, due chip, delete. `index` is
  * only its position in the list on screen — the "1." in front of it.
  */
-export function itemEl(task, index) {
+export function itemEl(task: Task, index: number) {
   const li = document.createElement("li");
   li.className = isSelected(task.id) ? "item selected" : "item";
   li.dataset.id = task.id;
@@ -99,7 +100,7 @@ export function itemEl(task, index) {
  * characters task text cannot hold, or two rows could run together and a
  * redraw that was needed would be skipped.
  */
-const rowsKey = (items) =>
+const rowsKey = (items: Task[]) =>
   [
     // The language leads, because a row carries strings that are in no task at
     // all — the complete and delete titles, the "click for the note" hint, the
@@ -114,10 +115,10 @@ const rowsKey = (items) =>
   ].join("\u0001");
 
 /** The last rowsKey drawn into each quadrant. */
-const drawn = new Map();
+const drawn = new Map<string, string>();
 
 /** The four add-form chips, kept so their labels can be rewritten. */
-const addChips = [];
+const addChips: DueChip[] = [];
 
 /**
  * Repaint the add forms' due chips.

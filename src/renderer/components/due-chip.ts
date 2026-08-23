@@ -9,11 +9,19 @@
  */
 
 import { dueInfo, formatDue } from "../../shared/core.js";
+import type { DueInfo } from "../../shared/types.js";
 import { currentLanguage, t } from "../i18n.js";
 import { calendarIcon } from "./icons.js";
 
-/** The words for a due date, in whatever language is on screen right now. */
-const words = (info) => formatDue(info, t, currentLanguage());
+/**
+ * The words for a due date, in whatever language is on screen right now.
+ *
+ * Takes a DueInfo rather than a value: formatDue answers null for "no date",
+ * and every caller here has already dealt with that case -- an empty chip
+ * shows a calendar icon instead of words. Narrowing it here is what lets them
+ * read .text without asking again.
+ */
+const words = (info: DueInfo) => formatDue(info, t, currentLanguage())!;
 
 /**
  * Editable chip: a native date input stretched invisibly over a compact face,

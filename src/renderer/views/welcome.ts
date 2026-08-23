@@ -10,6 +10,7 @@
  * is not final either; the same two options live in the settings panel.
  */
 
+import { messageOf } from "../errors.js";
 import { $ } from "../dom.js";
 import { needsStartupChoice } from "../../shared/core.js";
 import { activeCount } from "../store.js";
@@ -60,7 +61,7 @@ const REASONS = {
   bad_response: "account.error.badResponse",
 };
 
-function say(text, isError = false) {
+function say(text: string, isError = false) {
   els.msg.textContent = text || "";
   els.msg.classList.toggle("error", Boolean(text) && isError);
 }
@@ -104,7 +105,7 @@ export function showWelcome() {
  * already signed in. Main returns the stored value, so a null is a write that
  * did not land.
  */
-async function finish(choice) {
+async function finish(choice: string) {
   const saved = await window.api.setStartupChoice(choice).catch(() => null);
   if (saved !== choice) {
     say(t("welcome.saveFailed"), true);
@@ -139,7 +140,7 @@ async function chooseSync() {
       .signInWithGoogle(adoptMode())
       .catch((err) => ({
         ok: false,
-        error: String((err && err.message) || err),
+        error: messageOf(err),
       }));
 
     if (result && result.ok) {
@@ -151,7 +152,9 @@ async function chooseSync() {
     // dropping someone onto an empty matrix would look like it worked.
     const code = (result && result.error) || "unknown";
     say(
-      code in REASONS ? t(REASONS[code]) : t("account.signInFailed", { code }),
+      code in REASONS
+        ? t((REASONS as Record<string, string>)[code])
+        : t("account.signInFailed", { code }),
       true,
     );
   } finally {
@@ -174,7 +177,7 @@ async function signOut() {
   } catch (err) {
     say(
       t("welcome.signOutFailed", {
-        code: String((err && err.message) || err),
+        code: messageOf(err),
       }),
       true,
     );
@@ -184,7 +187,7 @@ async function signOut() {
   return true;
 }
 
-export function wireWelcome(done) {
+export function wireWelcome(done: (choice: string) => void) {
   onDone = done || (() => {});
   els.root = $("#welcome");
   els.sync = $("#welcomeSync");

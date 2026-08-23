@@ -818,74 +818,10 @@
       data-i18n-attr="aria-label"
       data-i18n-attr-only
     >
-      <header class="settings-head">
-        <h2 data-i18n="settings.title">Settings</h2>
-        <button
-          class="settings-close"
-          id="settingsClose"
-          aria-label="Close"
-          data-i18n="settings.close"
-          data-i18n-attr="aria-label"
-          data-i18n-attr-only
-        >
-          ×
-        </button>
-      </header>
-
-      <!-- A select, not the .switch the theme row uses. That pill is
-           `width: calc(50% - 2px)` and `translateX(100%)`, so it is only ever
-           right for exactly two options — reusing it here would break on the
-           day a third language lands, which is the whole point of this row. -->
-      <div class="settings-row">
-        <!-- A real <label>, not the <span> the other rows use: those sit beside
-             a group that carries its own aria-label, but a bare <select> next to
-             a <span> has no accessible name at all. -->
-        <label
-          class="settings-label"
-          for="languageSelect"
-          data-i18n="settings.language"
-          >Language</label
-        >
-        <select class="settings-select" id="languageSelect"></select>
-      </div>
-
-      <div class="settings-row">
-        <span class="settings-label" data-i18n="settings.theme">Theme</span>
-        <div
-          class="switch"
-          id="themeSeg"
-          role="group"
-          aria-label="Choose a theme"
-          data-i18n="settings.themeChoose"
-          data-i18n-attr="aria-label"
-          data-i18n-attr-only
-        >
-          <button
-            class="switch-btn"
-            data-theme="light"
-            aria-pressed="false"
-            data-i18n="settings.themeLight"
-          >
-            Light
-          </button>
-          <button
-            class="switch-btn"
-            data-theme="dark"
-            aria-pressed="false"
-            data-i18n="settings.themeDark"
-          >
-            Dark
-          </button>
-        </div>
-      </div>
-
-      <div class="settings-row">
-        <span class="settings-label" data-i18n="settings.export">Export</span>
-        <button class="settings-action" id="settingsExport">
-          PDF · HTML · Markdown
-          <kbd>Ctrl+E</kbd>
-        </button>
-      </div>
+      <!-- Filled by views/settings.tsx. The account block below is still
+           views/account.js's, which is why React fills a div rather than
+           the panel. -->
+      <div id="settingsBody"></div>
 
       <div class="settings-block">
         <span class="settings-label" data-i18n="settings.sync"

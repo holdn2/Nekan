@@ -125,7 +125,7 @@ export const getSpace = () => activeSpace;
  * Switch boards. Only a filter changes — no task moves and nothing is written,
  * so the caller persists the *choice* through settings, not through the tasks.
  */
-export function setSpace(next: Space) {
+export function setSpace(next: unknown) {
   activeSpace = sanitizeSpace(next);
   return activeSpace;
 }

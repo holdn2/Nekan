@@ -62,11 +62,15 @@ electron-builder가 싣는 것도 거기다. `npm start`·`npm test`·`npm run d
 
 - `tsconfig.shared.json` — `src/shared/`를 **ES 모듈로** 내보낸다. 그리고 **규칙이다**:
   `types: []` + DOM lib 없음이라 여기서 `fs`나 `document`를 만지면 **컴파일이 죽는다.**
-  `strict`도 여기만 켜져 있다 — 159개 테스트가 이 파일들을 덮고 있어서 컴파일러가 요구하는
-  수정에 안전망이 있다.
+  `strict`는 처음에 여기만 켰었다(테스트가 이 파일들을 덮으니 안전망이 있었다).
+  **2026-08-23에 렌더러도 켜졌다** — 아래 항목 참고. 남은 것은 `src/main/`뿐이다.
 - `tsconfig.main.json` — 메인과 preload. CommonJS. `composite`이라 선언 파일을 내보내고,
   렌더러가 그걸로 `window.api`의 타입을 얻는다.
-- `tsconfig.renderer.json` — **Vite가 내보내고 tsc는 읽기만 한다**(`noEmit`).
+- `tsconfig.renderer.json` — **Vite가 내보내고 tsc는 읽기만 한다**(`noEmit`). **`strict`가 켜져
+  있다**(2026-08-23). 켤 때 140개가 나왔는데 126개는 타입이 안 붙은 매개변수였고 **14개는 진짜**였다
+  — 그 목록은 그날 커밋 메시지에 있다. 한동안 "React로 옮긴 파일만" 담는 별도 설정
+  (`tsconfig.renderer.strict.json`)을 뒀다가 없앴다: `files:`는 울타리가 아니라 **import한 것까지
+  검사해서** 어차피 렌더러 전체로 번졌기 때문이다. 옛 커밋에서 그 이름을 보면 이 날짜로 읽을 것.
   `module: "preserve"`로 import 경로를 tsc가 다시 쓰지 않게 두는데, 이제 그 경로를 읽는 것은
   브라우저가 아니라 번들러다 — `.js`라고 적힌 것을 옆의 `.ts`·`.tsx`에 이어주는 일은
   `vite.config.ts`의 플러그인이 한다. **`noEmit`을 빼면 `tsc -b`가 번들 옆에 렌더러를 한 벌 더

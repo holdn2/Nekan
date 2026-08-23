@@ -18,6 +18,13 @@ import {
   startOfToday,
   startOfTomorrow,
 } from "../shared/core.js";
+import type { Task } from "../shared/types.js";
+
+/** The two shapes main pushes. Read off window.api so they cannot drift. */
+type UpdateStatus = Parameters<
+  Parameters<typeof window.api.onUpdateStatus>[0]
+>[0];
+type SyncStatus = Parameters<Parameters<typeof window.api.onSyncStatus>[0]>[0];
 import { acceptSynced, setClockOffset, setTasks } from "./store.js";
 import { subscribe } from "./render-bus.js";
 import { applyStaticStrings, currentLanguage, t } from "./i18n.js";
@@ -116,7 +123,7 @@ function render() {
  * on screen for days. Without a rollover, an item added yesterday keeps its
  * orange "today" chip until some unrelated click happens to re-render.
  */
-let dayTimer = null;
+let dayTimer: ReturnType<typeof setTimeout> | null = null;
 let renderedDay = startOfToday().getTime();
 
 /** Redraw only if the date actually moved on. */
@@ -129,7 +136,7 @@ function refreshIfDayChanged() {
 
 /** Re-arm for the next local midnight, and keep re-arming after that. */
 function scheduleDayRollover() {
-  clearTimeout(dayTimer);
+  if (dayTimer) clearTimeout(dayTimer);
   // +1s of slack so a timer that fires a hair early doesn't re-render the
   // day that is still ending and then wait another 24h.
   const wait = startOfTomorrow().getTime() - Date.now() + 1000;
@@ -211,19 +218,19 @@ function wireShortcuts() {
  * here rather than inside applyMode() because chrome.js must not import
  * settings.js -- that direction is already taken.
  */
-function enterMode(next) {
+function enterMode(next: string) {
   if (next === "collapsed") closeSettings();
   applyMode(next);
 }
 
 /** Last mode pushed by the main process, which outranks the load snapshot. */
-let pushedMode = null;
+let pushedMode: string | null = null;
 /** Same for the update status, for the same reason. */
-let pushedUpdate = null;
+let pushedUpdate: UpdateStatus | null = null;
 /** Same again, for a sync that finished before the load snapshot arrived. */
-let pushedTasks = null;
+let pushedTasks: Task[] | null = null;
 /** And for its status, which is pushed on the same schedule. */
-let pushedSync = null;
+let pushedSync: SyncStatus | null = null;
 
 /**
  * Load, wire, draw. The order is what matters here: the mode listener before
@@ -266,7 +273,7 @@ async function init() {
   // out rather than going on showing an email it no longer has.
   window.api.onSyncStatus((next) => {
     pushedSync = next;
-    applySession(next.session);
+    applySession(next.session ?? null);
     applySyncStatus(next);
   });
 
@@ -290,7 +297,7 @@ async function init() {
   // The session follows the same rule as the mode and the update status: a
   // value that was pushed while load() was in flight is the newer one, and
   // state.auth would otherwise put a signed-out snapshot back on screen.
-  applySession(pushedSync ? pushedSync.session : state.auth);
+  applySession(pushedSync ? (pushedSync.session ?? null) : state.auth);
   applySyncStatus(pushedSync || state.sync);
 
   wireChrome();

@@ -5,6 +5,7 @@
  * change size or lose its place in the list while it is being edited.
  */
 
+import type { Task } from "../../shared/types.js";
 import { editTask } from "../store.js";
 import { notify } from "../render-bus.js";
 
@@ -16,7 +17,7 @@ import { notify } from "../render-bus.js";
  * Dragging is switched off for the duration: the row is draggable, and a
  * text selection inside a draggable element starts a drag instead of selecting.
  */
-export function startEdit(li, textEl, task) {
+export function startEdit(li: HTMLElement, textEl: HTMLElement, task: Task) {
   // The dblclick listener stays on the row while it is being edited, and
   // double-clicking a word to select it is exactly what people do mid-edit.
   // Without this the second dblclick would stack another keydown/blur pair and
@@ -28,14 +29,19 @@ export function startEdit(li, textEl, task) {
   textEl.contentEditable = "true";
   textEl.focus();
 
+  // Select what is there, so typing replaces it. There is no selection to
+  // move when the document is not focused, and that is not a failure -- the
+  // edit still opens, it just does not start selected.
   const range = document.createRange();
   range.selectNodeContents(textEl);
   const sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
+  if (sel) {
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
 
   /** Leave edit mode; `commit` decides whether the typing survives. */
-  const finish = (commit) => {
+  const finish = (commit: boolean) => {
     // Unhook first. Clearing contentEditable on a focused element blurs it, so
     // doing that while onBlur is still attached re-enters finish(true) — and an
     // Escape would save the edit it was cancelling.
@@ -50,7 +56,7 @@ export function startEdit(li, textEl, task) {
     notify();
   };
 
-  const onKey = (e) => {
+  const onKey = (e: KeyboardEvent) => {
     // An IME is mid-word. The Enter that commits a Korean syllable and the
     // Escape that abandons one are delivered here first, and without this they
     // would finish the edit instead -- one keystroke doing two jobs, the second

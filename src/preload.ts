@@ -29,6 +29,22 @@ const languages = flag("langs").split(",").filter(Boolean);
  * described once. A channel added here shows up over there without anybody
  * writing it down twice -- the mistake core-bridge used to invite.
  */
+/**
+ * What main pushes, named here because this file is where the renderer's view
+ * of the boundary comes from -- window.api is `typeof api`, so a callback typed
+ * here is a callback typed over there.
+ */
+interface UpdateStatus {
+  state?: string;
+  version?: string;
+}
+
+interface SyncStatus {
+  state: string;
+  unsent: number;
+  session?: { userId: string | null; email: string | null } | null;
+}
+
 const api = {
   language,
   languages,
@@ -67,17 +83,20 @@ const api = {
   // Opens the policy page for the language the app is in. Like the releases
   // link, it takes nothing — the renderer cannot choose what gets opened.
   openPrivacyPolicy: () => ipcRenderer.invoke("legal:privacy"),
-  onMode: (cb) => ipcRenderer.on("win:mode", (_e, mode) => cb(mode)),
-  onUpdateStatus: (cb) =>
+  onMode: (cb: (mode: string) => void) =>
+    ipcRenderer.on("win:mode", (_e, mode) => cb(mode)),
+  onUpdateStatus: (cb: (status: UpdateStatus) => void) =>
     ipcRenderer.on("update:status", (_e, status) => cb(status)),
   // A pull applied rows. The list is the merged one, so the renderer replaces
   // rather than merges again — and must not save it back, or every device
   // would answer every sync with a sync.
-  onSyncTasks: (cb) =>
+  onSyncTasks: (
+    cb: (tasks: unknown, clockOffset: number, overwritten: number) => void,
+  ) =>
     ipcRenderer.on("sync:tasks", (_e, tasks, clockOffset, overwritten) =>
       cb(tasks, clockOffset, overwritten),
     ),
-  onSyncStatus: (cb) =>
+  onSyncStatus: (cb: (status: SyncStatus) => void) =>
     ipcRenderer.on("sync:status", (_e, status) => cb(status)),
 };
 
