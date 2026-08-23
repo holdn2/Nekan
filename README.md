@@ -275,17 +275,22 @@ src/                   # 쓰는 곳 (TypeScript)
     sync.ts            # 동기화 판정 (LWW·행 변환·커서·시계 오차)
     auth.ts            # 세션 모양과 만료 판정
     i18n/              # ko.json · en.json · GLOSSARY.md · locales.ts
-  renderer/            # ES 모듈 (번들러 없음 — import에 .js 확장자를 쓴다)
+  renderer/            # React (Vite가 묶는다 — import는 .js 확장자를 그대로 쓴다)
     index.html
     app.ts             # 진입점: 렌더 디스패처, 단축키, 초기화
     store.ts           # 할 일 배열과 모든 변경 (DOM을 모름)
     render-bus.ts      # "다시 그려라" 신호
     i18n.ts            # 렌더러의 문자열
     dom.ts             # 공통 DOM 헬퍼
-    components/        # 아이콘, 마감일 칩, 메모 표시, 토스트
+    selection.ts       # 어느 할 일의 메모를 보고 있나
+    panels.ts          # 설정 패널이 열려 있나
+    react/             # 아이콘, 스토어 구독 훅, 테스트 헬퍼
+    components/        # 마감일 칩, 메모 표시, 토스트, 인라인 편집, 추가 폼
     views/             # 4분면 · 다 꺼내기 · 히스토리/휴지통 · 메모 패널 · 계정 · 설정 · 첫 실행
-    window/            # 타이틀바·탭 · 분면 경계 드래그 · 드래그앤드롭 · 내보내기
+    window/            # 타이틀바·탭 · 바/창 모드 · 분면 경계 드래그 ·
+                       #   드래그앤드롭 · 내보내기
     styles/            # 영역별 15개 (라이트/다크 팔레트는 base.css, 공용 토글은 switch.css)
 out/                   # `npm run build`가 만든다. 앱이 실제로 읽는 것
 test/                  # node --test 단위 테스트 (TypeScript)
+                       #   컴포넌트 테스트는 vitest로, 소스 옆 *.test.tsx
 ```

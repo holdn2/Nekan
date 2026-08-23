@@ -28,10 +28,13 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
     sync.ts        동기화 판정 (LWW·행 변환·커서·시계 오차). main/sync.ts가 쓴다
     auth.ts        세션 모양과 만료 판정. 렌더러에 나갈 필드를 여기서 고른다
     i18n/          ko.json · en.json · GLOSSARY.md · locales.ts (지원 목록과 기본값)
-  renderer/        ES 모듈. 번들러 없음 — import 경로에 `.js` 확장자를 반드시 쓴다
-    index.html     정적 마크업. <link> 15개와 <script> 하나
-    app.ts         진입점. render() 디스패처, 전역 단축키, init() 조립
+  renderer/        React. Vite가 묶는다 — import 경로에는 여전히 `.js`를 쓰고
+                   (`vite.config.mts`의 플러그인이 옆의 `.ts`/`.tsx`로 잇는다)
+    index.html     껍데기와 가이드 탭. <link> 15개, <script> 하나, 그리고 React가
+                   채울 빈 host들. 가이드 88문단만 아직 마크업이다
+    app.ts         진입점. 조립과 전역 단축키. render()는 한 줄이 됐다
     i18n.ts        렌더러 쪽 i18next. t · tNodes · applyStaticStrings · setLanguage
+                   (React 쪽 마크업 문자열은 react/rich-text.tsx)
     store.ts       tasks 배열과 모든 변경. DOM을 모른다 → commit()이 저장+notify
     render-bus.ts  "다시 그려라" 신호 하나. store·view → app 순환을 막는 장치
                    횟수도 센다 — React가 비교할 스냅샷이 그 숫자다
@@ -43,15 +46,18 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
     window-api.d.ts  window.api를 preload의 `typeof api`에서 받아 전역으로 선언
     components/    toast · due-chip · due-badge · memo-mark · memo-line ·
                    editable-text · add-form (task를 모르는 조각들). 전부 .tsx다
-    react/         React 쪽 배관 — icons.tsx가 아이콘 전부, use-store.ts가 훅,
-                   testing.tsx가 컴포넌트 테스트의 mount/flush/find
-    views/         matrix · inbox · archive · memo · inline-edit · account · settings · welcome
-                   matrix · memo · settings · archive · inbox가 .tsx다 (#73).
-                   inline-edit는 없어졌다 — components/editable-text.tsx가 그 일을 한다
-    window/        chrome.tsx(타이틀바·탭) · mode.ts(바/창) · layout(분면 경계) ·
-                   dnd · export-ui
+    react/         React 쪽 배관 — icons.tsx(아이콘)·window-icons.tsx(창 버튼)·
+                   brand-icons.tsx(구글 마크) · use-store.ts(훅) ·
+                   rich-text.tsx(문자열 속 <b>) · testing.tsx(테스트 헬퍼)
+    views/         matrix · inbox · archive · memo · account · settings · welcome
+                   **전부 .tsx다** (#73). inline-edit는 없어졌다 —
+                   components/editable-text.tsx가 그 일을 한다
+    window/        chrome.tsx(타이틀바·탭) · mode.ts(바/창) ·
+                   layout.ts · dnd.ts · export-ui.ts — 뒤의 셋은 React가 아니고
+                   그게 맞다: 그릴 마크업이 없고 기하·이벤트·한 번의 호출이다
     styles/        base부터 scrollbars까지 15개. index.html의 <link> 순서가 캐스케이드
                    switch.css만 영역이 아니라 부품이다 — 두 곳이 쓰므로 base 바로 뒤
+src/renderer/**/*.test.tsx  vitest용 컴포넌트 테스트 (소스 옆에 둔다)
 test/              node --test 용 단위 테스트 (shared/ 와 store-io만 커버)
 out/               `npm run build`가 만든다. 앱이 실제로 읽는 것은 전부 여기다
 tools/build.js     tsc 네 번 + 자산 22개 복사 + 고아 산출물 삭제
