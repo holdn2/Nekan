@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 import { messageOf } from "../../../shared/errors.js";
 import { t } from "../../i18n.js";
 import { RichText } from "../../react/rich-text.js";
-import type { Message, SignInResult } from "./status.js";
+import type { SignInResult } from "./status.js";
 import {
   applySession,
   applySyncStatus,

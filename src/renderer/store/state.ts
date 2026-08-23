@@ -11,7 +11,7 @@
  * hands it here.
  */
 
-import type { Space, Task } from "../../shared/types.js";
+import type { Task } from "../../shared/types.js";
 import { DEFAULT_SPACE, sanitizeSpace } from "../../shared/core.js";
 import { notify } from "../render-bus.js";
 

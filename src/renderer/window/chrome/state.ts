@@ -12,7 +12,6 @@
  */
 
 import { t } from "../../i18n.js";
-import { $ } from "../../dom.js";
 import { notify } from "../../render-bus.js";
 import { toast } from "../../components/toast.js";
 import { setSpace } from "../../store.js";
@@ -48,7 +47,14 @@ export function applySpace(next: unknown, persist = true) {
 
 /* -------------------------------------------------------------------- tabs */
 
-/** Show one view and hide the rest, then redraw whatever it needs. */
+/**
+ * Move to a tab. Which section is on screen follows from this, in tabs.tsx.
+ *
+ * Hiding the four sections used to be five classList.toggle calls right here,
+ * which meant a second way of changing tabs would have had to remember them.
+ * They are an effect of the component that draws the tab strip now: it reads
+ * the same answer these buttons write, so the two cannot disagree.
+ */
 export function setTab(tab: string) {
   // The panel belongs to the matrix; leaving the tab closes it (and gives the
   // window its height back) rather than leaving it pointing at a hidden row.
@@ -57,13 +63,6 @@ export function setTab(tab: string) {
   // makes every later redraw pay for a choice made once and forgotten.
   resetArchivePaging();
   activeTab = tab;
-  // The five sections are index.html's, not this component's -- they hold the
-  // whole app -- so they are shown and hidden here rather than rendered.
-  $("#inboxPanel").classList.toggle("hidden", tab !== "matrix");
-  $("#matrixView").classList.toggle("hidden", tab !== "matrix");
-  $("#historyView").classList.toggle("hidden", tab !== "history");
-  $("#trashView").classList.toggle("hidden", tab !== "trash");
-  $("#guideView").classList.toggle("hidden", tab !== "guide");
   notify();
 }
 

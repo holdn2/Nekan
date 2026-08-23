@@ -15,15 +15,16 @@
  * cannot own a state whose button is outside it.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { target } from "../dom.js";
-import { t, wireLanguageSelect } from "../i18n.js";
+import { t } from "../i18n.js";
 import { getTheme, toggleTheme } from "../window/chrome.js";
 import { closeSettings, isSettingsOpen } from "../panels.js";
 import { exportBoard } from "../window/export-ui.js";
 import { useRenderSignal } from "../react/use-store.js";
 import { CloseIcon } from "../react/icons.js";
+import { LanguageSelect } from "../components/language-select.js";
 
 function SettingsBody() {
   useRenderSignal();
@@ -39,14 +40,6 @@ function SettingsBody() {
   });
 
   const theme = getTheme();
-  const select = useRef<HTMLSelectElement>(null);
-
-  // Filled and wired by i18n, which owns the list and keeps every picker on
-  // screen in step -- the first-run card carries one too. Once, on mount: the
-  // element is React's but its options are not.
-  useEffect(() => {
-    if (select.current) wireLanguageSelect(select.current);
-  }, []);
 
   return (
     <>
@@ -74,7 +67,7 @@ function SettingsBody() {
         <label className="settings-label" htmlFor="languageSelect">
           {t("settings.language")}
         </label>
-        <select className="settings-select" id="languageSelect" ref={select} />
+        <LanguageSelect className="settings-select" id="languageSelect" />
       </div>
 
       <div className="settings-row">

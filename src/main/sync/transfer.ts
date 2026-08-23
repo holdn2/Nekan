@@ -18,7 +18,6 @@ import {
 } from "../../shared/sync";
 import { request } from "../api-client";
 import { getStore, persist, setTasks } from "../store";
-import { emitTasks, report, syncState } from "./status";
 
 /** A pull that has not run out of pages by here is a bug, not a big account. */
 const MAX_PAGES = 400;

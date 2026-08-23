@@ -7,7 +7,7 @@
  * are tombstones old enough to have reached every device.
  */
 
-import type { Place, Task } from "../types.js";
+import type { Task } from "../types.js";
 import { FALLBACK_QUAD, PLACES, spaceFor } from "./places.js";
 import { clampMemo } from "./text.js";
 import { assignOrderKeys, hasOrderKey } from "./order.js";
