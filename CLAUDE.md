@@ -39,8 +39,10 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
   renderer/        React. Vite가 묶는다 — import 경로에는 여전히 `.js`를 쓰고
                    (`vite.config.mts`의 플러그인이 옆의 `.ts`/`.tsx`로 잇는다)
     index.html     껍데기와 가이드 탭. <link> 16개, <script> 하나, 그리고 React가
-                   채울 빈 host들. 가이드 88문단만 아직 마크업이다 — 다 꺼내기
-                   <section>도 이제 빈 껍데기다(드롭 존·레이아웃 기준점이라 남는다)
+                   채울 빈 host들. **가이드 탭 밖에 남은 마크업은 없다** —
+                   `<body>` 안 요소 16개가 전부 host이거나 컨테이너다(드롭 존 ·
+                   레이아웃 기준점 · 창 기준 팝오버 · React가 못 쓰는 aria-label).
+                   가이드는 130태그 · 88문단으로 그대로 남는다
     app.ts         진입점. 조립뿐이다 + app/  day-rollover · shortcuts · pushes
                    (pushes는 첫 await 앞에 등록해야 하는 넷을 들고 있다)
     i18n.ts        렌더러 쪽 i18next. t · tNodes · applyStaticStrings · setLanguage
@@ -62,7 +64,8 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
     react/         React 쪽 배관 — icons.tsx(아이콘)·window-icons.tsx(창 버튼)·
                    brand-icons.tsx(구글 마크) · use-store.ts(훅) ·
                    rich-text.tsx(문자열 속 <b>) · testing.tsx(테스트 헬퍼)
-    views/         matrix · inbox · memo · settings, 그리고 폴더가 된 셋:
+    views/         matrix · inbox · memo · settings(계정 블록까지 그린다),
+                   그리고 폴더가 된 셋:
                    archive.tsx + archive/(paging·row·tab) ·
                    account.tsx + account/(status·dev-sign-in·delete-account) ·
                    welcome.tsx + welcome/(state·choices)
