@@ -5,10 +5,10 @@
  * theme, export, account -- which is why they left the title bar. Two buttons
  * became one, and the bar got a button's width back.
  *
- * React fills the top of the panel and the account block fills the rest, each
- * into its own host: the panel itself is index.html's, because the popover is
- * positioned against the window rather than against anything either of them
- * draws.
+ * The whole inside of the popover is drawn here, the account block included.
+ * The <section> itself stays index.html's -- it is positioned against the
+ * window rather than against anything drawn in it, and its aria-label is a
+ * static string the catalogue reaches through data-i18n.
  *
  * Whether it is open lives in panels.ts, not here. The gear that opens it is
  * drawn by the title bar, and app.ts closes it on the way into a bar -- a view
@@ -24,6 +24,7 @@ import { closeSettings, isSettingsOpen } from "../panels.js";
 import { exportBoard } from "../window/export-ui.js";
 import { useRenderSignal } from "../react/use-store.js";
 import { CloseIcon } from "../react/icons.js";
+import { Account } from "./account.js";
 import { LanguageSelect } from "../components/language-select.js";
 
 function SettingsBody() {
@@ -124,17 +125,27 @@ function SettingsBody() {
           <kbd>Ctrl+E</kbd>
         </button>
       </div>
+
+      {/* Its own block rather than a row: it is the one thing in here with
+          more than a control in it -- a state, an address, and two buttons
+          that end an account. */}
+      <div className="settings-block">
+        <span className="settings-label">{t("settings.sync")}</span>
+        <section className="account" id="account">
+          <Account />
+        </section>
+      </div>
     </>
   );
 }
 
 /**
- * Fill the top of the panel, and bind the two ways out that are not buttons in
- * it: the backdrop, and Escape.
+ * Fill the panel, and bind the two ways out that are not buttons in it: the
+ * backdrop, and Escape.
  */
 export function mountSettings() {
-  const body = document.getElementById("settingsBody");
-  if (body) createRoot(body).render(<SettingsBody />);
+  const panel = document.getElementById("settingsPanel");
+  if (panel) createRoot(panel).render(<SettingsBody />);
 
   document
     .getElementById("settingsBackdrop")

@@ -31,12 +31,7 @@ import { toast } from "./components/toast.js";
 import { mountMatrix } from "./views/matrix.js";
 import { applyInboxOpen, mountInbox } from "./views/inbox.js";
 import { mountArchive } from "./views/archive.js";
-import {
-  applySession,
-  applySyncStatus,
-  mountAccount,
-  setDevLogin,
-} from "./views/account.js";
+import { applySession, applySyncStatus, setDevLogin } from "./views/account.js";
 import { mountMemo } from "./views/memo.js";
 import { dropStaleSelection } from "./selection.js";
 import { mountSettings } from "./views/settings.js";
@@ -111,7 +106,6 @@ async function init() {
 
   setDevLogin(state.devLogin);
   mountSettings();
-  mountAccount();
   // The session follows the same rule as the mode and the update status: a
   // value that was pushed while load() was in flight is the newer one, and
   // state.auth would otherwise put a signed-out snapshot back on screen.

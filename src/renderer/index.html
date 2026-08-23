@@ -352,20 +352,9 @@
       data-i18n-attr="aria-label"
       data-i18n-attr-only
     >
-      <!-- Filled by views/settings.tsx. The account block below is still
-           views/account.js's, which is why React fills a div rather than
-           the panel. -->
-      <div id="settingsBody"></div>
-
-      <div class="settings-block">
-        <span class="settings-label" data-i18n="settings.sync"
-          >Sync across devices</span
-        >
-        <section class="account" id="account">
-          <!-- Filled by views/account.tsx. The section stays here because
-               it sits inside the settings panel's last block. -->
-        </section>
-      </div>
+      <!-- Filled by views/settings.tsx, account block included. The section
+           stays here because the popover is positioned against the window and
+           its aria-label is a static string. -->
     </section>
 
     <!-- The first thing a new install shows, in place of the matrix. It is the
