@@ -5,7 +5,8 @@
   "main": "out/main.js",
   "imports": {
     "#shared/*": "./out/shared/*",
-    "#main/*": "./out/main/*"
+    "#main/*": "./out/main/*",
+    "#tools/*": "./tools/*"
   },
   "author": "makersfarm",
   "license": "MIT",
@@ -18,6 +19,7 @@
     "format:check": "prettier --check .",
     "start": "npm run build && electron .",
     "dist": "npm run build && electron-builder --win nsis --publish never",
+    "dist:mac": "npm run build && electron-builder --mac --publish never",
     "release": "npm run build && electron-builder --win nsis --publish always && node tools/check-release.js"
   },
   "dependencies": {
@@ -58,6 +60,31 @@
       "target": [
         "nsis"
       ]
+    },
+    "mac": {
+      "icon": "build/icon.png",
+      "category": "public.app-category.productivity",
+      "darkModeSupport": true,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
     },
     "nsis": {
       "oneClick": true,
