@@ -38,7 +38,7 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
                    shared/test는 auth 하나)
   renderer/        React. Vite가 묶는다 — import 경로에는 여전히 `.js`를 쓰고
                    (`vite.config.mts`의 플러그인이 옆의 `.ts`/`.tsx`로 잇는다)
-    index.html     껍데기와 가이드 탭. <link> 15개, <script> 하나, 그리고 React가
+    index.html     껍데기와 가이드 탭. <link> 16개, <script> 하나, 그리고 React가
                    채울 빈 host들. 가이드 88문단만 아직 마크업이다
     app.ts         진입점. 조립뿐이다 + app/  day-rollover · shortcuts · pushes
                    (pushes는 첫 await 앞에 등록해야 하는 넷을 들고 있다)
@@ -60,17 +60,20 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
     react/         React 쪽 배관 — icons.tsx(아이콘)·window-icons.tsx(창 버튼)·
                    brand-icons.tsx(구글 마크) · use-store.ts(훅) ·
                    rich-text.tsx(문자열 속 <b>) · testing.tsx(테스트 헬퍼)
-    views/         matrix · inbox · memo · settings · welcome, 그리고 폴더가 된 둘:
+    views/         matrix · inbox · memo · settings, 그리고 폴더가 된 셋:
                    archive.tsx + archive/(paging·row·tab) ·
-                   account.tsx + account/(status·dev-sign-in·delete-account)
+                   account.tsx + account/(status·dev-sign-in·delete-account) ·
+                   welcome.tsx + welcome/(state·choices)
                    **전부 .tsx다** (#73). inline-edit는 없어졌다 —
                    components/editable-text.tsx가 그 일을 한다
     window/        chrome.tsx + chrome/(state·title-bar·tabs) · mode.ts(바/창) ·
                    layout.ts + layout/(grid·quad-edges·memo-edge) ·
                    dnd.ts · export-ui.ts — 뒤의 둘은 React가 아니고 그게 맞다:
                    그릴 마크업이 없고 이벤트와 한 번의 호출이다
-    styles/        base부터 scrollbars까지 15개. index.html의 <link> 순서가 캐스케이드
+    styles/        base부터 scrollbars까지 16개. index.html의 <link> 순서가 캐스케이드
                    switch.css만 영역이 아니라 부품이다 — 두 곳이 쓰므로 base 바로 뒤
+                   welcome.css는 settings.css 바로 뒤여야 한다 — 첫 실행 카드의 언어
+                   선택이 `.settings-select`이고, 거기에 덧칠하기 때문이다
     */test/        컴포넌트 테스트도 같은 규칙 (components/test · views/test)
 out/               `npm run build`가 만든다. 앱이 실제로 읽는 것은 전부 여기다
 tools/build.js     tsc 세 번 + vite 한 번 + 자산 복사 + 고아 산출물 삭제
