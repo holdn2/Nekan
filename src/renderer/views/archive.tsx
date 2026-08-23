@@ -101,7 +101,15 @@ const matches = (task: Task, query: string) => {
 };
 
 interface BulkAction<T extends Task> {
-  label: string;
+  /**
+   * The key, not the words.
+   *
+   * These are handed down as props, and a parent that does not subscribe to
+   * the render signal never rebuilds them -- which left three buttons in
+   * Korean inside an English window. Translating where they are drawn is what
+   * makes that impossible rather than remembered.
+   */
+  labelKey: string;
   danger?: boolean;
   /** The question, when there is one. No confirm means it just runs. */
   confirm?: (count: number) => string;
@@ -170,7 +178,12 @@ interface TabProps<T extends Task> {
   stamp: (task: T) => number;
   emptyKey: string;
   searchKey: string;
-  /** The buttons a row gets. Different on each tab; nothing else is. */
+  /**
+   * The buttons a row gets. Different on each tab; nothing else is.
+   *
+   * A function rather than a list, so it runs during *this* component's render
+   * and its words cannot be older than the language on screen.
+   */
   actions: (task: T) => Action[];
   /**
    * The buttons that act on the whole tab. Trash has two -- restoring
@@ -250,7 +263,7 @@ function ArchiveTab<T extends Task>({
         />
         {bulk.map((action) => (
           <button
-            key={action.label}
+            key={action.labelKey}
             className={action.danger ? "ghost danger" : "ghost"}
             type="button"
             onClick={() => {
@@ -268,7 +281,7 @@ function ArchiveTab<T extends Task>({
               action.run(everything);
             }}
           >
-            {action.label}
+            {t(action.labelKey)}
           </button>
         ))}
       </div>
@@ -319,7 +332,7 @@ function History() {
       ]}
       bulk={[
         {
-          label: t("history.clearAll"),
+          labelKey: "history.clearAll",
           danger: true,
           confirm: (count) => t("archive.confirmTrashAll", { count }),
           run: trashAll,
@@ -348,9 +361,9 @@ function Trash() {
       bulk={[
         // No question: restoring puts things back, which is the undo for the
         // one below rather than something to be careful about.
-        { label: t("trash.restoreAll"), run: untrashAll },
+        { labelKey: "trash.restoreAll", run: untrashAll },
         {
-          label: t("trash.empty"),
+          labelKey: "trash.empty",
           danger: true,
           confirm: (count) => t("archive.confirmPurgeAll", { count }),
           run: purgeAll,

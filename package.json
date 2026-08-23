@@ -47,7 +47,8 @@
       "package.json",
       "!out/**/*.d.ts",
       "!out/.tsbuildinfo-*",
-      "!out/test/**"
+      "!out/test/**",
+      "!out/renderer/**/*.map"
     ],
     "directories": {
       "output": "dist"

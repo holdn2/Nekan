@@ -45,15 +45,19 @@ let inboxOpen = false;
  */
 export function applyInboxOpen(open: boolean, persist = true) {
   inboxOpen = Boolean(open);
+  // The panel is index.html's, so its class is set here. The button inside it
+  // is not: it renders its own aria-expanded, and reaching for it from init --
+  // before React has drawn it -- is how this stopped at <body class="booting">
+  // once already.
   $("#inboxPanel").classList.toggle("open", inboxOpen);
-  $("#inboxToggle").setAttribute("aria-expanded", String(inboxOpen));
+  notify();
   if (persist) window.api.setInboxOpen(inboxOpen);
 }
 
 /** Unfold and put the caret in the box — what Ctrl+0 does. */
 export function focusInbox() {
   applyInboxOpen(true);
-  $<HTMLInputElement>("#inboxInput").focus();
+  document.querySelector<HTMLInputElement>("#inboxInput")?.focus();
 }
 
 /**
@@ -147,7 +151,8 @@ function InboxHead() {
       aria-controls="inboxBody"
       onClick={() => {
         applyInboxOpen(!inboxOpen);
-        if (inboxOpen) $<HTMLInputElement>("#inboxInput")?.focus();
+        if (inboxOpen)
+          document.querySelector<HTMLInputElement>("#inboxInput")?.focus();
       }}
     >
       <ChevronIcon />
