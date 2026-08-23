@@ -42,9 +42,8 @@ import {
   announceOverwritten,
   applySession,
   applySyncStatus,
-  renderAccount,
+  mountAccount,
   setDevLogin,
-  wireAccount,
 } from "./views/account.js";
 import { mountMemo } from "./views/memo.js";
 import { dropStaleSelection } from "./selection.js";
@@ -97,7 +96,6 @@ function render() {
   // it was born with. A no-op while the card is not showing.
   // Cheap, and outside the bar-mode return below: the account block counts the
   // tasks a sign-in would carry up, and that number moves with every change.
-  renderAccount();
   // A bar shows nothing but its chips, and renderCounts already did those.
   if (getMode() === "collapsed") return;
   // Everything else on screen draws itself. The guide tab is static markup;
@@ -287,7 +285,7 @@ async function init() {
 
   setDevLogin(state.devLogin);
   wireSettings();
-  wireAccount();
+  mountAccount();
   // The session follows the same rule as the mode and the update status: a
   // value that was pushed while load() was in flight is the newer one, and
   // state.auth would otherwise put a signed-out snapshot back on screen.
