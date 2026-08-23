@@ -47,7 +47,8 @@ import {
 } from "./views/account.js";
 import { mountMemo } from "./views/memo.js";
 import { dropStaleSelection } from "./selection.js";
-import { closeSettings, wireSettings } from "./views/settings.js";
+import { mountSettings } from "./views/settings.js";
+import { closeSettings } from "./panels.js";
 import {
   mountWelcome,
   needsWelcome,
@@ -55,21 +56,17 @@ import {
   wireWelcome,
 } from "./views/welcome.js";
 import {
-  applyMode,
   applyPinned,
   applySpace,
   applyTheme,
   applyUpdateStatus,
   applyVersion,
-  getMode,
   getTab,
-  relabelChrome,
-  renderCounts,
+  mountChrome,
   setTab,
-  toggleSize,
   toggleTheme,
-  wireChrome,
 } from "./window/chrome.js";
+import { applyMode, getMode, toggleSize } from "./window/mode.js";
 import { setLayout, wireMemoEdge, wireQuadEdges } from "./window/layout.js";
 import { wireDragAndDrop } from "./window/dnd.js";
 import { exportBoard } from "./window/export-ui.js";
@@ -77,35 +74,20 @@ import { exportBoard } from "./window/export-ui.js";
 /* -------------------------------------------------------------- rendering */
 
 /**
- * The one redraw. Everything that changes anything ends up here through the
- * render bus, and it always rebuilds the whole visible tab — there is no
- * partial update that could disagree with the store.
+ * What is left of the one redraw.
+ *
+ * It used to rebuild the whole visible tab, and every view is a component now
+ * -- each subscribes to the same signal this does and decides for itself
+ * whether it is on screen. What could not move is this: the selected id has to
+ * be forgotten when its task is completed, trashed or dragged out of the
+ * matrix, and no single view owns that.
+ *
+ * The panel does not depend on it having run. selectedTask() answers null for
+ * a task in any of those states, so the panel closes on the state; this only
+ * stops the id from lingering behind it.
  */
 function render() {
   dropStaleSelection();
-  renderCounts();
-  // Cheap, and above the bar-mode return: the title bar is all a bar has, and
-  // everything relabelChrome() rewrites was last set by a push that will not
-  // come again just because the language changed.
-  relabelChrome();
-  // Same reason, one tab further in: the add forms' due chips are built once and
-  // never rebuilt, so they would keep the old language until the matrix tab
-  // happened to redraw.
-  // Same again, one screen further out: the first-run card is built once and
-  // sits above everything, so its merge line keeps the language and the count
-  // it was born with. A no-op while the card is not showing.
-  // Cheap, and outside the bar-mode return below: the account block counts the
-  // tasks a sign-in would carry up, and that number moves with every change.
-  // A bar shows nothing but its chips, and renderCounts already did those.
-  if (getMode() === "collapsed") return;
-  // Everything else on screen draws itself. The guide tab is static markup;
-  // the history and trash tabs and the memo panel are React and subscribe to
-  // the same signal this render() does -- each of those checks the tab or the
-  // selection for itself rather than being dispatched to from here.
-  //
-  // No ordering dependency on dropStaleSelection above, either: selectedTask()
-  // answers null for a task that has just been completed or trashed, so the
-  // panel closes on the state rather than on that call having run first.
 }
 
 /* --------------------------------------------------------- day rollover */
@@ -284,7 +266,7 @@ async function init() {
   setLayout(state.settings?.layout);
 
   setDevLogin(state.devLogin);
-  wireSettings();
+  mountSettings();
   mountAccount();
   // The session follows the same rule as the mode and the update status: a
   // value that was pushed while load() was in flight is the newer one, and
@@ -292,7 +274,7 @@ async function init() {
   applySession(pushedSync ? (pushedSync.session ?? null) : state.auth);
   applySyncStatus(pushedSync || state.sync);
 
-  wireChrome();
+  mountChrome();
   wireInbox();
   mountInbox();
   mountMatrix();

@@ -37,6 +37,8 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
                    횟수도 센다 — React가 비교할 스냅샷이 그 숫자다
     selection.ts   어느 task의 메모를 보고 있나. 매트릭스·타이틀바가 뷰를 import하지
                    않고 이걸 본다
+    panels.ts      설정 패널이 열려 있나. 톱니바퀴는 타이틀바가 그리고 Escape는 문서에
+                   붙으므로, 뷰가 가질 수 없는 상태다
     dom.ts         $ · $$ · target · labelBtn
     window-api.d.ts  window.api를 preload의 `typeof api`에서 받아 전역으로 선언
     components/    toast · due-chip · due-badge · memo-mark · memo-line ·
@@ -46,7 +48,8 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
     views/         matrix · inbox · archive · memo · inline-edit · account · settings · welcome
                    matrix · memo · settings · archive · inbox가 .tsx다 (#73).
                    inline-edit는 없어졌다 — components/editable-text.tsx가 그 일을 한다
-    window/        chrome(타이틀바·탭·모드) · layout(분면 경계) · dnd · export-ui
+    window/        chrome.tsx(타이틀바·탭) · mode.ts(바/창) · layout(분면 경계) ·
+                   dnd · export-ui
     styles/        base부터 scrollbars까지 15개. index.html의 <link> 순서가 캐스케이드
                    switch.css만 영역이 아니라 부품이다 — 두 곳이 쓰므로 base 바로 뒤
 test/              node --test 용 단위 테스트 (shared/ 와 store-io만 커버)
@@ -351,6 +354,12 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   **2026-08-19에 `BAR.width`가 684가 됐다.** 칩의 `gap`이 4 → 6px이 되면서 들어가는 최소 폭이
   633 → **657px**(영어)로 뛰어 660 기준 여유가 **3px**만 남았다. 줄이는 대신 바를 넓혀 갚았고,
   지금 여유는 한국어 **41px** · 영어 **27px**(들어가는 최소 폭 643 / 657)이다. **영어가 늘 최악이다.**
+  **2026-08-23에 타이틀바가 React가 되면서 다시 쟀다: 한국어 49px · 영어 35px**(들어가는 최소
+  폭 635 / 649). 여덟 픽셀이 늘었고, 줄어든 것이 아니라 늘어난 것이므로 무언가 빠진 것은
+  아닌지 세어 확인했다 — 창 버튼 6개·칩 5개·스위치·브랜드 전부 있고 넘침 0이다.
+  **재는 방법은 그대로다**(뷰포트를 1px씩 줄여 `.titlebar`의 `scrollWidth > clientWidth`가
+  처음 참이 되는 폭을 찾는다). 이제는 `renderCounts()` 대신 컴포넌트가 개수를 되돌리므로,
+  **접은 다음에 숫자를 바꾸라는 규칙은 그대로 유효하다.**
   칩 하나의 `gap` 2px이 24px을 먹는다 — 칩이 다섯이고 그 뒤가 눌리기 때문이다.
   이 override 방식을 쓰는 이유가 하나 더 있다: **가려진 Electron 창은 리레이아웃을 하지 않아서**
   진짜로 `collapse()`를 해도 `window.innerWidth`가 확장 모드 값을 계속 돌려준다

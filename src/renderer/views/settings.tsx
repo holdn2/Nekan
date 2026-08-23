@@ -5,72 +5,39 @@
  * theme, export, account -- which is why they left the title bar. Two buttons
  * became one, and the bar got a button's width back.
  *
- * React fills the top of the panel; the account block below it is still
- * views/account.js's markup, sitting in index.html where it has always been.
- * That is why the component renders into #settingsBody rather than into the
- * panel: owning the panel would mean owning the account markup too, and that
- * view has not moved yet.
+ * React fills the top of the panel and the account block fills the rest, each
+ * into its own host: the panel itself is index.html's, because the popover is
+ * positioned against the window rather than against anything either of them
+ * draws.
  *
- * Opening and closing stay imperative. The gear is in the title bar, the
- * backdrop is a sibling of the panel, and Escape is on the document -- none of
- * those are inside anything React draws.
+ * Whether it is open lives in panels.ts, not here. The gear that opens it is
+ * drawn by the title bar, and app.ts closes it on the way into a bar -- a view
+ * cannot own a state whose button is outside it.
  */
 
 import { useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
-import { $, target } from "../dom.js";
+import { target } from "../dom.js";
 import { t, wireLanguageSelect } from "../i18n.js";
-import { getMode, getTheme, toggleTheme } from "../window/chrome.js";
+import { getTheme, toggleTheme } from "../window/chrome.js";
+import { closeSettings, isSettingsOpen } from "../panels.js";
 import { exportBoard } from "../window/export-ui.js";
 import { useRenderSignal } from "../react/use-store.js";
 import { CloseIcon } from "../react/icons.js";
 
-let open = false;
-/** The parts of the panel that are not React's. */
-interface SettingsEls {
-  panel: HTMLElement;
-  backdrop: HTMLElement;
-  gear: HTMLButtonElement;
-}
-const els = {} as SettingsEls;
-
-export function isSettingsOpen() {
-  return open;
-}
-
-export function closeSettings() {
-  if (!open) return;
-  open = false;
-  els.panel.classList.add("hidden");
-  els.backdrop.classList.add("hidden");
-  els.gear.setAttribute("aria-expanded", "false");
-}
-
-/**
- * Show the panel, growing the window first if this is a bar.
- *
- * 320px of panel does not fit in 48px of height, and a popover that opened
- * half off-screen would be worse than one that took a moment. The window is
- * main's to resize, so this asks and then opens regardless -- a failed expand
- * should not swallow the click.
- */
-export async function openSettings() {
-  if (open) return;
-  if (getMode() === "collapsed") {
-    try {
-      await window.api.expand();
-    } catch (err) {
-      console.error("expand failed", err);
-    }
-  }
-  open = true;
-  els.panel.classList.remove("hidden");
-  els.backdrop.classList.remove("hidden");
-  els.gear.setAttribute("aria-expanded", "true");
-}
-
 function SettingsBody() {
   useRenderSignal();
+  const open = isSettingsOpen();
+
+  // The panel and its backdrop are index.html's -- the popover is positioned
+  // against the window rather than against anything this draws.
+  useEffect(() => {
+    document.getElementById("settingsPanel")?.classList.toggle("hidden", !open);
+    document
+      .getElementById("settingsBackdrop")
+      ?.classList.toggle("hidden", !open);
+  });
+
   const theme = getTheme();
   const select = useRef<HTMLSelectElement>(null);
 
@@ -168,24 +135,21 @@ function SettingsBody() {
   );
 }
 
-export function wireSettings() {
-  els.panel = $("#settingsPanel");
-  els.backdrop = $("#settingsBackdrop");
-  els.gear = $("#settingsBtn");
-
+/**
+ * Fill the top of the panel, and bind the two ways out that are not buttons in
+ * it: the backdrop, and Escape.
+ */
+export function mountSettings() {
   const body = document.getElementById("settingsBody");
   if (body) createRoot(body).render(<SettingsBody />);
 
-  els.gear.addEventListener("click", () => {
-    if (open) closeSettings();
-    else openSettings();
-  });
-
-  els.backdrop.addEventListener("click", closeSettings);
+  document
+    .getElementById("settingsBackdrop")
+    ?.addEventListener("click", closeSettings);
 
   // Escape closes it. Registered here rather than in app.js's shortcut handler
   // because that one only listens for Ctrl combinations.
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && open) closeSettings();
+    if (e.key === "Escape") closeSettings();
   });
 }
