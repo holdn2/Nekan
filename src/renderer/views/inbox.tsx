@@ -11,7 +11,7 @@
  *     list would push the quadrants off the bottom of a small window.
  */
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { INBOX, splitBulkText } from "../../shared/core.js";
 import type { Task } from "../../shared/types.js";
@@ -27,7 +27,7 @@ import {
 import { notify } from "../render-bus.js";
 import { EditableText } from "../components/editable-text.js";
 import { AddForm } from "../components/add-form.js";
-import { CloseIcon } from "../react/icons.js";
+import { ChevronIcon, CloseIcon } from "../react/icons.js";
 import { useRenderSignal } from "../react/use-store.js";
 
 /** Matches the row's fade-out in styles.css. */
@@ -108,6 +108,13 @@ function InboxRow({ task, index }: { task: Task; index: number }) {
 function InboxList() {
   useRenderSignal();
   const items = inboxTasks();
+  // The list element is index.html's, so its empty-state attribute is set from
+  // here rather than rendered -- :empty has to keep matching.
+  useEffect(() => {
+    document
+      .getElementById("inboxList")
+      ?.setAttribute("data-empty", t("inbox.empty"));
+  });
   return (
     <>
       {items.map((task, i) => (
@@ -122,12 +129,38 @@ function InboxCount() {
   return <>{inboxTasks().length}</>;
 }
 
-/** The header toggle. Everything below it is React's. */
-export function wireInbox() {
-  $("#inboxToggle").addEventListener("click", () => {
-    applyInboxOpen(!inboxOpen);
-    if (inboxOpen) $<HTMLInputElement>("#inboxInput")?.focus();
-  });
+/**
+ * The header: a chevron, what the panel is, and how many are waiting.
+ *
+ * It says "Shared by Work and Life" because it is the one list the board
+ * switch does not scope -- everything else in the window follows that switch,
+ * and a staging list that did would hide half of what you wrote down.
+ */
+function InboxHead() {
+  useRenderSignal();
+  return (
+    <button
+      className="inbox-toggle"
+      id="inboxToggle"
+      type="button"
+      aria-expanded={inboxOpen}
+      aria-controls="inboxBody"
+      onClick={() => {
+        applyInboxOpen(!inboxOpen);
+        if (inboxOpen) $<HTMLInputElement>("#inboxInput")?.focus();
+      }}
+    >
+      <ChevronIcon />
+      <span className="inbox-label">{t("inbox.title")}</span>
+      {/* Says what the panel is, the way each quadrant's .sub does. It used to
+          be a bordered pill reading just "Shared", which named a property
+          without saying whose. */}
+      <span className="inbox-sub">{t("inbox.shared")}</span>
+      <span className="badge" id="inboxCount">
+        <InboxCount />
+      </span>
+    </button>
+  );
 }
 
 /**
@@ -167,10 +200,10 @@ function InboxAdd() {
 
 /** Fill the three places index.html left empty. Called once, from init(). */
 export function mountInbox() {
+  const head = document.querySelector(".inbox-head");
+  if (head) createRoot(head).render(<InboxHead />);
   const list = document.getElementById("inboxList");
   if (list) createRoot(list).render(<InboxList />);
-  const count = document.getElementById("inboxCount");
-  if (count) createRoot(count).render(<InboxCount />);
   const add = document.getElementById("inboxAddHost");
   if (add) createRoot(add).render(<InboxAdd />);
 }

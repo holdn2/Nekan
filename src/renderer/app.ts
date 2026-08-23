@@ -31,12 +31,7 @@ import { applyStaticStrings, currentLanguage, t } from "./i18n.js";
 import { $ } from "./dom.js";
 import { toast } from "./components/toast.js";
 import { mountMatrix } from "./views/matrix.js";
-import {
-  applyInboxOpen,
-  focusInbox,
-  mountInbox,
-  wireInbox,
-} from "./views/inbox.js";
+import { applyInboxOpen, focusInbox, mountInbox } from "./views/inbox.js";
 import { mountArchive } from "./views/archive.js";
 import {
   announceOverwritten,
@@ -275,7 +270,6 @@ async function init() {
   applySyncStatus(pushedSync || state.sync);
 
   mountChrome();
-  wireInbox();
   mountInbox();
   mountMatrix();
   mountWelcome();

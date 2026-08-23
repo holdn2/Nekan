@@ -48,47 +48,12 @@
          included, so a task can be sent back up while the list is folded. -->
     <section id="inboxPanel" class="inbox" data-quad="inbox">
       <header class="inbox-head">
-        <button
-          class="inbox-toggle"
-          id="inboxToggle"
-          aria-expanded="false"
-          aria-controls="inboxBody"
-        >
-          <svg
-            class="chev"
-            viewBox="0 0 16 16"
-            width="11"
-            height="11"
-            aria-hidden="true"
-          >
-            <path
-              d="M6 3.5L10.5 8L6 12.5"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.6"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          <span class="inbox-label" data-i18n="inbox.title">Brain dump</span>
-          <!-- Says what the panel is, the way each quadrant's .sub does. It
-               used to be a bordered pill reading just "Shared", which named a
-               property without saying whose. -->
-          <span class="inbox-sub" data-i18n="inbox.shared"
-            >Shared by Work and Life</span
-          >
-          <!-- Filled by views/inbox.tsx -->
-          <span class="badge" id="inboxCount"></span>
-        </button>
+        <!-- Filled by views/inbox.tsx -->
       </header>
       <div class="inbox-body" id="inboxBody">
-        <ul
-          class="inbox-list"
-          id="inboxList"
-          data-i18n="inbox.empty"
-          data-i18n-attr="data-empty"
-          data-i18n-attr-only
-        ></ul>
+        <!-- data-empty is what the stylesheet writes into an empty list; the
+             component sets it, because :empty still has to match. -->
+        <ul class="inbox-list" id="inboxList"></ul>
         <!-- Filled by views/inbox.tsx -->
         <div id="inboxAddHost"></div>
       </div>

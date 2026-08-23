@@ -128,3 +128,25 @@ export function CalendarIcon() {
     </svg>
   );
 }
+
+/** The brain dump's fold/unfold arrow. Rotated by CSS, not redrawn. */
+export function ChevronIcon() {
+  return (
+    <svg
+      className="chev"
+      viewBox="0 0 16 16"
+      width="11"
+      height="11"
+      aria-hidden="true"
+    >
+      <path
+        d="M6 3.5L10.5 8L6 12.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
