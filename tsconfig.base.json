@@ -17,15 +17,11 @@
     "rootDir": "src",
     "outDir": "out",
 
-    // The comments in this codebase carry the reasons. Stripping them from the
-    // build would mean the thing that actually runs is the one nobody can read.
-    // Off here and on in tsconfig.shared.json. The risk in this migration is
-    // not the renaming -- it is the edits made to satisfy the compiler, in
-    // 6,159 lines of main and renderer code that no test covers. src/shared/
-    // is the opposite: 159 tests sit on exactly those files, so it is checked
-    // strictly from the first day and the rest is tightened later, per
-    // directory, once there is something to catch a regression.
-    "strict": false,
+    // On everywhere under src/ since 2026-08-23. It started in shared/ alone,
+    // where the tests were, and moved out a directory at a time: renderer
+    // (140 errors, 14 of them real), then main (105, 9 real). The ones worth
+    // knowing about are in those two commits.
+    "strict": true,
 
     "removeComments": false,
     "newLine": "lf",

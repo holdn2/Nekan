@@ -63,11 +63,12 @@ electron-builder가 싣는 것도 거기다. `npm start`·`npm test`·`npm run d
 - `tsconfig.shared.json` — `src/shared/`를 **ES 모듈로** 내보낸다. 그리고 **규칙이다**:
   `types: []` + DOM lib 없음이라 여기서 `fs`나 `document`를 만지면 **컴파일이 죽는다.**
   `strict`는 처음에 여기만 켰었다(테스트가 이 파일들을 덮으니 안전망이 있었다).
-  **2026-08-23에 렌더러도 켜졌다** — 아래 항목 참고. 남은 것은 `src/main/`뿐이다.
+  **2026-08-23에 `src/` 전체로 올라가 이제 `tsconfig.base.json`에 있다** — 렌더러 140개,
+  메인 105개를 고치고 나서다. 프로젝트별 `strict` 줄은 그래서 없다.
 - `tsconfig.main.json` — 메인과 preload. CommonJS. `composite`이라 선언 파일을 내보내고,
   렌더러가 그걸로 `window.api`의 타입을 얻는다.
-- `tsconfig.renderer.json` — **Vite가 내보내고 tsc는 읽기만 한다**(`noEmit`). **`strict`가 켜져
-  있다**(2026-08-23). 켤 때 140개가 나왔는데 126개는 타입이 안 붙은 매개변수였고 **14개는 진짜**였다
+- `tsconfig.renderer.json` — **Vite가 내보내고 tsc는 읽기만 한다**(`noEmit`).
+  `strict`를 켤 때 140개가 나왔는데 126개는 타입이 안 붙은 매개변수였고 **14개는 진짜**였다
   — 그 목록은 그날 커밋 메시지에 있다. 한동안 "React로 옮긴 파일만" 담는 별도 설정
   (`tsconfig.renderer.strict.json`)을 뒀다가 없앴다: `files:`는 울타리가 아니라 **import한 것까지
   검사해서** 어차피 렌더러 전체로 번졌기 때문이다. 옛 커밋에서 그 이름을 보면 이 날짜로 읽을 것.
@@ -75,7 +76,9 @@ electron-builder가 싣는 것도 거기다. `npm start`·`npm test`·`npm run d
   브라우저가 아니라 번들러다 — `.js`라고 적힌 것을 옆의 `.ts`·`.tsx`에 이어주는 일은
   `vite.config.ts`의 플러그인이 한다. **`noEmit`을 빼면 `tsc -b`가 번들 옆에 렌더러를 한 벌 더
   뱉는다** — `out/renderer/app.js`, 번들러가 생기기 전에 `index.html`이 읽던 바로 그 이름이다.
-- `tsconfig.test.json` — `out/test/`로 나간다. 테스트는 `#shared/*`·`#main/*`로 import한다
+- `tsconfig.test.json` — `out/test/`로 나간다. **`strict`가 꺼진 유일한 곳이고 의도한 것이다**:
+  79개 중 대부분이 "테스트가 방금 만들어 곧바로 단언할 값이 null일 수 있다"는 지적인데,
+  거기서 null이면 테스트가 요란하게 실패한다 — 그게 그 파일이 하는 일이다. 테스트는 `#shared/*`·`#main/*`로 import한다
   (`package.json`의 `imports`). `test/`가 `src/`보다 한 겹 위라 **소스와 산출물 양쪽에서
   맞는 상대 경로가 없기 때문이다.**
 - `tsconfig.json` — **아무것도 컴파일하지 않는다.** `files: []`에 위 넷을 `references`로만 적은

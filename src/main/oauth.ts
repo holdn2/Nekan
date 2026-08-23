@@ -25,9 +25,9 @@ import { language, t } from "./i18n";
 const WINDOW_MS = 5 * 60 * 1000;
 
 /** Only ever one sign-in at a time; a second press replaces the first. */
-let pending = null;
+let pending: { abandon: (why: string) => void } | null = null;
 
-const base64url = (buffer) =>
+const base64url = (buffer: Buffer) =>
   buffer
     .toString("base64")
     .replace(/\+/g, "-")
@@ -57,7 +57,7 @@ function pkcePair() {
  * over loopback for a line of text that is on screen for a second is not worth
  * the route.
  */
-function donePage(message) {
+function donePage(message: string) {
   return `<!doctype html><html lang="${language()}"><head><meta charset="utf-8">
 <title>Nekan</title><style>
 body{margin:0;height:100vh;display:grid;place-items:center;background:#f7f5ef;
@@ -100,7 +100,7 @@ function loopbackCode(
     };
 
     const server = http.createServer((req, res) => {
-      const url = new URL(req.url, "http://127.0.0.1");
+      const url = new URL(req.url ?? "/", "http://127.0.0.1");
       // A favicon request, a stray probe, or a callback we did not start --
       // none of them may end the flow.
       //
@@ -144,7 +144,7 @@ function loopbackCode(
     // asynchronous, and a second press arriving in that window would find
     // `pending` still null, leave this attempt unreplaced, and hold two
     // servers open until the five-minute timeout closed the first.
-    pending = { abandon: (why) => finish({ ok: false, error: why }) };
+    pending = { abandon: (why: string) => finish({ ok: false, error: why }) };
 
     server.listen(0, "127.0.0.1", () => {
       // listen() has run, so this is an AddressInfo and not the string a

@@ -10,7 +10,7 @@
  * is not final either; the same two options live in the settings panel.
  */
 
-import { messageOf } from "../errors.js";
+import { messageOf } from "../../shared/errors.js";
 import { $ } from "../dom.js";
 import { needsStartupChoice } from "../../shared/core.js";
 import { activeCount } from "../store.js";

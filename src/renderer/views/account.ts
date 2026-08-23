@@ -9,7 +9,7 @@
  */
 
 import type { PublicSession } from "../../shared/types.js";
-import { messageOf } from "../errors.js";
+import { messageOf } from "../../shared/errors.js";
 
 /** What a sign-in answers with: the session when it worked, a code when not. */
 interface SignInResult {

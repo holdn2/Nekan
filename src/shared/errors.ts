@@ -1,10 +1,11 @@
 /**
  * What to show a person when something threw.
  *
- * Five places were spelling this the same way, and under `strict` none of them
- * compiled: a caught value is `unknown`, because anything can be thrown and
- * usually what is thrown is not an Error at all -- a rejected IPC call answers
- * with a plain object, and `throw "nope"` is legal.
+ * Six places were spelling this the same way, on both sides of the IPC
+ * boundary, and under `strict` none of them compiled: a caught value is
+ * `unknown`, because anything can be thrown and usually what is thrown is not
+ * an Error at all -- a rejected IPC call answers with a plain object, and
+ * `throw "nope"` is legal.
  *
  * The string is going on screen and into a message the user may quote back, so
  * it falls through to String() rather than to a shrug: an ugly code is still a

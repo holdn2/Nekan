@@ -15,11 +15,26 @@ import path from "path";
 import { app } from "electron";
 
 import { loadStore, writeStore } from "./store-io";
+import type { Task } from "../shared/types";
+import type { Store } from "./store-io";
 import { dropExpiredTombstones } from "../shared/core";
 import { stamp } from "../shared/sync";
 
-let store = null;
-let saveTimer = null;
+let store: Store | null = null;
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * The store, or a loud failure.
+ *
+ * Everything below runs after load(), and did before this said so -- reading
+ * `store.settings` off null is a crash either way. The difference is that this
+ * one names what went wrong instead of saying "cannot read properties of
+ * null", which is what a caller that skipped load() would otherwise get.
+ */
+function loaded(): Store {
+  if (!store) throw new Error("store read before load()");
+  return store;
+}
 
 /**
  * Where the data lives. app.setName() in main.js pins the folder name, so
@@ -58,13 +73,13 @@ function load() {
 }
 
 /** The whole store object — tasks and settings. */
-const getStore = () => store;
+const getStore = () => loaded();
 /** Settings only; the half every module here actually touches. */
-const getSettings = () => store.settings;
+const getSettings = () => loaded().settings;
 
 /** Replace the task list outright. Used by sync, which merged already. */
-function setTasks(tasks) {
-  store.tasks = Array.isArray(tasks) ? tasks : [];
+function setTasks(tasks: unknown) {
+  loaded().tasks = Array.isArray(tasks) ? tasks : [];
 }
 
 /**
@@ -84,7 +99,7 @@ function mergeRendererTasks(tasks: unknown) {
   type Incoming = { id: unknown; updatedAt?: unknown };
   const incoming: Incoming[] = Array.isArray(tasks) ? tasks : [];
   const byId = new Map<string, Incoming>(
-    store.tasks.map((t: Incoming) => [String(t.id), t]),
+    loaded().tasks.map((t: Incoming) => [String(t.id), t]),
   );
   for (const task of incoming) {
     const id = String(task.id);
@@ -93,7 +108,12 @@ function mergeRendererTasks(tasks: unknown) {
       byId.set(id, task);
     }
   }
-  store.tasks = [...byId.values()];
+  // Shape-blind on purpose: this function compares timestamps and nothing
+  // else, so it works in `Incoming` rather than in Task. They are tasks by the
+  // time they get here -- the renderer normalises its list before it can send
+  // one, and load() normalises what came off disk -- and this is where that
+  // knowledge is written down rather than assumed.
+  loaded().tasks = [...byId.values()] as Task[];
 }
 
 /** How many times one backup name may be reused before giving up. */
@@ -115,7 +135,7 @@ const BACKUP_LIMIT = 20;
  * Returns the path written, or null. Null means the caller must not delete
  * anything: a backup that did not happen is not a backup.
  */
-function backupStore(name) {
+function backupStore(name: string) {
   const dir = app.getPath("userData");
   const dot = name.lastIndexOf(".");
   const stem = dot === -1 ? name : name.slice(0, dot);
@@ -128,25 +148,25 @@ function backupStore(name) {
     } catch {
       return null;
     }
-    return writeStore(target, store) ? target : null;
+    return writeStore(target, loaded()) ? target : null;
   }
   return null;
 }
 
 /** Write now, through store-io's temp-file + rename. Answers whether it landed. */
 function save() {
-  return writeStore(storePath(), store);
+  return writeStore(storePath(), loaded());
 }
 
 /** Write soon — coalesces a burst of changes into one file write. */
 function persist() {
-  clearTimeout(saveTimer);
+  if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(save, 200);
 }
 
 /** Write immediately, cancelling any pending debounce. For quit paths. */
 function persistNow() {
-  clearTimeout(saveTimer);
+  if (saveTimer) clearTimeout(saveTimer);
   return save();
 }
 
