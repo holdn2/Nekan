@@ -16,3 +16,6 @@ out/
 
 # Compiler bookkeeping.
 *.tsbuildinfo
+
+# 손으로 만져 보는 QA 프로필 (세션용, 저장소에 올리지 않는다)
+.qa/
