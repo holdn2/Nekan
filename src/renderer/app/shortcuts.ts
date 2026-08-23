@@ -6,9 +6,7 @@
  * popover is not in this file.
  */
 
-import { t } from "../i18n.js";
 import { $ } from "../dom.js";
-import { toast } from "../components/toast.js";
 import { focusInbox } from "../views/inbox.js";
 import { setTab, toggleTheme } from "../window/chrome.js";
 import { getMode, toggleSize } from "../window/mode.js";

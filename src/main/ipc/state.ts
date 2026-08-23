@@ -13,7 +13,6 @@ import { getClockOffset, getPublicSession } from "../api-client";
 import { getSettings, getStore, mergeRendererTasks, persist } from "../store";
 import { getUpdateStatus } from "../updater";
 import { getSyncStatus, syncSoon } from "../sync";
-import { language } from "../i18n";
 
 function registerStateIpc() {
   /* ------------------------------------------------------------- state */

@@ -15,7 +15,7 @@ import {
   sessionFromToken,
 } from "../../shared/auth";
 import { clearSession, readSession, writeSession } from "../token-store";
-import { request, errorCode } from "./http";
+import { request } from "./http";
 
 /** The live session, or null. The only copy in the process. */
 let session: Session | null = null;

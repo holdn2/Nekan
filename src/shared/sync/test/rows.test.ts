@@ -5,7 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { toRow, fromRow, FIELDS } from "#shared/sync.js";
+import { toRow, fromRow } from "#shared/sync.js";
 import type { LooseTask } from "#shared/sync.js";
 import type { Task } from "#shared/types.js";
 

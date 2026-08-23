@@ -10,7 +10,7 @@
  */
 
 import { getAccessToken, getPublicSession } from "../api-client";
-import { getSettings, getStore, persist } from "../store";
+import { getStore, persist } from "../store";
 import { pull, push } from "./transfer";
 import type { Handlers } from "./status";
 import {

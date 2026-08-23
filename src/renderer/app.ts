@@ -13,11 +13,7 @@
  * its own.
  */
 
-import {
-  normalizeTasks,
-  startOfToday,
-  startOfTomorrow,
-} from "../shared/core.js";
+import { normalizeTasks } from "../shared/core.js";
 import type { Task } from "../shared/types.js";
 
 /** The two shapes main pushes. Read off window.api so they cannot drift. */
@@ -25,22 +21,24 @@ type UpdateStatus = Parameters<
   Parameters<typeof window.api.onUpdateStatus>[0]
 >[0];
 type SyncStatus = Parameters<Parameters<typeof window.api.onSyncStatus>[0]>[0];
-import { acceptSynced, setClockOffset, setTasks } from "./store.js";
+import { setClockOffset, setTasks } from "./store.js";
 import { subscribe } from "./render-bus.js";
-import {
-  refreshIfDayChanged,
-  scheduleDayRollover,
-  watchForDayChange,
-} from "./app/day-rollover.js";
+import { scheduleDayRollover, watchForDayChange } from "./app/day-rollover.js";
 import { wireShortcuts } from "./app/shortcuts.js";
+import {
+  enterMode,
+  listenForPushes,
+  pushedMode,
+  pushedSync,
+  pushedTasks,
+  pushedUpdate,
+} from "./app/pushes.js";
 import { applyStaticStrings, currentLanguage, t } from "./i18n.js";
-import { $ } from "./dom.js";
 import { toast } from "./components/toast.js";
 import { mountMatrix } from "./views/matrix.js";
-import { applyInboxOpen, focusInbox, mountInbox } from "./views/inbox.js";
+import { applyInboxOpen, mountInbox } from "./views/inbox.js";
 import { mountArchive } from "./views/archive.js";
 import {
-  announceOverwritten,
   applySession,
   applySyncStatus,
   mountAccount,
@@ -49,7 +47,6 @@ import {
 import { mountMemo } from "./views/memo.js";
 import { dropStaleSelection } from "./selection.js";
 import { mountSettings } from "./views/settings.js";
-import { closeSettings } from "./panels.js";
 import {
   mountWelcome,
   needsWelcome,
@@ -62,15 +59,11 @@ import {
   applyTheme,
   applyUpdateStatus,
   applyVersion,
-  getTab,
   mountChrome,
-  setTab,
-  toggleTheme,
 } from "./window/chrome.js";
 import { applyMode, getMode, toggleSize } from "./window/mode.js";
 import { setLayout, wireMemoEdge, wireQuadEdges } from "./window/layout.js";
 import { wireDragAndDrop } from "./window/dnd.js";
-import { exportBoard } from "./window/export-ui.js";
 
 /* -------------------------------------------------------------- rendering */
 
@@ -94,29 +87,6 @@ function render() {
 /* ------------------------------------------------------------------- init */
 
 /**
- * applyMode, plus the one thing that must not survive a trip into the bar.
- *
- * collapsed.css hides the settings popover, but hiding is not closing:
- * views/settings.js would still believe it is open, and the first gear press
- * in the bar would spend itself closing something nobody can see. It lives
- * here rather than inside applyMode() because chrome.js must not import
- * settings.js -- that direction is already taken.
- */
-function enterMode(next: string) {
-  if (next === "collapsed") closeSettings();
-  applyMode(next);
-}
-
-/** Last mode pushed by the main process, which outranks the load snapshot. */
-let pushedMode: string | null = null;
-/** Same for the update status, for the same reason. */
-let pushedUpdate: UpdateStatus | null = null;
-/** Same again, for a sync that finished before the load snapshot arrived. */
-let pushedTasks: Task[] | null = null;
-/** And for its status, which is pushed on the same schedule. */
-let pushedSync: SyncStatus | null = null;
-
-/**
  * Load, wire, draw. The order is what matters here: the mode listener before
  * the first await, the store before anything reads it, and the wiring before
  * the render that applyMode() triggers at the end.
@@ -128,42 +98,14 @@ async function init() {
   document.documentElement.lang = currentLanguage();
   applyStaticStrings();
 
-  // Registered before the first await: the main process sends 'win:mode' from
-  // ready-to-show, and a listener attached later would miss it silently.
-  window.api.onMode((next) => {
-    pushedMode = next;
-    enterMode(next);
-  });
-
-  // Same race, longer odds: the first update check is seconds away, and the
-  // reply below could still be in flight when it lands.
-  window.api.onUpdateStatus((next) => {
-    pushedUpdate = next;
-    applyUpdateStatus(next, { announce: true });
-  });
-
-  // Same race as the two above, and the same fix: the first sync runs three
-  // seconds after launch and the reply below could still be in flight. Both
-  // lists come from main's one array, so the later one is the newer one.
-  window.api.onSyncTasks((tasks, offset, overwritten) => {
-    setClockOffset(offset);
-    pushedTasks = normalizeTasks(tasks);
-    acceptSynced(pushedTasks);
-    announceOverwritten(overwritten);
-  });
-
-  // Carries the session as well as the state. Main can end a session on its
-  // own when a token turns out to be revoked, and this is how the guide finds
-  // out rather than going on showing an email it no longer has.
-  window.api.onSyncStatus((next) => {
-    pushedSync = next;
-    applySession(next.session ?? null);
-    applySyncStatus(next);
-  });
+  // Registered before the first await. Main sends 'win:mode' from
+  // ready-to-show, and a listener attached after this point misses it in
+  // silence -- see the note in app/pushes.ts.
+  listenForPushes();
 
   const state = await window.api.load();
   setClockOffset(state.clockOffset);
-  setTasks(normalizeTasks(pushedTasks || state.tasks));
+  setTasks(normalizeTasks(pushedTasks() || state.tasks));
   // Every change ends on the render bus, so this one subscription is what keeps
   // the screen in step with the data.
   subscribe(render);
@@ -181,8 +123,8 @@ async function init() {
   // The session follows the same rule as the mode and the update status: a
   // value that was pushed while load() was in flight is the newer one, and
   // state.auth would otherwise put a signed-out snapshot back on screen.
-  applySession(pushedSync ? (pushedSync.session ?? null) : state.auth);
-  applySyncStatus(pushedSync || state.sync);
+  applySession(pushedSync() ? (pushedSync()!.session ?? null) : state.auth);
+  applySyncStatus(pushedSync() || state.sync);
 
   mountChrome();
   mountInbox();
@@ -209,10 +151,10 @@ async function init() {
 
   // No announce: this is the state as it already stood, and a reload arrives
   // here too. Whatever landed as a push above has announced itself already.
-  applyUpdateStatus(pushedUpdate || state.update);
+  applyUpdateStatus(pushedUpdate() || state.update);
   // state.mode is a snapshot from before ready-to-show, so a mode that was
   // pushed in the meantime is the newer truth. This is also the first render.
-  enterMode(pushedMode || state.mode || "expanded");
+  enterMode(pushedMode() || state.mode || "expanded");
   scheduleDayRollover();
   releaseSwitches();
 }

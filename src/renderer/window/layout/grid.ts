@@ -14,10 +14,7 @@ import {
   DEFAULT_LAYOUT,
   MIN_COL_PX,
   MIN_INBOX_PX,
-  MIN_MEMO_PX,
   MIN_ROW_PX,
-  clampInbox,
-  clampMemoPanel,
   sanitizeLayout,
 } from "../../../shared/core.js";
 import type { Layout } from "../../../shared/types.js";

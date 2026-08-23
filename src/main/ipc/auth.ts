@@ -14,7 +14,7 @@ import { app, ipcMain } from "electron";
 import type { PublicSession } from "../../shared/types";
 import { deleteAccount, login, loginWithGoogle, logout } from "../api-client";
 import { cancelSignIn } from "../oauth";
-import { backupStore, getStore, persistNow, setTasks } from "../store";
+import { backupStore, persistNow, setTasks } from "../store";
 import { announceTasks, syncAccount } from "../sync";
 
 /** Where a sign-in puts the local tasks it was asked not to merge. */

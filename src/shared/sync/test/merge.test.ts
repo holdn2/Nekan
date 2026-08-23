@@ -5,7 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { toRow, stamp, remoteWins, mergeIncoming } from "#shared/sync.js";
+import { toRow, remoteWins, mergeIncoming } from "#shared/sync.js";
 import type { Place, Task } from "#shared/types.js";
 
 function task(over: Partial<Task> = {}): Task {

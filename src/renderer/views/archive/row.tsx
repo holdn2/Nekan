@@ -11,7 +11,7 @@
 import type { Task } from "../../../shared/types.js";
 import { DueBadge } from "../../components/due-badge.js";
 import { MemoLine } from "../../components/memo-line.js";
-import { QUAD_LABEL, dayLabel, timeLabel } from "./paging.js";
+import { QUAD_LABEL, timeLabel } from "./paging.js";
 
 interface BulkAction<T extends Task> {
   /**

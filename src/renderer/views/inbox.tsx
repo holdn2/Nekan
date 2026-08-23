@@ -17,13 +17,7 @@ import { INBOX, splitBulkText } from "../../shared/core.js";
 import type { Task } from "../../shared/types.js";
 import { $ } from "../dom.js";
 import { t } from "../i18n.js";
-import {
-  addTask,
-  addTasks,
-  deleteTask,
-  editTask,
-  inboxTasks,
-} from "../store.js";
+import { addTasks, deleteTask, editTask, inboxTasks } from "../store.js";
 import { notify } from "../render-bus.js";
 import { EditableText } from "../components/editable-text.js";
 import { AddForm } from "../components/add-form.js";

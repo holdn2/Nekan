@@ -10,7 +10,6 @@
 import {
   DEFAULT_LAYOUT,
   MIN_MEMO_PX,
-  MIN_ROW_PX,
   clampMemoPanel,
 } from "../../../shared/core.js";
 import { $ } from "../../dom.js";
@@ -20,7 +19,6 @@ import {
   applyLayout,
   layout,
   memoHeight,
-  metrics,
   saveLayout,
 } from "./grid.js";
 

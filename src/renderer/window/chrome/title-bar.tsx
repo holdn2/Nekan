@@ -29,7 +29,6 @@ import {
   applySpace,
   currentUpdate,
   currentVersion,
-  getTab,
   isPinned,
   setTab,
 } from "./state.js";

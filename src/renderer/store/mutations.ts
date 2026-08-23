@@ -11,15 +11,7 @@
  */
 
 import type { Place, Task } from "../../shared/types.js";
-import {
-  INBOX,
-  MAX_MEMO,
-  clampMemo,
-  clampText,
-  compareOrder,
-  orderKeyBetween,
-  spaceFor,
-} from "../../shared/core.js";
+import { clampText, orderKeyBetween, spaceFor } from "../../shared/core.js";
 import {
   allTasks,
   commit,

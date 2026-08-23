@@ -14,7 +14,6 @@
 import {
   DEFAULT_LAYOUT,
   MIN_COL_PX,
-  MIN_INBOX_PX,
   MIN_ROW_PX,
   QUADS,
   clampAxis,
@@ -26,13 +25,11 @@ import type { DragStart, Edge } from "./grid.js";
 import {
   GUTTER,
   HIT,
-  MEMO_HIT,
   applyLayout,
   dumpOpen,
   inboxList,
   inboxRoom,
   layout,
-  memoHeight,
   metrics,
   saveLayout,
 } from "./grid.js";

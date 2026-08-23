@@ -8,7 +8,7 @@
 
 import { useState } from "react";
 import type { Task } from "../../../shared/types.js";
-import { currentLanguage, t } from "../../i18n.js";
+import { t } from "../../i18n.js";
 import { useRenderSignal } from "../../react/use-store.js";
 import { getTab } from "../../window/chrome.js";
 import type { Action, BulkAction } from "./row.js";

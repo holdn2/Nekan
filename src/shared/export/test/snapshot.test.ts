@@ -5,13 +5,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {
-  buildSnapshot,
-  toMarkdown,
-  toHtml,
-  defaultFileName,
-} from "#shared/export.js";
-import { initI18n, setMainLanguage, t } from "#main/i18n.js";
+import { buildSnapshot, toMarkdown, toHtml } from "#shared/export.js";
+import { initI18n, t } from "#main/i18n.js";
 
 const NOW = new Date(2026, 7, 2, 14, 30); // 2026-08-02 14:30, local
 
@@ -29,10 +24,6 @@ const snapshotOf = (
   space?: unknown,
   i18n = inKorean,
 ) => buildSnapshot(tasks, now, space, i18n);
-
-/** Same, for the one function that names a file rather than filling it. */
-const nameOf = (now: Date, ext: string, space?: unknown) =>
-  defaultFileName(now, ext, space, t);
 
 const task = (over = {}) => ({
   id: Math.random().toString(36).slice(2),

@@ -8,7 +8,6 @@
 
 import {
   PAGE_SIZE,
-  fromRow,
   hasMore,
   mergeIncoming,
   nextCursor,
