@@ -168,6 +168,15 @@ body:has(#welcome:not(.hidden)) #closeBtn {
   color: var(--danger);
 }
 
+/* Under the message, and only while the browser has the sign-in. It moves the
+   footer down a line for as long as that lasts, which is the right trade: a
+   reserved row would be empty space on every launch, and this one is only
+   there while there is something to cancel. */
+.welcome-cancel {
+  margin-top: var(--sp-xs);
+  font-size: var(--fs-sm);
+}
+
 /* Two rows, because there are two things being said: the choice is
    reversible, and signing in stores something. Run together they wrapped
    mid-sentence and left "다." stranded on a line of its own.

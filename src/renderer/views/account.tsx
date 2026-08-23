@@ -210,6 +210,18 @@ function Account() {
       >
         {message ? message.render() : ""}
       </p>
+      {/* Same as the first-run card: the consent screen is a window this app
+          does not own, and closing it tells the loopback server nothing. Kept
+          outside the live region above for the same reason it is there. */}
+      {busy ? (
+        <button
+          className="text-link account-cancel"
+          type="button"
+          onClick={() => window.api.cancelSignIn().catch(() => {})}
+        >
+          {t("common.cancel")}
+        </button>
+      ) : null}
     </>
   );
 }

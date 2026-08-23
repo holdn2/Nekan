@@ -26,7 +26,7 @@ import {
 
 export { needsWelcome, showWelcome, wireWelcome } from "./welcome/state.js";
 
-function Welcome() {
+export function Welcome() {
   useRenderSignal();
   const [, redraw] = useState(0);
   setAnnounce(() => redraw((n) => n + 1));
@@ -88,6 +88,18 @@ function Welcome() {
 
   /** "합치기" unless the box was offered and turned off. */
   const adoptMode = () => (count === 0 || adopt ? "merge" : "replace");
+
+  /**
+   * Give up on a sign-in that is not coming back.
+   *
+   * The consent screen is a window this app does not own, and closing it says
+   * nothing to the loopback server waiting here -- so without this the promise
+   * below stays unresolved until the five-minute timeout, and both choices sit
+   * disabled the whole time with no way to answer the question.
+   */
+  const cancelSync = () => {
+    window.api.cancelSignIn().catch(() => {});
+  };
 
   const chooseSync = async () => {
     if (busy) return;
@@ -190,6 +202,18 @@ function Welcome() {
         >
           {message?.text ?? ""}
         </p>
+        {/* Only while the browser has it. Outside the live region above, so a
+            screen reader hears the sentence rather than the sentence and a
+            button every time the message changes. */}
+        {busy ? (
+          <button
+            className="text-link welcome-cancel"
+            type="button"
+            onClick={cancelSync}
+          >
+            {t("common.cancel")}
+          </button>
+        ) : null}
         {/* The notice sits in the footer rather than under the sync button
             because this card has to fit a 760x520 window, and the sync button
             is the tallest thing in it. Both choices are still on screen. */}
