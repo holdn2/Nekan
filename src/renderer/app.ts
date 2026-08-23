@@ -34,7 +34,7 @@ import { relabelAddForms, renderMatrix, wireAddForms } from "./views/matrix.js";
 import {
   applyInboxOpen,
   focusInbox,
-  renderInbox,
+  mountInbox,
   wireInbox,
 } from "./views/inbox.js";
 import { mountArchive } from "./views/archive.js";
@@ -103,7 +103,6 @@ function render() {
   // A bar shows nothing but its chips, and renderCounts already did those.
   if (getMode() === "collapsed") return;
   if (getTab() === "matrix") {
-    renderInbox();
     renderMatrix();
   }
   // Everything else on screen draws itself. The guide tab is static markup;
@@ -303,6 +302,7 @@ async function init() {
   wireChrome();
   wireAddForms();
   wireInbox();
+  mountInbox();
   mountArchive();
   mountMemo();
   wireShortcuts();

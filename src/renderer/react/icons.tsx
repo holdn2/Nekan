@@ -12,7 +12,7 @@
  * the drawing -- hence aria-hidden.
  */
 
-import { CLOSE, NOTE } from "../components/icons.js";
+import { CLOSE, NOTE, PLUS } from "../components/icons.js";
 
 export function CloseIcon() {
   return (
@@ -51,6 +51,24 @@ export function NoteIcon() {
         d={NOTE.lines}
         stroke="currentColor"
         strokeWidth={NOTE.strokeWidth}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function PlusIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={PLUS.size}
+      height={PLUS.size}
+      aria-hidden="true"
+    >
+      <path
+        d={PLUS.d}
+        stroke="currentColor"
+        strokeWidth={PLUS.strokeWidth}
         strokeLinecap="round"
       />
     </svg>

@@ -25,6 +25,26 @@ interface Mounted {
 }
 
 /**
+ * Containers mount() has made, so the next test does not find the last one's
+ * elements. Without this, find(".text") in the second test of a file answers
+ * with the first test's node -- which reads as the component not reacting, and
+ * cost an hour once.
+ */
+const mounted = new Set<{
+  root: Root;
+  container: HTMLElement;
+  owned: boolean;
+}>();
+
+function clearPrevious() {
+  for (const entry of mounted) {
+    act(() => entry.root.unmount());
+    if (entry.owned) entry.container.remove();
+  }
+  mounted.clear();
+}
+
+/**
  * Render `element` and wait for React.
  *
  * Into `into` when the component is one that fills an element index.html
@@ -35,13 +55,15 @@ export async function mount(
   element: ReactElement,
   into?: HTMLElement,
 ): Promise<Mounted> {
+  clearPrevious();
   const container = into ?? document.createElement("div");
   if (!into) document.body.append(container);
-  let root: Root;
+  let root!: Root;
   await act(async () => {
     root = createRoot(container);
     root.render(element);
   });
+  mounted.add({ root, container, owned: !into });
 
   return {
     container,
@@ -50,10 +72,7 @@ export async function mount(
         fn?.();
       });
     },
-    unmount: () => {
-      act(() => root.unmount());
-      if (!into) container.remove();
-    },
+    unmount: () => clearPrevious(),
   };
 }
 

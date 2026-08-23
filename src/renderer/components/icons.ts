@@ -52,14 +52,21 @@ export function calendarIcon() {
  * The add button in every form. Same reason as closeIcon below: + is a maths
  * glyph and rides the same axis, so as text it sat low by the same 1.5px.
  */
+/** The plus, as numbers. Shared with react/icons.tsx -- see CLOSE. */
+export const PLUS = {
+  size: 12,
+  d: "M8 3.5v9M3.5 8h9",
+  strokeWidth: 1.5,
+};
+
 export function plusIcon() {
-  const svg = svgRoot(12);
+  const svg = svgRoot(PLUS.size);
   svg.setAttribute("aria-hidden", "true");
   svg.append(
     shape("path", {
-      d: "M8 3.5v9M3.5 8h9",
+      d: PLUS.d,
       stroke: "currentColor",
-      "stroke-width": "1.5",
+      "stroke-width": String(PLUS.strokeWidth),
       "stroke-linecap": "round",
     }),
   );

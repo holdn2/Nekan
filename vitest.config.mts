@@ -29,6 +29,8 @@ export default mergeConfig(
       // for the start-up cost: these are unit tests and there are going to be
       // a lot of them.
       environment: "happy-dom",
+      // Relative to the Vite root, like `include` above.
+      setupFiles: ["react/testing-setup.ts"],
       restoreMocks: true,
     },
   }),
