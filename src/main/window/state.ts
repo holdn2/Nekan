@@ -136,14 +136,12 @@ function setMode(next: string) {
 }
 
 /**
- * Open and close the window on a move of the app's own making.
+ * Stop treating what happens next as the app's own doing.
  *
- * Everything between them is invisible to rememberPlacement, which is what
- * keeps a fold from being recorded as the user having moved the widget.
+ * There is no matching begin(): the only two things that open the flag are
+ * placeWindow, which closes it again a tick later, and the window being built,
+ * which is why createWindow is the one caller of this.
  */
-const beginSwitch = () => {
-  switching = true;
-};
 const endSwitch = () => {
   switching = false;
 };
@@ -156,7 +154,6 @@ export {
   getMode,
   setWindow,
   setMode,
-  beginSwitch,
   endSwitch,
   sanitizeBounds,
   savedBarPosition,

@@ -37,13 +37,3 @@ export const $$ = <T extends HTMLElement = HTMLElement>(
  */
 export const target = <T extends HTMLElement = HTMLElement>(e: Event): T =>
   e.target as T;
-
-/**
- * Title and accessible name always move together on the icon-only buttons —
- * they carry no text, so a screen reader would otherwise just say "button".
- */
-export function labelBtn(sel: string, label: string): void {
-  const btn = $(sel);
-  btn.title = label;
-  btn.setAttribute("aria-label", label);
-}
