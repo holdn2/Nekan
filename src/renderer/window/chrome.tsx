@@ -12,7 +12,7 @@
  */
 
 import { createRoot } from "react-dom/client";
-import { $, $$ } from "../dom.js";
+import { $ } from "../dom.js";
 import { toggleSize } from "./mode.js";
 import { TitleBar } from "./chrome/title-bar.js";
 import { GuideVersion, Tabs, UpdateLine } from "./chrome/tabs.js";
@@ -57,6 +57,3 @@ export function mountChrome() {
     toggleSize();
   });
 }
-
-/** Kept for app.ts, which counts the tabs to size the guide's own list. */
-export const tabButtons = () => $$(".tab");
