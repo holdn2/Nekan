@@ -7,15 +7,20 @@
   to run at all once the hardened runtime is on. Without them the packaged app
   launches to a blank window and the crash is inside Electron, not our code.
 
-  This file does nothing until there is a signing certificate -- codesign is
-  what reads it, and electron-builder skips signing when no identity is found.
-  It is committed now so that turning signing on is a credentials change and
-  not a packaging change.
-
   Deliberately not here: com.apple.security.app-sandbox and the network/file
   entitlements that go with it. Those belong to the Mac App Store target, which
-  this app does not build -- it ships through GitHub Releases, and sandboxing
+  this app does not build. It ships through GitHub Releases, and sandboxing
   would take away the loopback listener that Google sign-in returns to.
+
+  No double hyphen anywhere in this comment, and none in the ones below. This
+  repository writes them for an em dash, which is fine in JavaScript and illegal
+  inside an XML comment. codesign reads this file with AMFI's own parser, which
+  says so plainly and then takes the whole build down with it:
+
+    Failed to parse entitlements: AMFIUnserializeXML: syntax error near line 10
+
+  That was line 10 of this file, and it cost the first signed build (2026-08-24).
+  tools/test/entitlements.test.ts is there so it costs the next one nothing.
 -->
 <plist version="1.0">
   <dict>

@@ -26,7 +26,13 @@ function initI18n(lng?: string | null) {
     lng: lng || FALLBACK,
     fallbackLng: FALLBACK,
     resources: { ko: { translation: ko }, en: { translation: en } },
-    interpolation: { escapeValue: false },
+    interpolation: {
+      escapeValue: false,
+      // The same default the renderer sets, for the same seven strings. Main
+      // does not draw the guide, but it reads from the same catalogues, and an
+      // unresolved {{mod}} would reach a dialog title as those four braces.
+      defaultVariables: { mod: process.platform === "darwin" ? "Cmd" : "Ctrl" },
+    },
   });
   ready = true;
 }

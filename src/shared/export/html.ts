@@ -109,8 +109,8 @@ export function toHtml(
   * { box-sizing: border-box; }
   body {
     margin: 0; padding: 18px 20px 24px;
-    font-family: "Pretendard Variable", "Pretendard", "Malgun Gothic",
-      "Segoe UI", system-ui, sans-serif;
+    font-family: "Pretendard Variable", "Pretendard", "Apple SD Gothic Neo",
+      "Malgun Gothic", -apple-system, "Segoe UI", system-ui, sans-serif;
     font-size: 11.5px; line-height: 1.5; color: #1f1e1c; background: #fff;
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }

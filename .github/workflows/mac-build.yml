@@ -1,13 +1,19 @@
-# Builds the macOS app so that the packaging config is checked by a machine
-# that can actually run it. Nobody here has a Mac, and electron-builder cannot
-# produce a mac target from Windows, so without this the config is unverified
-# until the day someone tries to release from it.
+# Builds the macOS app so that the packaging config is checked by a machine that
+# can actually run it. Nobody here has a Mac, and electron-builder cannot produce
+# a mac target from Windows, so without this the config is unverified until the
+# day someone tries to release from it.
 #
-# This does NOT publish and does NOT sign. The artifact it uploads is for
-# reading the build log and confirming the bundle exists -- Gatekeeper will
-# refuse to open it on a real Mac, and electron-updater refuses to update an
-# unsigned mac app. Signing is a separate change that needs a Developer ID
-# certificate in the repository secrets; see issue #69.
+# It never publishes. Whether it signs depends on how the run was started, and
+# not because this file chooses: electron-builder refuses to sign a pull-request
+# build. isSignAllowed() checks GITHUB_BASE_REF, which Actions sets only for
+# `pull_request`, and returns before an identity is even looked for --
+# notarisation is downstream of signing, so it is skipped along with it. The
+# credentials below therefore sit unused on a PR run and do their work only on a
+# manual run from the Actions tab.
+#
+# That is also why signing cannot be checked by opening a pull request. Use
+# `workflow_dispatch`: it is the only path here that produces a bundle a Mac
+# will open.
 name: Mac build
 
 on:
@@ -36,6 +42,11 @@ concurrency:
 jobs:
   build:
     runs-on: macos-latest
+    env:
+      # One place decides it, so the key step, the checks and the artifact name
+      # cannot disagree about what this run produced. Why the answer is "a manual
+      # run, and only a manual run" is in the header.
+      SIGNING: ${{ github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -58,21 +69,94 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      # notarytool wants the App Store Connect key as a *file*, so this one
+      # secret cannot be handed straight to electron-builder the way CSC_LINK
+      # can. It goes to RUNNER_TEMP rather than anywhere in the workspace: the
+      # packager walks the working tree and the upload step globs dist/, and a
+      # private key has no business being reachable by either.
+      #
+      # Decoded with python rather than `base64 --decode` because macOS ships
+      # BSD base64, whose flags differ from GNU's, and because a secret pasted
+      # out of a file may carry newlines that openssl's -A form refuses.
+      - name: Put the notarisation key on disk
+        if: env.SIGNING == 'true'
+        id: api-key
+        env:
+          APPLE_API_KEY_B64: ${{ secrets.APPLE_API_KEY_B64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${APPLE_API_KEY_B64:-}" ]; then
+            echo "APPLE_API_KEY_B64 is empty -- the secret is missing." >&2
+            exit 1
+          fi
+          key="$RUNNER_TEMP/apple-api-key.p8"
+          python3 -c 'import base64,os,sys; sys.stdout.buffer.write(base64.b64decode(os.environ["APPLE_API_KEY_B64"]))' > "$key"
+          chmod 600 "$key"
+          # The path is not a secret; what is in the file is. Printing the size
+          # makes a missing or truncated key visible in the log without any of
+          # it being in the log.
+          echo "wrote $(wc -c < "$key") bytes"
+          echo "path=$key" >> "$GITHUB_OUTPUT"
+
       - name: Build the mac app
         run: npm run dist:mac
         env:
-          # Without this electron-builder goes looking through the runner's
-          # keychain for anything it could sign with. There is nothing valid
-          # there, and the failure it produces reads like a certificate problem
-          # rather than what it is. Turning discovery off makes the unsigned
-          # build the explicit outcome.
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+          # CSC_IDENTITY_AUTO_DISCOVERY used to be false here, to make an
+          # unsigned build the explicit outcome rather than a keychain hunt that
+          # fails looking like a certificate problem. It cannot stay:
+          # findIdentity() returns null outright when that flag is false and no
+          # CSC_NAME is set, so the keychain CSC_LINK just built would never be
+          # searched. The build would succeed, unsigned, with one warning in the
+          # log -- the quiet kind of wrong. Skipping is now decided by the event,
+          # upstream of this step.
+          #
+          # CSC_LINK takes the .p12 as base64 directly, so unlike the key above
+          # it never touches this disk.
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          # Notarisation is turned on by these three and nothing else -- there is
+          # no `notarize` in package.json, because app-builder-lib reads them
+          # from the environment and errors if one of the three is missing.
+          # APPLE_API_KEY is the *path* written above, not the key itself.
+          APPLE_API_KEY: ${{ steps.api-key.outputs.path }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
 
-      # Named without a hash so the log is readable, and kept short because an
-      # unsigned build is only good for inspection.
+      # The log saying "signing" and "notarization successful" is the builder's
+      # own account of itself. This asks the OS instead, because the failure that
+      # matters is the one where a bundle ships and Gatekeeper refuses it on a
+      # stranger's machine.
+      #
+      # stapler is the check worth having most: notarisation is a round trip to
+      # Apple, and a ticket that was issued but not stapled means every first
+      # launch needs the network to go well.
+      - name: Prove the bundle is signed, notarised and accepted
+        if: env.SIGNING == 'true'
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          apps=(dist/mac*/*.app)
+          if [ ${#apps[@]} -eq 0 ]; then
+            echo "no .app under dist/ -- the build produced nothing to check." >&2
+            exit 1
+          fi
+          for app in "${apps[@]}"; do
+            echo "=== $app"
+            codesign --verify --deep --strict --verbose=2 "$app"
+            codesign -dv --verbose=4 "$app" 2>&1 | grep -E "^(Authority|TeamIdentifier|Timestamp|Signature)"
+            # Notarised *and* stapled, then accepted by the policy a first launch
+            # actually consults.
+            xcrun stapler validate "$app"
+            spctl --assess --type execute --verbose=4 "$app"
+          done
+
+      # Named for what it is, so a signed bundle and an unsigned one cannot be
+      # taken for each other in the artifact list. An unsigned one is good only
+      # for reading the log -- Gatekeeper will refuse to open it, and
+      # electron-updater refuses to update an unsigned mac app.
       - uses: actions/upload-artifact@v5
         with:
-          name: mac-unsigned
+          name: mac-${{ env.SIGNING == 'true' && 'signed' || 'unsigned' }}
           retention-days: 7
           path: |
             dist/*.dmg
@@ -80,3 +164,10 @@ jobs:
             dist/latest-mac.yml
             dist/*.blockmap
           if-no-files-found: error
+
+      # The runner is thrown away, so this is belt and braces -- but a job that
+      # fails between writing the key and finishing should not leave it sitting
+      # there for whatever else runs in the same job.
+      - name: Take the key back off disk
+        if: always() && steps.api-key.outputs.path != ''
+        run: rm -f "${{ steps.api-key.outputs.path }}"

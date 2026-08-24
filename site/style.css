@@ -50,9 +50,11 @@ body {
   font:
     16px/1.75 "Pretendard Variable",
     "Pretendard",
+    "Apple SD Gothic Neo",
+    "Malgun Gothic",
     -apple-system,
     "Segoe UI",
-    "Malgun Gothic",
+    system-ui,
     sans-serif;
 }
 main {

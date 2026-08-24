@@ -58,6 +58,7 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
     panels.ts      설정 패널이 열려 있나. 톱니바퀴는 타이틀바가 그리고 Escape는 문서에
                    붙으므로, 뷰가 가질 수 없는 상태다
     dom.ts         $ · $$ · target · labelBtn
+    keys.ts        isMac · accel(e) · accelName(). 조합키가 어느 키인지 한 곳
     window-api.d.ts  window.api를 preload의 `typeof api`에서 받아 전역으로 선언
     components/    toast · due-chip · due-badge · memo-mark · memo-line ·
                    editable-text · add-form · language-select
@@ -420,11 +421,16 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
 - **views/settings.tsx`는 window/chrome`을 import하지만 그 반대는 안 된다.** 테마 세그먼트
   컨트롤을 반영하는 코드가 `applyTheme()` 안에 있는 이유다 — settings에 두면 순환이 된다.
   렌더러 그래프에 순환은 여기 말고 한 군데도 없다.
-- **화면을 그리는 코드에 명령형 DOM은 없다. 남은 `classList` 쓰기 여섯 곳은 의도한 것이다.**
-  ① 뷰 넷(memo·settings·welcome·다 꺼내기 `open`)이 **자기가 그려 들어가는 host**의 클래스를
-  토글한다 — `useEffect`가 매 렌더 돌므로 낡을 수가 없다. ② `dnd.ts`와 `layout/`이 React가
-  소유한 요소에 클래스를 붙이지만 **pointermove마다**다 — React 상태로 올리면 마우스가 움직일
-  때마다 매트릭스 전체가 다시 그려진다. ③ `body.booting`은 한 번뿐이다.
+- **화면을 그리는 코드에 명령형 DOM은 없다. 남은 `classList` 쓰기는 다섯 부류이고 전부
+  의도한 것이다.** 세는 단위가 호출이 아니라 **쓰는 파일**이다 — 호출 수로 세면 `quad-edges.ts`
+  하나가 열한 번이라 숫자가 아무것도 말해주지 않는다.
+  ① 뷰 넷(`memo.tsx`·`settings.tsx`·`welcome.tsx`·`inbox.tsx`의 `open`)이 **자기가 그려 들어가는
+  host**의 클래스를 토글한다 — `useEffect`가 매 렌더 돌므로 낡을 수가 없다(settings는 패널과
+  backdrop 둘이다). ② `dnd.ts`와 `layout/`이 React가 소유한 요소에 클래스를 붙이지만
+  **pointermove마다**다 — React 상태로 올리면 마우스가 움직일 때마다 매트릭스 전체가 다시
+  그려진다. ③ `app.ts`의 `body.booting`은 한 번뿐이다. ④ `window/mode.ts`의
+  `body.collapsed`/`.expanded` — 모드는 **메인이 정해서 푸시**하고 `body`는 React의 것이 아니다.
+  ⑤ `chrome/tabs.tsx`가 탭 가시성을 토글한다(다음 문단).
   **탭 가시성은 2026-08-23에 `setTab()`에서 `chrome/tabs.tsx`의 이펙트로 옮겼다** — 같은 답을
   읽는 컴포넌트가 하니까 "탭과 화면이 어긋나는" 상태가 불가능해진다.
   **언어 `<select>`도 그날 컴포넌트가 됐다**(`components/language-select.tsx`).
@@ -520,6 +526,34 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   `FIRST_CHECK_MS`(10초)가 무의미해진다.
   `powerMonitor`는 **app ready 전에는 쓸 수 없어서** 파일 최상단이 아니라 `initUpdater()`
   안에서 `require`한다. `main.ts`는 이 파일을 `whenReady()`보다 훨씬 먼저 부른다.
+- **맥 서명은 `workflow_dispatch`에서만 돈다. 이 파일이 그렇게 정한 게 아니라
+  electron-builder가 거부한다.** `isSignAllowed()`가 `GITHUB_BASE_REF`를 보고
+  (`builder-util/out/util.js`의 `isPullRequest()`), PR 빌드면 identity를 찾기도 전에
+  `false`로 빠진다. 공증은 서명 뒤에만 불리므로 함께 건너뛴다. 그래서 **PR을 열어서는 서명 경로를
+  한 줄도 검증할 수 없고**, Actions 탭에서 손으로 돌려야 한다. 자격증명을 env에 항상 걸어 두어도
+  PR 빌드에서는 아무 일도 일어나지 않는다.
+- **`CSC_IDENTITY_AUTO_DISCOVERY: false`를 남겨두면 서명이 조용히 안 된다.**
+  `findIdentity()`가 그 플래그가 `false`이고 `CSC_NAME`이 없으면 **`CSC_LINK`가 방금 만든
+  키체인을 찾지도 않고 `null`을 돌려준다**(`app-builder-lib/out/codeSign/macCodeSign.js`).
+  빌드는 성공하고 경고 한 줄만 남는다 — 서명 안 된 번들이 초록불을 달고 나가는 형태다.
+- **공증은 `notarize` 설정이 아니라 env 세 개가 켠다.** `APPLE_API_KEY` · `APPLE_API_KEY_ID` ·
+  `APPLE_API_ISSUER`이고, 셋 중 하나만 있으면 오류다(`MacTargetHelper.getNotarizeOptions`).
+  **`APPLE_API_KEY`는 값이 아니라 `.p8`의 경로다** — 그래서 그 시크릿만 러너 디스크에 써야 하고,
+  워크스페이스가 아니라 `$RUNNER_TEMP`에 둔다(패키저가 작업 트리를 훑고 업로드가 `dist/`를
+  훑는다). `@electron/notarize`의 `notarize()`는 제출 뒤 **stapling까지 한다**(2.5.0 확인).
+- **서명 시크릿은 저장소 시크릿이고, 그건 쓰기 권한자가 한 명일 때만 괜찮다.** 지금은
+  `holdn2` 하나뿐이라(`gh api repos/holdn2/Nekan/collaborators`) `workflow_dispatch`를 누를 수
+  있는 사람과 시크릿을 읽을 수 있는 사람이 같다. **협업자가 둘이 되는 순간 달라진다** — 그
+  사람은 `pull_request` 워크플로를 하나 추가하는 것만으로 `MAC_CSC_LINK`를 가져갈 수 있다
+  (공개 저장소라 fork PR에는 시크릿이 안 가지만, 같은 저장소의 브랜치에는 간다).
+  **그때 Environment로 옮긴다.** 조건은 "릴리스 준비가 됐을 때"가 아니라 **"쓰기 권한자가 둘
+  이상이 됐을 때"**다. 지금 옮기면 소유자가 자기 실행을 자기가 승인하는 절차만 생기고,
+  **대상을 릴리스 브랜치로 좁히면 서명 검증 자체가 불가능해진다** — 위 항목대로 PR에서는
+  서명이 돌지 않으므로 기능 브랜치에 대고 손으로 돌리는 것이 유일한 확인 방법이다.
+- **빌드 로그의 "notarization successful"은 빌더의 자기 진술이다.** 실제로 열리는지는 OS에
+  물어야 한다 — `codesign --verify --deep --strict` · `xcrun stapler validate` ·
+  `spctl --assess --type execute`. 특히 stapler가 중요하다: 티켓이 발급됐지만 stapling이 안 되면
+  **첫 실행마다 네트워크가 필요해진다.**
 - **`npm run release`에는 `GH_TOKEN`이 필요하다.** 없으면 빌드는 끝나고 업로드에서만 죽는다
   (`GitHub Personal Access Token is not set`). `gh`가 로그인돼 있으면 따로 만들 것 없이
   `GH_TOKEN="$(gh auth token)" npm run release`로 넘기면 된다. **토큰을 로그나 파일에 찍지 말 것.**
@@ -619,6 +653,23 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   **정렬을 볼 때는 언어를 바꿔가며 볼 것** — 같은 폭의 낱말은 결함을 가린다.
 - 언어 선택은 `.switch`가 아니라 `<select>`다. 알약이 `calc(50% - 2px)` + `translateX(100%)`라
   **정확히 두 칸일 때만 맞는다** — 세 번째 언어를 넣는 날 깨진다.
+- **조합키는 macOS에서 Cmd다. 그것을 아는 곳이 `renderer/keys.ts` 하나뿐이어야 한다.**
+  `KeyboardEvent`는 Cmd를 `metaKey`, Ctrl을 `ctrlKey`로 따로 보고하므로 **`ctrlKey`만 보면
+  맥에서는 단축키가 이상하게 도는 게 아니라 하나도 안 돈다.** 판정은 `accel(e)`이 하고,
+  플랫폼은 `window.api.platform`에서 온다 — `process.platform`은 샌드박스 preload에도
+  남아 있는 몇 가지 중 하나라 argv 플래그도 IPC도 필요 없다.
+  **`altKey`를 함께 거르는 이유는 양쪽 다 있다**: Windows의 AltGr가 `ctrlKey+altKey`로 오고,
+  macOS의 Option은 글자를 조합한다. 둘 다 통과시키면 단축키가 돌면서 `preventDefault`가
+  글자를 먹는다.
+  **사용자가 읽는 낱말은 카탈로그가 아니라 보간이 정한다.** `{{mod}}`를 쓰고, 값은 렌더러와
+  메인 **두 i18next 초기화의 `interpolation.defaultVariables`**가 넣는다 — `applyStaticStrings()`는
+  키만 알고 인자를 못 주므로 호출부에서 넘기는 방식은 가이드 탭에 닿지 않는다. 메인에도 같은
+  기본값을 두는 이유는 카탈로그가 한 벌이라서다: 빠뜨리면 대화상자 제목에 `{{mod}}`가 그대로
+  나간다.
+  **미검증 하나**: macOS는 기본 메뉴를 자동으로 달고 그 가속기가 페이지보다 먼저 처리되므로,
+  **`Cmd`+`M`이 바 모드가 아니라 최소화로 갈 수 있다.** 맥이 없어 확인하지 못했다. 그렇다면
+  고칠 곳은 mac 전용 `Menu`를 하나 놓는 것이고, 그때까지도 타이틀바의 접기 버튼이 같은 일을 한다.
+
 - **`dueInfo()`는 계산만 한다** — `{ date, days, state, otherYear }`. 문자열은
   `formatDue(info, t, locale)`가 만들고, **`t`를 인자로 받는다**: `shared/`는 카탈로그를 들 수
   없다 — i18next 초기화는 메인과 렌더러가 각자 하고, `shared/`는 그 둘을 모른다. `state`는 CSS가 쓰는 값이라 계산 쪽에 남는다. 요일은

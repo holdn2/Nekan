@@ -122,7 +122,12 @@ function SettingsBody() {
           }}
         >
           PDF · HTML · Markdown
-          <kbd>Ctrl+E</kbd>
+          {/* The catalogue says "{{mod}}+E" and the interpolation fills the
+              modifier in, the same path the guide's own shortcut list takes.
+              It was hardcoded "Ctrl+E" here, which read wrong on macOS and,
+              being English already, was invisible to find-untranslated. A
+              second literal would have re-opened exactly that hole. */}
+          <kbd>{t("settings.exportShortcut")}</kbd>
         </button>
       </div>
 
