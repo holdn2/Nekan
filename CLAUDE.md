@@ -417,11 +417,16 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
 - **views/settings.tsx`는 window/chrome`을 import하지만 그 반대는 안 된다.** 테마 세그먼트
   컨트롤을 반영하는 코드가 `applyTheme()` 안에 있는 이유다 — settings에 두면 순환이 된다.
   렌더러 그래프에 순환은 여기 말고 한 군데도 없다.
-- **화면을 그리는 코드에 명령형 DOM은 없다. 남은 `classList` 쓰기 여섯 곳은 의도한 것이다.**
-  ① 뷰 넷(memo·settings·welcome·다 꺼내기 `open`)이 **자기가 그려 들어가는 host**의 클래스를
-  토글한다 — `useEffect`가 매 렌더 돌므로 낡을 수가 없다. ② `dnd.ts`와 `layout/`이 React가
-  소유한 요소에 클래스를 붙이지만 **pointermove마다**다 — React 상태로 올리면 마우스가 움직일
-  때마다 매트릭스 전체가 다시 그려진다. ③ `body.booting`은 한 번뿐이다.
+- **화면을 그리는 코드에 명령형 DOM은 없다. 남은 `classList` 쓰기는 다섯 부류이고 전부
+  의도한 것이다.** 세는 단위가 호출이 아니라 **쓰는 파일**이다 — 호출 수로 세면 `quad-edges.ts`
+  하나가 열한 번이라 숫자가 아무것도 말해주지 않는다.
+  ① 뷰 넷(`memo.tsx`·`settings.tsx`·`welcome.tsx`·`inbox.tsx`의 `open`)이 **자기가 그려 들어가는
+  host**의 클래스를 토글한다 — `useEffect`가 매 렌더 돌므로 낡을 수가 없다(settings는 패널과
+  backdrop 둘이다). ② `dnd.ts`와 `layout/`이 React가 소유한 요소에 클래스를 붙이지만
+  **pointermove마다**다 — React 상태로 올리면 마우스가 움직일 때마다 매트릭스 전체가 다시
+  그려진다. ③ `app.ts`의 `body.booting`은 한 번뿐이다. ④ `window/mode.ts`의
+  `body.collapsed`/`.expanded` — 모드는 **메인이 정해서 푸시**하고 `body`는 React의 것이 아니다.
+  ⑤ `chrome/tabs.tsx`가 탭 가시성을 토글한다(다음 문단).
   **탭 가시성은 2026-08-23에 `setTab()`에서 `chrome/tabs.tsx`의 이펙트로 옮겼다** — 같은 답을
   읽는 컴포넌트가 하니까 "탭과 화면이 어긋나는" 상태가 불가능해진다.
   **언어 `<select>`도 그날 컴포넌트가 됐다**(`components/language-select.tsx`).
