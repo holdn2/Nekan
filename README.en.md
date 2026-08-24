@@ -151,9 +151,10 @@ says to run `npm run release` first, and stops. Letting it create one would put
 two drafts on one tag, which is the single failure `check-release.js` cannot
 repair, because the bytes are on another machine.
 
-**Ticking publish on a branch other than `main` fails**, so that a bundle which
-is not what the tag points at cannot be uploaded. It fails in the first step,
-before the half hour the build and notarisation take.
+**Everything that can answer no is asked up front.** Ticking publish on a branch
+other than `main`, or when there is no release for that version yet, fails in a
+preflight job within seconds -- rather than after the half hour the build and
+notarisation take, on a runner that bills at ten times the Linux rate.
 
 **A pull-request build does not sign.** electron-builder refuses to
 (`isSignAllowed()`), so a manual run is the only way to check that path. Run it

@@ -15,7 +15,7 @@
 # `workflow_dispatch`: it is the only path here that produces a bundle a Mac
 # will open.
 #
-# Publishing is a second job on purpose. The release token is the one credential
+# Publishing is a separate job on purpose. The release token is the one credential
 # here that can change what users download, and the build job runs `npm ci`,
 # which executes an install script from every dependency in the tree. Those two
 # should not be in the same job. Splitting them also puts the upload on a Linux
@@ -28,6 +28,11 @@
 # publishing question it cannot fix. Uploading only into a release that already
 # exists means that question never gets asked. Windows makes the draft; this
 # fills in the other half.
+#
+# Both of the answers that can be "no" are asked in a preflight job before any
+# of it is paid for. Half an hour of macOS at ten times the Linux rate, spent to
+# find out that the box was ticked on the wrong branch, is a guard that is right
+# and useless.
 name: Mac build
 
 on:
@@ -62,18 +67,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: macos-latest
-    env:
-      # One place decides it, so the key step, the checks and the artifact name
-      # cannot disagree about what this run produced. Why the answer is "a manual
-      # run, and only a manual run" is in the header.
-      SIGNING: ${{ github.event_name == 'workflow_dispatch' }}
+  # Everything that can say no to a publishing run, asked before any of it is
+  # paid for. It is fifteen seconds of Linux; the build and notarisation behind
+  # it are half an hour of macOS, which bills at ten times the rate. A guard
+  # that only fires at the end is right and useless.
+  #
+  # It runs on every event and does nothing unless publishing was asked for, so
+  # that `build` can depend on it without the dependency skipping `build` too.
+  preflight:
+    runs-on: ubuntu-latest
+    permissions:
+      # Reading a release, including a draft. No checkout, no npm ci: the token
+      # is here and the dependency tree is not.
+      contents: read
     steps:
-      # First, so that a run that cannot publish costs seconds rather than the
-      # half hour the build and notarisation take. Failing is the point: a green
-      # run that uploaded nothing, because the box was ticked on the wrong
-      # branch, is the shape of mistake this repository keeps paying for.
+      # The branch is answered by the event, so it is asked first and without
+      # cloning anything.
       - name: Refuse to publish from anywhere but main
         if: inputs.publish && github.ref_name != 'main'
         run: |
@@ -82,6 +91,39 @@ jobs:
           echo "that is not what the tag points at." >&2
           exit 1
 
+      # Only for package.json, which is what decides the tag -- the same file
+      # the publish job and tools/check-release.js read, so there is nowhere for
+      # a second answer to live.
+      - uses: actions/checkout@v5
+        if: inputs.publish
+        with:
+          persist-credentials: false
+
+      - name: Refuse to publish when there is no release to publish into
+        if: inputs.publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="v$(node -p "require('./package.json').version")"
+          echo "looking for release $tag"
+          if ! gh release view "$tag" > /dev/null 2>&1; then
+            echo "there is no release for $tag." >&2
+            echo "Windows makes the draft: run npm run release there first." >&2
+            echo "This workflow fills in the mac half and never creates one." >&2
+            exit 1
+          fi
+          echo "found it -- the mac half can go in"
+
+  build:
+    needs: preflight
+    runs-on: macos-latest
+    env:
+      # One place decides it, so the key step, the checks and the artifact name
+      # cannot disagree about what this run produced. Why the answer is "a manual
+      # run, and only a manual run" is in the header.
+      SIGNING: ${{ github.event_name == 'workflow_dispatch' }}
+    steps:
       - uses: actions/checkout@v5
         with:
           # checkout leaves the token in .git/config unless told not to, and
