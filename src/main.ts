@@ -49,7 +49,7 @@ if (!gotLock) {
     const settings = getSettings();
     settings.language =
       storedLanguage(settings.language) || pickLanguage(app.getLocale());
-    initI18n(settings.language);
+    initI18n(settings.language as string | undefined);
     // Before the IPC, because state:load hands the renderer whoever is logged
     // in and the answer comes off disk. safeStorage needs the app ready, which
     // is why this cannot sit next to the store load above.
@@ -58,7 +58,7 @@ if (!gotLock) {
     createWindow();
     // Last, and knowing nothing about windows itself: this is the wire from the
     // updater to whichever window is on screen when it has news.
-    initUpdater((status) => {
+    initUpdater((status: unknown) => {
       const win = getWindow();
       if (win && !win.isDestroyed())
         win.webContents.send("update:status", status);
@@ -66,7 +66,7 @@ if (!gotLock) {
     // Same arrangement, same reason: sync knows nothing about windows, and this
     // is the one wire from a finished pull to whatever is on screen. The clock
     // offset rides along because it was learned by the same request.
-    const toWindow = (channel, ...args) => {
+    const toWindow = (channel: string, ...args: unknown[]) => {
       const win = getWindow();
       if (win && !win.isDestroyed()) win.webContents.send(channel, ...args);
     };

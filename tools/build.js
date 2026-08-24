@@ -25,10 +25,10 @@ const ROOT = path.join(__dirname, "..");
 const SRC = path.join(ROOT, "src");
 const TEST = path.join(ROOT, "test");
 const OUT = path.join(ROOT, "out");
+const RENDERER = path.join(SRC, "renderer");
 const PROJECTS = [
   "tsconfig.shared.json",
   "tsconfig.main.json",
-  "tsconfig.renderer.json",
   "tsconfig.test.json",
 ];
 
@@ -43,12 +43,24 @@ const ASSET_EXT = new Set([
   ".txt",
 ]);
 
-/** Every file under src/ that the compilers will not produce. */
+/**
+ * Every file under src/ that neither compiler nor bundler will produce.
+ *
+ * src/renderer/ is skipped whole: Vite reads index.html, follows the fifteen
+ * <link>s and the entry script, and writes the lot into out/renderer itself.
+ * Copying the sources next to the bundle would leave a second, stale copy of
+ * every stylesheet one directory away from the one actually being used.
+ */
 function assets(dir = SRC) {
+  if (dir === RENDERER) return [];
   const found = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) found.push(...assets(full));
+    // The font is Vite's to emit -- it is referenced from base.css, so the
+    // bundler already carries it across, and a second copy here would be two
+    // megabytes of the same file in the installer.
+    else if (path.extname(entry.name) === ".woff2") continue;
     else if (ASSET_EXT.has(path.extname(entry.name))) found.push(full);
   }
   return found;
@@ -100,11 +112,20 @@ function markSharedAsEsm() {
  * and the .d.ts files that the project references read, and every build
  * silently becomes a full one.
  */
-function hasSource(rel) {
+function hasSource(rel, produced) {
   // Written by the compilers, for the compilers.
   if (rel.startsWith(".tsbuildinfo")) return true;
+  // Vite's, all of it. Hashed filenames have no source of the same name, and
+  // emptyOutDir already clears the directory on every build.
+  if (rel.startsWith("renderer/")) return true;
   // Written by markSharedAsEsm below.
   if (rel === "shared/package.json") return true;
+
+  // Copied assets are pruned against what this build actually copies. Asking
+  // "is there a file of that name in src/" instead would keep a file that used
+  // to be copied and no longer is -- which is the stale output this function
+  // exists to remove, wearing the face of a source file.
+  if (ASSET_EXT.has(path.extname(rel))) return produced.has(rel);
 
   const fromTest = rel.startsWith("test/");
   const root = fromTest ? TEST : SRC;
@@ -128,6 +149,9 @@ function hasSource(rel) {
  */
 function prune() {
   if (!fs.existsSync(OUT)) return 0;
+  const produced = new Set(
+    assets().map((f) => path.relative(SRC, f).split(path.sep).join("/")),
+  );
   let gone = 0;
   const walk = (dir) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -138,13 +162,31 @@ function prune() {
         continue;
       }
       const rel = path.relative(OUT, full).split(path.sep).join("/");
-      if (hasSource(rel)) continue;
+      if (hasSource(rel, produced)) continue;
       fs.rmSync(full);
       gone += 1;
     }
   };
   walk(OUT);
   return gone;
+}
+
+/**
+ * Build the renderer. Watch mode runs Vite's own watcher rather than a second
+ * process pool: it already knows the whole graph, which tsc -w would not.
+ */
+function bundleRenderer(watch) {
+  const args = ["vite", "build", ...(watch ? ["--watch"] : [])];
+  if (watch) {
+    spawn("npx", args, { cwd: ROOT, stdio: "inherit", shell: true });
+    return;
+  }
+  const run = spawnSync("npx", args, {
+    cwd: ROOT,
+    stdio: "inherit",
+    shell: true,
+  });
+  if (run.status !== 0) process.exit(run.status ?? 1);
 }
 
 function compile(watch) {
@@ -166,6 +208,7 @@ function compile(watch) {
 const watch = process.argv.includes("--watch");
 const removed = prune();
 compile(watch);
+bundleRenderer(watch);
 
 if (watch) {
   copyAssets();

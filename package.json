@@ -13,7 +13,7 @@
     "build": "node tools/build.js",
     "build:watch": "node tools/build.js --watch",
     "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.shared.json",
-    "test": "npm run build && node --test \"out/test/**/*.test.js\"",
+    "test": "npm run build && node --test \"out/test/**/*.test.js\" && vitest run",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "start": "npm run build && electron .",
@@ -22,14 +22,22 @@
   },
   "dependencies": {
     "electron-updater": "^6.8.9",
-    "i18next": "^26.3.6"
+    "i18next": "^26.3.6",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
     "electron": "^43.2.0",
     "electron-builder": "^26.15.3",
+    "happy-dom": "^20.11.6",
     "prettier": "^3.9.6",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11"
   },
   "build": {
     "appId": "com.makersfarm.nekan",
@@ -39,7 +47,8 @@
       "package.json",
       "!out/**/*.d.ts",
       "!out/.tsbuildinfo-*",
-      "!out/test/**"
+      "!out/test/**",
+      "!out/renderer/**/*.map"
     ],
     "directories": {
       "output": "dist"

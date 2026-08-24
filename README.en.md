@@ -277,17 +277,22 @@ src/                   # what you write (TypeScript)
     sync.ts            # sync decisions (last-write-wins, row mapping, cursors, clock skew)
     auth.ts            # session shape and expiry
     i18n/              # ko.json · en.json · GLOSSARY.md · locales.ts
-  renderer/            # ES modules (no bundler — imports keep their .js extension)
+  renderer/            # React (bundled by Vite — imports keep their .js extension)
     index.html
     app.ts             # entry point: render dispatcher, shortcuts, init
     store.ts           # the task array and every change to it (knows nothing of the DOM)
     render-bus.ts      # the one "redraw" signal
     i18n.ts            # strings for the renderer
     dom.ts             # shared DOM helpers
-    components/        # icons, due chip, note marker, toast
+    selection.ts       # whose note the panel is showing
+    panels.ts          # whether the settings popover is open
+    react/             # icons, the store subscription hook, test helpers
+    components/        # due chip, note marker, toast, editable text, add form
     views/             # quadrants · brain dump · history/trash · note panel · account · settings · first run
-    window/            # title bar and tabs · quadrant edges · drag and drop · export
+    window/            # title bar and tabs · bar/window mode · quadrant edges ·
+                       #   drag and drop · export
     styles/            # 15 files by area (light/dark palettes in base.css, the shared toggle in switch.css)
 out/                   # built by `npm run build`. This is what actually runs
 test/                  # node --test unit tests (TypeScript)
+                       #   component tests run under vitest, beside the source
 ```

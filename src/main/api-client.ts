@@ -12,6 +12,7 @@
  * this shape anyway -- it is just as well that it is also the right one.
  */
 
+import type { Session } from "../shared/types";
 import { needsRefresh, publicSession, sessionFromToken } from "../shared/auth";
 import { clockOffset, nextOffset } from "../shared/sync";
 import {
@@ -48,9 +49,9 @@ const SUPABASE_ANON_KEY =
 const TIMEOUT_MS = 15_000;
 
 /** The live session, or null. The only copy in the process. */
-let session = null;
+let session: Session | null = null;
 /** The refresh in flight, if any. See refreshSession(). */
-let refreshing = null;
+let refreshing: Promise<Session | null> | null = null;
 /**
  * How far this machine's clock is behind the server's, in ms.
  *
@@ -127,9 +128,9 @@ async function request(
  * turns these into Korean, and anything unrecognised falls through as itself
  * so a new one is visible rather than swallowed.
  */
-function errorCode(res) {
+function errorCode(res: Reply) {
   if (res.status === 0) return "offline";
-  const body = res.body || {};
+  const body = (res.body ?? {}) as { error_code?: string; error?: string };
   return body.error_code || body.error || `http_${res.status}`;
 }
 
@@ -143,7 +144,7 @@ function errorCode(res) {
  * new pair to a caller before it is stored means a crash in between logs the
  * user out with no way back.
  */
-function remember(next) {
+function remember(next: Session | null) {
   session = next;
   writeSession(next);
   return next;
@@ -310,7 +311,7 @@ async function loginWithGoogle() {
   return { ok: true, session: publicSession(next) };
 }
 
-async function login(email, password) {
+async function login(email: string, password: string) {
   // Checked before the request, not after: a successful login we cannot store
   // is a login that vanishes on restart, and the user would have no idea why.
   if (!canStore()) return { ok: false, error: "no_secure_storage" };
@@ -337,7 +338,7 @@ async function login(email, password) {
  * until a link is clicked. Both are reported rather than one being assumed --
  * that setting is going to be turned on before launch.
  */
-async function signup(email, password) {
+async function signup(email: string, password: string) {
   if (!canStore()) return { ok: false, error: "no_secure_storage" };
 
   const res = await request("/auth/v1/signup", {
@@ -366,7 +367,10 @@ async function signup(email, password) {
  * request rather than refreshSession(): that path stores what it gets, and
  * this session is on its way out.
  */
-async function revoke(previous, inFlight) {
+async function revoke(
+  previous: Session | null,
+  inFlight: Promise<Session | null> | null,
+) {
   // A renewal that was already running holds this same refresh token, and
   // rotation means a second exchange would invalidate one of the two -- the
   // race refreshSession()'s single flight exists to prevent. Rather than
@@ -377,8 +381,11 @@ async function revoke(previous, inFlight) {
     await inFlight.catch(() => {});
     return;
   }
+  // Nothing to revoke. Reached when logout runs with no session, which the
+  // caller already treats as success -- being signed out is the outcome.
+  if (!previous) return;
 
-  let token = previous.accessToken;
+  let token: string | null = previous.accessToken;
   if (needsRefresh(previous, Date.now())) {
     const res = await request("/auth/v1/token?grant_type=refresh_token", {
       method: "POST",

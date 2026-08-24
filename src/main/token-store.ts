@@ -10,6 +10,7 @@
  * here may run before whenReady.
  */
 
+import type { Session } from "../shared/types";
 import fs from "fs";
 import path from "path";
 import { app, safeStorage } from "electron";
@@ -58,7 +59,7 @@ function readSession() {
  * Replace the stored session. Temp file + rename, for the same reason
  * store-io.js does it: a write cut in half would read back as a logout.
  */
-function writeSession(session) {
+function writeSession(session: Session | null) {
   if (!canStore()) return false;
   const target = authPath();
   const tmp = `${target}.tmp`;

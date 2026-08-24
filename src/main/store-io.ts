@@ -7,9 +7,23 @@ import fs from "fs";
 import path from "path";
 
 import { DEFAULT_LAYOUT, DEFAULT_SPACE } from "../shared/core";
+import type { Task } from "../shared/types";
+
+/**
+ * What data.json holds: the task list, and everything that is set once.
+ *
+ * `settings` is a bag rather than a shape because it grows -- a new key is a
+ * line in defaultStore() and nothing else -- and because main is not the only
+ * writer: the renderer sends whole settings through IPC. The readers that care
+ * name the field and say what they expect it to be.
+ */
+export interface Store {
+  tasks: Task[];
+  settings: Record<string, unknown>;
+}
 
 /** A first-run store: no tasks, and the settings every reader assumes exist. */
-function defaultStore() {
+function defaultStore(): Store {
   return {
     tasks: [],
     settings: {
@@ -92,7 +106,7 @@ function loadStore(target: string, legacy?: string | string[]) {
  * Write through a temp file + rename so an interrupted write can never leave
  * a truncated data.json behind (that would silently wipe every task).
  */
-function writeStore(target, store) {
+function writeStore(target: string, store: unknown) {
   const tmp = `${target}.tmp`;
   try {
     fs.mkdirSync(path.dirname(target), { recursive: true });

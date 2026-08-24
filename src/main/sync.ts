@@ -13,6 +13,7 @@
  * to keep working when the server does not.
  */
 
+import type { PublicSession } from "../shared/types";
 import {
   PAGE_SIZE,
   hasMore,
@@ -45,7 +46,7 @@ type Handlers = {
 };
 let onTasks: NonNullable<Handlers["onTasks"]> = () => {};
 let onStatus: NonNullable<Handlers["onStatus"]> = () => {};
-let timer = null;
+let timer: ReturnType<typeof setTimeout> | null = null;
 let running = false;
 let failures = 0;
 let reconciledAt = 0;
@@ -61,7 +62,31 @@ let dirty = false;
  * means it is safe to close the laptop. There is deliberately no "checking":
  * a status nobody can do anything about is decoration that moves.
  */
-let status = { state: "off", unsent: 0, syncedAt: null, session: null };
+/**
+ * The cursor and watermark, as they sit in settings.sync.
+ *
+ * Separate from SyncState below, which is what the window is told: this one is
+ * bookkeeping that never leaves this process.
+ */
+interface SyncBookmark {
+  userId: string | null;
+  cursor: number;
+  pushedAt: number;
+}
+
+interface SyncState {
+  state: string;
+  unsent: number;
+  syncedAt: number | null;
+  session: PublicSession | null;
+}
+
+let status: SyncState = {
+  state: "off",
+  unsent: 0,
+  syncedAt: null,
+  session: null,
+};
 
 /**
  * The session rides along with the status.
@@ -72,21 +97,27 @@ let status = { state: "off", unsent: 0, syncedAt: null, session: null };
  * chip for an account it is no longer talking to. This runs every cycle, so the
  * screen is wrong for at most one heartbeat.
  */
-function report(next) {
-  const merged = { ...status, session: getPublicSession(), ...next };
-  const same = (key) =>
+function report(next: Partial<SyncState>) {
+  const merged: SyncState = { ...status, session: getPublicSession(), ...next };
+  const same = (key: keyof SyncState) =>
     key === "session"
       ? (merged.session && merged.session.email) ===
         (status.session && status.session.email)
       : merged[key] === status[key];
-  if (["state", "unsent", "syncedAt", "session"].every(same)) return;
+  const watched: (keyof SyncState)[] = [
+    "state",
+    "unsent",
+    "syncedAt",
+    "session",
+  ];
+  if (watched.every(same)) return;
   status = merged;
   onStatus(status);
 }
 
 /** Recount what is waiting, from whatever the store holds right now. */
 function countUnsent() {
-  const state = getSettings().sync;
+  const state = getSettings().sync as SyncBookmark | undefined;
   return unsentChanges(getStore().tasks, state ? state.pushedAt : 0).length;
 }
 
@@ -102,10 +133,10 @@ function getSyncStatus() {
  * nothing, or the other account's cursor would make this one skip every row
  * written before it.
  */
-function syncState() {
+function syncState(): SyncBookmark {
   const settings = getSettings();
   if (!settings.sync) settings.sync = { userId: null, cursor: 0, pushedAt: 0 };
-  return settings.sync;
+  return settings.sync as SyncBookmark;
 }
 
 /* ------------------------------------------------------------------- pull */
@@ -117,7 +148,7 @@ function syncState() {
  * pages that only land if all hundred arrive is a sync that never completes on
  * a bad connection.
  */
-async function pull(token, from, watermark) {
+async function pull(token: string, from: number, watermark: number) {
   let cursor = from;
   let applied = 0;
   let overwritten = 0;
@@ -176,7 +207,7 @@ async function pull(token, from, watermark) {
  * whose updated_at is not newer than what is stored -- so re-sending is free
  * and the client does not have to know what the server already has.
  */
-async function push(token, userId, from) {
+async function push(token: string, userId: string, from: number) {
   const pending = pendingChanges(getStore().tasks, from);
   if (!pending.length) return { ok: true, pushedAt: from, sent: 0 };
 
@@ -203,8 +234,8 @@ async function push(token, userId, from) {
 /* ---------------------------------------------------------------- the loop */
 
 /** Start again in `ms`, replacing whatever was already queued. */
-function schedule(ms) {
-  clearTimeout(timer);
+function schedule(ms: number) {
+  if (timer) clearTimeout(timer);
   timer = setTimeout(() => {
     runSync();
   }, ms);
@@ -300,7 +331,7 @@ async function runSync() {
  * Logging out passes null, which also clears it -- the next person to log in on
  * this machine must not inherit a cursor that says the account is up to date.
  */
-function useAccount(userId) {
+function useAccount(userId: string | null) {
   const state = syncState();
   if (state.userId === userId) return;
   state.userId = userId || null;
@@ -360,14 +391,14 @@ function syncSoon() {
  * when, is the next piece; until then this does the obvious thing rather than a
  * half-measure that would be harder to undo.
  */
-function syncAccount(userId) {
+function syncAccount(userId: string | null) {
   useAccount(userId || null);
   failures = 0;
   if (userId) {
     report({ state: "syncing", unsent: countUnsent(), syncedAt: null });
     schedule(0);
   } else {
-    clearTimeout(timer);
+    if (timer) clearTimeout(timer);
     report({ state: "off", unsent: 0, syncedAt: null });
   }
 }

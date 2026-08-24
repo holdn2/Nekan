@@ -9,6 +9,7 @@
  * dialog, which makes the dialog's file-type dropdown the whole format picker.
  */
 
+import { messageOf } from "../shared/errors";
 import fs from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
@@ -42,7 +43,13 @@ const exportFilters = () => [
  */
 const fontUrl = () =>
   pathToFileURL(
-    path.join(__dirname, "..", "assets", "fonts", "PretendardVariable.woff2"),
+    path.join(
+      __dirname,
+      "..",
+      "renderer",
+      "assets",
+      "PretendardVariable.woff2",
+    ),
   ).href;
 
 /**
@@ -51,7 +58,7 @@ const fontUrl = () =>
  * would flash the document over the matrix. The HTML goes through a temp file
  * rather than a data: URL so a long board cannot hit a URL length limit.
  */
-async function renderPdf(html, target) {
+async function renderPdf(html: string, target: string) {
   const tmp = path.join(app.getPath("temp"), `em-export-${Date.now()}.html`);
   fs.writeFileSync(tmp, html, "utf8");
 
@@ -81,7 +88,7 @@ async function renderPdf(html, target) {
  * What comes out follows the header toggle — the matrix on screen plus the
  * shared inbox. The other board is a separate export.
  */
-async function runExport(parent) {
+async function runExport(parent: BrowserWindow | null) {
   if (!parent || parent.isDestroyed()) return { ok: false, reason: "canceled" };
 
   const space = sanitizeSpace(getSettings().activeSpace);
@@ -115,14 +122,14 @@ async function runExport(parent) {
     }
   } catch (err) {
     console.error("export failed", err);
-    return { ok: false, reason: "error", message: String(err.message || err) };
+    return { ok: false, reason: "error", message: messageOf(err) };
   }
 
   return { ok: true, path: target, name: path.basename(target) };
 }
 
 /** Show the written file in Explorer — the toast's "Open the folder". */
-function revealExport(target) {
+function revealExport(target: string) {
   if (typeof target === "string" && target) shell.showItemInFolder(target);
 }
 

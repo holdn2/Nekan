@@ -1,12 +1,21 @@
 {
-  // The renderer. ES modules with the .js extension written out in every
-  // import, because there is no bundler and the browser resolves the specifier
-  // exactly as it is written. "preserve" is what keeps tsc from rewriting them.
+  // The renderer. Type checking only -- Vite emits it (see vite.config.ts).
+  // Imports still end in .js, which the browser used to resolve literally and
+  // the bundler now maps onto the .ts or .tsx of the same name; "preserve" is
+  // what keeps tsc from rewriting those specifiers underneath it.
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "module": "preserve",
     "moduleResolution": "bundler",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    // React's own transform: no React import needed in a .tsx, and the JSX is
+    // compiled by tsc and by Vite the same way.
+    "jsx": "react-jsx",
+    // Vite emits this project; tsc only reads it. Without this, `tsc -b` from
+    // the solution config writes a second copy of the renderer into out/
+    // beside the bundle -- including an out/renderer/app.js, which is the file
+    // index.html used to load before the bundler arrived.
+    "noEmit": true,
     "types": []
   },
   "include": ["src/renderer/**/*"],

@@ -8,6 +8,12 @@
   // every relative path in it.
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
+    // The one place that is not strict, and on purpose. Its 79 complaints are
+    // almost all "possibly null" about a value the test itself just built and
+    // is about to assert on -- a null there fails the test, loudly, which is
+    // the whole job of the file. Tightening it would buy a safety net for the
+    // safety net.
+    "strict": false,
     "rootDir": "test",
     "outDir": "out/test",
     "module": "nodenext",

@@ -329,7 +329,6 @@
     "quadQ3": "Urgent",
     "quadOther": "기타",
     "more": "더 보기 ({{count}}개 남음)",
-    "expand": "전체 보기",
     "noResults": "검색 결과가 없습니다.",
     "historyEmpty": "완료한 항목이 아직 없습니다.",
     "trashEmpty": "휴지통이 비어 있습니다.",

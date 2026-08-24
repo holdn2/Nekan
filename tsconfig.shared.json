@@ -26,7 +26,6 @@
     "tsBuildInfoFile": "out/.tsbuildinfo-shared",
     "module": "esnext",
     "moduleResolution": "bundler",
-    "strict": true,
     "types": [],
     "lib": ["ES2022"]
   },

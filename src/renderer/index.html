@@ -32,262 +32,13 @@
        have been applied; app.js drops it at the end of init(). -->
   <body class="expanded booting">
     <header class="titlebar">
-      <div class="brand">
-        <img class="logo" src="../assets/icon.png" alt="" />
-        <span class="title">Nekan</span>
-        <!-- Costs the bar nothing: collapsed.css drops it with the app name,
-             the way the export button goes. Only the number is here — the
-             update state and the release link are in the guide, which is where
-             someone goes to read rather than to work. -->
-        <span class="app-version" id="titleVersion"></span>
-      </div>
-
-      <!-- Which matrix is on screen. It sits in the title bar because it scopes
-           the whole app — the quadrants, the counts, history, trash and the
-           export all follow it. The one thing it does NOT scope is the inbox
-           below, which is why that panel says so on its own header. -->
-      <div
-        class="switch space-switch"
-        id="spaceSwitch"
-        role="group"
-        aria-label="Choose a matrix"
-        data-i18n="titlebar.boards"
-        data-i18n-attr="aria-label"
-        data-i18n-attr-only
-      >
-        <button
-          class="switch-btn active"
-          data-space="work"
-          aria-pressed="true"
-          data-i18n="space.work"
-        >
-          Work
-        </button>
-        <button
-          class="switch-btn"
-          data-space="life"
-          aria-pressed="false"
-          data-i18n="space.life"
-        >
-          Life
-        </button>
-      </div>
-
-      <div class="bar-summary" id="barSummary">
-        <!-- Hidden while the inbox is empty, so a visible count always means
-             "there is something you have not classified yet". -->
-        <button
-          class="chip inbox-chip hidden"
-          id="inboxChip"
-          data-jump="inbox"
-          aria-label="Tasks not sorted yet"
-          data-i18n="titlebar.countInbox"
-          data-i18n-attr="aria-label"
-          data-i18n-attr-only
-        >
-          <i class="dot inbox"></i><b id="cInbox">0</b>
-        </button>
-        <button
-          class="chip"
-          data-jump="q1"
-          aria-label="Urgent &amp; Important, remaining"
-          data-i18n="titlebar.countQ1"
-          data-i18n-attr="aria-label"
-          data-i18n-attr-only
-        >
-          <i class="dot q1"></i><b id="c1">0</b>
-        </button>
-        <button
-          class="chip"
-          data-jump="q2"
-          aria-label="Important &amp; Not Urgent, remaining"
-          data-i18n="titlebar.countQ2"
-          data-i18n-attr="aria-label"
-          data-i18n-attr-only
-        >
-          <i class="dot q2"></i><b id="c2">0</b>
-        </button>
-        <button
-          class="chip"
-          data-jump="q3"
-          aria-label="Urgent &amp; Not Important, remaining"
-          data-i18n="titlebar.countQ3"
-          data-i18n-attr="aria-label"
-          data-i18n-attr-only
-        >
-          <i class="dot q3"></i><b id="c3">0</b>
-        </button>
-        <button
-          class="chip"
-          data-jump="q4"
-          aria-label="Not Urgent &amp; Not Important, remaining"
-          data-i18n="titlebar.countQ4"
-          data-i18n-attr="aria-label"
-          data-i18n-attr-only
-        >
-          <i class="dot q4"></i><b id="c4">0</b>
-        </button>
-      </div>
-
-      <div class="win-actions">
-        <!-- The one button that is not always here. It appears only once a new
-             version has finished downloading, so seeing it at all is the
-             message; until then the update is silent and would be applied on
-             quit anyway. It stays in bar mode on purpose — that is where this
-             widget is usually left, and `BAR.width` is sized to hold it. -->
-        <button
-          class="win-btn hidden"
-          id="updateBtn"
-          title="Update ready"
-          aria-label="Update ready"
-          data-i18n="titlebar.updateReady"
-          data-i18n-attr="title,aria-label"
-          data-i18n-attr-only
-        >
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-            <circle
-              cx="8"
-              cy="8"
-              r="6.2"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.4"
-            />
-            <path
-              d="M8 11.4V5M5.4 7.6L8 5l2.6 2.6"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.4"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-        <!-- Theme and export used to be two buttons here. They are one panel
-             now, which costs the bar one button instead of two — and the dot
-             gives sync a signal the bar can afford, where the old 56px chip
-             could not. -->
-        <button
-          class="win-btn"
-          id="settingsBtn"
-          title="Settings"
-          aria-label="Settings"
-          aria-expanded="false"
-          data-i18n="settings.title"
-          data-i18n-attr="title,aria-label"
-          data-i18n-attr-only
-        >
-          <!-- A cog, not a circle with spokes: that reads as the sun icon the
-               theme button used to be, right next to where it used to sit. The
-               outline is generated rather than drawn by hand, so all eight
-               teeth are identical and evenly spaced. -->
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-            <path
-              d="M6.67 3.28L6.87 1.19L9.13 1.19L9.33 3.28L10.39 3.72L12.01 2.39L13.61 3.99L12.28 5.61L12.72 6.67L14.81 6.87L14.81 9.13L12.72 9.33L12.28 10.39L13.61 12.01L12.01 13.61L10.39 12.28L9.33 12.72L9.13 14.81L6.87 14.81L6.67 12.72L5.61 12.28L3.99 13.61L2.39 12.01L3.72 10.39L3.28 9.33L1.19 9.13L1.19 6.87L3.28 6.67L3.72 5.61L2.39 3.99L3.99 2.39L5.61 3.72Z"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.25"
-              stroke-linejoin="round"
-            />
-            <circle
-              cx="8"
-              cy="8"
-              r="2.4"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.25"
-            />
-          </svg>
-          <i class="sync-dot" aria-hidden="true"></i>
-        </button>
-        <button
-          class="win-btn"
-          id="pinBtn"
-          title="Always on top"
-          aria-label="Always on top"
-          data-i18n="titlebar.pin"
-          data-i18n-attr="title,aria-label"
-          data-i18n-attr-only
-        >
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-            <path
-              d="M6 1h4l-.6 4.2 2.4 2.3v1.2H8.7V15L8 15.8 7.3 15V8.7H2.2V7.5l2.4-2.3z"
-              fill="currentColor"
-            />
-          </svg>
-        </button>
-        <button
-          class="win-btn"
-          id="sizeBtn"
-          title="Shrink to the bar"
-          aria-label="Shrink to the bar"
-          data-i18n="titlebar.collapse"
-          data-i18n-attr="title,aria-label"
-          data-i18n-attr-only
-        >
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-            <rect
-              x="2"
-              y="3"
-              width="12"
-              height="10"
-              rx="1.5"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.4"
-            />
-            <path d="M2 6h12" stroke="currentColor" stroke-width="1.4" />
-          </svg>
-        </button>
-        <button
-          class="win-btn"
-          id="minBtn"
-          title="Minimise to the taskbar"
-          aria-label="Minimise to the taskbar"
-          data-i18n="titlebar.minimize"
-          data-i18n-attr="title,aria-label"
-          data-i18n-attr-only
-        >
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-            <path d="M3 8h10" stroke="currentColor" stroke-width="1.4" />
-          </svg>
-        </button>
-        <button
-          class="win-btn danger"
-          id="closeBtn"
-          title="Quit"
-          aria-label="Quit"
-          data-i18n="titlebar.close"
-          data-i18n-attr="title,aria-label"
-          data-i18n-attr-only
-        >
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-            <path
-              d="M4 4l8 8M12 4l-8 8"
-              stroke="currentColor"
-              stroke-width="1.5"
-            />
-          </svg>
-        </button>
-      </div>
+      <!-- Filled by window/chrome.tsx. The header stays here because the
+           stylesheet lays the window out by it and collapsed.css hides parts
+           of it by name. -->
     </header>
 
     <nav class="tabs">
-      <button class="tab active" data-tab="matrix" data-i18n="tabs.matrix">
-        Matrix
-      </button>
-      <!-- The label is wrapped so the badge beside it survives: the string pass
-           replaces an element's children, and a bare text node next to the
-           count would take the count with it. -->
-      <button class="tab" data-tab="history">
-        <span data-i18n="tabs.history">History</span>
-        <span class="badge" id="doneCount">0</span>
-      </button>
-      <button class="tab" data-tab="trash">
-        <span data-i18n="tabs.trash">Trash</span>
-        <span class="badge" id="trashCount">0</span>
-      </button>
-      <button class="tab" data-tab="guide" data-i18n="tabs.guide">Guide</button>
+      <!-- Filled by window/chrome.tsx -->
     </nav>
 
     <!-- "다 꺼내기": the staging list where tasks are written down before they
@@ -297,65 +48,14 @@
          included, so a task can be sent back up while the list is folded. -->
     <section id="inboxPanel" class="inbox" data-quad="inbox">
       <header class="inbox-head">
-        <button
-          class="inbox-toggle"
-          id="inboxToggle"
-          aria-expanded="false"
-          aria-controls="inboxBody"
-        >
-          <svg
-            class="chev"
-            viewBox="0 0 16 16"
-            width="11"
-            height="11"
-            aria-hidden="true"
-          >
-            <path
-              d="M6 3.5L10.5 8L6 12.5"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.6"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          <span class="inbox-label" data-i18n="inbox.title">Brain dump</span>
-          <!-- Says what the panel is, the way each quadrant's .sub does. It
-               used to be a bordered pill reading just "Shared", which named a
-               property without saying whose. -->
-          <span class="inbox-sub" data-i18n="inbox.shared"
-            >Shared by Work and Life</span
-          >
-          <span class="badge" id="inboxCount">0</span>
-        </button>
+        <!-- Filled by views/inbox.tsx -->
       </header>
       <div class="inbox-body" id="inboxBody">
-        <ul
-          class="inbox-list"
-          id="inboxList"
-          data-i18n="inbox.empty"
-          data-i18n-attr="data-empty"
-          data-i18n-attr-only
-        ></ul>
-        <form class="add inbox-add" id="inboxAdd">
-          <input
-            type="text"
-            id="inboxInput"
-            placeholder="Write anything (paste several lines to add one task per line)"
-            maxlength="200"
-            autocomplete="off"
-            data-i18n="inbox.placeholder"
-            data-i18n-attr="placeholder"
-            data-i18n-attr-only
-          />
-          <button
-            type="submit"
-            title="Add"
-            data-i18n="common.add"
-            data-i18n-attr="title"
-            data-i18n-attr-only
-          ></button>
-        </form>
+        <!-- data-empty is what the stylesheet writes into an empty list; the
+             component sets it, because :empty still has to match. -->
+        <ul class="inbox-list" id="inboxList"></ul>
+        <!-- Filled by views/inbox.tsx -->
+        <div id="inboxAddHost"></div>
       </div>
     </section>
 
@@ -363,193 +63,34 @@
          quadrant edges, so there are no separate splitter elements. -->
     <main id="matrixView" class="view matrix">
       <section class="quad q1" data-quad="q1">
-        <header>
-          <span class="dot q1"></span>
-          <h2 data-i18n="quad.q1.title">Urgent &amp; Important</h2>
-          <span class="sub" data-i18n="quad.q1.action">Do it now</span>
-          <span class="count" data-count="q1">0</span>
-        </header>
-        <ul
-          class="list"
-          data-list="q1"
-          data-i18n="matrix.empty"
-          data-i18n-attr="data-empty"
-          data-i18n-attr-only
-        ></ul>
-        <form class="add" data-add="q1">
-          <input
-            type="text"
-            placeholder="Add a task…"
-            maxlength="200"
-            autocomplete="off"
-            data-i18n="matrix.addPlaceholder"
-            data-i18n-attr="placeholder"
-            data-i18n-attr-only
-          />
-          <button
-            type="submit"
-            title="Add"
-            data-i18n="common.add"
-            data-i18n-attr="title"
-            data-i18n-attr-only
-          ></button>
-        </form>
+        <!-- Filled by views/matrix.tsx. The section stays here because
+             window/dnd.ts binds a drop zone to it. -->
       </section>
 
       <section class="quad q2" data-quad="q2">
-        <header>
-          <span class="dot q2"></span>
-          <h2 data-i18n="quad.q2.title">Important &amp; Not Urgent</h2>
-          <span class="sub" data-i18n="quad.q2.action">Plan it</span>
-          <span class="count" data-count="q2">0</span>
-        </header>
-        <ul
-          class="list"
-          data-list="q2"
-          data-i18n="matrix.empty"
-          data-i18n-attr="data-empty"
-          data-i18n-attr-only
-        ></ul>
-        <form class="add" data-add="q2">
-          <input
-            type="text"
-            placeholder="Add a task…"
-            maxlength="200"
-            autocomplete="off"
-            data-i18n="matrix.addPlaceholder"
-            data-i18n-attr="placeholder"
-            data-i18n-attr-only
-          />
-          <button
-            type="submit"
-            title="Add"
-            data-i18n="common.add"
-            data-i18n-attr="title"
-            data-i18n-attr-only
-          ></button>
-        </form>
+        <!-- Filled by views/matrix.tsx. The section stays here because
+             window/dnd.ts binds a drop zone to it. -->
       </section>
 
       <section class="quad q3" data-quad="q3">
-        <header>
-          <span class="dot q3"></span>
-          <h2 data-i18n="quad.q3.title">Urgent &amp; Not Important</h2>
-          <span class="sub" data-i18n="quad.q3.action">Delegate it</span>
-          <span class="count" data-count="q3">0</span>
-        </header>
-        <ul
-          class="list"
-          data-list="q3"
-          data-i18n="matrix.empty"
-          data-i18n-attr="data-empty"
-          data-i18n-attr-only
-        ></ul>
-        <form class="add" data-add="q3">
-          <input
-            type="text"
-            placeholder="Add a task…"
-            maxlength="200"
-            autocomplete="off"
-            data-i18n="matrix.addPlaceholder"
-            data-i18n-attr="placeholder"
-            data-i18n-attr-only
-          />
-          <button
-            type="submit"
-            title="Add"
-            data-i18n="common.add"
-            data-i18n-attr="title"
-            data-i18n-attr-only
-          ></button>
-        </form>
+        <!-- Filled by views/matrix.tsx. The section stays here because
+             window/dnd.ts binds a drop zone to it. -->
       </section>
 
       <section class="quad q4" data-quad="q4">
-        <header>
-          <span class="dot q4"></span>
-          <h2 data-i18n="quad.q4.title">Not Urgent &amp; Not Important</h2>
-          <span class="sub" data-i18n="quad.q4.action">Drop it</span>
-          <span class="count" data-count="q4">0</span>
-        </header>
-        <ul
-          class="list"
-          data-list="q4"
-          data-i18n="matrix.empty"
-          data-i18n-attr="data-empty"
-          data-i18n-attr-only
-        ></ul>
-        <form class="add" data-add="q4">
-          <input
-            type="text"
-            placeholder="Add a task…"
-            maxlength="200"
-            autocomplete="off"
-            data-i18n="matrix.addPlaceholder"
-            data-i18n-attr="placeholder"
-            data-i18n-attr-only
-          />
-          <button
-            type="submit"
-            title="Add"
-            data-i18n="common.add"
-            data-i18n-attr="title"
-            data-i18n-attr-only
-          ></button>
-        </form>
+        <!-- Filled by views/matrix.tsx. The section stays here because
+             window/dnd.ts binds a drop zone to it. -->
       </section>
     </main>
 
     <section id="historyView" class="view history hidden">
-      <div class="history-bar">
-        <input
-          type="search"
-          id="historySearch"
-          placeholder="Search completed tasks…"
-          autocomplete="off"
-          data-i18n="history.search"
-          data-i18n-attr="placeholder"
-          data-i18n-attr-only
-        />
-        <button
-          class="ghost danger"
-          id="clearHistory"
-          data-i18n="history.clearAll"
-        >
-          Move all to the trash
-        </button>
-      </div>
-      <div class="history-scroll">
-        <ul class="history-list" id="historyList"></ul>
-        <p class="empty" id="historyEmpty" data-i18n="archive.historyEmpty">
-          Nothing completed yet.
-        </p>
-      </div>
+      <!-- Filled by views/archive.tsx. The section stays here because
+           window/chrome shows and hides it when the tab changes. -->
     </section>
 
     <section id="trashView" class="view history hidden">
-      <div class="history-bar">
-        <input
-          type="search"
-          id="trashSearch"
-          placeholder="Search deleted tasks…"
-          autocomplete="off"
-          data-i18n="trash.search"
-          data-i18n-attr="placeholder"
-          data-i18n-attr-only
-        />
-        <button class="ghost" id="restoreAll" data-i18n="trash.restoreAll">
-          Restore all
-        </button>
-        <button class="ghost danger" id="emptyTrash" data-i18n="trash.empty">
-          Empty the trash
-        </button>
-      </div>
-      <div class="history-scroll">
-        <ul class="history-list" id="trashList"></ul>
-        <p class="empty" id="trashEmpty" data-i18n="archive.trashEmpty">
-          The trash is empty.
-        </p>
-      </div>
+      <!-- Filled by views/archive.tsx. The section stays here because
+           window/chrome shows and hides it when the tab changes. -->
     </section>
 
     <!-- Prose, not labels. Every paragraph is one key: a language breaks a
@@ -797,62 +338,8 @@
       data-i18n-attr="aria-label"
       data-i18n-attr-only
     >
-      <div class="memo-card">
-        <header class="memo-head">
-          <span class="dot" id="memoDot"></span>
-          <span class="memo-title" id="memoTitle"></span>
-          <button
-            class="memo-x"
-            id="memoClose"
-            title="Close the note"
-            aria-label="Close the note"
-            data-i18n="memo.close"
-            data-i18n-attr="title,aria-label"
-            data-i18n-attr-only
-          >
-            ✕
-          </button>
-        </header>
-        <div class="memo-body">
-          <p
-            class="memo-text"
-            id="memoText"
-            title="Double-click to edit"
-            data-i18n="memo.edit"
-            data-i18n-attr="title"
-            data-i18n-attr-only
-          ></p>
-          <!-- Two strings on one element: what the empty box invites, and what
-               a screen reader calls it. `attr=key` is how the second one gets
-               its own entry without a wrapper the stylesheet would trip on. -->
-          <textarea
-            id="memoInput"
-            placeholder="Write a note…"
-            aria-label="Note text"
-            maxlength="2000"
-            spellcheck="false"
-            data-i18n="memo.placeholder"
-            data-i18n-attr="placeholder,aria-label=memo.field"
-            data-i18n-attr-only
-          ></textarea>
-        </div>
-        <footer class="memo-foot">
-          <span class="memo-hint" id="memoHint"></span>
-          <button
-            class="ghost danger"
-            id="memoDelete"
-            data-i18n="common.delete"
-          >
-            Delete
-          </button>
-          <button class="ghost" id="memoCancel" data-i18n="common.cancel">
-            Cancel
-          </button>
-          <button class="primary" id="memoSave" data-i18n="common.save">
-            Save
-          </button>
-        </footer>
-      </div>
+      <!-- Filled by views/memo.tsx. The section stays here because the
+           layout sizes it and window/layout.js drags its top edge. -->
     </section>
 
     <!-- Everything that is set once rather than used constantly: the theme, the
@@ -872,239 +359,18 @@
       data-i18n-attr="aria-label"
       data-i18n-attr-only
     >
-      <header class="settings-head">
-        <h2 data-i18n="settings.title">Settings</h2>
-        <button
-          class="settings-close"
-          id="settingsClose"
-          aria-label="Close"
-          data-i18n="settings.close"
-          data-i18n-attr="aria-label"
-          data-i18n-attr-only
-        >
-          ×
-        </button>
-      </header>
-
-      <!-- A select, not the .switch the theme row uses. That pill is
-           `width: calc(50% - 2px)` and `translateX(100%)`, so it is only ever
-           right for exactly two options — reusing it here would break on the
-           day a third language lands, which is the whole point of this row. -->
-      <div class="settings-row">
-        <!-- A real <label>, not the <span> the other rows use: those sit beside
-             a group that carries its own aria-label, but a bare <select> next to
-             a <span> has no accessible name at all. -->
-        <label
-          class="settings-label"
-          for="languageSelect"
-          data-i18n="settings.language"
-          >Language</label
-        >
-        <select class="settings-select" id="languageSelect"></select>
-      </div>
-
-      <div class="settings-row">
-        <span class="settings-label" data-i18n="settings.theme">Theme</span>
-        <div
-          class="switch"
-          id="themeSeg"
-          role="group"
-          aria-label="Choose a theme"
-          data-i18n="settings.themeChoose"
-          data-i18n-attr="aria-label"
-          data-i18n-attr-only
-        >
-          <button
-            class="switch-btn"
-            data-theme="light"
-            aria-pressed="false"
-            data-i18n="settings.themeLight"
-          >
-            Light
-          </button>
-          <button
-            class="switch-btn"
-            data-theme="dark"
-            aria-pressed="false"
-            data-i18n="settings.themeDark"
-          >
-            Dark
-          </button>
-        </div>
-      </div>
-
-      <div class="settings-row">
-        <span class="settings-label" data-i18n="settings.export">Export</span>
-        <button class="settings-action" id="settingsExport">
-          PDF · HTML · Markdown
-          <kbd>Ctrl+E</kbd>
-        </button>
-      </div>
+      <!-- Filled by views/settings.tsx. The account block below is still
+           views/account.js's, which is why React fills a div rather than
+           the panel. -->
+      <div id="settingsBody"></div>
 
       <div class="settings-block">
         <span class="settings-label" data-i18n="settings.sync"
           >Sync across devices</span
         >
         <section class="account" id="account">
-          <div class="account-out" id="accountOut">
-            <button class="google-btn" id="googleBtn" type="button">
-              <svg
-                viewBox="0 0 18 18"
-                width="16"
-                height="16"
-                aria-hidden="true"
-              >
-                <path
-                  fill="#4285F4"
-                  d="M17.6 9.2c0-.6-.1-1.3-.2-1.9H9v3.5h4.8a4.1 4.1 0 0 1-1.8 2.7v2.2h2.9c1.7-1.6 2.7-3.9 2.7-6.5z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M9 18c2.4 0 4.5-.8 6-2.2l-2.9-2.3c-.8.6-1.9.9-3.1.9-2.4 0-4.4-1.6-5.1-3.8H.9v2.3A9 9 0 0 0 9 18z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M3.9 10.7a5.4 5.4 0 0 1 0-3.4V5H.9a9 9 0 0 0 0 8l3-2.3z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M9 3.6c1.3 0 2.5.5 3.4 1.3l2.6-2.6A9 9 0 0 0 .9 5l3 2.3C4.6 5.2 6.6 3.6 9 3.6z"
-                />
-              </svg>
-              <span data-i18n="account.google">Sign in with Google</span>
-            </button>
-
-            <!-- The other door into the same decision. Signing in is reachable
-                 from here as well as the first-run card, so the notice has to
-                 be in both or it leaks out of one of them. -->
-            <p class="account-hint">
-              <span data-i18n="legal.notice"></span>
-              <button
-                class="text-link"
-                id="accountPrivacy"
-                type="button"
-                data-i18n="legal.privacy"
-              >
-                Privacy policy
-              </button>
-            </p>
-
-            <!-- Only shown when there is something to lose. Somebody signing
-               in on a fresh machine has no decision to make and should not
-               be handed one. -->
-            <!-- The count is bold and the words around it change places
-                 between languages, so the sentence cannot be split in two here.
-                 views/account.js writes the whole span from one catalogue
-                 string and the <b> travels inside it. -->
-            <label class="account-adopt hidden" id="accountAdopt">
-              <input type="checkbox" id="adoptLocal" checked />
-              <span id="adoptText"></span>
-            </label>
-            <p
-              class="account-hint hidden"
-              id="adoptHint"
-              data-i18n="account.adoptHint"
-            ></p>
-
-            <!-- A development run only. The shipped app never registers this
-               channel, so this stays hidden there. -->
-            <form class="account-dev hidden" id="devLogin">
-              <input
-                type="email"
-                id="devEmail"
-                placeholder="Development email"
-                data-i18n="account.devEmail"
-                data-i18n-attr="placeholder"
-                data-i18n-attr-only
-              />
-              <input
-                type="password"
-                id="devPassword"
-                placeholder="Password"
-                data-i18n="account.devPassword"
-                data-i18n-attr="placeholder"
-                data-i18n-attr-only
-              />
-              <button type="submit" data-i18n="account.devSignIn">
-                Development sign-in
-              </button>
-            </form>
-          </div>
-
-          <div class="account-in hidden" id="accountIn">
-            <span class="account-who" id="accountEmail"></span>
-            <span class="account-state" id="accountState"></span>
-            <!-- The notice above this lives in the signed-out block, which is
-                 hidden the moment somebody signs in — so without this the
-                 people whose tasks are actually on the server were the only
-                 ones who could not reach the policy. -->
-            <button
-              class="text-link"
-              id="accountInPrivacy"
-              type="button"
-              data-i18n="legal.privacy"
-            >
-              Privacy policy
-            </button>
-            <button
-              class="account-out-btn"
-              id="logoutBtn"
-              type="button"
-              data-i18n="account.signOut"
-            >
-              Sign out
-            </button>
-          </div>
-
-          <!-- Only shown while signed in. Two steps on purpose: the first press
-               opens the explanation, the second one acts. "탈퇴" reads as
-               "everything goes", so what stays has to be said before the
-               irreversible button is on screen -- not in a toast afterwards. -->
-          <div class="account-danger hidden" id="accountDanger">
-            <button
-              class="account-leave-btn"
-              id="leaveBtn"
-              type="button"
-              data-i18n="account.leave"
-            >
-              Delete account
-            </button>
-
-            <div class="account-confirm hidden" id="leaveConfirm">
-              <!-- Both sentences carry their own <b> through the catalogue.
-                   Splitting them into bold and not-bold keys would be asking a
-                   translator for sentence fragments, and where the emphasis
-                   falls moves with the language. -->
-              <p
-                class="account-confirm-lede"
-                data-i18n="account.confirmLede"
-              ></p>
-              <p
-                class="account-confirm-keep"
-                data-i18n="account.confirmKeep"
-              ></p>
-              <div class="account-confirm-row">
-                <button
-                  class="account-confirm-cancel"
-                  id="leaveCancel"
-                  type="button"
-                  data-i18n="common.cancel"
-                >
-                  Cancel
-                </button>
-                <button
-                  class="account-confirm-go"
-                  id="leaveGo"
-                  type="button"
-                  data-i18n="account.confirmGo"
-                >
-                  Delete my account
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <p class="account-msg" id="accountMsg" role="status"></p>
+          <!-- Filled by views/account.tsx. The section stays here because
+               it sits inside the settings panel's last block. -->
         </section>
       </div>
     </section>
@@ -1113,136 +379,14 @@
          only moment where "this app can also use an account" can be said at
          all; put off, it becomes a feature nobody ever finds. -->
     <div class="welcome hidden" id="welcome">
-      <!-- The gear is behind this overlay, so this is the only way to change
-           language before the question is answered. Somebody whose machine
-           opened the app in a language they cannot read should not have to
-           decide where their tasks live first. -->
-      <select
-        class="settings-select welcome-lang"
-        id="welcomeLanguage"
-        aria-label="Language"
-        data-i18n="settings.language"
-        data-i18n-attr="aria-label"
-        data-i18n-attr-only
-      ></select>
-      <div class="welcome-card">
-        <img class="welcome-logo" src="../assets/icon.png" alt="" />
-        <h1>Nekan</h1>
-        <p class="welcome-lede" data-i18n="welcome.lede">
-          Where should your tasks live?
-        </p>
-
-        <button
-          class="welcome-choice recommended"
-          id="welcomeSync"
-          type="button"
-        >
-          <svg viewBox="0 0 18 18" width="18" height="18" aria-hidden="true">
-            <path
-              fill="#4285F4"
-              d="M17.6 9.2c0-.6-.1-1.3-.2-1.9H9v3.5h4.8a4.1 4.1 0 0 1-1.8 2.7v2.2h2.9c1.7-1.6 2.7-3.9 2.7-6.5z"
-            />
-            <path
-              fill="#34A853"
-              d="M9 18c2.4 0 4.5-.8 6-2.2l-2.9-2.3c-.8.6-1.9.9-3.1.9-2.4 0-4.4-1.6-5.1-3.8H.9v2.3A9 9 0 0 0 9 18z"
-            />
-            <path
-              fill="#FBBC05"
-              d="M3.9 10.7a5.4 5.4 0 0 1 0-3.4V5H.9a9 9 0 0 0 0 8l3-2.3z"
-            />
-            <path
-              fill="#EA4335"
-              d="M9 3.6c1.3 0 2.5.5 3.4 1.3l2.6-2.6A9 9 0 0 0 .9 5l3 2.3C4.6 5.2 6.6 3.6 9 3.6z"
-            />
-          </svg>
-          <span class="welcome-choice-text">
-            <b>
-              <span data-i18n="welcome.syncTitle"
-                >Sign in with Google and sync</span
-              >
-              <!-- Markup rather than a CSS `content` string. It used to be one,
-                   which put a word on screen that no catalogue could reach and
-                   that the untranslated sweep could not see. -->
-              <span class="welcome-badge" data-i18n="welcome.recommended"
-                >Recommended</span
-              >
-            </b>
-            <small data-i18n="welcome.syncSub">
-              The same list on every device
-            </small>
-          </span>
-        </button>
-
-        <button class="welcome-choice" id="welcomeLocal" type="button">
-          <svg viewBox="0 0 18 18" width="18" height="18" aria-hidden="true">
-            <rect
-              x="2.2"
-              y="3.4"
-              width="13.6"
-              height="9.4"
-              rx="1.4"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.4"
-            />
-            <path
-              d="M6 15.4h6"
-              stroke="currentColor"
-              stroke-width="1.4"
-              stroke-linecap="round"
-            />
-          </svg>
-          <span class="welcome-choice-text">
-            <b data-i18n="welcome.localTitle">Keep them on this computer</b>
-            <small data-i18n="welcome.localSub"
-              >Start right now, no account</small
-            >
-          </span>
-        </button>
-
-        <!-- Only when there is something to carry. A fresh install has nothing
-             to decide and should not be handed a decision. -->
-        <label class="welcome-adopt hidden" id="welcomeAdopt">
-          <input type="checkbox" id="welcomeAdoptBox" checked />
-          <span id="welcomeAdoptText"></span>
-        </label>
-
-        <p class="welcome-msg" id="welcomeMsg" role="status"></p>
-        <!-- The notice sits in the footer rather than under the sync button
-             because this card has to fit a 760x520 window, and the sync button
-             is the tallest thing in it. Both choices are still on screen. -->
-        <p class="welcome-foot">
-          <span data-i18n="welcome.foot"
-            >You can change this later in Settings.</span
-          >
-          <span class="welcome-foot-legal">
-            <span data-i18n="legal.notice"></span>
-            <button
-              class="text-link"
-              id="welcomePrivacy"
-              type="button"
-              data-i18n="legal.privacy"
-            >
-              Privacy policy
-            </button>
-          </span>
-        </p>
-      </div>
+      <!-- Filled by views/welcome.tsx. The overlay stays here because it
+           covers the window, title bar included, and the stylesheet hides it
+           by class. -->
     </div>
 
     <!-- Save confirmations and errors. Floats over everything so it never
          changes the layout the memo panel and the inbox are accounting for. -->
-    <div class="toast hidden" id="toast" role="status" aria-live="polite">
-      <span class="toast-text" id="toastText"></span>
-      <button
-        class="toast-act hidden"
-        id="toastAct"
-        type="button"
-        data-i18n="export.openFolder"
-      >
-        Open the folder
-      </button>
-    </div>
+    <div id="toastRoot"></div>
 
     <!-- One entry point. src/shared/ is compiled to ES modules, so the page
          imports it the same way the module graph imports everything else and

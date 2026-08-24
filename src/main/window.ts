@@ -26,7 +26,7 @@ import {
   collapseOrigin,
   needsStartupChoice,
 } from "../shared/core";
-import type { Point } from "../shared/types";
+import type { Point, Rect } from "../shared/types";
 import { SUPPORTED } from "../shared/i18n/locales";
 
 /** Where preload.js, the renderer and the icon live, from this folder. */
@@ -43,7 +43,7 @@ const EXPANDED = { width: 1000, height: 700, minWidth: 760, minHeight: 520 };
 // extra 20px is breathing room, not capacity.
 const BAR = { width: 684, height: 48 };
 
-let win = null;
+let win: BrowserWindow | null = null;
 let mode = "expanded";
 /**
  * True while the window is being placed by code rather than by the user.
@@ -64,9 +64,16 @@ const getWindow = () => win;
 /** 'expanded' | 'collapsed'. Main owns this; the renderer follows. */
 const getMode = () => mode;
 
-/** Keep the window inside a visible display, in case a monitor went away. */
-function sanitizeBounds(bounds) {
-  if (!bounds) return null;
+/**
+ * Keep the window inside a visible display, in case a monitor went away.
+ *
+ * Takes `unknown` because that is what it is handed: these come out of
+ * data.json, which anyone can edit and an older version wrote. A rectangle
+ * missing a number would otherwise reach setBounds and open the window
+ * somewhere nobody can see.
+ */
+function sanitizeBounds(bounds: unknown): Rect | null {
+  if (!isRect(bounds)) return null;
   const area = screen.getDisplayMatching(bounds).workArea;
   const width = Math.min(bounds.width, area.width);
   const height = Math.min(bounds.height, area.height);
@@ -75,15 +82,25 @@ function sanitizeBounds(bounds) {
   return { x, y, width, height };
 }
 
+/** Four finite numbers. Anything else is not a rectangle. */
+function isRect(value: unknown): value is Rect {
+  if (!value || typeof value !== "object") return false;
+  const r = value as Record<string, unknown>;
+  return (["x", "y", "width", "height"] as const).every((k) =>
+    Number.isFinite(r[k]),
+  );
+}
+
 /** A saved bar position, or null when there is none worth trusting. */
-function savedBarPosition() {
-  const at = getSettings().barPosition;
+function savedBarPosition(): Point | null {
+  const at = getSettings().barPosition as Point | undefined;
   if (!at || !Number.isFinite(at.x) || !Number.isFinite(at.y)) return null;
   return { x: at.x, y: at.y };
 }
 
 /** Where the bar was left. Position only — its size is a constant. */
 function rememberBarPosition() {
+  if (!win) return;
   const { x, y } = win.getBounds();
   getSettings().barPosition = { x, y };
 }
@@ -104,7 +121,8 @@ function rememberPlacement() {
  * Resize the window as part of a mode switch and record what was asked for.
  * The events this raises are ignored — see `switching`.
  */
-function placeWindow(bounds, remember) {
+function placeWindow(bounds: Rect | null, remember: (bounds: Rect) => void) {
+  if (!win || !bounds) return;
   switching = true;
   win.setBounds(bounds);
   remember(bounds);
@@ -151,6 +169,7 @@ function createWindow() {
   win.loadFile(path.join(SRC, "renderer", "index.html"));
 
   win.once("ready-to-show", () => {
+    if (!win) return;
     win.show();
     // Quitting from bar mode has to come back as the bar, where it was left —
     // the window was just built at the expanded bounds, which is somewhere else.
@@ -208,7 +227,7 @@ function collapse(at?: Point | null) {
   win.setMinimumSize(BAR.width, BAR.height);
   placeWindow(
     sanitizeBounds({ ...origin, width: BAR.width, height: BAR.height }),
-    (bar) => {
+    (bar: Rect) => {
       settings.barPosition = { x: bar.x, y: bar.y };
     },
   );
@@ -252,7 +271,7 @@ function expand() {
   win.setMinimumSize(EXPANDED.minWidth, EXPANDED.minHeight);
   placeWindow(
     sanitizeBounds({ ...expandOrigin(bar, size, area), ...size }),
-    (opened) => {
+    (opened: Rect) => {
       settings.bounds = opened;
     },
   );

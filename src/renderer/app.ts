@@ -18,51 +18,50 @@ import {
   startOfToday,
   startOfTomorrow,
 } from "../shared/core.js";
+import type { Task } from "../shared/types.js";
+
+/** The two shapes main pushes. Read off window.api so they cannot drift. */
+type UpdateStatus = Parameters<
+  Parameters<typeof window.api.onUpdateStatus>[0]
+>[0];
+type SyncStatus = Parameters<Parameters<typeof window.api.onSyncStatus>[0]>[0];
 import { acceptSynced, setClockOffset, setTasks } from "./store.js";
-import { subscribe } from "./render-bus.js";
+import { notify, subscribe } from "./render-bus.js";
 import { applyStaticStrings, currentLanguage, t } from "./i18n.js";
 import { $ } from "./dom.js";
 import { toast } from "./components/toast.js";
-import { relabelAddForms, renderMatrix, wireAddForms } from "./views/matrix.js";
-import {
-  applyInboxOpen,
-  focusInbox,
-  renderInbox,
-  wireInbox,
-} from "./views/inbox.js";
-import { renderHistory, renderTrash, wireArchive } from "./views/archive.js";
+import { mountMatrix } from "./views/matrix.js";
+import { applyInboxOpen, focusInbox, mountInbox } from "./views/inbox.js";
+import { mountArchive } from "./views/archive.js";
 import {
   announceOverwritten,
   applySession,
   applySyncStatus,
-  renderAccount,
+  mountAccount,
   setDevLogin,
-  wireAccount,
 } from "./views/account.js";
-import { dropStaleSelection, renderMemo, wireMemo } from "./views/memo.js";
-import { closeSettings, wireSettings } from "./views/settings.js";
+import { mountMemo } from "./views/memo.js";
+import { dropStaleSelection } from "./selection.js";
+import { mountSettings } from "./views/settings.js";
+import { closeSettings } from "./panels.js";
 import {
+  mountWelcome,
   needsWelcome,
-  relabelWelcome,
   showWelcome,
   wireWelcome,
 } from "./views/welcome.js";
 import {
-  applyMode,
   applyPinned,
   applySpace,
   applyTheme,
   applyUpdateStatus,
   applyVersion,
-  getMode,
   getTab,
-  relabelChrome,
-  renderCounts,
+  mountChrome,
   setTab,
-  toggleSize,
   toggleTheme,
-  wireChrome,
 } from "./window/chrome.js";
+import { applyMode, getMode, toggleSize } from "./window/mode.js";
 import { setLayout, wireMemoEdge, wireQuadEdges } from "./window/layout.js";
 import { wireDragAndDrop } from "./window/dnd.js";
 import { exportBoard } from "./window/export-ui.js";
@@ -70,38 +69,20 @@ import { exportBoard } from "./window/export-ui.js";
 /* -------------------------------------------------------------- rendering */
 
 /**
- * The one redraw. Everything that changes anything ends up here through the
- * render bus, and it always rebuilds the whole visible tab — there is no
- * partial update that could disagree with the store.
+ * What is left of the one redraw.
+ *
+ * It used to rebuild the whole visible tab, and every view is a component now
+ * -- each subscribes to the same signal this does and decides for itself
+ * whether it is on screen. What could not move is this: the selected id has to
+ * be forgotten when its task is completed, trashed or dragged out of the
+ * matrix, and no single view owns that.
+ *
+ * The panel does not depend on it having run. selectedTask() answers null for
+ * a task in any of those states, so the panel closes on the state; this only
+ * stops the id from lingering behind it.
  */
 function render() {
   dropStaleSelection();
-  renderCounts();
-  // Cheap, and above the bar-mode return: the title bar is all a bar has, and
-  // everything relabelChrome() rewrites was last set by a push that will not
-  // come again just because the language changed.
-  relabelChrome();
-  // Same reason, one tab further in: the add forms' due chips are built once and
-  // never rebuilt, so they would keep the old language until the matrix tab
-  // happened to redraw.
-  relabelAddForms();
-  // Same again, one screen further out: the first-run card is built once and
-  // sits above everything, so its merge line keeps the language and the count
-  // it was born with. A no-op while the card is not showing.
-  relabelWelcome();
-  // Cheap, and outside the bar-mode return below: the account block counts the
-  // tasks a sign-in would carry up, and that number moves with every change.
-  renderAccount();
-  // A bar shows nothing but its chips, and renderCounts already did those.
-  if (getMode() === "collapsed") return;
-  const tab = getTab();
-  if (tab === "matrix") {
-    renderInbox();
-    renderMatrix();
-  } else if (tab === "history") renderHistory();
-  else if (tab === "trash") renderTrash();
-  // the guide tab is static markup — nothing to render
-  renderMemo();
 }
 
 /* --------------------------------------------------------- day rollover */
@@ -111,7 +92,7 @@ function render() {
  * on screen for days. Without a rollover, an item added yesterday keeps its
  * orange "today" chip until some unrelated click happens to re-render.
  */
-let dayTimer = null;
+let dayTimer: ReturnType<typeof setTimeout> | null = null;
 let renderedDay = startOfToday().getTime();
 
 /** Redraw only if the date actually moved on. */
@@ -119,12 +100,16 @@ function refreshIfDayChanged() {
   const today = startOfToday().getTime();
   if (today === renderedDay) return;
   renderedDay = today;
-  render();
+  // notify(), not render(): render() is what the bus calls, and it only drops
+  // a selection that has gone stale. Every due date on screen is worded
+  // relative to today, so the day changing has to reach the components -- and
+  // they hear it the same way every other change reaches them.
+  notify();
 }
 
 /** Re-arm for the next local midnight, and keep re-arming after that. */
 function scheduleDayRollover() {
-  clearTimeout(dayTimer);
+  if (dayTimer) clearTimeout(dayTimer);
   // +1s of slack so a timer that fires a hair early doesn't re-render the
   // day that is still ending and then wait another 24h.
   const wait = startOfTomorrow().getTime() - Date.now() + 1000;
@@ -206,19 +191,19 @@ function wireShortcuts() {
  * here rather than inside applyMode() because chrome.js must not import
  * settings.js -- that direction is already taken.
  */
-function enterMode(next) {
+function enterMode(next: string) {
   if (next === "collapsed") closeSettings();
   applyMode(next);
 }
 
 /** Last mode pushed by the main process, which outranks the load snapshot. */
-let pushedMode = null;
+let pushedMode: string | null = null;
 /** Same for the update status, for the same reason. */
-let pushedUpdate = null;
+let pushedUpdate: UpdateStatus | null = null;
 /** Same again, for a sync that finished before the load snapshot arrived. */
-let pushedTasks = null;
+let pushedTasks: Task[] | null = null;
 /** And for its status, which is pushed on the same schedule. */
-let pushedSync = null;
+let pushedSync: SyncStatus | null = null;
 
 /**
  * Load, wire, draw. The order is what matters here: the mode listener before
@@ -261,7 +246,7 @@ async function init() {
   // out rather than going on showing an email it no longer has.
   window.api.onSyncStatus((next) => {
     pushedSync = next;
-    applySession(next.session);
+    applySession(next.session ?? null);
     applySyncStatus(next);
   });
 
@@ -280,19 +265,20 @@ async function init() {
   setLayout(state.settings?.layout);
 
   setDevLogin(state.devLogin);
-  wireSettings();
-  wireAccount();
+  mountSettings();
+  mountAccount();
   // The session follows the same rule as the mode and the update status: a
   // value that was pushed while load() was in flight is the newer one, and
   // state.auth would otherwise put a signed-out snapshot back on screen.
-  applySession(pushedSync ? pushedSync.session : state.auth);
+  applySession(pushedSync ? (pushedSync.session ?? null) : state.auth);
   applySyncStatus(pushedSync || state.sync);
 
-  wireChrome();
-  wireAddForms();
-  wireInbox();
-  wireArchive();
-  wireMemo();
+  mountChrome();
+  mountInbox();
+  mountMatrix();
+  mountWelcome();
+  mountArchive();
+  mountMemo();
   wireShortcuts();
   wireDragAndDrop();
   wireQuadEdges();

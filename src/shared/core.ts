@@ -46,6 +46,19 @@ export const QUADS: Quadrant[] = ["q1", "q2", "q3", "q4"];
 export const INBOX = "inbox" as const;
 /** Every place a task may legally sit. */
 export const PLACES: Place[] = [INBOX, ...QUADS];
+
+/**
+ * Is this one of them?
+ *
+ * For values read back out of the document, where the type is whatever the DOM
+ * says -- a string, or nothing at all. Worth checking rather than asserting:
+ * a quadrant the renderer does not know is not a visible error, it is a task
+ * that stops being drawn, because every list on screen is a filter on this
+ * field.
+ */
+export const isPlace = (value: unknown): value is Place =>
+  typeof value === "string" && (PLACES as string[]).includes(value);
+
 /** Where a task with an unknown quadrant lands. */
 export const FALLBACK_QUAD: Quadrant = "q4";
 
@@ -148,11 +161,10 @@ export function parseDue(value: unknown): Date | null {
 /**
  * What a due date *is*, relative to `now` — no words in it.
  *
- * This file is loaded twice, once by `require` and once as a classic script the
- * renderer runs ahead of its module graph, so it can hold neither a catalogue
- * nor the code to read one. That is why the split exists at all: the counting
- * lives here and the wording lives in `formatDue()` below, which is handed a
- * `t` rather than reaching for one.
+ * This file cannot hold a catalogue: main and the renderer each initialise
+ * their own i18next and this module knows about neither. That is why the split
+ * exists at all -- the counting lives here and the wording lives in
+ * `formatDue()` below, which is handed a `t` rather than reaching for one.
  *
  * `state` stays on this side even though it looks like presentation. It is what
  * the stylesheets colour the chip by, and moving it across would tie the CSS to

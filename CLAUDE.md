@@ -28,19 +28,36 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
     sync.ts        동기화 판정 (LWW·행 변환·커서·시계 오차). main/sync.ts가 쓴다
     auth.ts        세션 모양과 만료 판정. 렌더러에 나갈 필드를 여기서 고른다
     i18n/          ko.json · en.json · GLOSSARY.md · locales.ts (지원 목록과 기본값)
-  renderer/        ES 모듈. 번들러 없음 — import 경로에 `.js` 확장자를 반드시 쓴다
-    index.html     정적 마크업. <link> 15개와 <script> 하나
-    app.ts         진입점. render() 디스패처, 전역 단축키, init() 조립
+  renderer/        React. Vite가 묶는다 — import 경로에는 여전히 `.js`를 쓰고
+                   (`vite.config.mts`의 플러그인이 옆의 `.ts`/`.tsx`로 잇는다)
+    index.html     껍데기와 가이드 탭. <link> 15개, <script> 하나, 그리고 React가
+                   채울 빈 host들. 가이드 88문단만 아직 마크업이다
+    app.ts         진입점. 조립과 전역 단축키. render()는 한 줄이 됐다
     i18n.ts        렌더러 쪽 i18next. t · tNodes · applyStaticStrings · setLanguage
+                   (React 쪽 마크업 문자열은 react/rich-text.tsx)
     store.ts       tasks 배열과 모든 변경. DOM을 모른다 → commit()이 저장+notify
     render-bus.ts  "다시 그려라" 신호 하나. store·view → app 순환을 막는 장치
-    dom.ts         $ · $$ · target · numEl · actionBtn · labelBtn
+                   횟수도 센다 — React가 비교할 스냅샷이 그 숫자다
+    selection.ts   어느 task의 메모를 보고 있나. 매트릭스·타이틀바가 뷰를 import하지
+                   않고 이걸 본다
+    panels.ts      설정 패널이 열려 있나. 톱니바퀴는 타이틀바가 그리고 Escape는 문서에
+                   붙으므로, 뷰가 가질 수 없는 상태다
+    dom.ts         $ · $$ · target · labelBtn
     window-api.d.ts  window.api를 preload의 `typeof api`에서 받아 전역으로 선언
-    components/    icons · due-chip · memo-mark · toast (task를 모르는 조각들)
-    views/         matrix · inbox · archive · memo · inline-edit · account · settings · welcome
-    window/        chrome(타이틀바·탭·모드) · layout(분면 경계) · dnd · export-ui
+    components/    toast · due-chip · due-badge · memo-mark · memo-line ·
+                   editable-text · add-form (task를 모르는 조각들). 전부 .tsx다
+    react/         React 쪽 배관 — icons.tsx(아이콘)·window-icons.tsx(창 버튼)·
+                   brand-icons.tsx(구글 마크) · use-store.ts(훅) ·
+                   rich-text.tsx(문자열 속 <b>) · testing.tsx(테스트 헬퍼)
+    views/         matrix · inbox · archive · memo · account · settings · welcome
+                   **전부 .tsx다** (#73). inline-edit는 없어졌다 —
+                   components/editable-text.tsx가 그 일을 한다
+    window/        chrome.tsx(타이틀바·탭) · mode.ts(바/창) ·
+                   layout.ts · dnd.ts · export-ui.ts — 뒤의 셋은 React가 아니고
+                   그게 맞다: 그릴 마크업이 없고 기하·이벤트·한 번의 호출이다
     styles/        base부터 scrollbars까지 15개. index.html의 <link> 순서가 캐스케이드
                    switch.css만 영역이 아니라 부품이다 — 두 곳이 쓰므로 base 바로 뒤
+src/renderer/**/*.test.tsx  vitest용 컴포넌트 테스트 (소스 옆에 둔다)
 test/              node --test 용 단위 테스트 (shared/ 와 store-io만 커버)
 out/               `npm run build`가 만든다. 앱이 실제로 읽는 것은 전부 여기다
 tools/build.js     tsc 네 번 + 자산 22개 복사 + 고아 산출물 삭제
@@ -51,19 +68,45 @@ electron-builder가 싣는 것도 거기다. `npm start`·`npm test`·`npm run d
 있어 평소에는 의식할 일이 없지만, **`src/`를 고치고 앱만 다시 띄우면 옛 코드가 돈다.**
 `npm run build:watch`가 두 컴파일러를 watch로 띄우고 자산도 따라 복사한다.
 
-**tsconfig가 넷이고 각자 이유가 있다.**
+**tsconfig가 다섯이고 각자 이유가 있다. 그중 하나는 빌드가 아니라 에디터의 것이다.**
 
 - `tsconfig.shared.json` — `src/shared/`를 **ES 모듈로** 내보낸다. 그리고 **규칙이다**:
   `types: []` + DOM lib 없음이라 여기서 `fs`나 `document`를 만지면 **컴파일이 죽는다.**
-  `strict`도 여기만 켜져 있다 — 159개 테스트가 이 파일들을 덮고 있어서 컴파일러가 요구하는
-  수정에 안전망이 있다.
+  `strict`는 처음에 여기만 켰었다(테스트가 이 파일들을 덮으니 안전망이 있었다).
+  **2026-08-23에 `src/` 전체로 올라가 이제 `tsconfig.base.json`에 있다** — 렌더러 140개,
+  메인 105개를 고치고 나서다. 프로젝트별 `strict` 줄은 그래서 없다.
 - `tsconfig.main.json` — 메인과 preload. CommonJS. `composite`이라 선언 파일을 내보내고,
   렌더러가 그걸로 `window.api`의 타입을 얻는다.
-- `tsconfig.renderer.json` — `module: "preserve"`. **import 경로를 tsc가 다시 쓰지 않게
-  하는 것이 이 설정의 전부다** — 번들러가 없어 브라우저가 적힌 그대로 읽는다.
-- `tsconfig.test.json` — `out/test/`로 나간다. 테스트는 `#shared/*`·`#main/*`로 import한다
+- `tsconfig.renderer.json` — **Vite가 내보내고 tsc는 읽기만 한다**(`noEmit`).
+  `strict`를 켤 때 140개가 나왔는데 126개는 타입이 안 붙은 매개변수였고 **14개는 진짜**였다
+  — 그 목록은 그날 커밋 메시지에 있다. 한동안 "React로 옮긴 파일만" 담는 별도 설정
+  (`tsconfig.renderer.strict.json`)을 뒀다가 없앴다: `files:`는 울타리가 아니라 **import한 것까지
+  검사해서** 어차피 렌더러 전체로 번졌기 때문이다. 옛 커밋에서 그 이름을 보면 이 날짜로 읽을 것.
+  `module: "preserve"`로 import 경로를 tsc가 다시 쓰지 않게 두는데, 이제 그 경로를 읽는 것은
+  브라우저가 아니라 번들러다 — `.js`라고 적힌 것을 옆의 `.ts`·`.tsx`에 이어주는 일은
+  `vite.config.mts`의 플러그인이 한다. **`noEmit`을 빼면 `tsc -b`가 번들 옆에 렌더러를 한 벌 더
+  뱉는다** — `out/renderer/app.js`, 번들러가 생기기 전에 `index.html`이 읽던 바로 그 이름이다.
+- `tsconfig.test.json` — `out/test/`로 나간다. **`strict`가 꺼진 유일한 곳이고 의도한 것이다**:
+  79개 중 대부분이 "테스트가 방금 만들어 곧바로 단언할 값이 null일 수 있다"는 지적인데,
+  거기서 null이면 테스트가 요란하게 실패한다 — 그게 그 파일이 하는 일이다. 테스트는 `#shared/*`·`#main/*`로 import한다
   (`package.json`의 `imports`). `test/`가 `src/`보다 한 겹 위라 **소스와 산출물 양쪽에서
   맞는 상대 경로가 없기 때문이다.**
+- `tsconfig.json` — **아무것도 컴파일하지 않는다.** `files: []`에 위 넷을 `references`로만 적은
+  파일이고, 있는 이유는 하나다: **언어 서버는 정확히 `tsconfig.json`이라는 이름만 찾는다.**
+  이게 없으면 VS Code는 프로젝트를 못 찾아 모든 파일을 기본 설정으로 열고, **빌드에는 없는
+  오류를 뿌린다** — `window.api`를 모르고, `.tsx`에 JSX 플래그가 없다고 하고,
+  `node:test`를 default import 할 수 없다고 한다. 2026-08-23에 실측했다: 언어 서버 기준
+  `app.ts` 5개·`toast.tsx` 1개·`core.test.ts` 5개였고(`tsc`에 프로젝트 없이 물으면 `app.ts`
+  하나가 **254개**), 이 파일을 놓자 **46개 파일 전부 0개**가 됐다.
+  **그러니 "에디터가 빨간 줄을 뿌린다"는 신고를 받으면 `npm run typecheck`부터 돌리지 말 것** —
+  그 둘은 다른 질문이고, 통과해도 에디터는 계속 틀릴 수 있다.
+
+**에디터와 빌드는 아예 다른 컴파일러를 쓴다.** 저장소의 TypeScript는 7.0.2인데 **그 패키지에는
+`tsc`밖에 없다** — `tsserver`가 없어서(`bin`이 `{"tsc": ...}` 하나뿐) VS Code는 워크스페이스
+버전을 쓸 수 없고 자기 안에 든 5.x로 판정한다. `typescript.tsdk`를 `node_modules/typescript/lib`로
+돌리면 **언어 서버가 아예 안 뜬다.** 지금은 둘의 판정이 같지만(위 46개 파일 0개), 언젠가
+7만 아는 문법을 쓰면 **빌드는 통과하는데 에디터만 빨개지는** 형태로 갈라진다. 그때 고칠 곳은
+코드가 아니다.
 
 **`shared/`는 ESM 한 벌이고 메인·테스트는 그것을 `require`한다.** Node 22.12부터 되는 일이고
 (테스트 러너 22.20 · Electron 43의 24.18 양쪽에서 확인), `out/shared/package.json`에
@@ -180,8 +223,10 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   포트는 `listen(0)`으로 OS가 고른다 — 그래서 Supabase의 Redirect URL 허용목록에
   `http://127.0.0.1:*`가 있어야 한다. 와일드카드를 못 쓰게 되면 고쳐야 할 곳은 그 `listen(0)`
   한 줄이다. 앱 안 webview를 쓰면 **Google이 막는다.**
-- **콜백 서버는 `/callback`이 아닌 요청을 404로 흘려보낸다.** 브라우저가 보내는 favicon 요청
-  하나에 로그인이 끝나버리면 안 되기 때문이다.
+- **콜백 서버는 `/callback/<state>`가 아닌 요청을 전부 404로 흘려보낸다.** 브라우저가 보내는
+  favicon 요청 하나에 로그인이 끝나버리면 안 되기 때문이고, 같은 기기의 다른 프로세스가
+  `?error=`를 먼저 때려 로그인을 취소시키는 것도 막는다. **`/callback`만 받고 state를 쿼리로
+  검사하는 형태로 바꾸면 안 된다** — 아래 "state를 경로에 둔 이유"를 볼 것.
 - **브라우저 마지막 화면에 "로그인되었습니다"라고 쓰지 말 것.** 그 시점에 일어난 일은 코드가
   돌아온 것뿐이고, 교환은 그 다음에 실패할 수 있다. 판정은 앱이 한다.
 
@@ -317,6 +362,12 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   **2026-08-19에 `BAR.width`가 684가 됐다.** 칩의 `gap`이 4 → 6px이 되면서 들어가는 최소 폭이
   633 → **657px**(영어)로 뛰어 660 기준 여유가 **3px**만 남았다. 줄이는 대신 바를 넓혀 갚았고,
   지금 여유는 한국어 **41px** · 영어 **27px**(들어가는 최소 폭 643 / 657)이다. **영어가 늘 최악이다.**
+  **2026-08-23에 타이틀바가 React가 되면서 다시 쟀다: 한국어 49px · 영어 35px**(들어가는 최소
+  폭 635 / 649). 여덟 픽셀이 늘었고, 줄어든 것이 아니라 늘어난 것이므로 무언가 빠진 것은
+  아닌지 세어 확인했다 — 창 버튼 6개·칩 5개·스위치·브랜드 전부 있고 넘침 0이다.
+  **재는 방법은 그대로다**(뷰포트를 1px씩 줄여 `.titlebar`의 `scrollWidth > clientWidth`가
+  처음 참이 되는 폭을 찾는다). 이제는 `renderCounts()` 대신 컴포넌트가 개수를 되돌리므로,
+  **접은 다음에 숫자를 바꾸라는 규칙은 그대로 유효하다.**
   칩 하나의 `gap` 2px이 24px을 먹는다 — 칩이 다섯이고 그 뒤가 눌리기 때문이다.
   이 override 방식을 쓰는 이유가 하나 더 있다: **가려진 Electron 창은 리레이아웃을 하지 않아서**
   진짜로 `collapse()`를 해도 `window.innerWidth`가 확장 모드 값을 계속 돌려준다
@@ -434,8 +485,14 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
 ## 작업 규칙
 
 - 코드 주석/커밋 메시지는 영어, 사용자 대화와 문서는 한국어.
-- **렌더러 import 경로에는 `.js` 확장자를 반드시 쓴다.** 번들러가 없어서 브라우저 해석기가
-  그대로 읽는다 — `from './store'`는 404로 죽는다.
+  **다만 주석이 화면에 나가는 낱말을 인용할 때는 한글 그대로 둔다** — `"동기화 중"`,
+  `"다 꺼내기"`, 업무/일상처럼. 규칙은 주석의 **문장**에 관한 것이고, 인용을 영어로 옮기면
+  그 주석이 가리키는 카탈로그 값과 이어지지 않는다. 지금 스무 곳쯤이 그렇게 쓰고 있다.
+  리뷰 도구는 이 둘을 구분하지 못하니 지적을 받으면 어느 쪽인지 먼저 볼 것.
+- **렌더러 import 경로에는 `.js` 확장자를 반드시 쓴다.** 번들러가 생기기 전에는 브라우저가
+  그대로 읽어서였고(`from './store'`는 404였다), 지금은 `vite.config.mts`의 플러그인이 그
+  `.js`를 옆의 `.ts`·`.tsx`에 잇는다. **규칙은 그대로다** — 확장자를 빼면 그 플러그인이
+  아무것도 잇지 못한다.
 - **조작 설명은 가이드 탭이 원본이고, README는 그 밖의 전부다.** 경계는 "앱을 쓰는 데 필요한가"
   하나다 — 필요하면 `guide.*` 카탈로그(두 언어)에 적고, 몰라도 되는 것(구현·근거·설치·개발)은
   README에 적는다. **가이드 탭만 보고도 앱을 다 쓸 수 있어야 한다**는 것이 합격 기준이다.
@@ -521,9 +578,23 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
 
 ## 검증
 
-`npm test` (`node --test`, 추가 의존성 없음) 가 `src/shared/`의 순수 함수만 덮는다 —
-데이터가 날아가는 규칙(정규화 기본값, quadrant 유효성, temp+rename 저장, 손상 파일 폴백)이
-여기 들어 있으니 이 파일들을 건드렸으면 반드시 돌린다. UI는 커버되지 않는다.
+**`npm test`가 러너 둘을 돌린다.** `node --test`가 `out/test/`의 159개로 `src/shared/`의 순수
+함수를 덮고 — 데이터가 날아가는 규칙(정규화 기본값, quadrant 유효성, temp+rename 저장, 손상
+파일 폴백)이 거기 있으니 그 파일들을 건드렸으면 반드시 돌린다 — 이어서 `vitest run`이
+**React로 옮긴 렌더러 조각**을 덮는다.
+
+**러너가 둘인 이유**: 번들러가 생기면서 렌더러가 **Node가 require할 수 있는 파일로 존재하지
+않게 됐다.** Vite가 한 덩어리로 묶으니 모듈 단위로 import할 것이 없다. vitest는 그 Vite 파이프라인을
+그대로 지나므로 **테스트가 보는 코드가 실제로 나가는 코드**이고, 테스트 전용 컴파일 대상을 하나 더
+두지 않아도 된다. 설정은 `vitest.config.mts`, 헬퍼는 `src/renderer/react/testing.tsx`
+(`mount` · `flush` · `find` · `hidden`).
+
+**컴포넌트 테스트는 소스 옆에 둔다** (`src/renderer/**/*.test.tsx`). 진입점이 `index.html`이라
+거기서 닿지 않는 파일은 **번들에 들어가지 않는다** — 확인했다. 맞춰야 할 glob도 없다.
+
+**아직 React가 아닌 렌더러 코드(약 89%)는 여전히 커버되지 않는다.** 손으로 만든 DOM은 Electron을
+띄워야만 검사할 수 있고, 그래서 아래 CDP 절차가 그대로 필요하다. **뷰를 React로 옮길 때마다
+테스트를 함께 달 것** — 그게 이 마이그레이션이 주는 유일한 안전망이다.
 
 **사용자가 패키징된 exe를 띄워둔 채인 경우가 많고, 그러면 단일 인스턴스 락 때문에
 `npm start`가 조용히 죽는다.** 사용자 앱을 끄지 말고 데이터 폴더를 갈라서 띄울 것:
@@ -610,6 +681,17 @@ npx electron . --user-data-dir=<B> --remote-debugging-port=9334
 **메인 프로세스 코드는 `location.reload()`로 갱신되지 않는다.** 렌더러만 다시 그려질 뿐이고,
 `main/window.ts`의 상수를 고친 뒤 리로드해서 재면 **옛 값이 계속 나온다** — 2026-08-19에
 `BAR.width`를 684로 바꾸고도 660이 나와서 한참 헤맸다. 메인을 건드렸으면 **앱을 다시 띄울 것.**
+
+**IME 경로는 한글로 눌러봐야만 보인다.** 조합 중의 `keydown`은 `isComposing: true`를 달고
+오는데(2026-08-22 실측), 그걸 안 보면 **조합을 확정하는 Enter가 편집도 함께 끝내고 조합을
+취소하는 Escape가 편집도 취소한다.** 영어로 누르면 조합이 없어서 검증을 그냥 통과한다 —
+인라인 편집과 메모 textarea가 실제로 그랬다. 진짜 조합은 CDP로 만들 수 있다:
+`Input.imeSetComposition`에 `ㅎ` → `하` → `한`을 차례로 보내면 값이 실제로 조합되고,
+이어서 `Input.dispatchKeyEvent`로 보낸 키가 `isComposing`을 달고 도착한다.
+**`Page.bringToFront`를 먼저 보내지 않으면 포커스가 입력란에 없어서 조합이 아예 안 들어가고**,
+그러면 "가드가 안 먹는다"로 잘못 읽는다(빈 `keydown` 목록이 그 신호다).
+텍스트를 받는 곳을 새로 만들면 `e.isComposing`을 핸들러 맨 앞에서 볼 것 — 폼의 `submit`은
+브라우저가 조합 중 Enter를 삼켜서 이 문제가 없다.
 
 **CDP 입력이 안 먹는 것처럼 보이면 먼저 무엇이 덮고 있는지 본다.** `Input.dispatchMouseEvent`가
 무시되는 줄 알고 OS 마우스(`SendInput`)로 갈아타 좌표 보정에 오래 썼는데, 실제로는 **첫 실행

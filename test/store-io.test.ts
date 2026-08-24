@@ -5,16 +5,27 @@ import os from "node:os";
 import path from "node:path";
 
 import { defaultStore, loadStore, writeStore } from "#main/store-io.js";
+import type { Store } from "#main/store-io.js";
 import { DEFAULT_SPACE } from "#shared/core.js";
 
 function tmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "em-store-"));
 }
 
+/**
+ * A row that is deliberately not a Task.
+ *
+ * These tests are about the file, not about the schema: loadStore does not
+ * normalise, so what it hands back is whatever was on disk, and the point of
+ * several of them is to put something odd there. Saying that with a cast is
+ * more honest than padding the fixtures out into valid tasks they are not.
+ */
+const rows = (...list: unknown[]) => list as Store["tasks"];
+
 test("writeStore round-trips through loadStore", () => {
   const target = path.join(tmpDir(), "nested", "data.json");
   const store = defaultStore();
-  store.tasks = [{ id: "a", text: "할 일", quadrant: "q1" }];
+  store.tasks = rows({ id: "a", text: "할 일", quadrant: "q1" });
 
   assert.equal(writeStore(target, store), true);
   assert.deepEqual(loadStore(target).tasks, store.tasks);
@@ -31,13 +42,13 @@ test("an interrupted write cannot truncate the previous file", () => {
   const dir = tmpDir();
   const target = path.join(dir, "data.json");
   const good = defaultStore();
-  good.tasks = [{ id: "a", text: "keep me", quadrant: "q1" }];
+  good.tasks = rows({ id: "a", text: "keep me", quadrant: "q1" });
   writeStore(target, good);
 
   // A value JSON.stringify throws on: the temp write fails mid-save.
   const broken = defaultStore();
-  broken.tasks = [{ id: "b", text: "x", self: null }];
-  broken.tasks[0].self = broken.tasks[0];
+  broken.tasks = rows({ id: "b", text: "x", self: null });
+  (broken.tasks[0] as unknown as { self: unknown }).self = broken.tasks[0];
   assert.equal(writeStore(target, broken), false);
 
   assert.deepEqual(loadStore(target).tasks, good.tasks);
@@ -85,7 +96,7 @@ test("the legacy store is copied once, and never over an existing file", () => {
   assert.equal(loadStore(target, legacy).tasks[0].id, "old");
 
   const current = defaultStore();
-  current.tasks = [{ id: "new", text: "new", quadrant: "q1" }];
+  current.tasks = rows({ id: "new", text: "new", quadrant: "q1" });
   writeStore(target, current);
   assert.equal(loadStore(target, legacy).tasks[0].id, "new");
 });

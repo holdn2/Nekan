@@ -10,6 +10,7 @@
  * the logic lives in those modules, not here.
  */
 
+import type { PublicSession } from "../shared/types";
 import { app, ipcMain, shell } from "electron";
 
 /** Where the guide tab's link goes. */
@@ -136,7 +137,7 @@ function registerIpc() {
   ipcMain.handle("settings:language", (_e, next) => {
     const settings = getSettings();
     settings.language = storedLanguage(next) || settings.language;
-    setMainLanguage(settings.language);
+    setMainLanguage(settings.language as string);
     persist();
     return settings.language;
   });
@@ -217,7 +218,9 @@ function registerIpc() {
   // is read here rather than passed in, so the renderer cannot pick the page
   // either -- there is nothing on this channel for a task's text to steer.
   ipcMain.handle("legal:privacy", () =>
-    shell.openExternal(PRIVACY_URL[language()] || PRIVACY_URL.en),
+    shell.openExternal(
+      (PRIVACY_URL as Record<string, string>)[language()] || PRIVACY_URL.en,
+    ),
   );
 
   /* -------------------------------------------------------------- auth */
@@ -238,7 +241,7 @@ function registerIpc() {
    * rows are copied aside first, because being asked to leave them out is not
    * being asked to destroy them.
    */
-  function adoptLocalTasks(mode) {
+  function adoptLocalTasks(mode: string) {
     if (mode !== "replace") return;
     // Nothing is cleared unless the copy is actually on disk. writeStore can
     // fail -- a full disk, a locked file -- and clearing anyway would destroy
@@ -257,7 +260,10 @@ function registerIpc() {
     announceTasks();
   }
 
-  async function afterSignIn(result, mode) {
+  async function afterSignIn(
+    result: { ok?: boolean; session?: PublicSession | null },
+    mode: string,
+  ) {
     if (!result.ok || !result.session) return result;
     // No user id, nothing to scope a sync to -- and syncAccount(null) would
     // quietly turn syncing off, leaving a signed-in app whose tasks never go

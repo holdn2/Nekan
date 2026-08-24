@@ -53,7 +53,15 @@ const MIN_GAP_MS = 30 * 60 * 1000;
  * `ready`. A button offering a restart that cannot happen is a dead button;
  * a sentence in a tab someone opened on purpose is not.
  */
-let status = { state: "idle", version: null, checkedAt: null };
+interface UpdateState {
+  state: string;
+  /** The version on offer, once there is one. */
+  version: string | null;
+  /** When the server last answered -- not when we last asked. See askedAt. */
+  checkedAt: number | null;
+}
+
+let status: UpdateState = { state: "idle", version: null, checkedAt: null };
 let notify: (status: any) => void = () => {};
 /**
  * When we last *asked*, which is not `status.checkedAt` — that only moves when
@@ -62,12 +70,12 @@ let notify: (status: any) => void = () => {};
  */
 let askedAt = 0;
 /** The next scheduled ask, so that any earlier ask can move it. */
-let timer = null;
+let timer: ReturnType<typeof setTimeout> | null = null;
 
 /** The last thing the updater learnt, for state:load to hand a fresh renderer. */
 const getUpdateStatus = () => status;
 
-function setStatus(state, version = null) {
+function setStatus(state: string, version: string | null = null) {
   status = {
     state,
     version,
@@ -90,7 +98,7 @@ function check() {
   // check landing shortly before a tick gets that tick thrown away by the
   // throttle, and the next one is a further six hours out — up to six and a
   // half hours between asks, from a change whose whole point was to shorten it.
-  clearTimeout(timer);
+  if (timer) clearTimeout(timer);
   timer = setTimeout(checkIfDue, CHECK_EVERY_MS);
   autoUpdater.checkForUpdates().catch(() => {});
 }
@@ -117,7 +125,7 @@ function checkIfDue() {
  * passes one that forwards it to the renderer, so this file needs to know
  * nothing about windows.
  */
-function initUpdater(onStatus) {
+function initUpdater(onStatus: (status: UpdateState) => void) {
   notify = typeof onStatus === "function" ? onStatus : () => {};
 
   // An unpackaged run has no app-update.yml to read a feed out of, and nobody
@@ -150,10 +158,10 @@ function initUpdater(onStatus) {
   );
   autoUpdater.on(
     "update-available",
-    unlessReady((info) => setStatus("downloading", info.version)),
+    unlessReady((info) => setStatus("downloading", info?.version ?? null)),
   );
-  autoUpdater.on("update-downloaded", (info) =>
-    setStatus("ready", info.version),
+  autoUpdater.on("update-downloaded", (info: UpdateInfo) =>
+    setStatus("ready", info?.version ?? null),
   );
   autoUpdater.on("error", (err) => {
     console.error("update failed", err?.message || err);

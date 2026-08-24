@@ -10,11 +10,12 @@
  * on document (for the rows, which are rebuilt on every render).
  */
 
+import { isPlace } from "../../shared/core.js";
 import { $, $$, target } from "../dom.js";
 import { moveTask } from "../store.js";
 
 /** The row the dragged one should be inserted before, or undefined for last. */
-function afterElement(list, y) {
+function afterElement(list: HTMLElement, y: number) {
   const items = $$(".item:not(.dragging)", list);
   return items.find((el) => {
     const box = el.getBoundingClientRect();
@@ -27,11 +28,13 @@ const dropZones = () => [...$$(".quad"), $("#inboxPanel")];
 
 /** Bind the drag handlers. Called once; the zones outlive every render. */
 export function wireDragAndDrop() {
-  let draggingId = null;
+  let draggingId: string | null = null;
 
   document.addEventListener("dragstart", (e) => {
     const item = target(e).closest?.(".item") as HTMLElement | null;
-    if (!item) return;
+    // No id means no task to move, and no dataTransfer means this is not
+    // really a drag -- neither is worth starting one for.
+    if (!item?.dataset.id || !e.dataTransfer) return;
     draggingId = item.dataset.id;
     item.classList.add("dragging");
     e.dataTransfer.effectAllowed = "move";
@@ -49,12 +52,11 @@ export function wireDragAndDrop() {
     // sent back up while the list is folded. afterElement then measures hidden
     // rows as zero-height and finds no insertion point, which lands the task at
     // the end — the right answer for a drop on a collapsed header.
-    const list = $(".list, .inbox-list", zone);
 
     zone.addEventListener("dragover", (e) => {
       if (!draggingId) return;
       e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
+      if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
       zone.classList.add("drop");
     });
 
@@ -66,10 +68,19 @@ export function wireDragAndDrop() {
     zone.addEventListener("drop", (e) => {
       e.preventDefault();
       zone.classList.remove("drop");
-      const id = draggingId || e.dataTransfer.getData("text/plain");
+      const id = draggingId || e.dataTransfer?.getData("text/plain");
       if (!id) return;
+      // Resolved here rather than when the handler was bound: the lists are
+      // React's now, and an element captured at startup would be the one it
+      // replaced -- a drop would then measure nothing and land at the end.
+      const list = $(".list, .inbox-list", zone);
       const before = afterElement(list, e.clientY);
-      moveTask(id, zone.dataset.quad, before ? before.dataset.id : null);
+      // The drop zone names its quadrant in the markup, so this is only ever
+      // one of the five -- but it arrives as whatever the DOM has, and writing
+      // an unknown one into a task would take that task off the screen.
+      const quad = zone.dataset.quad;
+      if (!isPlace(quad)) return;
+      moveTask(id, quad, before?.dataset.id ?? null);
     });
   });
 }
