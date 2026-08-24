@@ -113,7 +113,11 @@ function InboxList() {
     // a quadrant does it. An attribute rather than an element, because the
     // rule is `:empty::after` -- an element saying "nothing here" would be a
     // child, and then the list is not empty any more.
-    <ul className="inbox-list" id="inboxList" data-empty={t("inbox.empty")}>
+    <ul
+      className="inbox-list m-[0px] min-h-[0px] shrink list-none overflow-y-auto p-sm"
+      id="inboxList"
+      data-empty={t("inbox.empty")}
+    >
       {items.map((task, i) => (
         <InboxRow key={task.id} task={task} index={i} />
       ))}
@@ -137,7 +141,14 @@ function InboxHead() {
   useRenderSignal();
   return (
     <button
-      className="inbox-toggle"
+      className={cn(
+        // Spans the row so the count can sit at the far right, the way the
+        // quadrant headers and the tab badges do. A header that stopped
+        // halfway also looked clickable only halfway.
+        "inbox-toggle group flex min-w-[0px] flex-auto items-center gap-md",
+        "border-0",
+        "bg-transparent px-xl py-md font-medium hover:text-accent",
+      )}
       id="inboxToggle"
       type="button"
       aria-expanded={inboxOpen}
@@ -148,12 +159,19 @@ function InboxHead() {
           document.querySelector<HTMLInputElement>("#inboxInput")?.focus();
       }}
     >
-      <ChevronIcon />
+      <ChevronIcon open={inboxOpen} />
       <span className="inbox-label">{t("inbox.title")}</span>
       {/* Says what the panel is, the way each quadrant's .sub does. It used to
           be a bordered pill reading just "Shared", which named a property
           without saying whose. */}
-      <span className="inbox-sub">{t("inbox.shared")}</span>
+      <span
+        className={cn(
+          "inbox-sub min-w-[0px] shrink basis-auto overflow-hidden text-xs",
+          "whitespace-nowrap text-ellipsis text-faint",
+        )}
+      >
+        {t("inbox.shared")}
+      </span>
       <Badge id="inboxCount">
         <InboxCount />
       </Badge>
@@ -206,12 +224,28 @@ function InboxAdd() {
  * after every render.
  */
 function InboxPanel() {
+  // The fold is React's answer, not a stylesheet's. It used to be
+  // `section.inbox.open .inbox-body`, which stopped working the moment the body
+  // carried `hidden`: that is a utility now, and utilities are a later layer
+  // than the hand-written rules, so it won however specific the rule was.
+  useRenderSignal();
   return (
     <>
-      <header className="inbox-head">
+      <header className="inbox-head flex flex-none items-center gap-lg pr-xl">
         <InboxHead />
       </header>
-      <div className="inbox-body" id="inboxBody">
+      {/* A column so the shrink lands on the list and not on the add form: the
+          input is the whole point of the panel and must not be the part that
+          gets squeezed out. Shown only when the panel is open -- the class on
+          the section is what says so, and inbox.css still carries that one
+          rule because the section is index.html's. */}
+      <div
+        className={cn(
+          "inbox-body min-h-[0px] shrink flex-col border-t border-line",
+          inboxOpen ? "flex" : "hidden",
+        )}
+        id="inboxBody"
+      >
         <InboxList />
         <InboxAdd />
       </div>

@@ -35,7 +35,15 @@
     <!-- The section is here because it is a drop zone, a flex child the
          layout measures, and the element whose `open` class sets the panel's
          height. Everything inside it is views/inbox.tsx's. -->
-    <section id="inboxPanel" class="inbox" data-quad="inbox"></section>
+    <!-- `inbox` stays a class: it is a `quadrant` value as well as this panel,
+         and collapsed.css and the drop-target code both reach for it by name.
+         Shrinkable but never growing, so the matrix keeps what this does not
+         use; min-h-0 is what lets the shrink reach the list inside. -->
+    <section
+      id="inboxPanel"
+      class="inbox mx-xl mt-md flex min-h-[0px] shrink flex-col overflow-hidden rounded-panel border border-line bg-panel shadow-default transition-[border-color] duration-[120ms]"
+      data-quad="inbox"
+    ></section>
 
     <!-- A 2×2 grid: the shared row/column lines are dragged straight from the
          quadrant edges, so there are no separate splitter elements. -->

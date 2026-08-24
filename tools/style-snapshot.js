@@ -105,6 +105,12 @@ const PROPS = [
   "webkitLineClamp",
   "pointerEvents",
   "transitionProperty",
+  // Tailwind v4 rotates, scales and translates with the independent CSS
+  // properties rather than through `transform`, so a rotated chevron reads
+  // as `transform: none` and looks like a rotation that stopped working.
+  "rotate",
+  "scale",
+  "translate",
 ];
 
 /** Runs inside the page. Returns JSON, because CDP hands back a value. */

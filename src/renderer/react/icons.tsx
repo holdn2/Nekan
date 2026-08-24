@@ -13,6 +13,8 @@
  * button, not to the drawing -- hence aria-hidden throughout.
  */
 
+import { cn } from "./cn.js";
+
 /**
  * The cross: the delete mark on a task row, and the memo panel's close button.
  *
@@ -129,11 +131,22 @@ export function CalendarIcon() {
   );
 }
 
-/** The brain dump's fold/unfold arrow. Rotated by CSS, not redrawn. */
-export function ChevronIcon() {
+/**
+ * The brain dump's fold/unfold arrow. Rotated rather than redrawn.
+ *
+ * Points right when folded, down when open -- the only moving part of the
+ * header, so it carries the whole open/closed signal. Which way it points is
+ * inbox.css's one remaining rule, because the state lives as a class on the
+ * <section> that index.html owns.
+ */
+export function ChevronIcon({ open }: { open?: boolean }) {
   return (
     <svg
-      className="chev"
+      className={cn(
+        "chev flex-none text-faint transition-transform duration-[150ms]",
+        "group-hover:text-accent",
+        open && "rotate-90",
+      )}
       viewBox="0 0 16 16"
       width="11"
       height="11"

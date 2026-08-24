@@ -37,7 +37,10 @@ export function AddForm({ place, placeholderKey, withDue, onPaste }: Props) {
 
   return (
     <form
-      className={withDue ? "add" : "add inbox-add"}
+      // The dump's add box never gives up height: when the window is too short
+      // the list above shrinks and scrolls, because a panel you cannot type
+      // into is not a smaller panel, it is a broken one.
+      className={withDue ? "add" : "add inbox-add flex-none"}
       data-add={place}
       onSubmit={(e) => {
         e.preventDefault();
