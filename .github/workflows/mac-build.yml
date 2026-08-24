@@ -99,21 +99,42 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Refuse to publish when there is no release to publish into
+      # Two ways to answer no, and they are different mistakes.
+      #
+      # No release at all: the halves ran out of order. Windows makes the draft.
+      #
+      # A release that is already published: the version was not bumped. That is
+      # not hypothetical -- it happened on 2026-08-10, when package.json still
+      # said 1.0.6 and v1.0.6 had gone out two days earlier. Uploading there
+      # would replace assets on a release people are downloading, because the
+      # upload runs with --clobber. Only a draft is a safe destination.
+      - name: Refuse to publish into anything but a draft
         if: inputs.publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           tag="v$(node -p "require('./package.json').version")"
-          echo "looking for release $tag"
-          if ! gh release view "$tag" > /dev/null 2>&1; then
+          echo "looking for a draft release $tag"
+
+          if ! draft=$(gh release view "$tag" --json isDraft --jq '.isDraft' 2>/dev/null); then
             echo "there is no release for $tag." >&2
             echo "Windows makes the draft: run npm run release there first." >&2
             echo "This workflow fills in the mac half and never creates one." >&2
+            echo "(If the draft does exist, then this token cannot see drafts," >&2
+            echo " and the lookup is what needs fixing -- not the release.)" >&2
             exit 1
           fi
-          echo "found it -- the mac half can go in"
+
+          if [ "$draft" != "true" ]; then
+            echo "$tag is already published." >&2
+            echo "Uploading into it would replace assets people are already" >&2
+            echo "downloading. Bump the version in package.json and make a new" >&2
+            echo "release; a published one is never a destination." >&2
+            exit 1
+          fi
+
+          echo "found the draft -- the mac half can go in"
 
   build:
     needs: preflight
@@ -295,9 +316,18 @@ jobs:
           # second draft for the same tag, which is the failure
           # tools/check-release.js exists to describe and cannot repair across
           # machines.
-          if ! gh release view "$tag" > /dev/null 2>&1; then
+          # Asked again rather than trusted from preflight. Half an hour of
+          # building and notarising sits between the two, which is long enough
+          # for someone to publish the draft -- and this is the step that would
+          # then overwrite it.
+          if ! draft=$(gh release view "$tag" --json isDraft --jq '.isDraft' 2>/dev/null); then
             echo "no release for $tag." >&2
             echo 'Run npm run release on Windows first, then re-run this.' >&2
+            exit 1
+          fi
+          if [ "$draft" != "true" ]; then
+            echo "$tag was a draft when this run started and is published now." >&2
+            echo "Not uploading: --clobber would replace its assets." >&2
             exit 1
           fi
 
