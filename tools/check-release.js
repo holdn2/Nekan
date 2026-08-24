@@ -130,6 +130,20 @@ if (require.main === module) {
   const version = require("../package.json").version;
   const tag = `v${version}`;
 
+  /**
+   * Where this machine's build left its files.
+   *
+   * tools/dist.js decides it and passes it in, so the build and this check
+   * cannot end up looking in different directories -- the header there says why
+   * the output ever moves. Standing alone, which is how the mac workflow runs
+   * it, the default is the configured one.
+   */
+  const DIST =
+    process.argv[2] ||
+    process.env.NEKAN_DIST ||
+    require("../package.json").build?.directories?.output ||
+    "dist";
+
   const api = async (url, init = {}) => {
     const res = await fetch(
       url.startsWith("http") ? url : `https://api.github.com${url}`,
@@ -171,10 +185,10 @@ if (require.main === module) {
    * publishing question, not a race to repair, so it says so and stops.
    */
   const attach = async (releaseId, name) => {
-    const file = path.join("dist", name);
+    const file = path.join(DIST, name);
     if (!fs.existsSync(file)) {
       throw new Error(
-        `${name} is in a split draft but not in this machine's dist/.\n` +
+        `${name} is in a split draft but not in this machine's ${DIST}/.\n` +
           `  Assets move only by re-uploading their bytes, and this run did not build that file.\n` +
           `  If another machine built it, fold the drafts there -- or publish every target from one place.`,
       );

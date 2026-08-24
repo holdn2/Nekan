@@ -126,6 +126,19 @@ npm run dist      # dist\Nekan-Setup-1.0.0.exe — 로컬 확인용, 업로드�
 npm run release   # 빌드 + GitHub Release에 업로드 (아래 GH_TOKEN 참고)
 ```
 
+> **`EBUSY ... unlink ...\dist\win-unpacked\resources\app.asar`로 죽으면** 저장소 밖으로
+> 내보내면 된다. 이 기계에서는 그 경로의 `.asar`를 무언가가 계속 붙잡고 있고(실시간 검사로
+> 보인다) 폴더를 지우지도 이름을 바꾸지도 못하는데, electron-builder는 시작할 때 출력 폴더를
+> 비운다. 우리 프로세스가 잡는 것이 아니다 — 그 경로에서 도는 것은 하나도 없다.
+>
+> ```sh
+> NEKAN_DIST="$LOCALAPPDATA/Temp/nekan-dist" npm run release
+> ```
+>
+> `tools/dist.js`가 그 값을 **한 번 읽어** electron-builder와 `check-release.js` 양쪽에
+> 넘긴다. 둘이 같은 곳을 봐야 하기 때문이다 — draft가 갈라졌을 때 검사가 디스크에서 파일을
+> 다시 올리는데, 빌드가 쓴 곳을 봐야 찾는다.
+
 **릴리스 절차**
 
 1. `package.json`의 `version`을 올리고 커밋한다.

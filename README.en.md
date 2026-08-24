@@ -127,6 +127,21 @@ npm run dist      # dist\Nekan-Setup-1.0.0.exe -- local check, not uploaded
 npm run release   # build + upload to a GitHub Release (see GH_TOKEN below)
 ```
 
+> **If it dies with `EBUSY ... unlink ...\dist\win-unpacked\resources\app.asar`,**
+> build outside the repository. Something on this machine keeps handles on the
+> `.asar` files under that path -- real-time scanning, most likely -- and the
+> directory can be neither deleted nor renamed, while electron-builder clears its
+> output directory before it starts. It is not one of ours: nothing runs there.
+>
+> ```sh
+> NEKAN_DIST="$LOCALAPPDATA/Temp/nekan-dist" npm run release
+> ```
+>
+> `tools/dist.js` reads that once and hands it to both electron-builder and
+> `check-release.js`, because the two have to agree: the check re-uploads assets
+> from disk when a draft splits, and can only find them where the build wrote
+> them.
+
 **Release procedure**
 
 1. Bump `version` in `package.json` and commit it.

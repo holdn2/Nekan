@@ -18,9 +18,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "start": "npm run build && electron .",
-    "dist": "npm run build && electron-builder --win nsis --publish never",
-    "dist:mac": "npm run build && electron-builder --mac --publish never",
-    "release": "npm run build && electron-builder --win nsis --publish always && node tools/check-release.js"
+    "dist": "npm run build && node tools/dist.js",
+    "dist:mac": "npm run build && node tools/dist.js --mac",
+    "release": "npm run build && node tools/dist.js --publish"
   },
   "dependencies": {
     "electron-updater": "^6.8.9",
