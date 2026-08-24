@@ -64,7 +64,13 @@ permissions:
 
 concurrency:
   group: mac-build-${{ github.ref }}
-  cancel-in-progress: true
+  # A pull request that pushes twice should not pay for two builds, so the
+  # older one goes. A manual run is different on both counts: it costs half an
+  # hour and a round trip to Apple's notary, and when publish is on it is
+  # writing to a release. Cancelling that mid-upload leaves a draft with some
+  # of its assets -- recoverable, since check-release.js would say so and a
+  # re-run clobbers its way back, but not something to invite.
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 jobs:
   # Everything that can say no to a publishing run, asked before any of it is
