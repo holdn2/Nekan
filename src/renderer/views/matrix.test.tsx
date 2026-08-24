@@ -187,25 +187,29 @@ test("a row does not collect a listener every time it redraws", async () => {
   const real = HTMLElement.prototype.addEventListener;
   const realOff = HTMLElement.prototype.removeEventListener;
   const isRow = (el: HTMLElement) => el.classList?.contains("item");
+  const tally = (step: number) =>
+    function (this: HTMLElement, ...args: Parameters<typeof real>) {
+      const [type] = args;
+      if (isRow(this) && type in counted) counted[type] += step;
+      return null as never;
+    };
   HTMLElement.prototype.addEventListener = function (
     this: HTMLElement,
-    type: string,
-    ...rest: unknown[]
+    ...args: Parameters<typeof real>
   ) {
-    if (isRow(this) && type in counted) counted[type] += 1;
-    return (real as never).call(this, type, ...(rest as never[]));
-  } as typeof real;
+    tally(1).apply(this, args);
+    return real.apply(this, args);
+  };
   HTMLElement.prototype.removeEventListener = function (
     this: HTMLElement,
-    type: string,
-    ...rest: unknown[]
+    ...args: Parameters<typeof realOff>
   ) {
-    if (isRow(this) && type in counted) counted[type] -= 1;
-    return (realOff as never).call(this, type, ...(rest as never[]));
-  } as typeof realOff;
+    tally(-1).apply(this, args);
+    return realOff.apply(this, args);
+  };
 
   try {
-    setTasks([task()]);
+    setTasks([task(1)]);
     draw();
     const { flush } = await mount(<div />);
     await flush();
