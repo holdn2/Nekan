@@ -28,7 +28,19 @@ test("shows the message it was given", async () => {
 
 test("an error tints it", async () => {
   await flush(() => toast("broken", { error: true }));
-  expect(find("#toast").classList.contains("error")).toBe(true);
+  // The tint is two utilities rather than an `error` class now, so this names
+  // them. It reads like an implementation detail and is not one: the class list
+  // *is* the styling here, and there is no stylesheet left to ask instead.
+  const cls = find("#toast").classList;
+  expect(cls.contains("text-danger")).toBe(true);
+  expect(cls.contains("border-danger")).toBe(true);
+});
+
+test("without an error it keeps the ordinary colours", async () => {
+  await flush(() => toast("saved"));
+  const cls = find("#toast").classList;
+  expect(cls.contains("text-danger")).toBe(false);
+  expect(cls.contains("border-line-strong")).toBe(true);
 });
 
 test("the action carries its own label and handler", async () => {

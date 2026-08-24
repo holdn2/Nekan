@@ -39,7 +39,7 @@
   overflow-y: auto;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-panel);
   box-shadow: var(--shadow);
 }
 

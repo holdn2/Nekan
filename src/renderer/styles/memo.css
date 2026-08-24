@@ -48,7 +48,7 @@
   background: var(--panel);
   border: 1px solid var(--line);
   border-top: 2px solid var(--accent);
-  border-radius: var(--radius);
+  border-radius: var(--radius-panel);
   box-shadow: var(--shadow);
   overflow: hidden;
 }

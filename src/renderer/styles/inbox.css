@@ -29,7 +29,7 @@ section.inbox {
   margin: var(--sp-md) var(--sp-xl) 0;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-panel);
   box-shadow: var(--shadow);
   overflow: hidden;
   transition: border-color 0.12s ease;

@@ -85,7 +85,7 @@ body:has(#welcome:not(.hidden)) #closeBtn {
   margin-bottom: var(--sp-md);
   padding: var(--sp-xl) var(--sp-2xl);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-panel);
   background: var(--panel);
   color: var(--text);
   text-align: left;

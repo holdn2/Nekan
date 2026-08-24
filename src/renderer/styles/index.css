@@ -116,46 +116,9 @@
  * twenty-three ad-hoc values down to thirteen named steps, and a numeric escape
  * hatch would grow them straight back. Both are one line to reverse.
  *
- * Three names could not come across unchanged, because Tailwind reads the part
- * after the namespace as the utility's name and these had no such part:
- *   --shadow       -> --shadow-default   (`shadow-default`)
- *   --radius       -> --radius-panel     (`rounded-panel`; base.css calls this
- *                                        one "a panel", which is the name)
- *   --font         -> --font-sans        (`font-sans`; there is one family)
- *
- * NINE TOKENS ARE DELIBERATELY NOT MAPPED, and the reason is a trap worth
- * knowing before adding any of them back.
- *
- *   --radius-xs  --radius-sm  --radius-md  --radius-lg  --radius-pill
- *   --shadow-knob  --shadow-even  --shadow-pop  --shadow-toast
- *
- * `inline` stops Tailwind emitting a variable of its own -- unless it finds the
- * key's exact name already being read somewhere in the CSS, which it takes as
- * "this theme variable is used" and emits after all. These nine are the only
- * tokens whose base.css name is spelled the same way Tailwind spells its
- * namespace, so `@theme inline { --radius-xs: var(--radius-xs) }` made Tailwind
- * write `--radius-xs: var(--radius-xs)` into `:root` -- a variable that refers
- * to itself. Measured, not guessed: those nine came out and no others.
- *
- * That is not a cosmetic problem. Tailwind emits into `:root,:host` OUTSIDE
- * every layer, and unlayered declarations beat layered ones, so the circular
- * definition would have won over base.css's real value. A self-reference is
- * invalid at computed-value time, so `border-radius: var(--radius-xs)` would
- * have resolved to nothing and four corner sizes and four shadows would have
- * gone quietly missing -- passing every test in the repo on the way through.
- *
- * The rest are safe by accident of naming: base.css abbreviates (`--fs-`,
- * `--fw-`, `--lh-`, `--ls-`, `--sp-`) where Tailwind spells out (`--text-`,
- * `--font-weight-`, `--leading-`, `--tracking-`, `--spacing-`), so no key
- * collides. Radius and shadow were the two it already spelled out in full.
- *
- * Fixing it properly means base.css giving these nine up -- they hold one value
- * each and are not themed (base.css says so of the shadows), so they belong in
- * `@theme` rather than being mirrored into it. That is a base.css edit, and
- * #62 is the pass that opens that file anyway. Until then `rounded-sm` and
- * `shadow-pop` do not exist, which is a gap and not a bug: the hand-written
- * rules that use them are untouched. `tools/check-styles.js` fails the build if
- * one of these ever gets added back.
+ * Two names could not be namespaced and stay in `base.css`, mapped by hand:
+ *   --shadow -> --shadow-default   (themed, so the palette is its home)
+ *   --font   -> --font-sans        (there is one family)
  */
 @theme inline {
   --color-bg: var(--bg);
@@ -211,5 +174,52 @@
   --spacing-5xl: var(--sp-5xl);
   --spacing-6xl: var(--sp-6xl);
   --spacing-7xl: var(--sp-7xl);
-  --radius-panel: var(--radius);
+}
+
+/**
+ * Design tokens that are not palette, and so are not themed.
+ *
+ * These nine used to sit in `base.css` alongside the colours, and they could
+ * not be handed to Tailwind from there. `@theme inline` says "the value lives
+ * elsewhere, point at it" -- but when the key is spelled the same as a property
+ * the sheets already read, Tailwind decides its own variable is in use and
+ * emits `--radius-xs: var(--radius-xs)` into `:root`, outside every layer,
+ * where it beats the real value and refers to itself. Corners and shadows were
+ * the only two namespaces base.css spelled out in full, so they were the only
+ * ones it happened to.
+ *
+ * Owning them here settles it. Tailwind emits each one exactly once, the
+ * `var(--radius-sm)` in the hand-written sheets goes on resolving because the
+ * variable is still on `:root`, and `rounded-sm` and `shadow-toast` exist for
+ * the markup. `static` keeps them all emitted even while few utilities use
+ * them, so a sheet's `var()` can never outlive the variable behind it.
+ *
+ * The split is by whether a value is themed, not by what kind of thing it is:
+ * `--shadow` changes between light and dark, so it stays in `base.css` with the
+ * palette. These nine have one value each and belong to the design system.
+ *
+ * `--radius` became `--radius-panel` on the way in -- Tailwind reads whatever
+ * follows the namespace as the utility's name, and a bare `--radius` gives it
+ * nothing to call the utility. base.css described this one as "a panel", which
+ * is where the name came from. Its eleven call sites moved with it.
+ */
+@theme static {
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-panel: 10px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  /* Written as literals in four different files before they were collected. */
+  --shadow-knob: 0 1px 2px rgb(0 0 0 / 0.12);
+  /* Directionless, for something sitting in a gap too tight to fall into: an
+     offset shadow fills the space below and leaves the space above clean, and
+     the thing then reads as riding high even when it is centred to the pixel.
+     Carrying a little more weight than --shadow-knob because it is doing more
+     work -- the switch's pill and its track are nine levels of luminance apart,
+     so this edge is most of what separates them. */
+  --shadow-even: 0 0 3px rgb(0 0 0 / 0.18);
+  --shadow-pop: 0 10px 30px #00000022, 0 2px 6px #00000014;
+  --shadow-toast: 0 6px 20px #00000026;
 }

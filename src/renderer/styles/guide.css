@@ -14,7 +14,7 @@
   overflow-y: auto;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-panel);
   box-shadow: var(--shadow);
 }
 
@@ -87,7 +87,7 @@
 .axis {
   padding: var(--sp-xl) var(--sp-2xl);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-panel);
   background: var(--panel-2);
 }
 
@@ -117,7 +117,7 @@
 .guide-quad {
   padding: var(--sp-2xl);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-panel);
   background: var(--panel-2);
 }
 
@@ -182,7 +182,7 @@
 .guide-points.app {
   padding: var(--sp-xl) var(--sp-2xl) var(--sp-xl) var(--sp-6xl);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-panel);
   background: var(--panel-2);
   font-size: var(--fs-sm);
 }

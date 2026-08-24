@@ -98,7 +98,7 @@ body.resizing-memo {
   min-height: 0;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-panel);
   overflow: hidden;
   box-shadow: var(--shadow);
   transition: border-color 0.12s ease;
