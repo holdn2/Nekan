@@ -135,13 +135,26 @@ npm run release   # 빌드 + GitHub Release에 업로드 (아래 GH_TOKEN 참고
 
 `latest.yml`이 곧 업데이트 피드다. 설치 파일만 따로 올리면 아무도 업데이트되지 않는다.
 
-**위 절차는 Windows만이다.** 맥 번들은 이 저장소에 맥이 없어서 GitHub Actions의
-`Mac build` 워크플로가 만든다. Actions 탭에서 **수동 실행**하면 서명·공증까지 하고
-(`dmg` · `zip` · blockmap · `latest-mac.yml`) 아티팩트로 올려 준다 —
-**PR 빌드에서는 서명이 되지 않는다.** electron-builder가 PR 빌드에서 서명을 거부하기
-때문이고, 그래서 확인은 수동 실행으로만 된다. **아직 Release로 올리는 배선은 없다**:
-맥 자산은 손으로 draft에 붙여야 하고, 그 draft가 Windows 것과 갈라지지 않는지는
-`node tools/check-release.js`가 본다.
+**위 2번은 Windows 절반이다.** 이 저장소에 맥이 없어서 맥 번들은 GitHub Actions의
+`Mac build` 워크플로가 만든다. 그래서 2번과 3번 사이에 한 단계가 들어간다:
+
+**2-1.** Actions → **Mac build** → Run workflow, 브랜치 `main`, **publish 체크**.
+서명·공증을 거쳐 검증한 뒤(`codesign` · `stapler` · `spctl`) **같은 draft에** 맥 자산을
+올린다 — 아키텍처마다 `dmg` · `zip` · 두 blockmap, 그리고 `latest-mac.yml` 하나.
+끝에 `check-release.js`가 두 플랫폼이 다 갖춰졌는지 본다.
+
+**순서를 지켜야 한다.** 그 잡은 **릴리스를 만들지 않는다** — 없으면 "먼저
+`npm run release`를 돌려라"라고 말하고 멈춘다. 만들게 두면 같은 태그에 draft가 둘이 되고,
+그건 `check-release.js`가 **기계가 달라서 고칠 수 없는** 유일한 고장이다.
+
+**아니라고 답할 수 있는 것은 전부 앞에서 묻는다.** `publish`를 `main` 아닌 브랜치에서
+켜거나, 그 버전의 릴리스가 아직 없으면 **preflight 잡이 십몇 초 만에 죽는다** — 빌드와
+공증에 드는 30분(맥 러너는 Linux의 10배로 과금된다)을 쓰고 나서 알게 되는 가드는
+맞더라도 쓸모가 없다.
+
+**PR 빌드에서는 서명이 되지 않는다.** electron-builder가 PR 빌드에서 서명을 거부하므로
+(`isSignAllowed()`), 서명 경로 확인은 수동 실행뿐이다. `publish`를 끄고 돌리면 서명·공증만
+하고 아티팩트로 남긴다.
 
 > **electron-builder는 같은 태그로 draft를 두 개 만든다.** 업로드가 병렬로 돌면서 둘 다
 > "릴리스가 없네"라고 판단해 각자 만드는 경쟁 상태이고, v1.0.0과 v1.0.1 **두 번 다** 이렇게

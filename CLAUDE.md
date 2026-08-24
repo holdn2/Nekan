@@ -525,6 +525,20 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
 - **`npm run release`에는 `GH_TOKEN`이 필요하다.** 없으면 빌드는 끝나고 업로드에서만 죽는다
   (`GitHub Personal Access Token is not set`). `gh`가 로그인돼 있으면 따로 만들 것 없이
   `GH_TOKEN="$(gh auth token)" npm run release`로 넘기면 된다. **토큰을 로그나 파일에 찍지 말 것.**
+- **릴리스는 기계 두 대가 절반씩 만든다. 순서가 규칙이다.** Windows는 사용자 기계에서
+  `npm run release`가 draft를 **만들고**, 맥은 `Mac build` 워크플로를 `publish`를 켜고 손으로
+  돌려 **그 draft에 붙인다**(`gh release upload --clobber`). **맥 잡은 릴리스를 만들지 않는다** —
+  없으면 멈춘다. 만들게 두면 같은 태그에 draft가 둘이 되는데, 그건 `check-release.js`가
+  **고칠 수 없는 유일한 고장**이다(그 함수는 로컬 `dist/`의 바이트만 다시 올릴 수 있고,
+  맥 파일은 다른 기계에 있다. 그 파일의 `attach()` 주석이 이 경우를 미리 적어 두었다).
+  태그는 양쪽 다 `package.json`의 버전에서 나온다 — 워크플로도 `check-release.js`도 같은 곳을
+  읽으므로 손으로 맞출 자리가 없다.
+  **`publish`는 `main`에서만 켜진다.** 다른 브랜치에서 켜면 첫 단계에서 죽는다 — 빌드와 공증에
+  30분이 드는데 그걸 다 쓰고 "아무것도 안 올라갔다"를 알게 되는 것이 이 저장소가 반복해서
+  당한 실패 방식이다.
+  **업데이터가 받는 것은 `.zip`이고 `.dmg`가 아니다.** `latest-mac.yml`이 피드다. 둘 중
+  하나라도 빠지면 **아무 오류 없이** 맥 사용자가 영영 업데이트를 못 받거나 매번 전체를 받는다.
+  `check-release.js`의 맥 규칙이 그 셋을 필수로 두는 이유다.
 - **electron-builder가 만드는 것은 draft다.** 업로드가 끝나도 공개되지 않는다 —
   `gh release edit v<버전> --notes-file <파일> --draft=false --latest`로 노트를 넣고 공개한다.
   릴리스 노트는 **사용자가 주는 문구를 그대로** 쓴다.
