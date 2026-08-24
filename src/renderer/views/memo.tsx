@@ -16,6 +16,8 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { Dot } from "../components/dot.js";
+import { GhostButton } from "../components/ghost-button.js";
 import { createRoot } from "react-dom/client";
 import { clampMemo } from "../../shared/core.js";
 import { t } from "../i18n.js";
@@ -102,7 +104,7 @@ export function MemoPanel() {
   return (
     <div className="memo-card">
       <header className="memo-head">
-        <span className={`dot ${task.quadrant}`} id="memoDot" />
+        <Dot place={task.quadrant} id="memoDot" />
         <span className="memo-title" id="memoTitle" title={task.text}>
           {task.text}
         </span>
@@ -157,22 +159,21 @@ export function MemoPanel() {
         <span className="memo-hint" id="memoHint">
           {t(editing ? "memo.editing" : "memo.edit")}
         </span>
-        <button
-          className={`ghost danger${editing || !original ? " hidden" : ""}`}
+        <GhostButton
+          danger
+          className={editing || !original ? "hidden" : undefined}
           id="memoDelete"
-          type="button"
           onClick={remove}
         >
           {t("common.delete")}
-        </button>
-        <button
-          className={`ghost${!editing || !original ? " hidden" : ""}`}
+        </GhostButton>
+        <GhostButton
+          className={!editing || !original ? "hidden" : undefined}
           id="memoCancel"
-          type="button"
           onClick={cancel}
         >
           {t("common.cancel")}
-        </button>
+        </GhostButton>
         <button
           className={`primary${editing ? "" : " hidden"}`}
           id="memoSave"

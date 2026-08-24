@@ -71,7 +71,9 @@ test("shows the selected task and its note, reading first", async () => {
   expect(section.classList.contains("hidden")).toBe(false);
   expect(find("#memoTitle").textContent).toBe("제목");
   expect(find("#memoText").textContent).toBe("원래 메모");
-  expect(find("#memoDot").className).toBe("dot q1");
+  // The quadrant, not the whole class list: the rest of it is how the dot is
+  // drawn, which components/dot.tsx owns and is free to change.
+  expect(find("#memoDot").classList.contains("q1")).toBe(true);
   expect(hidden("#memoInput")).toBe(true);
   // The close button is drawn, not typed -- an x character sits below centre.
   expect(document.querySelector("#memoClose svg")).not.toBeNull();

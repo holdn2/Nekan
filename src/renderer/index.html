@@ -115,7 +115,13 @@
           <div class="guide-quads">
             <section class="guide-quad q1">
               <header>
-                <span class="dot q1"></span>
+                <!-- Spelled out rather than drawn by components/dot.tsx: the guide
+                     is markup, not components, so it cannot call one. The four
+                     below are the only dots in the app that are not that
+                     component, and they are examples rather than data. -->
+                <span
+                  class="dot inline-block h-md w-md shrink-0 rounded-[50%] q1 bg-q1"
+                ></span>
                 <h3 data-i18n="quad.q1.title">Urgent &amp; Important</h3>
                 <span class="tag" data-i18n="guide.q1.tag">Do · right now</span>
               </header>
@@ -126,7 +132,9 @@
 
             <section class="guide-quad q2">
               <header>
-                <span class="dot q2"></span>
+                <span
+                  class="dot inline-block h-md w-md shrink-0 rounded-[50%] q2 bg-q2"
+                ></span>
                 <h3 data-i18n="quad.q2.title">Important &amp; Not Urgent</h3>
                 <span class="tag" data-i18n="guide.q2.tag"
                   >Plan · book the time</span
@@ -139,7 +147,9 @@
 
             <section class="guide-quad q3">
               <header>
-                <span class="dot q3"></span>
+                <span
+                  class="dot inline-block h-md w-md shrink-0 rounded-[50%] q3 bg-q3"
+                ></span>
                 <h3 data-i18n="quad.q3.title">Urgent &amp; Not Important</h3>
                 <span class="tag" data-i18n="guide.q3.tag"
                   >Delegate · hand off or cut down</span
@@ -152,7 +162,9 @@
 
             <section class="guide-quad q4">
               <header>
-                <span class="dot q4"></span>
+                <span
+                  class="dot inline-block h-md w-md shrink-0 rounded-[50%] q4 bg-q4"
+                ></span>
                 <h3 data-i18n="quad.q4.title">
                   Not Urgent &amp; Not Important
                 </h3>

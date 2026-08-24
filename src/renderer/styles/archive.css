@@ -14,25 +14,6 @@
   gap: var(--sp-md);
 }
 
-.ghost {
-  padding: var(--sp-sm) var(--sp-xl);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-md);
-  background: var(--panel);
-  color: var(--muted);
-}
-
-.ghost:hover {
-  color: var(--text);
-  background: var(--panel-2);
-}
-
-.ghost.danger:hover {
-  border-color: var(--danger);
-  color: var(--danger);
-  background: var(--danger-soft);
-}
-
 .history-scroll {
   flex: 1 1 auto;
   min-height: 0;

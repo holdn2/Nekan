@@ -7,6 +7,7 @@
  */
 
 import { useState } from "react";
+import { GhostButton } from "../../components/ghost-button.js";
 import type { Task } from "../../../shared/types.js";
 import { t } from "../../i18n.js";
 import { useRenderSignal } from "../../react/use-store.js";
@@ -113,10 +114,9 @@ function ArchiveTab<T extends Task>({
           autoComplete="off"
         />
         {bulk.map((action) => (
-          <button
+          <GhostButton
             key={action.labelKey}
-            className={action.danger ? "ghost danger" : "ghost"}
-            type="button"
+            danger={action.danger}
             onClick={() => {
               // The list the tab holds, not a condition to filter by: it is
               // already scoped to the board on screen, and the other board's
@@ -133,7 +133,7 @@ function ArchiveTab<T extends Task>({
             }}
           >
             {t(action.labelKey)}
-          </button>
+          </GhostButton>
         ))}
       </div>
       <div className="history-scroll">

@@ -164,11 +164,3 @@ section.inbox.open .inbox-body {
   white-space: pre-wrap;
   user-select: text;
 }
-
-/* Hollow instead of coloured: the inbox is not a fifth quadrant, it is the
-   "no colour yet" state. Kept at 1.5px so the hole stays visible at 8px —
-   2px would fill in and read as just another solid dot. */
-.dot.inbox {
-  background: transparent;
-  border: 1.5px solid var(--muted);
-}

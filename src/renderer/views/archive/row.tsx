@@ -9,6 +9,7 @@
  */
 
 import type { Task } from "../../../shared/types.js";
+import { Dot } from "../../components/dot.js";
 import { DueBadge } from "../../components/due-badge.js";
 import { MemoLine } from "../../components/memo-line.js";
 import { QUAD_LABEL, timeLabel } from "./paging.js";
@@ -50,10 +51,7 @@ function Row({
   return (
     <li className={`hitem${task.memo ? " has-memo" : ""}`}>
       <span className="num">{index + 1}.</span>
-      <span
-        className={`dot ${task.quadrant}`}
-        title={QUAD_LABEL[task.quadrant]?.() || ""}
-      />
+      <Dot place={task.quadrant} title={QUAD_LABEL[task.quadrant]?.() || ""} />
       {/* Title and memo share one column, so the memo lines up under the title
           and stops where the date column starts instead of running alongside
           it. */}

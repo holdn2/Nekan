@@ -31,10 +31,10 @@ const BUILT = path.join(__dirname, "..", "out", "renderer", "assets");
  * How many duplicated class names are allowed. This is a ratchet, not a
  * target: every component that moves to utilities should take a bite out of it,
  * and the number only ever goes down. 33 the day the plumbing landed; 32 once
- * `hidden` stopped being nine per-area rules and became one utility; 30 with
- * the tab strip.
+ * `hidden` stopped being nine per-area rules and became one utility; 30 with the tab strip; 28 once the
+ * dot and the ghost button became components.
  */
-const MAX_DUPLICATED = 30;
+const MAX_DUPLICATED = 28;
 
 const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, "");
 

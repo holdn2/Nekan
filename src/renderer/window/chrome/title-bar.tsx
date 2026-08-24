@@ -9,6 +9,7 @@
  */
 
 import { INBOX, QUADS } from "../../../shared/core.js";
+import { Dot } from "../../components/dot.js";
 import type { Place } from "../../../shared/types.js";
 import { t } from "../../i18n.js";
 import { activeOf, getSpace, inboxTasks } from "../../store.js";
@@ -60,7 +61,7 @@ function Chip({ place, count }: { place: Place; count: number }) {
         if (place === INBOX) applyInboxOpen(true);
       }}
     >
-      <i className={`dot ${place}`} />
+      <Dot place={place} as="i" />
       <b id={place === INBOX ? "cInbox" : `c${place[1]}`}>{count}</b>
     </button>
   );

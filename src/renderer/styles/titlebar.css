@@ -103,27 +103,6 @@
   color: var(--danger);
 }
 
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-  flex: 0 0 auto;
-}
-
-.dot.q1 {
-  background: var(--q1);
-}
-.dot.q2 {
-  background: var(--q2);
-}
-.dot.q3 {
-  background: var(--q3);
-}
-.dot.q4 {
-  background: var(--q4);
-}
-
 .win-actions {
   -webkit-app-region: no-drag;
   display: flex;

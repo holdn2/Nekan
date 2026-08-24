@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { Dot } from "../components/dot.js";
 import { createRoot } from "react-dom/client";
 import { QUADS, isCrowded } from "../../shared/core.js";
 import type { Quadrant, Task } from "../../shared/types.js";
@@ -124,7 +125,7 @@ function Quad({ quad }: { quad: Quadrant }) {
   return (
     <>
       <header>
-        <span className={`dot ${quad}`} />
+        <Dot place={quad} />
         <h2>{t(`quad.${quad}.title`)}</h2>
         <span className="sub">{t(`quad.${quad}.action`)}</span>
         <span
