@@ -1,30 +1,23 @@
 /**
- * The memo panel under the matrix, plus the marker on rows that have one.
- * --memo-h is defined in base.css and overwritten by window/layout.js when the
- * top edge is dragged.
+ * What is left of the memo panel after it moved to utilities.
+ *
+ * The panel, its card, the head, the note itself, the editor and the footer are
+ * spelled on the elements in views/memo.tsx, with the panel's own box in
+ * index.html because that element is index.html's.
+ *
+ * Two things stayed here, and the matrix's selected-row rules stayed with them
+ * because they belong to a sheet that has not moved yet.
  */
-
-/* ---------- memo panel ---------- */
-/* Takes its height out of the matrix, like the brain dump above. Shrinkable
-   with a zero min-height, and a flex column itself: a block box would keep its
-   own height and let the card overflow onto the quadrants, which body's
-   overflow:hidden would then make look fixed. The gap above it is .view's
-   bottom padding. */
-.memo {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  flex: 0 1 var(--memo-h);
-  min-height: 0;
-  padding: 0 var(--sp-xl) var(--sp-xl);
-}
 
 /* The grab zone for the height drag, straddling the card's top border: half in
    the gap above, half over the border itself. It has to be a positioned box to
-   paint over the matrix's padding, which is what the upper half sits in. The
-   6px each way is the same reach layout.js hit-tests with -- both numbers are
-   small enough that a second one going stale would be hard to see, so keep
-   them together in mind when either changes.
+   paint over the matrix's padding, which is what the upper half sits in.
+
+   A pseudo-element, so it cannot be a utility: there is no element to put one
+   on, and inventing one would put a div in the markup whose only job is to be
+   styled. The 6px each way is the same reach layout.ts hit-tests with -- both
+   numbers are small enough that a second one going stale would be hard to see,
+   so keep them together in mind when either changes.
 
    The cursor is the whole affordance, as it is on the dump's edge. The card's
    top border is already an accent line, so a highlight drawn above it reads as
@@ -40,139 +33,10 @@
   cursor: row-resize;
 }
 
-.memo-card {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-top: 2px solid var(--accent);
-  border-radius: var(--radius-panel);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.memo-head {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-md);
-  padding: var(--sp-sm) var(--sp-sm) var(--sp-sm) var(--sp-xl);
-  border-bottom: 1px solid var(--line);
-}
-
-.memo-title {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-weight: var(--fw-medium);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.memo-x {
-  width: 24px;
-  height: 24px;
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--faint);
-  font-size: var(--fs-sm);
-  line-height: var(--lh-none);
-}
-
-.memo-x:hover {
-  background: var(--panel-3);
-  color: var(--text);
-}
-
-.memo-body {
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-  padding: var(--sp-md) var(--sp-lg) var(--sp-sm);
-}
-
-#memoInput {
-  flex: 1 1 auto;
-  min-height: 0;
-  width: 100%;
-  padding: var(--sp-sm) var(--sp-md);
-  resize: none;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-md);
-  background: var(--input-bg);
-  color: var(--text);
-  font: inherit;
-  line-height: var(--lh-normal);
-  outline: none;
-  user-select: text;
-}
-
-#memoInput:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-
-#memoInput::placeholder {
-  color: var(--faint);
-}
-
-.memo-text {
-  flex: 1 1 auto;
-  min-height: 0;
-  margin: 0;
-  padding: var(--sp-sm) var(--sp-md);
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-  line-height: var(--lh-normal);
-  user-select: text;
-  cursor: text;
-}
-
-.memo-foot {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-sm);
-  padding: 0 var(--sp-lg) var(--sp-md);
-}
-
-.memo-hint {
-  flex: 1 1 auto;
-  color: var(--faint);
-  font-size: var(--fs-xs);
-}
-
-.memo-foot .ghost {
-  padding: var(--sp-xs) var(--sp-xl);
-  font-size: var(--fs-sm);
-}
-
-.primary {
-  padding: var(--sp-xs) var(--sp-2xl);
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-md);
-  background: var(--accent);
-  color: var(--on-accent);
-  font-size: var(--fs-sm);
-}
-
-.primary:hover:not(:disabled) {
-  filter: brightness(1.07);
-}
-
-.primary:disabled {
-  border-color: var(--line);
-  background: var(--panel-3);
-  color: var(--faint);
-  cursor: default;
-}
-
-/* The "has a memo" marker on list rows. */
+/* The "has a memo" marker on list rows. Still a class because the matrix
+   builds the rows it appears on and matrix.css has not moved yet; the two
+   rules below are that sheet's, sitting here because they are about this
+   marker. They go when the matrix does. */
 .memo-mark {
   flex: 0 0 auto;
   display: inline-flex;

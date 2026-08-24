@@ -137,16 +137,29 @@ const VIEW = { width: 1000, height: 700 };
 const BAR = { width: 684, height: 48 };
 
 const STATES = [
+  // Every run starts from the same place. Without the resets, a note left open
+  // by the previous run is captured as if it were the resting state, and two
+  // captures of the same build then differ by fifteen elements.
   [
     "matrix",
-    'window.api.expand().then(()=>{document.querySelector("[data-tab=matrix]")?.click();return 1})',
+    'document.querySelector("#memoClose")?.click();' +
+      'document.querySelector("#settingsPanel")?.classList.contains("hidden") === false &&' +
+      'document.querySelector("#settingsBtn").click();' +
+      'window.api.expand().then(()=>{document.querySelector("[data-tab=matrix]")?.click();return 1})',
   ],
   ["history", 'document.querySelector("[data-tab=history]").click(); 1'],
   ["trash", 'document.querySelector("[data-tab=trash]").click(); 1'],
   ["guide", 'document.querySelector("[data-tab=guide]").click(); 1'],
+  // Opening the note takes a click on a quadrant row's text, not any row: the
+  // brain dump's rows have no note by design, so clicking one selects nothing
+  // and this state would capture a closed panel while looking like it worked.
+  [
+    "memo",
+    'document.querySelector("[data-tab=matrix]").click(); document.querySelector(".quad .item .text")?.click(); 1',
+  ],
   [
     "settings",
-    'document.querySelector("[data-tab=matrix]").click(); document.querySelector("#settingsBtn").click(); 1',
+    'document.querySelector("#memoClose")?.click(); document.querySelector("#settingsBtn").click(); 1',
   ],
   [
     "bar",

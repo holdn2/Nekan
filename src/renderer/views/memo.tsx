@@ -31,7 +31,14 @@ import {
 } from "../selection.js";
 import { useRenderSignal } from "../react/use-store.js";
 import { CloseIcon } from "../react/icons.js";
+import { cn } from "../react/cn.js";
 
+/**
+ * The footer's buttons are smaller than a ghost button elsewhere. These land
+ * after the component's own padding inside cn(), so they replace it rather
+ * than adding a second padding and hoping the right one wins.
+ */
+const FOOT_BTN = "px-xl py-xs text-sm";
 export function MemoPanel() {
   useRenderSignal();
   const task = selectedTask();
@@ -103,14 +110,28 @@ export function MemoPanel() {
   };
 
   return (
-    <div className="memo-card">
-      <header className="memo-head">
+    <div
+      className={cn(
+        "memo-card flex min-h-[0px] flex-auto flex-col overflow-hidden",
+        "rounded-panel border border-line border-t-2 border-t-accent bg-panel",
+        "shadow-default",
+      )}
+    >
+      <header className="memo-head flex items-center gap-md border-b border-line py-sm pr-sm pl-xl">
         <Dot place={task.quadrant} id="memoDot" />
-        <span className="memo-title" id="memoTitle" title={task.text}>
+        <span
+          className="memo-title min-w-[0px] flex-auto overflow-hidden font-medium text-ellipsis whitespace-nowrap"
+          id="memoTitle"
+          title={task.text}
+        >
           {task.text}
         </span>
         <button
-          className="memo-x"
+          className={cn(
+            "memo-x grid h-[24px] w-[24px] flex-none place-items-center",
+            "rounded-sm border-0 bg-transparent text-sm leading-none text-faint",
+            "hover:bg-panel-3 hover:text-text",
+          )}
           id="memoClose"
           type="button"
           title={t("memo.close")}
@@ -121,9 +142,14 @@ export function MemoPanel() {
         </button>
       </header>
 
-      <div className="memo-body">
+      <div className="memo-body flex min-h-[0px] flex-auto px-lg pt-md pb-sm">
         <p
-          className={`memo-text${editing ? " hidden" : ""}`}
+          className={cn(
+            "memo-text m-[0px] min-h-[0px] flex-auto cursor-text overflow-y-auto",
+            "px-md py-sm leading-normal [word-break:break-word] whitespace-pre-wrap",
+            "select-text",
+            editing && "hidden",
+          )}
           id="memoText"
           title={t("memo.edit")}
           onDoubleClick={() => setMemoEditing(true)}
@@ -133,7 +159,14 @@ export function MemoPanel() {
         <textarea
           ref={input}
           id="memoInput"
-          className={editing ? "" : "hidden"}
+          className={cn(
+            "min-h-[0px] w-full flex-auto resize-none rounded-md border",
+            "border-line-strong bg-input-bg px-md py-sm font-[inherit]",
+            "leading-normal text-text outline-none select-text",
+            "placeholder:text-faint",
+            "focus:border-accent focus:shadow-[0_0_0_2px_var(--accent-soft)]",
+            !editing && "hidden",
+          )}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={t("memo.placeholder")}
@@ -157,27 +190,34 @@ export function MemoPanel() {
         />
       </div>
 
-      <footer className="memo-foot">
-        <span className="memo-hint" id="memoHint">
+      <footer className="memo-foot flex items-center gap-sm px-lg pb-md">
+        <span className="memo-hint flex-auto text-xs text-faint" id="memoHint">
           {t(editing ? "memo.editing" : "memo.edit")}
         </span>
         <GhostButton
           danger
-          className={editing || !original ? "hidden" : undefined}
+          className={cn(FOOT_BTN, (editing || !original) && "hidden")}
           id="memoDelete"
           onClick={remove}
         >
           {t("common.delete")}
         </GhostButton>
         <GhostButton
-          className={!editing || !original ? "hidden" : undefined}
+          className={cn(FOOT_BTN, (!editing || !original) && "hidden")}
           id="memoCancel"
           onClick={cancel}
         >
           {t("common.cancel")}
         </GhostButton>
         <button
-          className={`primary${editing ? "" : " hidden"}`}
+          className={cn(
+            "primary rounded-md border border-accent bg-accent px-2xl py-xs",
+            "text-sm text-on-accent",
+            "hover:not-disabled:brightness-[1.07]",
+            "disabled:cursor-default disabled:border-line disabled:bg-panel-3",
+            "disabled:text-faint",
+            !editing && "hidden",
+          )}
           id="memoSave"
           type="button"
           disabled={!canSave}
