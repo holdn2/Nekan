@@ -38,7 +38,8 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
                    shared/test는 auth 하나)
   renderer/        React. Vite가 묶는다 — import 경로에는 여전히 `.js`를 쓰고
                    (`vite.config.mts`의 플러그인이 옆의 `.ts`/`.tsx`로 잇는다)
-    index.html     껍데기와 가이드 탭. <link> 16개, <script> 하나, 그리고 React가
+    index.html     껍데기와 가이드 탭. <link> 하나(styles/index.css) · <script> 하나,
+                   그리고 React가
                    채울 빈 host들. **가이드 탭 밖에 남은 마크업은 없다** —
                    `<body>` 안 요소 16개가 전부 host이거나 컨테이너다(드롭 존 ·
                    레이아웃 기준점 · 창 기준 팝오버 · React가 못 쓰는 aria-label).
@@ -75,7 +76,9 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
                    layout.ts + layout/(grid·quad-edges·memo-edge) ·
                    dnd.ts · export-ui.ts — 뒤의 둘은 React가 아니고 그게 맞다:
                    그릴 마크업이 없고 이벤트와 한 번의 호출이다
-    styles/        base부터 scrollbars까지 16개. index.html의 <link> 순서가 캐스케이드
+    styles/        base부터 scrollbars까지 16개 + 진입점 index.css
+                   index.css의 `@import` 순서가 캐스케이드다 (옛날엔 index.html의
+                   <link> 순서였다) — 셋 다 layer(nekan)로 들어간다
                    switch.css만 영역이 아니라 부품이다 — 두 곳이 쓰므로 base 바로 뒤
                    welcome.css는 settings.css 바로 뒤여야 한다 — 첫 실행 카드의 언어
                    선택이 `.settings-select`이고, 거기에 덧칠하기 때문이다
@@ -428,6 +431,28 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   화면에 떠 있는 picker를 Set에 모아 두고 전환할 때 값을 손으로 써 넣던 것이 사라졌다.
 - **매트릭스는 다른 탭에서도 계속 렌더된다. 일부러다.** 히스토리·휴지통처럼 `getTab()`으로
   막으면 add 폼 넷이 언마운트돼서 **쓰다 만 할 일이 가이드 한 번 보고 오면 사라진다.**
+- **스타일시트는 `styles/index.css` 하나로 들어간다. Tailwind가 붙어 있지만 유틸리티는
+  아직 하나도 만들어지지 않는다** (#75 0·1단계). 알아야 할 것은 넷이다.
+  ① **`@import` 순서가 캐스케이드다.** 옛날엔 `index.html`의 `<link>` 열여섯 줄이 그 일을
+  했고, 지금은 `index.css`의 `@import` 열여섯 줄이 한다. **줄을 옮기면 캐스케이드가 옮겨간다.**
+  ② **손으로 쓴 CSS는 전부 `layer(nekan)`에 있다.** 레이어 순서는 `theme, nekan, utilities`다.
+  중요한 것은 **`!important`는 레이어 순서가 뒤집힌다**는 것 — 그래서 `collapsed.css`의
+  `!important` 여덟 개가 앞으로도 유틸리티를 이긴다. 바 모드는 유틸리티로 풀 수 없다.
+  ③ **유틸리티를 켜면 `hidden`이 문제가 된다.** Tailwind가 소스를 훑어 유틸리티처럼 생긴
+  낱말마다 하나씩 만드는데 `hidden`이 거기 걸린다. 그것은 이 앱의 클래스이고 아홉 개 시트가
+  각자 선언하고 있다. 유틸리티는 뒤 레이어라 **특정성과 무관하게 전부 이긴다.** 여덟은 값이
+  같아서 무해한데 **`.toast.hidden`이 아니다** — 그건 `display`를 건드리지 않고 opacity로
+  사라진다(주석에 이유가 적혀 있다). `display:none`이 붙으면 **양방향 애니메이션이 죽고
+  이 저장소의 어떤 테스트도 눈치채지 못한다.** 그래서 지금은 `source(none)`으로 막아 뒀다.
+  ④ **`@theme`에 시트가 읽는 이름과 똑같은 키를 넣지 말 것.** Tailwind가 "내 변수가 쓰이는군"
+  으로 읽고 `--radius-xs: var(--radius-xs)`를 **레이어 밖 `:root`에** 뱉는다. 레이어 밖이
+  레이어 안을 이기고 자기 참조는 무효라, **모서리 네 개와 그림자 네 개가 조용히 사라진다.**
+  `--radius-*`·`--shadow-*` 아홉이 그래서 매핑되지 않았다 — `base.css`가 Tailwind와 같은
+  철자를 쓰는 두 네임스페이스라서다(나머지는 `--fs-`·`--sp-`처럼 축약형이라 안 부딪힌다).
+  **위 셋(②는 빼고)은 `node tools/check-styles.js`가 지킨다**(`npm test`가 부른다). 중복
+  클래스 수는 33에서 래칫이라 늘면 실패하고, 줄면 숫자를 내리라고 말한다. 유틸리티 충돌은
+  **빌드 산출물을 읽어서** 판정하므로 `source(none)`을 떼는 날 저절로 켜진다.
+
 - **`.switch`(`styles/switch.css`)는 업무/일상과 테마가 함께 쓴다.** 미끄러지는 알약은 컨테이너의
   `::before` 하나이고, 어느 쪽에 설지는 CSS `:has(> .switch-btn:last-child.active)`가 정한다 —
   **위치를 JS가 따로 알려주지 않으므로** 버튼에 `.active`를 붙이는 코드만 고치면 된다.
