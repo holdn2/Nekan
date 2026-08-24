@@ -494,6 +494,34 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   `FIRST_CHECK_MS`(10초)가 무의미해진다.
   `powerMonitor`는 **app ready 전에는 쓸 수 없어서** 파일 최상단이 아니라 `initUpdater()`
   안에서 `require`한다. `main.ts`는 이 파일을 `whenReady()`보다 훨씬 먼저 부른다.
+- **맥 서명은 `workflow_dispatch`에서만 돈다. 이 파일이 그렇게 정한 게 아니라
+  electron-builder가 거부한다.** `isSignAllowed()`가 `GITHUB_BASE_REF`를 보고
+  (`builder-util/out/util.js`의 `isPullRequest()`), PR 빌드면 identity를 찾기도 전에
+  `false`로 빠진다. 공증은 서명 뒤에만 불리므로 함께 건너뛴다. 그래서 **PR을 열어서는 서명 경로를
+  한 줄도 검증할 수 없고**, Actions 탭에서 손으로 돌려야 한다. 자격증명을 env에 항상 걸어 두어도
+  PR 빌드에서는 아무 일도 일어나지 않는다.
+- **`CSC_IDENTITY_AUTO_DISCOVERY: false`를 남겨두면 서명이 조용히 안 된다.**
+  `findIdentity()`가 그 플래그가 `false`이고 `CSC_NAME`이 없으면 **`CSC_LINK`가 방금 만든
+  키체인을 찾지도 않고 `null`을 돌려준다**(`app-builder-lib/out/codeSign/macCodeSign.js`).
+  빌드는 성공하고 경고 한 줄만 남는다 — 서명 안 된 번들이 초록불을 달고 나가는 형태다.
+- **공증은 `notarize` 설정이 아니라 env 세 개가 켠다.** `APPLE_API_KEY` · `APPLE_API_KEY_ID` ·
+  `APPLE_API_ISSUER`이고, 셋 중 하나만 있으면 오류다(`MacTargetHelper.getNotarizeOptions`).
+  **`APPLE_API_KEY`는 값이 아니라 `.p8`의 경로다** — 그래서 그 시크릿만 러너 디스크에 써야 하고,
+  워크스페이스가 아니라 `$RUNNER_TEMP`에 둔다(패키저가 작업 트리를 훑고 업로드가 `dist/`를
+  훑는다). `@electron/notarize`의 `notarize()`는 제출 뒤 **stapling까지 한다**(2.5.0 확인).
+- **서명 시크릿은 저장소 시크릿이고, 그건 쓰기 권한자가 한 명일 때만 괜찮다.** 지금은
+  `holdn2` 하나뿐이라(`gh api repos/holdn2/Nekan/collaborators`) `workflow_dispatch`를 누를 수
+  있는 사람과 시크릿을 읽을 수 있는 사람이 같다. **협업자가 둘이 되는 순간 달라진다** — 그
+  사람은 `pull_request` 워크플로를 하나 추가하는 것만으로 `MAC_CSC_LINK`를 가져갈 수 있다
+  (공개 저장소라 fork PR에는 시크릿이 안 가지만, 같은 저장소의 브랜치에는 간다).
+  **그때 Environment로 옮긴다.** 조건은 "릴리스 준비가 됐을 때"가 아니라 **"쓰기 권한자가 둘
+  이상이 됐을 때"**다. 지금 옮기면 소유자가 자기 실행을 자기가 승인하는 절차만 생기고,
+  **대상을 릴리스 브랜치로 좁히면 서명 검증 자체가 불가능해진다** — 위 항목대로 PR에서는
+  서명이 돌지 않으므로 기능 브랜치에 대고 손으로 돌리는 것이 유일한 확인 방법이다.
+- **빌드 로그의 "notarization successful"은 빌더의 자기 진술이다.** 실제로 열리는지는 OS에
+  물어야 한다 — `codesign --verify --deep --strict` · `xcrun stapler validate` ·
+  `spctl --assess --type execute`. 특히 stapler가 중요하다: 티켓이 발급됐지만 stapling이 안 되면
+  **첫 실행마다 네트워크가 필요해진다.**
 - **`npm run release`에는 `GH_TOKEN`이 필요하다.** 없으면 빌드는 끝나고 업로드에서만 죽는다
   (`GitHub Personal Access Token is not set`). `gh`가 로그인돼 있으면 따로 만들 것 없이
   `GH_TOKEN="$(gh auth token)" npm run release`로 넘기면 된다. **토큰을 로그나 파일에 찍지 말 것.**
