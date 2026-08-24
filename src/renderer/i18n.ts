@@ -126,39 +126,7 @@ export function setLanguage(next: string) {
   i18next.changeLanguage(next);
   document.documentElement.lang = next;
   applyStaticStrings();
-  // Both pickers show the same setting, and only one of them was touched.
-  pickers.forEach((select) => (select.value = next));
+  // Every picker on screen reads currentLanguage() during render, so ringing
+  // the bus is the whole of keeping them in step.
   notify();
-}
-
-/** Every language <select> on screen, so switching one moves the others. */
-const pickers = new Set<HTMLSelectElement>();
-
-/**
- * Fill a <select> with the languages this build has, and make it switch.
- *
- * Two screens need this control: the settings panel, and the first-run card —
- * which covers the whole window, so the gear is unreachable until the question
- * on it is answered. Somebody whose computer opened the app in a language they
- * cannot read would otherwise have to answer where their tasks live before
- * they could ask for words they understand.
- *
- * The list comes from preload, so adding a language means adding a catalogue
- * and nothing else. Each one is named in its own language: a person looking for
- * their own is looking for a word they recognise, not for its name written in a
- * script they cannot read — which is exactly the state they are in here.
- */
-export function wireLanguageSelect(select: HTMLSelectElement) {
-  (window.api.languages || []).forEach((code) => {
-    const option = document.createElement("option");
-    option.value = code;
-    option.textContent = t(`language.${code}`);
-    select.append(option);
-  });
-  select.value = currentLanguage();
-  select.addEventListener("change", () => {
-    setLanguage(select.value);
-    window.api.setLanguage(select.value);
-  });
-  pickers.add(select);
 }

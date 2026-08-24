@@ -231,3 +231,10 @@
 .account-msg.error {
   color: var(--danger);
 }
+
+/* Only while the browser has the sign-in. See the twin in welcome.css. */
+.account-cancel {
+  margin-top: var(--sp-xs);
+  font-size: var(--fs-sm);
+  align-self: start;
+}

@@ -11,7 +11,7 @@
  *     list would push the quadrants off the bottom of a small window.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { INBOX, splitBulkText } from "../../shared/core.js";
 import type { Task } from "../../shared/types.js";
@@ -106,19 +106,16 @@ function InboxRow({ task, index }: { task: Task; index: number }) {
 function InboxList() {
   useRenderSignal();
   const items = inboxTasks();
-  // The list element is index.html's, so its empty-state attribute is set from
-  // here rather than rendered -- :empty has to keep matching.
-  useEffect(() => {
-    document
-      .getElementById("inboxList")
-      ?.setAttribute("data-empty", t("inbox.empty"));
-  });
   return (
-    <>
+    // data-empty is what the stylesheet writes into an empty list, exactly as
+    // a quadrant does it. An attribute rather than an element, because the
+    // rule is `:empty::after` -- an element saying "nothing here" would be a
+    // child, and then the list is not empty any more.
+    <ul className="inbox-list" id="inboxList" data-empty={t("inbox.empty")}>
       {items.map((task, i) => (
         <InboxRow key={task.id} task={task} index={i} />
       ))}
-    </>
+    </ul>
   );
 }
 
@@ -197,12 +194,31 @@ function InboxAdd() {
   );
 }
 
-/** Fill the three places index.html left empty. Called once, from init(). */
+/**
+ * The whole panel, from one root.
+ *
+ * The <section> stays index.html's -- it is a drop zone, a flex child the
+ * layout measures, and the thing whose `open` class decides the panel's
+ * height. Everything inside it is drawn here, which is what lets the list
+ * carry its own empty-state attribute instead of being reached for by id
+ * after every render.
+ */
+function InboxPanel() {
+  return (
+    <>
+      <header className="inbox-head">
+        <InboxHead />
+      </header>
+      <div className="inbox-body" id="inboxBody">
+        <InboxList />
+        <InboxAdd />
+      </div>
+    </>
+  );
+}
+
+/** Fill the section index.html left empty. Called once, from init(). */
 export function mountInbox() {
-  const head = document.querySelector(".inbox-head");
-  if (head) createRoot(head).render(<InboxHead />);
-  const list = document.getElementById("inboxList");
-  if (list) createRoot(list).render(<InboxList />);
-  const add = document.getElementById("inboxAddHost");
-  if (add) createRoot(add).render(<InboxAdd />);
+  const panel = document.getElementById("inboxPanel");
+  if (panel) createRoot(panel).render(<InboxPanel />);
 }

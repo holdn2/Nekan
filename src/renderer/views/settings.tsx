@@ -5,25 +5,27 @@
  * theme, export, account -- which is why they left the title bar. Two buttons
  * became one, and the bar got a button's width back.
  *
- * React fills the top of the panel and the account block fills the rest, each
- * into its own host: the panel itself is index.html's, because the popover is
- * positioned against the window rather than against anything either of them
- * draws.
+ * The whole inside of the popover is drawn here, the account block included.
+ * The <section> itself stays index.html's -- it is positioned against the
+ * window rather than against anything drawn in it, and its aria-label is a
+ * static string the catalogue reaches through data-i18n.
  *
  * Whether it is open lives in panels.ts, not here. The gear that opens it is
  * drawn by the title bar, and app.ts closes it on the way into a bar -- a view
  * cannot own a state whose button is outside it.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { target } from "../dom.js";
-import { t, wireLanguageSelect } from "../i18n.js";
+import { t } from "../i18n.js";
 import { getTheme, toggleTheme } from "../window/chrome.js";
 import { closeSettings, isSettingsOpen } from "../panels.js";
 import { exportBoard } from "../window/export-ui.js";
 import { useRenderSignal } from "../react/use-store.js";
 import { CloseIcon } from "../react/icons.js";
+import { Account } from "./account.js";
+import { LanguageSelect } from "../components/language-select.js";
 
 function SettingsBody() {
   useRenderSignal();
@@ -39,14 +41,6 @@ function SettingsBody() {
   });
 
   const theme = getTheme();
-  const select = useRef<HTMLSelectElement>(null);
-
-  // Filled and wired by i18n, which owns the list and keeps every picker on
-  // screen in step -- the first-run card carries one too. Once, on mount: the
-  // element is React's but its options are not.
-  useEffect(() => {
-    if (select.current) wireLanguageSelect(select.current);
-  }, []);
 
   return (
     <>
@@ -74,7 +68,7 @@ function SettingsBody() {
         <label className="settings-label" htmlFor="languageSelect">
           {t("settings.language")}
         </label>
-        <select className="settings-select" id="languageSelect" ref={select} />
+        <LanguageSelect className="settings-select" id="languageSelect" />
       </div>
 
       <div className="settings-row">
@@ -131,17 +125,27 @@ function SettingsBody() {
           <kbd>Ctrl+E</kbd>
         </button>
       </div>
+
+      {/* Its own block rather than a row: it is the one thing in here with
+          more than a control in it -- a state, an address, and two buttons
+          that end an account. */}
+      <div className="settings-block">
+        <span className="settings-label">{t("settings.sync")}</span>
+        <section className="account" id="account">
+          <Account />
+        </section>
+      </div>
     </>
   );
 }
 
 /**
- * Fill the top of the panel, and bind the two ways out that are not buttons in
- * it: the backdrop, and Escape.
+ * Fill the panel, and bind the two ways out that are not buttons in it: the
+ * backdrop, and Escape.
  */
 export function mountSettings() {
-  const body = document.getElementById("settingsBody");
-  if (body) createRoot(body).render(<SettingsBody />);
+  const panel = document.getElementById("settingsPanel");
+  if (panel) createRoot(panel).render(<SettingsBody />);
 
   document
     .getElementById("settingsBackdrop")

@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="styles/guide.css" />
     <link rel="stylesheet" href="styles/account.css" />
     <link rel="stylesheet" href="styles/settings.css" />
+    <link rel="stylesheet" href="styles/welcome.css" />
     <link rel="stylesheet" href="styles/memo.css" />
     <link rel="stylesheet" href="styles/toast.css" />
     <link rel="stylesheet" href="styles/collapsed.css" />
@@ -46,18 +47,10 @@
          it takes its height from the matrix, capped so the quadrants always
          keep the larger share. The whole section is a drop target, header
          included, so a task can be sent back up while the list is folded. -->
-    <section id="inboxPanel" class="inbox" data-quad="inbox">
-      <header class="inbox-head">
-        <!-- Filled by views/inbox.tsx -->
-      </header>
-      <div class="inbox-body" id="inboxBody">
-        <!-- data-empty is what the stylesheet writes into an empty list; the
-             component sets it, because :empty still has to match. -->
-        <ul class="inbox-list" id="inboxList"></ul>
-        <!-- Filled by views/inbox.tsx -->
-        <div id="inboxAddHost"></div>
-      </div>
-    </section>
+    <!-- The section is here because it is a drop zone, a flex child the
+         layout measures, and the element whose `open` class sets the panel's
+         height. Everything inside it is views/inbox.tsx's. -->
+    <section id="inboxPanel" class="inbox" data-quad="inbox"></section>
 
     <!-- A 2×2 grid: the shared row/column lines are dragged straight from the
          quadrant edges, so there are no separate splitter elements. -->
@@ -359,20 +352,9 @@
       data-i18n-attr="aria-label"
       data-i18n-attr-only
     >
-      <!-- Filled by views/settings.tsx. The account block below is still
-           views/account.js's, which is why React fills a div rather than
-           the panel. -->
-      <div id="settingsBody"></div>
-
-      <div class="settings-block">
-        <span class="settings-label" data-i18n="settings.sync"
-          >Sync across devices</span
-        >
-        <section class="account" id="account">
-          <!-- Filled by views/account.tsx. The section stays here because
-               it sits inside the settings panel's last block. -->
-        </section>
-      </div>
+      <!-- Filled by views/settings.tsx, account block included. The section
+           stays here because the popover is positioned against the window and
+           its aria-label is a static string. -->
     </section>
 
     <!-- The first thing a new install shows, in place of the matrix. It is the

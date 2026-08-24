@@ -17,7 +17,6 @@ import {
   MIN_ROW_PX,
   sanitizeLayout,
 } from "../../../shared/core.js";
-import type { Layout } from "../../../shared/types.js";
 import { $ } from "../../dom.js";
 
 /**

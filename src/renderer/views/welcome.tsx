@@ -10,60 +10,27 @@
  * is not final either; the same two options live in the settings panel.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { needsStartupChoice } from "../../shared/core.js";
 import { messageOf } from "../../shared/errors.js";
-import { t, wireLanguageSelect } from "../i18n.js";
+import { t } from "../i18n.js";
 import { activeCount } from "../store.js";
 import { useRenderSignal } from "../react/use-store.js";
-import { RichText } from "../react/rich-text.js";
-import { GoogleMark, LaptopIcon } from "../react/brand-icons.js";
+import { LanguageSelect } from "../components/language-select.js";
+import { WelcomeChoices } from "./welcome/choices.js";
+import {
+  isWelcomeVisible,
+  reasonKey,
+  setAnnounce,
+  welcomeAnswered,
+} from "./welcome/state.js";
 
-/**
- * Is there a choice still to make? The rule lives in shared/core.js because
- * main asks it too — it is what keeps the window out of bar mode until this
- * screen is done with it.
- */
-export const needsWelcome = needsStartupChoice;
+export { needsWelcome, showWelcome, wireWelcome } from "./welcome/state.js";
 
-/**
- * Failures worth naming. Anything else falls through as its own code, which is
- * something a user can quote back and I can search for.
- */
-const REASONS: Record<string, string> = {
-  offline: "account.error.offline",
-  timeout: "account.error.timeout",
-  denied: "account.error.cancelled",
-  access_denied: "account.error.cancelled",
-  cancelled: "account.error.cancelled",
-  no_browser: "account.error.noBrowser",
-  no_loopback: "account.error.noLoopback",
-  no_secure_storage: "account.error.noSecureStorage",
-  flow_state_not_found: "account.error.expired",
-  bad_response: "account.error.badResponse",
-};
-
-/** Whether the card is up, and how a finished choice reaches the startup. */
-let visible = false;
-let onDone: (choice: string) => void = () => {};
-let announce: () => void = () => {};
-
-/** Put it on screen. The count on the merge line follows the store from here. */
-export function showWelcome() {
-  visible = true;
-  announce();
-}
-
-/** Set by app.js before the card can be shown. */
-export function wireWelcome(done: (choice: string) => void) {
-  onDone = done;
-}
-
-function Welcome() {
+export function Welcome() {
   useRenderSignal();
   const [, redraw] = useState(0);
-  announce = () => redraw((n) => n + 1);
+  setAnnounce(() => redraw((n) => n + 1));
 
   const [busy, setBusy] = useState(false);
   /**
@@ -79,22 +46,15 @@ function Welcome() {
     error: boolean;
   } | null>(null);
   const [adopt, setAdopt] = useState(true);
-  const picker = useRef<HTMLSelectElement>(null);
-
-  // The gear is behind this overlay, so this is the only way to change language
-  // before the question is answered. Switching here moves the settings panel's
-  // picker too -- see wireLanguageSelect.
-  useEffect(() => {
-    if (picker.current) wireLanguageSelect(picker.current);
-  }, []);
-
   // The overlay itself is index.html's -- it covers the window, title bar
   // included, and the stylesheet hides it by class.
   useEffect(() => {
-    document.getElementById("welcome")?.classList.toggle("hidden", !visible);
+    document
+      .getElementById("welcome")
+      ?.classList.toggle("hidden", !isWelcomeVisible());
   });
 
-  if (!visible) return null;
+  if (!isWelcomeVisible()) return null;
 
   const count = activeCount();
   const say = (text: string, error = false) => setMessage({ text, error });
@@ -114,13 +74,24 @@ function Welcome() {
       say(t("welcome.saveFailed"), true);
       return;
     }
-    visible = false;
+    welcomeAnswered(choice);
     redraw((n) => n + 1);
-    onDone(choice);
   };
 
   /** "합치기" unless the box was offered and turned off. */
   const adoptMode = () => (count === 0 || adopt ? "merge" : "replace");
+
+  /**
+   * Give up on a sign-in that is not coming back.
+   *
+   * The consent screen is a window this app does not own, and closing it says
+   * nothing to the loopback server waiting here -- so without this the promise
+   * below stays unresolved until the five-minute timeout, and both choices sit
+   * disabled the whole time with no way to answer the question.
+   */
+  const cancelSync = () => {
+    window.api.cancelSignIn().catch(() => {});
+  };
 
   const chooseSync = async () => {
     if (busy) return;
@@ -147,12 +118,8 @@ function Welcome() {
       // The screen stays up. A failed sign-in has not answered the question,
       // and dropping someone onto an empty matrix would look like it worked.
       const code = result?.error || "unknown";
-      say(
-        code in REASONS
-          ? t(REASONS[code])
-          : t("account.signInFailed", { code }),
-        true,
-      );
+      const known = reasonKey(code);
+      say(known ? t(known) : t("account.signInFailed", { code }), true);
     } finally {
       setBusy(false);
     }
@@ -200,66 +167,27 @@ function Welcome() {
 
   return (
     <>
-      <select
-        ref={picker}
+      {/* The gear is behind this overlay, so this is the only way to change
+          language before the question on it is answered. */}
+      <LanguageSelect
         className="settings-select welcome-lang"
         id="welcomeLanguage"
-        aria-label={t("settings.language")}
+        ariaLabel={t("settings.language")}
       />
       <div className="welcome-card">
         <img className="welcome-logo" src="../assets/icon.png" alt="" />
-        <h1>Nekan</h1>
-        <p className="welcome-lede">{t("welcome.lede")}</p>
-
-        <button
-          className="welcome-choice recommended"
-          type="button"
-          disabled={busy}
-          onClick={chooseSync}
-        >
-          <GoogleMark />
-          <span className="welcome-choice-text">
-            <b>
-              <span>{t("welcome.syncTitle")}</span>
-              {/* Markup rather than a CSS `content` string. It used to be one,
-                  which put a word on screen that no catalogue could reach and
-                  that the untranslated sweep could not see. */}
-              <span className="welcome-badge">{t("welcome.recommended")}</span>
-            </b>
-            <small>{t("welcome.syncSub")}</small>
-          </span>
-        </button>
-
-        <button
-          className="welcome-choice"
-          type="button"
-          disabled={busy}
-          onClick={chooseLocal}
-        >
-          <LaptopIcon />
-          <span className="welcome-choice-text">
-            <b>{t("welcome.localTitle")}</b>
-            <small>{t("welcome.localSub")}</small>
-          </span>
-        </button>
-
-        {/* Only when there is something to carry. A fresh install has nothing
-            to decide and should not be handed a decision. */}
-        {count > 0 ? (
-          <label className="welcome-adopt">
-            <input
-              type="checkbox"
-              checked={adopt}
-              onChange={(e) => setAdopt(e.target.checked)}
-            />
-            {/* Written whole rather than as a number dropped into fixed markup
-                — where the count falls in the sentence moves with the
-                language. */}
-            <span>
-              <RichText k="welcome.adopt" params={{ count }} />
-            </span>
-          </label>
-        ) : null}
+        <div className="welcome-text">
+          <h1>Nekan</h1>
+          <p className="welcome-lede">{t("welcome.lede")}</p>
+        </div>
+        <WelcomeChoices
+          busy={busy}
+          count={count}
+          adopt={adopt}
+          onAdopt={setAdopt}
+          onSync={chooseSync}
+          onLocal={chooseLocal}
+        />
 
         <p
           className={`welcome-msg${message?.error ? " error" : ""}`}
@@ -267,6 +195,18 @@ function Welcome() {
         >
           {message?.text ?? ""}
         </p>
+        {/* Only while the browser has it. Outside the live region above, so a
+            screen reader hears the sentence rather than the sentence and a
+            button every time the message changes. */}
+        {busy ? (
+          <button
+            className="text-link welcome-cancel"
+            type="button"
+            onClick={cancelSync}
+          >
+            {t("common.cancel")}
+          </button>
+        ) : null}
         {/* The notice sits in the footer rather than under the sync button
             because this card has to fit a 760x520 window, and the sync button
             is the tallest thing in it. Both choices are still on screen. */}
