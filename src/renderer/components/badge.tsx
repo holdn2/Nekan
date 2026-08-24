@@ -19,14 +19,16 @@ export function Badge({
   id,
   className,
   children,
+  ...rest
 }: {
   id?: string;
   className?: string;
   children: ReactNode;
-}) {
+} & Omit<React.HTMLAttributes<HTMLSpanElement>, "className" | "children">) {
   return (
     <span
       id={id}
+      {...rest}
       // `badge` stays a class name: one declaration still belongs to it in
       // tabs.css, the vertical padding, which is a measurement rather than a
       // choice and is not on the spacing scale.

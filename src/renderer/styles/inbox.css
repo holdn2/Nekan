@@ -153,14 +153,3 @@ section.inbox.open .inbox-body {
 .inbox-add {
   flex: 0 0 auto;
 }
-
-/* No due chip, no check, no memo mark — the inbox is for getting it out of your
-   head, and the rest of the fields appear once it lands in a quadrant. */
-.inbox-item .text {
-  font-weight: var(--fw-light);
-  flex: 1 1 auto;
-  line-height: var(--lh-snug);
-  word-break: break-word;
-  white-space: pre-wrap;
-  user-select: text;
-}

@@ -15,6 +15,7 @@ import { cn } from "../../react/cn.js";
 import { MemoLine } from "../../components/memo-line.js";
 import { QUAD_LABEL, timeLabel } from "./paging.js";
 
+import { RowNumber } from "../../components/row.js";
 interface BulkAction<T extends Task> {
   /**
    * The key, not the words.
@@ -60,9 +61,9 @@ function Row({
         task.memo ? "items-start" : "items-center",
       )}
     >
-      <span className={cn("num -mr-xs leading-none", task.memo && "mt-xs")}>
+      <RowNumber className={cn("-mr-xs leading-none", task.memo && "mt-xs")}>
         {index + 1}.
-      </span>
+      </RowNumber>
       <Dot
         place={task.quadrant}
         title={QUAD_LABEL[task.quadrant]?.() || ""}

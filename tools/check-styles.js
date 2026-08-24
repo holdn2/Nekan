@@ -33,9 +33,9 @@ const BUILT = path.join(__dirname, "..", "out", "renderer", "assets");
  * and the number only ever goes down. 33 the day the plumbing landed; 32 once
  * `hidden` stopped being nine per-area rules and became one utility; 30 with the tab strip; 28 once the
  * dot and the ghost button became components; 22 when archive.css went away
- * entirely.
+ * entirely; 15 with the memo panel and the matrix.
  */
-const MAX_DUPLICATED = 22;
+const MAX_DUPLICATED = 15;
 
 const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, "");
 

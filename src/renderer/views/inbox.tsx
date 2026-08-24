@@ -25,6 +25,8 @@ import { AddForm } from "../components/add-form.js";
 import { ChevronIcon, CloseIcon } from "../react/icons.js";
 import { useRenderSignal } from "../react/use-store.js";
 
+import { DeleteButton, ROW, ROW_TEXT, RowNumber } from "../components/row.js";
+import { cn } from "../react/cn.js";
 /** Matches the row's fade-out in styles.css. */
 const REMOVE_MS = 160;
 
@@ -67,14 +69,15 @@ function InboxRow({ task, index }: { task: Task; index: number }) {
   return (
     <li
       ref={li}
-      className={`item inbox-item${removing ? " removing" : ""}`}
+      className={cn(ROW, "inbox-item", removing && "removing")}
       data-id={task.id}
       draggable
     >
-      <span className="num">{index + 1}.</span>
+      <RowNumber>{index + 1}.</RowNumber>
       <EditableText
         value={task.text}
         title={t("item.hintInbox")}
+        className={ROW_TEXT}
         setDraggable={(on) => {
           if (li.current) li.current.draggable = on;
         }}
@@ -85,11 +88,9 @@ function InboxRow({ task, index }: { task: Task; index: number }) {
           notify();
         }}
       />
-      <button
-        className="del"
-        type="button"
+      <DeleteButton
         title={t("item.delete")}
-        aria-label={t("item.deleteLabel", { text: task.text })}
+        label={t("item.deleteLabel", { text: task.text })}
         disabled={removing}
         onClick={() => {
           // The row fades before it goes; the store hears about it when the
@@ -99,7 +100,7 @@ function InboxRow({ task, index }: { task: Task; index: number }) {
         }}
       >
         <CloseIcon />
-      </button>
+      </DeleteButton>
     </li>
   );
 }

@@ -39,34 +39,57 @@
 
     <!-- A 2×2 grid: the shared row/column lines are dragged straight from the
          quadrant edges, so there are no separate splitter elements. -->
-    <main id="matrixView" class="view matrix">
-      <section class="quad q1" data-quad="q1">
+    <!-- basis-0 rather than auto: the grid must fill what is left, not ask for
+         its own content height. See matrix.css. -->
+    <main
+      id="matrixView"
+      class="view matrix min-h-[0px] min-w-[0px] flex-auto px-xl pt-md pb-xl grid basis-[0px] grid-cols-2 grid-rows-2 gap-[var(--gutter)]"
+    >
+      <section
+        class="quad flex min-h-[0px] min-w-[0px] flex-col overflow-hidden rounded-panel border border-line bg-panel shadow-default transition-[border-color] duration-[120ms] q1 border-t-2 border-t-q1"
+        data-quad="q1"
+      >
         <!-- Filled by views/matrix.tsx. The section stays here because
              window/dnd.ts binds a drop zone to it. -->
       </section>
 
-      <section class="quad q2" data-quad="q2">
+      <section
+        class="quad flex min-h-[0px] min-w-[0px] flex-col overflow-hidden rounded-panel border border-line bg-panel shadow-default transition-[border-color] duration-[120ms] q2 border-t-2 border-t-q2"
+        data-quad="q2"
+      >
         <!-- Filled by views/matrix.tsx. The section stays here because
              window/dnd.ts binds a drop zone to it. -->
       </section>
 
-      <section class="quad q3" data-quad="q3">
+      <section
+        class="quad flex min-h-[0px] min-w-[0px] flex-col overflow-hidden rounded-panel border border-line bg-panel shadow-default transition-[border-color] duration-[120ms] q3 border-t-2 border-t-q3"
+        data-quad="q3"
+      >
         <!-- Filled by views/matrix.tsx. The section stays here because
              window/dnd.ts binds a drop zone to it. -->
       </section>
 
-      <section class="quad q4" data-quad="q4">
+      <section
+        class="quad flex min-h-[0px] min-w-[0px] flex-col overflow-hidden rounded-panel border border-line bg-panel shadow-default transition-[border-color] duration-[120ms] q4 border-t-2 border-t-q4"
+        data-quad="q4"
+      >
         <!-- Filled by views/matrix.tsx. The section stays here because
              window/dnd.ts binds a drop zone to it. -->
       </section>
     </main>
 
-    <section id="historyView" class="view history hidden flex flex-col gap-lg">
+    <section
+      id="historyView"
+      class="view history hidden flex flex-col gap-lg min-h-[0px] flex-auto px-xl pt-md pb-xl"
+    >
       <!-- Filled by views/archive.tsx. The section stays here because
            window/chrome shows and hides it when the tab changes. -->
     </section>
 
-    <section id="trashView" class="view history hidden flex flex-col gap-lg">
+    <section
+      id="trashView"
+      class="view history hidden flex flex-col gap-lg min-h-[0px] flex-auto px-xl pt-md pb-xl"
+    >
       <!-- Filled by views/archive.tsx. The section stays here because
            window/chrome shows and hides it when the tab changes. -->
     </section>
@@ -82,7 +105,10 @@
          the markup would never be the one on screen anyway. Nobody sees the
          gap: applyStaticStrings() runs before the first await in init(), and
          this tab starts hidden regardless. -->
-    <section id="guideView" class="view guide hidden">
+    <section
+      id="guideView"
+      class="view guide hidden min-h-[0px] flex-auto px-xl pt-md pb-xl"
+    >
       <div class="guide-scroll">
         <article class="guide-doc">
           <h1 data-i18n="guide.title">What is the Eisenhower matrix?</h1>

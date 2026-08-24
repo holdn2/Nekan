@@ -30,9 +30,12 @@ import { AddForm } from "../components/add-form.js";
 import { DueChip } from "../components/due-chip.js";
 import { EditableText } from "../components/editable-text.js";
 import { MemoMark } from "../components/memo-mark.js";
+import { Badge } from "../components/badge.js";
+import { cn } from "../react/cn.js";
 import { CloseIcon } from "../react/icons.js";
 import { useRenderSignal } from "../react/use-store.js";
 
+import { DeleteButton, ROW, ROW_TEXT, RowNumber } from "../components/row.js";
 /** Matches the row's fade-out in styles.css, so the change lands unseen. */
 const REMOVE_MS = 160;
 
@@ -70,13 +73,21 @@ function Row({ task, index }: { task: Task; index: number }) {
   return (
     <li
       ref={li}
-      className={`item${isSelected(task.id) ? " selected" : ""}${removing ? " removing" : ""}`}
+      className={cn(
+        ROW,
+        isSelected(task.id) && "selected",
+        removing && "removing",
+      )}
       data-id={task.id}
       draggable
     >
-      <span className="num">{index + 1}.</span>
+      <RowNumber>{index + 1}.</RowNumber>
       <button
-        className="check"
+        className={cn(
+          "check mt-hair h-[16px] w-[16px] flex-none rounded-[50%]",
+          "border-[1.6px] border-line-strong bg-transparent p-[0px]",
+          "hover:border-accent hover:bg-accent-soft",
+        )}
         type="button"
         title={t("item.complete")}
         // Icon-only buttons: without this a screen reader announces "button".
@@ -87,6 +98,7 @@ function Row({ task, index }: { task: Task; index: number }) {
       <EditableText
         value={task.text}
         title={t("item.hint")}
+        className={ROW_TEXT}
         setDraggable={(on) => {
           if (li.current) li.current.draggable = on;
         }}
@@ -102,16 +114,14 @@ function Row({ task, index }: { task: Task; index: number }) {
         value={task.dueDate}
         onChange={(value) => setDue(task.id, value)}
       />
-      <button
-        className="del"
-        type="button"
+      <DeleteButton
         title={t("item.delete")}
-        aria-label={t("item.deleteLabel", { text: task.text })}
+        label={t("item.deleteLabel", { text: task.text })}
         disabled={removing}
         onClick={() => leaveAfterFade(() => deleteTask(task.id))}
       >
         <CloseIcon />
-      </button>
+      </DeleteButton>
     </li>
   );
 }
@@ -124,21 +134,41 @@ function Quad({ quad }: { quad: Quadrant }) {
 
   return (
     <>
-      <header>
+      <header className="flex items-center gap-md border-b border-line px-xl py-lg">
         <Dot place={quad} />
-        <h2>{t(`quad.${quad}.title`)}</h2>
-        <span className="sub">{t(`quad.${quad}.action`)}</span>
-        <span
-          className={`count${crowded ? " crowded" : ""}`}
+        <h2 className="m-[0px] text-md font-semibold">
+          {t(`quad.${quad}.title`)}
+        </h2>
+        <span className="sub text-xs text-muted">
+          {t(`quad.${quad}.action`)}
+        </span>
+        {/* Past the point where the quadrant stops meaning anything -- see
+            isCrowded. Deliberately a tint and not a warning: this is the app
+            noticing, not the app objecting, and the add form below still works. */}
+        <Badge
+          className={cn(
+            "count ml-auto",
+            // `crowded` stays a class: the title bar's chip carries the same
+            // state into bar mode and styles it by that name, and it is what
+            // this rule is asserted by.
+            crowded && "crowded cursor-help bg-danger-soft text-danger",
+          )}
           data-count={quad}
           title={crowded ? t("matrix.crowded") : undefined}
         >
           {items.length}
-        </span>
+        </Badge>
       </header>
       {/* data-empty is what the stylesheet writes into an empty list; it is an
           attribute rather than a child so :empty still matches. */}
-      <ul className="list" data-list={quad} data-empty={t("matrix.empty")}>
+      <ul
+        className={cn(
+          "list m-[0px] flex min-h-[0px] flex-auto list-none flex-col gap-xs",
+          "overflow-y-auto p-sm",
+        )}
+        data-list={quad}
+        data-empty={t("matrix.empty")}
+      >
         {items.map((task, i) => (
           <Row key={task.id} task={task} index={i} />
         ))}

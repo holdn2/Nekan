@@ -238,12 +238,56 @@ async function capture(port, out) {
   );
 }
 
+/**
+ * Differences a utility makes that cannot reach a pixel.
+ *
+ * Two of these come up on every sheet that moves, and reporting them as
+ * findings buries the ones that matter -- the matrix's move produced 161 and
+ * every one was one of these:
+ *
+ *   A zero-width border's colour and style. `border-0` sets the width to zero
+ *   and leaves style solid and colour black, where `border: 0` left style none
+ *   and colour inherited. Nothing draws either way.
+ *
+ *   Tailwind composes box-shadow out of ring, inset and drop layers, so a
+ *   single shadow comes back with four fully transparent layers in front of
+ *   the real one. Same paint, different string.
+ *
+ * Anything else is reported. This is the one place in the tool that is allowed
+ * to decide a difference does not count, so it decides narrowly.
+ */
+function isInert(prop, before, after, all) {
+  if (prop === "boxShadow") {
+    const layers = (v) =>
+      String(v)
+        .split(/,\s*(?=rgba?\()/)
+        .map((x) => x.trim());
+    const visible = (v) =>
+      layers(v).filter(
+        (l) => !/^rgba\(0, 0, 0, 0\)\s+0px 0px 0px 0px$/.test(l),
+      );
+    return JSON.stringify(visible(before)) === JSON.stringify(visible(after));
+  }
+  const width = {
+    borderTopColor: "borderTopWidth",
+    borderRightColor: "borderRightWidth",
+    borderBottomColor: "borderBottomWidth",
+    borderLeftColor: "borderLeftWidth",
+    borderTopStyle: "borderTopWidth",
+  }[prop];
+  if (!width) return false;
+  return (
+    parseFloat(all.before[width]) === 0 && parseFloat(all.after[width]) === 0
+  );
+}
+
 function diff(beforeFile, afterFile, full) {
   const a = JSON.parse(fs.readFileSync(beforeFile, "utf8"));
   const b = JSON.parse(fs.readFileSync(afterFile, "utf8"));
   let diffs = 0,
     gone = 0,
-    added = 0;
+    added = 0,
+    inert = 0;
   const byProp = {};
   for (const state of Object.keys(a)) {
     const A = a[state];
@@ -258,6 +302,12 @@ function diff(beforeFile, afterFile, full) {
         const av = JSON.stringify(A[key][p]);
         const bv = JSON.stringify(B[key][p]);
         if (av === bv) continue;
+        if (
+          isInert(p, A[key][p], B[key][p], { before: A[key], after: B[key] })
+        ) {
+          inert++;
+          continue;
+        }
         diffs++;
         byProp[p] = (byProp[p] || 0) + 1;
         if (full || diffs <= 40)
@@ -272,7 +322,8 @@ function diff(beforeFile, afterFile, full) {
     }
   }
   console.log(
-    `\n${diffs} property differences, ${gone} elements gone, ${added} new`,
+    `\n${diffs} property differences, ${gone} elements gone, ${added} new` +
+      (inert ? ` (${inert} more cannot paint -- see isInert)` : ""),
   );
   if (diffs) {
     const worst = Object.entries(byProp).sort((x, y) => y[1] - x[1]);
