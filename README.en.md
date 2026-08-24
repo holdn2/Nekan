@@ -136,15 +136,29 @@ npm run release   # build + upload to a GitHub Release (see GH_TOKEN below)
 
 `latest.yml` is the update feed. Upload the installer on its own and nobody updates.
 
-**That procedure is Windows only.** There is no Mac here, so the mac bundle is
-built by the `Mac build` workflow on GitHub Actions. Run it **manually** from the
-Actions tab and it signs and notarises as well (`dmg` · `zip` · blockmap ·
-`latest-mac.yml`) and uploads the result as an artifact -- **a pull-request build
-does not sign.** electron-builder refuses to sign a PR build, which is why a
-manual run is the only way to check it. **Publishing is not wired up yet**: the
-mac assets have to be attached to the draft by hand, and
-`node tools/check-release.js` is what says whether that draft has drifted from
-the Windows one.
+**Step 2 above is the Windows half.** There is no Mac here, so the mac bundle is
+built by the `Mac build` workflow on GitHub Actions, and one step goes between 2
+and 3:
+
+**2-1.** Actions → **Mac build** → Run workflow, branch `main`, **tick publish**.
+It signs, notarises, checks the result (`codesign` · `stapler` · `spctl`) and
+uploads the mac assets **into the same draft**: a `dmg`, a `zip` and two
+blockmaps per architecture, plus one `latest-mac.yml`. `check-release.js` then
+says whether both platforms are complete.
+
+**The order matters.** That job never creates a release: if there is none it
+says to run `npm run release` first, and stops. Letting it create one would put
+two drafts on one tag, which is the single failure `check-release.js` cannot
+repair, because the bytes are on another machine.
+
+**Ticking publish on a branch other than `main` fails**, so that a bundle which
+is not what the tag points at cannot be uploaded. It fails in the first step,
+before the half hour the build and notarisation take.
+
+**A pull-request build does not sign.** electron-builder refuses to
+(`isSignAllowed()`), so a manual run is the only way to check that path. Run it
+with publish unticked and it signs, notarises and leaves the result as an
+artifact.
 
 > **electron-builder makes two drafts for the same tag.** The uploads run in parallel, both decide "there is no
 > release yet" and each creates one — a race, and it split that way on **both** v1.0.0 and v1.0.1 (the `.blockmap`

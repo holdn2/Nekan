@@ -3,9 +3,9 @@
 # a mac target from Windows, so without this the config is unverified until the
 # day someone tries to release from it.
 #
-# It never publishes. Whether it signs depends on how the run was started, and
-# not because this file chooses: electron-builder refuses to sign a pull-request
-# build. isSignAllowed() checks GITHUB_BASE_REF, which Actions sets only for
+# It signs on a manual run and, when asked, puts the result into the draft
+# release for the version in package.json. Whether it signs is not this file's
+# choice: electron-builder refuses to sign a pull-request build. isSignAllowed() checks GITHUB_BASE_REF, which Actions sets only for
 # `pull_request`, and returns before an identity is even looked for --
 # notarisation is downstream of signing, so it is skipped along with it. The
 # credentials below therefore sit unused on a PR run and do their work only on a
@@ -14,10 +14,31 @@
 # That is also why signing cannot be checked by opening a pull request. Use
 # `workflow_dispatch`: it is the only path here that produces a bundle a Mac
 # will open.
+#
+# Publishing is a second job on purpose. The release token is the one credential
+# here that can change what users download, and the build job runs `npm ci`,
+# which executes an install script from every dependency in the tree. Those two
+# should not be in the same job. Splitting them also puts the upload on a Linux
+# runner, which bills at a tenth of the macOS rate for what is a download and an
+# upload.
+#
+# This job never creates a release. tools/check-release.js explains why in its
+# own words: it can repair a draft that electron-builder split, because the
+# bytes are in the local dist/, but two machines landing in two drafts is a
+# publishing question it cannot fix. Uploading only into a release that already
+# exists means that question never gets asked. Windows makes the draft; this
+# fills in the other half.
 name: Mac build
 
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: >-
+          Upload into the draft release for the version in package.json.
+          Run `npm run release` on Windows first: the draft has to exist.
+        type: boolean
+        default: false
   # Only when something that decides the mac bundle changes. A full Electron
   # build takes minutes of macOS runner time, which bills at ten times the
   # Linux rate, so it is not worth spending on a CSS-only pull request.
@@ -29,9 +50,10 @@ on:
       - "tools/build.js"
       - ".github/workflows/mac-build.yml"
 
-# Read is all this needs: it builds and uploads an artifact, and never writes
-# to the repository. Without saying so the token inherits whatever the
-# repository or organisation defaults to, which is usually more.
+# The default for every job here. The one that needs more says so itself, so
+# that widening it is a visible, local decision rather than something the whole
+# file inherits. Without saying anything at all the token would inherit whatever
+# the repository or organisation defaults to, which is usually more.
 permissions:
   contents: read
 
@@ -48,6 +70,18 @@ jobs:
       # run, and only a manual run" is in the header.
       SIGNING: ${{ github.event_name == 'workflow_dispatch' }}
     steps:
+      # First, so that a run that cannot publish costs seconds rather than the
+      # half hour the build and notarisation take. Failing is the point: a green
+      # run that uploaded nothing, because the box was ticked on the wrong
+      # branch, is the shape of mistake this repository keeps paying for.
+      - name: Refuse to publish from anywhere but main
+        if: inputs.publish && github.ref_name != 'main'
+        run: |
+          echo "publish was asked for on ${{ github.ref_name }}." >&2
+          echo "The release is built from main, so this would upload a bundle" >&2
+          echo "that is not what the tag points at." >&2
+          exit 1
+
       - uses: actions/checkout@v5
         with:
           # checkout leaves the token in .git/config unless told not to, and
@@ -171,3 +205,72 @@ jobs:
       - name: Take the key back off disk
         if: always() && steps.api-key.outputs.path != ''
         run: rm -f "${{ steps.api-key.outputs.path }}"
+
+  # Downloads what the build job just signed and puts it in the draft release.
+  # On Linux because none of this needs a Mac, and macOS minutes bill at ten
+  # times the rate.
+  publish:
+    needs: build
+    if: ${{ inputs.publish }}
+    runs-on: ubuntu-latest
+    permissions:
+      # The one job that writes. Kept away from `npm ci`, which is where a
+      # dependency's install script would be if there were ever going to be one.
+      contents: write
+      # Naming any permission sets every other one to none, and reading the
+      # artifact the build job left is an Actions API call, not a contents one.
+      # Leaving it out is the kind of failure that reads as "the artifact is
+      # missing" rather than "this job may not look".
+      actions: read
+    steps:
+      # For tools/check-release.js and for package.json, which is what decides
+      # the tag. The same file decides it inside that script, so there is no
+      # second place to keep in step.
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      # Into dist/ because that is where check-release.js looks when it has to
+      # re-upload a file, and where electron-builder would have left them.
+      - uses: actions/download-artifact@v5
+        with:
+          name: mac-signed
+          path: dist
+
+      - name: Put the mac half into the draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="v$(node -p "require('./package.json').version")"
+
+          # Never create one. Windows makes the draft with `npm run release`;
+          # this fills in the other half. A release made from here would be a
+          # second draft for the same tag, which is the failure
+          # tools/check-release.js exists to describe and cannot repair across
+          # machines.
+          if ! gh release view "$tag" > /dev/null 2>&1; then
+            echo "no release for $tag." >&2
+            echo 'Run npm run release on Windows first, then re-run this.' >&2
+            exit 1
+          fi
+
+          ls -l dist
+          # --clobber so a re-run replaces its own files rather than failing on
+          # the second attempt.
+          gh release upload "$tag" \
+            dist/*.dmg dist/*.zip dist/*.blockmap dist/latest-mac.yml \
+            --clobber
+
+      # Asks the assembled draft whether it is a release, rather than trusting
+      # that two machines each did their half. It knows what each platform owns
+      # and needs -- including that latest-mac.yml is the feed, and that a zip
+      # without its blockmap costs every mac user a full download.
+      - name: Check the draft is a whole release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node tools/check-release.js
