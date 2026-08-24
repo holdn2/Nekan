@@ -37,6 +37,8 @@ export interface StyleAuditInput {
   entryCss?: string;
   /** The stylesheet the build emitted, for checking real utilities. */
   builtCss?: string;
+  /** `renderer/react/cn.ts`, for checking tailwind-merge against the theme. */
+  cnSource?: string;
   /** Defaults to MAX_DUPLICATED; pass it to test the ratchet itself. */
   max?: number;
 }
@@ -60,6 +62,15 @@ export function circularThemeKeys(
 
 /** Utility class names present in a built stylesheet's `utilities` layer. */
 export function emittedUtilities(builtCss: string): Set<string>;
+
+/** Theme keys in a namespace across every `@theme` block, without the prefix. */
+export function themeNames(entryCss: string, prefix: string): string[];
+
+/** The scale arrays `renderer/react/cn.ts` exports, read from its source. */
+export function mergeScales(cnSource: string): Record<string, string[]>;
+
+/** Where tailwind-merge's configured scales and the theme disagree. */
+export function auditMergeConfig(entryCss: string, cnSource: string): string[];
 
 /** Judge a set of stylesheets. */
 export function auditStyles(input: StyleAuditInput): StyleAudit;

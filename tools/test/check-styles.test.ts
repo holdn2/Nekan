@@ -2,11 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  auditMergeConfig,
   auditStyles,
   circularThemeKeys,
   classesIn,
   definitionsBySheet,
   emittedUtilities,
+  mergeScales,
+  themeNames,
 } from "#tools/check-styles.js";
 
 const sheet = (name: string, css: string) => ({ name, css });
@@ -131,4 +134,65 @@ test("no utilities emitted means nothing to shadow", () => {
   });
   assert.deepEqual(r.shadowed, []);
   assert.equal(r.errors.length, 0);
+});
+
+const THEME = [
+  "@theme inline {",
+  "  --color-panel: var(--panel);",
+  "  --text-xs: var(--fs-xs);",
+  "  --text-md: var(--fs-md);",
+  "}",
+  "",
+  "@theme static {",
+  "  --radius-pill: 999px;",
+  "}",
+].join("\n");
+
+/** A cn.ts whose scales agree with THEME, so a case can bend one of them. */
+const inSync = (over: Record<string, string[]> = {}) =>
+  Object.entries({
+    COLORS: ["panel"],
+    TEXT: ["xs", "md"],
+    RADIUS: ["pill"],
+    SPACING: [],
+    SHADOW: [],
+    FONT_WEIGHT: [],
+    LEADING: [],
+    TRACKING: [],
+    ...over,
+  })
+    .map(([k, v]) => `export const ${k} = ${JSON.stringify(v)};`)
+    .join("\n");
+
+test("theme keys are read out of every @theme block, inline or static", () => {
+  // The palette is in an `inline` block and the corners are in a `static` one,
+  // so reading only the first would miss half the theme.
+  assert.deepEqual(themeNames(THEME, "color-"), ["panel"]);
+  assert.deepEqual(themeNames(THEME, "text-"), ["md", "xs"]);
+  assert.deepEqual(themeNames(THEME, "radius-"), ["pill"]);
+});
+
+test("the scales tailwind-merge is given are read out of cn.ts", () => {
+  const src = inSync();
+  assert.deepEqual(mergeScales(src).TEXT, ["md", "xs"]);
+  assert.deepEqual(mergeScales(src).COLORS, ["panel"]);
+});
+
+test("a scale that has drifted from the theme is named, in both directions", () => {
+  const missing = auditMergeConfig(THEME, inSync({ TEXT: ["xs"] }));
+  assert.ok(missing.some((e) => /TEXT/.test(e) && /missing md/.test(e)));
+
+  const extra = auditMergeConfig(THEME, inSync({ TEXT: ["xs", "md", "huge"] }));
+  assert.ok(extra.some((e) => /TEXT/.test(e) && /huge/.test(e)));
+});
+
+test("a scale cn.ts stopped exporting is an error, not a silent pass", () => {
+  // The failure this guards: rename the export, the check finds nothing to
+  // compare, and quietly approves whatever the merge is configured with.
+  const errors = auditMergeConfig(THEME, "export const SOMETHING_ELSE = [];");
+  assert.ok(errors.some((e) => /no longer exports TEXT/.test(e)));
+});
+
+test("matching scales are silent", () => {
+  assert.deepEqual(auditMergeConfig(THEME, inSync()), []);
 });

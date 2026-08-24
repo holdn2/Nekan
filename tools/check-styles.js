@@ -191,6 +191,90 @@ function emittedUtilities(builtCss) {
 }
 
 /**
+ * The theme keys in a namespace, e.g. `--color-panel` -> `panel`.
+ *
+ * Reads every `@theme` block, so it does not care that the palette is in an
+ * `inline` one and the corners are in a `static` one.
+ */
+function themeNames(entryCss, prefix) {
+  const found = new Set();
+  for (const block of stripComments(entryCss).matchAll(
+    /@theme[^{]*\{([\s\S]*?)^\}/gm,
+  )) {
+    for (const m of block[1].matchAll(/^\s*--([\w-]+)\s*:/gm)) {
+      if (m[1].startsWith(prefix)) found.add(m[1].slice(prefix.length));
+    }
+  }
+  return [...found].sort();
+}
+
+/**
+ * The scale lists `renderer/react/cn.ts` hands to tailwind-merge.
+ *
+ * Read out of the source rather than imported: this runs as plain CommonJS
+ * before anything is built, and the built renderer is a bundle with no module
+ * to import from anyway.
+ */
+function mergeScales(cnSource) {
+  const out = {};
+  for (const m of cnSource.matchAll(
+    /export const ([A-Z_]+)(?:\s*:[^=]+)?\s*=\s*\[([\s\S]*?)\];/g,
+  )) {
+    out[m[1]] = [...m[2].matchAll(/"([^"]+)"/g)].map((q) => q[1]).sort();
+  }
+  return out;
+}
+
+/**
+ * Does tailwind-merge know the same scales the stylesheet declares?
+ *
+ * It decides which utilities conflict from its own idea of Tailwind's default
+ * scales, and this app uses none of them. `text-*` is the one that bites:
+ * `text-sm` is a size and `text-danger` is a colour, told apart by whether the
+ * suffix is a known size. `md` is not one in default Tailwind, so an
+ * unconfigured merge files `text-md` as a colour and then drops the size when
+ * both are present -- silently, and in the direction nothing else would catch.
+ *
+ * So cn.ts carries a copy of the scales, and a copy is a thing that drifts.
+ */
+function auditMergeConfig(entryCss, cnSource) {
+  const scales = mergeScales(cnSource);
+  const PAIRS = [
+    ["COLORS", "color-"],
+    ["SPACING", "spacing-"],
+    ["TEXT", "text-"],
+    ["RADIUS", "radius-"],
+    ["SHADOW", "shadow-"],
+    ["FONT_WEIGHT", "font-weight-"],
+    ["LEADING", "leading-"],
+    ["TRACKING", "tracking-"],
+  ];
+  const errors = [];
+  for (const [name, prefix] of PAIRS) {
+    const declared = scales[name];
+    if (!declared) {
+      errors.push(
+        `cn.ts no longer exports ${name}, so its scale cannot be checked`,
+      );
+      continue;
+    }
+    const inCss = themeNames(entryCss, prefix);
+    const missing = inCss.filter((v) => !declared.includes(v));
+    const extra = declared.filter((v) => !inCss.includes(v));
+    if (missing.length || extra.length) {
+      errors.push(
+        `cn.ts ${name} does not match the ${prefix}* theme keys` +
+          (missing.length ? ` -- missing ${missing.join(", ")}` : "") +
+          (extra.length
+            ? ` -- has ${extra.join(", ")} which the theme does not`
+            : ""),
+      );
+    }
+  }
+  return errors;
+}
+
+/**
  * Judge a set of stylesheets. Pure, so the tests can hand it cases this
  * repository does not have yet.
  */
@@ -198,6 +282,7 @@ function auditStyles({
   sheets,
   entryCss = "",
   builtCss = "",
+  cnSource = "",
   max = MAX_DUPLICATED,
 }) {
   const where = definitionsBySheet(sheets);
@@ -227,6 +312,8 @@ function auditStyles({
       `@theme key ${key} is also read as var(${key}) by a stylesheet -- Tailwind will emit ${key}: var(${key}) into :root, outside every layer, and it will resolve to nothing`,
     );
   }
+  if (cnSource) errors.push(...auditMergeConfig(entryCss, cnSource));
+
   for (const cls of shadowed) {
     errors.push(
       `.${cls} is both a generated utility and a class defined in ${where.get(cls).join(", ")} -- the utility is in a later layer, so it wins however specific the sheet's rule is`,
@@ -247,6 +334,9 @@ function auditStyles({
 
 module.exports = {
   MAX_DUPLICATED,
+  themeNames,
+  mergeScales,
+  auditMergeConfig,
   classesIn,
   definitionsBySheet,
   circularThemeKeys,
@@ -275,7 +365,12 @@ if (require.main === module) {
     }
   }
 
-  const r = auditStyles({ sheets, entryCss, builtCss });
+  const cnSource = fs.readFileSync(
+    path.join(__dirname, "..", "src", "renderer", "react", "cn.ts"),
+    "utf8",
+  );
+
+  const r = auditStyles({ sheets, entryCss, builtCss, cnSource });
 
   console.log(`check-styles: ${sheets.length} sheets, ${r.classes} classes`);
   console.log(
