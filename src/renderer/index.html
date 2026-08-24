@@ -7,27 +7,10 @@
       content="default-src 'self'; style-src 'self'; script-src 'self'"
     />
     <title>Nekan</title>
-    <!-- One file per area, in the order they had inside the single stylesheet —
-         later ones override earlier ones, so this order is load-bearing.
-         @import is deliberately not used: it serialises the loads and gives the
-         cascade one more thing to depend on. -->
-    <link rel="stylesheet" href="styles/base.css" />
-    <!-- Shared by two areas, so it goes before both of them. -->
-    <link rel="stylesheet" href="styles/switch.css" />
-    <link rel="stylesheet" href="styles/titlebar.css" />
-    <link rel="stylesheet" href="styles/tabs.css" />
-    <link rel="stylesheet" href="styles/inbox.css" />
-    <link rel="stylesheet" href="styles/matrix.css" />
-    <link rel="stylesheet" href="styles/due-chip.css" />
-    <link rel="stylesheet" href="styles/archive.css" />
-    <link rel="stylesheet" href="styles/guide.css" />
-    <link rel="stylesheet" href="styles/account.css" />
-    <link rel="stylesheet" href="styles/settings.css" />
-    <link rel="stylesheet" href="styles/welcome.css" />
-    <link rel="stylesheet" href="styles/memo.css" />
-    <link rel="stylesheet" href="styles/toast.css" />
-    <link rel="stylesheet" href="styles/collapsed.css" />
-    <link rel="stylesheet" href="styles/scrollbars.css" />
+    <!-- One file, which imports the sixteen area sheets in order. The order
+         is load-bearing and now lives beside a comment saying so, in
+         styles/index.css, rather than in the order of these lines. -->
+    <link rel="stylesheet" href="styles/index.css" />
   </head>
   <!-- `booting` holds the switch pills still until the saved board and theme
        have been applied; app.js drops it at the end of init(). -->

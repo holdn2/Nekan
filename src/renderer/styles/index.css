@@ -1,0 +1,219 @@
+/**
+ * The renderer's one stylesheet entry point.
+ *
+ * Until now `index.html` carried sixteen `<link>` tags and the order of those
+ * lines *was* the cascade. Nothing declared that; you had to know. A file added
+ * in the wrong place overrode something it had no business overriding, and the
+ * symptom was a style quietly not applying. The order below is the same order
+ * those links had -- moving a line here still moves the cascade, but now it is
+ * a thing you can read, in one place, with a comment next to it.
+ *
+ * The old comment in `index.html` said `@import` was avoided on purpose because
+ * it serialises the loads. That was true when the browser read `index.html` off
+ * disk and fetched each sheet itself. It is not true now: Vite resolves these at
+ * build time and emits one file, so there is nothing left to serialise. The
+ * reason to avoid it went away with the build step -- see `docs/DECISIONS.md`.
+ */
+
+/* Layer order, declared before anything can join a layer implicitly.
+ *
+ * `nekan` holds every hand-written sheet. It sits after `theme` so this app's
+ * tokens win over any Tailwind default of the same name (`--radius-sm` and its
+ * three siblings are defined on both sides), and before `utilities` so a
+ * utility can override a component rule -- which is the whole point of adding
+ * utilities to a codebase that already has component CSS.
+ *
+ * This also settles the bar-mode trap for free. For `!important` declarations
+ * the cascade reverses layer order, so `collapsed.css`'s eight `!important`
+ * rules still beat anything in `utilities`. Bar mode cannot be undone by a
+ * stray `block` on some element -- and bar mode breaking silently is exactly
+ * the failure this repo has already had once. */
+@layer theme, nekan, utilities;
+
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+
+/* NO UTILITY IS GENERATED YET, AND THAT IS THIS STAGE'S RESULT, NOT AN
+ * OVERSIGHT. `source(none)` above is what holds it: the utilities pipeline is
+ * imported and running -- which is what makes `@theme` and `@custom-variant`
+ * below take effect at all, since Tailwind ignores a stylesheet that imports
+ * none of it -- but it is told to scan nothing, so it finds no class names to
+ * build from and the layer comes out empty. Dropping `source(none)` and adding
+ * an `@source` line for the renderer's .ts, .tsx and .html files is the first
+ * move of the next stage. (Do not paste that glob into a comment: it contains
+ * the two characters that end one, and the build fails on the CSS after it.)
+ *
+ * Turning it on here was tried and measured. Tailwind scans the renderer and
+ * emits a utility for every word that happens to look like one, which came to
+ * eighteen: `hidden`, `flex`, `grid`, `block`, `relative`, `border` and so on.
+ * Seventeen are inert -- no stylesheet defines a class by those names. The
+ * eighteenth is not.
+ *
+ * `hidden` is this app's own class, applied in twenty-one places, and every
+ * area declares its own rule for it (`.view.hidden`, `.memo .hidden`, ...)
+ * precisely because there is no global one. Tailwind's `.hidden{display:none}`
+ * lands in `utilities`, a later layer than `nekan`, and layer order beats
+ * specificity -- so it would override all of them.
+ *
+ * For twenty of the twenty-one that is harmless: the area rule also says
+ * `display:none`, so the same element ends up hidden by a different rule. The
+ * twenty-first breaks. `.toast.hidden` never touches `display`; it sets opacity
+ * and a transform, and toast.css says why beside it -- "Faded out rather than
+ * removed, so it can animate both ways." Give the toast `display:none` and both
+ * animations stop happening, in a way no test in this repo would notice.
+ *
+ * So the utilities wait for the stage that renames `hidden`, which is the same
+ * stage that resolves the other thirty-two duplicated class names. That is the
+ * work #75 exists to do; this file is only the plumbing it needs. Everything
+ * else here -- the import order, the layers, the theme, the dark variant -- is
+ * live and does nothing to the screen, which is what this stage was for. */
+
+/* The sixteen sheets, in the order the `<link>` tags had. Do not sort. */
+@import "./base.css" layer(nekan);
+/* Shared by two areas, so it goes before both of them. */
+@import "./switch.css" layer(nekan);
+@import "./titlebar.css" layer(nekan);
+@import "./tabs.css" layer(nekan);
+@import "./inbox.css" layer(nekan);
+@import "./matrix.css" layer(nekan);
+@import "./due-chip.css" layer(nekan);
+@import "./archive.css" layer(nekan);
+@import "./guide.css" layer(nekan);
+@import "./account.css" layer(nekan);
+@import "./settings.css" layer(nekan);
+/* Right after settings.css: the first-run card's language picker is a
+   `.settings-select` and this paints over it. */
+@import "./welcome.css" layer(nekan);
+@import "./memo.css" layer(nekan);
+@import "./toast.css" layer(nekan);
+@import "./collapsed.css" layer(nekan);
+@import "./scrollbars.css" layer(nekan);
+
+/* Dark mode is an attribute here, not a media query.
+ *
+ * `base.css` has `:root[data-theme="dark"]` and no `@media` at all -- the theme
+ * is a saved setting the title bar switches, not something the OS decides.
+ * Tailwind's built-in `dark:` is `prefers-color-scheme`, so without this line
+ * `dark:` would compile happily and then never match. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/**
+ * The design system, handed to Tailwind.
+ *
+ * `inline` is doing real work: it tells Tailwind to emit `var(--panel)` into
+ * the utility instead of emitting a `--color-panel` variable of its own. So
+ * `bg-panel` resolves to the same custom property the hand-written CSS reads,
+ * `base.css` stays the one place a value is written, and the theme switch keeps
+ * working -- one `:root` block changes and both the utilities and the component
+ * CSS follow. Without `inline` there would be two copies of the palette and the
+ * dark theme would only move one of them.
+ *
+ * It also keeps `window/layout.ts` working. That file reads `--gutter` and
+ * `--memo-h` with `getComputedStyle` and writes `--memo-h`/`--inbox-h` back to
+ * `:root`. Those three are deliberately *not* mapped below: they are layout
+ * plumbing, not design tokens, there is no utility anyone should want for them,
+ * and they must stay exactly where the JS expects them.
+ *
+ * Tailwind's own default theme is not imported. This app's palette is the only
+ * one it should be possible to spell -- `bg-red-500` failing to compile is the
+ * feature, not a gap. For the same reason `--spacing` is left undefined, so
+ * `p-4` does not exist and `p-md` does: the spacing scale was built by cutting
+ * twenty-three ad-hoc values down to thirteen named steps, and a numeric escape
+ * hatch would grow them straight back. Both are one line to reverse.
+ *
+ * Three names could not come across unchanged, because Tailwind reads the part
+ * after the namespace as the utility's name and these had no such part:
+ *   --shadow       -> --shadow-default   (`shadow-default`)
+ *   --radius       -> --radius-panel     (`rounded-panel`; base.css calls this
+ *                                        one "a panel", which is the name)
+ *   --font         -> --font-sans        (`font-sans`; there is one family)
+ *
+ * NINE TOKENS ARE DELIBERATELY NOT MAPPED, and the reason is a trap worth
+ * knowing before adding any of them back.
+ *
+ *   --radius-xs  --radius-sm  --radius-md  --radius-lg  --radius-pill
+ *   --shadow-knob  --shadow-even  --shadow-pop  --shadow-toast
+ *
+ * `inline` stops Tailwind emitting a variable of its own -- unless it finds the
+ * key's exact name already being read somewhere in the CSS, which it takes as
+ * "this theme variable is used" and emits after all. These nine are the only
+ * tokens whose base.css name is spelled the same way Tailwind spells its
+ * namespace, so `@theme inline { --radius-xs: var(--radius-xs) }` made Tailwind
+ * write `--radius-xs: var(--radius-xs)` into `:root` -- a variable that refers
+ * to itself. Measured, not guessed: those nine came out and no others.
+ *
+ * That is not a cosmetic problem. Tailwind emits into `:root,:host` OUTSIDE
+ * every layer, and unlayered declarations beat layered ones, so the circular
+ * definition would have won over base.css's real value. A self-reference is
+ * invalid at computed-value time, so `border-radius: var(--radius-xs)` would
+ * have resolved to nothing and four corner sizes and four shadows would have
+ * gone quietly missing -- passing every test in the repo on the way through.
+ *
+ * The rest are safe by accident of naming: base.css abbreviates (`--fs-`,
+ * `--fw-`, `--lh-`, `--ls-`, `--sp-`) where Tailwind spells out (`--text-`,
+ * `--font-weight-`, `--leading-`, `--tracking-`, `--spacing-`), so no key
+ * collides. Radius and shadow were the two it already spelled out in full.
+ *
+ * Fixing it properly means base.css giving these nine up -- they hold one value
+ * each and are not themed (base.css says so of the shadows), so they belong in
+ * `@theme` rather than being mirrored into it. That is a base.css edit, and
+ * #62 is the pass that opens that file anyway. Until then `rounded-sm` and
+ * `shadow-pop` do not exist, which is a gap and not a bug: the hand-written
+ * rules that use them are untouched. `tools/check-styles.js` fails the build if
+ * one of these ever gets added back.
+ */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-panel-3: var(--panel-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-input-bg: var(--input-bg);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --shadow-default: var(--shadow);
+  --color-on-accent: var(--on-accent);
+  --color-scroll: var(--scroll);
+  --color-scroll-hover: var(--scroll-hover);
+  --color-q1: var(--q1);
+  --color-q2: var(--q2);
+  --color-q3: var(--q3);
+  --color-q4: var(--q4);
+  --font-sans: var(--font);
+  --text-xs: var(--fs-xs);
+  --text-sm: var(--fs-sm);
+  --text-md: var(--fs-md);
+  --text-lg: var(--fs-lg);
+  --text-xl: var(--fs-xl);
+  --text-2xl: var(--fs-2xl);
+  --text-3xl: var(--fs-3xl);
+  --font-weight-light: var(--fw-light);
+  --font-weight-normal: var(--fw-normal);
+  --font-weight-medium: var(--fw-medium);
+  --font-weight-semibold: var(--fw-semibold);
+  --leading-none: var(--lh-none);
+  --leading-snug: var(--lh-snug);
+  --leading-normal: var(--lh-normal);
+  --leading-relaxed: var(--lh-relaxed);
+  --tracking-tight: var(--ls-tight);
+  --tracking-wide: var(--ls-wide);
+  --spacing-hair: var(--sp-hair);
+  --spacing-2xs: var(--sp-2xs);
+  --spacing-xs: var(--sp-xs);
+  --spacing-sm: var(--sp-sm);
+  --spacing-md: var(--sp-md);
+  --spacing-lg: var(--sp-lg);
+  --spacing-xl: var(--sp-xl);
+  --spacing-2xl: var(--sp-2xl);
+  --spacing-3xl: var(--sp-3xl);
+  --spacing-4xl: var(--sp-4xl);
+  --spacing-5xl: var(--sp-5xl);
+  --spacing-6xl: var(--sp-6xl);
+  --spacing-7xl: var(--sp-7xl);
+  --radius-panel: var(--radius);
+}

@@ -11,6 +11,7 @@
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 
@@ -49,7 +50,7 @@ export default defineConfig({
   // loadFile() -- there is no server and no origin for an absolute path to be
   // absolute against. Getting this wrong is silent until the app is packaged.
   base: "./",
-  plugins: [jsSpecifiersAreTypeScript(), react()],
+  plugins: [jsSpecifiersAreTypeScript(), tailwindcss(), react()],
   build: {
     outDir: resolve(root, "out/renderer"),
     emptyOutDir: true,
