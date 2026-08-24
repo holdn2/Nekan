@@ -121,6 +121,14 @@
  *   --font   -> --font-sans        (there is one family)
  */
 @theme inline {
+  /* Not tokens, and not from base.css: Tailwind's own theme defines these two
+     and this file does not import it. `border-transparent` is what a control
+     that reserves border space but does not draw one asks for -- the tab strip
+     does exactly that -- and without a colour key by that name it does not
+     compile at all. */
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
   --color-bg: var(--bg);
   --color-panel: var(--panel);
   --color-panel-2: var(--panel-2);

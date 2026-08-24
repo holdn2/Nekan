@@ -19,6 +19,7 @@ import { $ } from "../dom.js";
 import { t } from "../i18n.js";
 import { addTasks, deleteTask, editTask, inboxTasks } from "../store.js";
 import { notify } from "../render-bus.js";
+import { Badge } from "../components/badge.js";
 import { EditableText } from "../components/editable-text.js";
 import { AddForm } from "../components/add-form.js";
 import { ChevronIcon, CloseIcon } from "../react/icons.js";
@@ -152,9 +153,9 @@ function InboxHead() {
           be a bordered pill reading just "Shared", which named a property
           without saying whose. */}
       <span className="inbox-sub">{t("inbox.shared")}</span>
-      <span className="badge" id="inboxCount">
+      <Badge id="inboxCount">
         <InboxCount />
-      </span>
+      </Badge>
     </button>
   );
 }

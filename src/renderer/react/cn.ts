@@ -36,6 +36,8 @@ import { extendTailwindMerge } from "tailwind-merge";
 
 /** Colour tokens, from `@theme inline` in styles/index.css. */
 export const COLORS = [
+  "transparent",
+  "current",
   "bg",
   "panel",
   "panel-2",

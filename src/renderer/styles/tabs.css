@@ -1,57 +1,21 @@
 /**
- * The 매트릭스 / 히스토리 / 휴지통 / 가이드 tab strip.
+ * What is left of the tab strip after it moved to utilities.
+ *
+ * One declaration, and it is here because it is a measurement rather than a
+ * choice. The rest -- the strip's flex row, each tab's box and its two colour
+ * states, the badge's shape -- is spelled on the elements in
+ * window/chrome/tabs.tsx and, for the strip itself, in index.html.
  */
 
-/* ---------- tabs ---------- */
-.tabs {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  padding: var(--sp-md) var(--sp-xl) 0;
-  flex: 0 0 auto;
-}
+/* Vertical padding in px, and 1px heavier on top. That asymmetry belongs to the
+   font, not to the design: flex centres the line box and a reader sees the ink,
+   which in Pretendard sits high in its own line. Solved from the glyph metrics
+   rather than guessed -- with equal padding the digit was 1.2px above centre.
 
-.tab {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-sm);
-  /* Height stated rather than inherited -- see .switch-btn. 31px, as before. */
-  padding: var(--sp-md) var(--sp-2xl);
-  line-height: var(--lh-none);
-  border: 1px solid transparent;
-  border-radius: var(--radius-md) var(--radius-md) 0 0;
-  background: transparent;
-  color: var(--muted);
-}
-
-.tab:hover {
-  color: var(--text);
-}
-
-.tab.active {
-  background: var(--panel);
-  border-color: var(--line);
-  border-bottom-color: var(--panel);
-  color: var(--text);
-  font-weight: var(--fw-medium);
-}
-
-/* Same shape as the quadrant count; see the note there for why inline-flex. */
+   It stays CSS because it is not on the spacing scale and must not be rounded
+   onto it: 3.5px and 2.5px are what the measurement gave. Re-measure when
+   --font changes, and note that the quadrant count in matrix.css carries the
+   same correction for the same reason. */
 .badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  /* Vertical padding in px, and 1px heavier on top. That asymmetry belongs to
-     the font, not to the design: flex centres the line box and a reader sees
-     the ink, which in Pretendard sits high in its own line. Solved from the
-     glyph metrics rather than guessed -- with equal padding the digit was
-     1.2px above centre. Re-measure when --font changes. */
   padding: 3.5px var(--sp-sm) 2.5px;
-  border-radius: var(--radius-pill);
-  background: var(--panel-3);
-  color: var(--muted);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-normal);
-  line-height: var(--lh-none);
-  font-variant-numeric: tabular-nums;
 }
