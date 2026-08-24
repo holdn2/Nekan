@@ -10,7 +10,16 @@
   position: fixed;
   left: 50%;
   bottom: 18px;
-  transform: translateX(-50%);
+  /* The resting state is faded out, and [data-open] brings it in. It used to
+     be the other way round -- a `.hidden` class carried the faded state -- but
+     `hidden` is a utility now, and a utility sets display:none, which is the
+     one thing this element must never have: it animates both ways and a box
+     with no display cannot. State lives in an attribute here for the same
+     reason it does on the sync dot and the theme: it is not a style, and
+     nothing can collide with it. */
+  transform: translate(-50%, 8px);
+  opacity: 0;
+  pointer-events: none;
   z-index: 50;
   display: flex;
   align-items: center;
@@ -27,11 +36,10 @@
     transform 0.18s ease;
 }
 
-/* Faded out rather than removed, so it can animate both ways. */
-.toast.hidden {
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, 8px);
+.toast[data-open] {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%);
 }
 
 .toast.error {
@@ -58,8 +66,4 @@
 .toast-act:hover {
   background: var(--accent);
   color: var(--on-accent);
-}
-
-.toast-act.hidden {
-  display: none;
 }

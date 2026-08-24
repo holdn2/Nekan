@@ -111,7 +111,10 @@
   color: var(--danger);
 }
 
-.duebox.static .due {
+/* Renamed off `static`, which is a Tailwind utility (position: static) and so
+   would have won this rule's element on layer order alone. Harmless while
+   .duebox sets no position -- and a silent break the day it does. */
+.duebox.readonly .due {
   cursor: default;
   opacity: 0.75;
 }

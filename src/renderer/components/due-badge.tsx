@@ -17,7 +17,7 @@ export function DueBadge({ value }: { value: string | null }) {
   const { text, hint } = formatDue(info, t, currentLanguage())!;
 
   return (
-    <span className={`duebox set ${info.state} static`}>
+    <span className={`duebox set ${info.state} readonly`}>
       <span className="due" title={t("due.chip", { date: text, hint })}>
         <span className="face">{text}</span>
       </span>

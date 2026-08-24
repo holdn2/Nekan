@@ -40,11 +40,6 @@
   cursor: row-resize;
 }
 
-.memo.hidden,
-.memo .hidden {
-  display: none !important;
-}
-
 .memo-card {
   display: flex;
   flex-direction: column;

@@ -1,17 +1,8 @@
 /* The first-run screen.
 
    Loaded straight after settings.css, which is where these rules used to live
-   and where two of them still have to sit relative to: the language picker on
-   this card is a `.settings-select`, and the card's own `.hidden` has to come
-   after anything that sets display on it. */
-
-/* No global `.hidden` in this project — every area declares its own, because a
-   bare one-class rule loses to any later rule that sets display, and the
-   blocks below set one. */
-.welcome.hidden,
-.welcome .hidden {
-  display: none;
-}
+   and where one of them still has to sit relative to: the language picker on
+   this card is a `.settings-select`. */
 
 .welcome {
   position: fixed;

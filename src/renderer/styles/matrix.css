@@ -10,10 +10,6 @@
   padding: var(--sp-md) var(--sp-xl) var(--sp-xl);
 }
 
-.view.hidden {
-  display: none !important;
-}
-
 /* Take what is left, rather than asking for content height and growing from
    there. With a basis of `auto` the grid's own content — four quadrants' worth
    of rows — is its base size, which over-subscribes the column even at the

@@ -30,42 +30,38 @@
  * the failure this repo has already had once. */
 @layer theme, nekan, utilities;
 
-@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@import "tailwindcss/utilities.css" layer(utilities);
+@source "../**/*.{ts,tsx,html}";
 
-/* NO UTILITY IS GENERATED YET, AND THAT IS THIS STAGE'S RESULT, NOT AN
- * OVERSIGHT. `source(none)` above is what holds it: the utilities pipeline is
- * imported and running -- which is what makes `@theme` and `@custom-variant`
- * below take effect at all, since Tailwind ignores a stylesheet that imports
- * none of it -- but it is told to scan nothing, so it finds no class names to
- * build from and the layer comes out empty. Dropping `source(none)` and adding
- * an `@source` line for the renderer's .ts, .tsx and .html files is the first
- * move of the next stage. (Do not paste that glob into a comment: it contains
- * the two characters that end one, and the build fails on the CSS after it.)
+/* `hidden` is one utility now, and getting there was the whole gate.
  *
- * Turning it on here was tried and measured. Tailwind scans the renderer and
- * emits a utility for every word that happens to look like one, which came to
- * eighteen: `hidden`, `flex`, `grid`, `block`, `relative`, `border` and so on.
- * Seventeen are inert -- no stylesheet defines a class by those names. The
- * eighteenth is not.
+ * Tailwind scans the renderer and emits a utility for every word that looks
+ * like one -- twenty of them here. Nineteen are inert, because no stylesheet
+ * defines a class by those names. Two were not, and both had to be settled
+ * before this import could go in at all, since a utility lands in a later layer
+ * than `nekan` and layer order beats specificity: it wins over the sheets'
+ * rules however specific they are.
  *
- * `hidden` is this app's own class, applied in twenty-one places, and every
- * area declares its own rule for it (`.view.hidden`, `.memo .hidden`, ...)
- * precisely because there is no global one. Tailwind's `.hidden{display:none}`
- * lands in `utilities`, a later layer than `nekan`, and layer order beats
- * specificity -- so it would override all of them.
+ *   `hidden`  was this app's own class, declared separately by nine sheets
+ *             precisely because there was no global rule -- and the comment in
+ *             each of them said so. Those nine rules are gone: the utility is
+ *             the global rule they were working around, and it is one line
+ *             instead of nine. The footgun they existed to describe ("the class
+ *             goes on and nothing happens") is gone with them.
  *
- * For twenty of the twenty-one that is harmless: the area rule also says
- * `display:none`, so the same element ends up hidden by a different rule. The
- * twenty-first breaks. `.toast.hidden` never touches `display`; it sets opacity
- * and a transform, and toast.css says why beside it -- "Faded out rather than
- * removed, so it can animate both ways." Give the toast `display:none` and both
- * animations stop happening, in a way no test in this repo would notice.
+ *             The toast could not come along. `.toast.hidden` never set
+ *             `display` -- it fades with opacity and a transform, and an
+ *             element with `display: none` cannot animate either way. It keeps
+ *             its state in `data-open` instead, which is what this repo already
+ *             does for the theme and the sync dot, and which nothing can
+ *             collide with.
  *
- * So the utilities wait for the stage that renames `hidden`, which is the same
- * stage that resolves the other thirty-two duplicated class names. That is the
- * work #75 exists to do; this file is only the plumbing it needs. Everything
- * else here -- the import order, the layers, the theme, the dark variant -- is
- * live and does nothing to the screen, which is what this stage was for. */
+ *   `static`  was a modifier on the due chip (`.duebox.static`). Renamed to
+ *             `readonly`. It was harmless today, since `.duebox` sets no
+ *             position, and would have broken silently the day it did.
+ *
+ * `tools/check-styles.js` reads the utilities out of the build rather than
+ * predicting them, so it found both of these and will find the next one. */
 
 /* The sixteen sheets, in the order the `<link>` tags had. Do not sort. */
 @import "./base.css" layer(nekan);

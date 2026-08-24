@@ -158,10 +158,6 @@
   background: var(--accent-soft);
 }
 
-.win-btn.hidden {
-  display: none;
-}
-
 /* The update button wears the accent rather than the muted window-button grey:
    it is only ever on screen when there is something to act on. The ID outranks
    .win-btn:hover, so its hover state has to be spelled out here. */

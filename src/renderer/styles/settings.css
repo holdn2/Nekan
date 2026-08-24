@@ -6,15 +6,6 @@
    The first-run screen used to be in here too and is welcome.css now, which
    loads immediately after this file. */
 
-/* This project has no global `.hidden` — every area declares its own, because
-   a bare one-class rule loses to any later rule that sets display, and every
-   block below sets one. */
-.settings.hidden,
-.settings-backdrop.hidden,
-.settings .hidden {
-  display: none;
-}
-
 /* ---------------------------------------------------------------- popover */
 
 /* Catches the click that closes the panel. Transparent on purpose: this is a

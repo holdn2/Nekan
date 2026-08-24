@@ -194,10 +194,6 @@
   color: var(--faint);
 }
 
-.empty.hidden {
-  display: none;
-}
-
 /* Version and update state, at the end of the document rather than in the
    title bar — see the comment on .guide-about in index.html. Quiet on purpose:
    it is the answer to a question, not something to notice while working. */

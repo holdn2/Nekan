@@ -1,15 +1,6 @@
 /* The account block in the guide, and the sync chip in the title bar.
    Loaded after guide.css so it can lean on the guide's type scale. */
 
-/* This project has no global `.hidden` -- every area declares its own, and it
-   has to, because a bare `.hidden { display: none }` would lose to any later
-   rule that sets display. Every block below sets one, so without this the
-   class goes on and nothing happens: both halves of the account panel show at
-   once. Two selectors deep beats the one-class rules underneath. */
-.account .hidden {
-  display: none;
-}
-
 .account {
   margin: var(--sp-2xl) 0 var(--sp-sm);
   padding: var(--sp-2xl) var(--sp-3xl);

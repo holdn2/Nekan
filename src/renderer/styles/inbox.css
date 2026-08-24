@@ -35,10 +35,6 @@ section.inbox {
   transition: border-color 0.12s ease;
 }
 
-section.inbox.hidden {
-  display: none !important;
-}
-
 section.inbox.drop {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent) inset;
@@ -175,8 +171,4 @@ section.inbox.open .inbox-body {
 .dot.inbox {
   background: transparent;
   border: 1.5px solid var(--muted);
-}
-
-.chip.hidden {
-  display: none !important;
 }

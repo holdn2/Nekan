@@ -59,14 +59,18 @@ function Toast() {
     () => state,
   );
 
-  // Always rendered, never conditional: `.toast.hidden` fades out rather than
+  // Always rendered, never conditional: the strip fades out rather than
   // disappearing, and an element React has unmounted cannot animate on its way
   // off screen. The ids stay for the same reason the classes do -- the
   // stylesheet and anything looking at this from outside still name them.
+  //
+  // Open is an attribute, not a class. `hidden` is a utility now and utilities
+  // set display:none, which would stop the animation this element exists for.
   return (
     <div
       id="toast"
-      className={`toast${open ? "" : " hidden"}${error ? " error" : ""}`}
+      className={`toast${error ? " error" : ""}`}
+      data-open={open ? "" : undefined}
       role="status"
       aria-live="polite"
     >

@@ -36,6 +36,21 @@ test("selectors inside @media and @layer are still selectors", () => {
   assert.deepEqual([...classesIn(css)].sort(), ["layered", "motion"]);
 });
 
+test("a class only asked about in :not() or :has() is not a definition", () => {
+  // welcome.css has `body:has(#welcome:not(.hidden)) #minBtn`, which styles a
+  // window button and says nothing about .hidden. Counting it made one sheet
+  // look like it owned a name it only looks for.
+  assert.deepEqual(
+    [...classesIn("body:has(#w:not(.hidden)) .win-btn { z-index: 1 }")].sort(),
+    ["win-btn"],
+  );
+  // :is() and :where() are the other way round -- those really are styled.
+  assert.deepEqual([...classesIn(":is(.a, .b) { color: red }")].sort(), [
+    "a",
+    "b",
+  ]);
+});
+
 test("a class defined in two sheets is reported with both of them", () => {
   const where = definitionsBySheet([
     sheet("a.css", ".shared { color: red } .only-a {}"),

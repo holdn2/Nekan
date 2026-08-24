@@ -1,8 +1,8 @@
 /**
  * Hold the line on the two things the Tailwind migration can break quietly.
  *
- * #75 exists because 171 class names are spread over sixteen stylesheets and
- * 33 of them are defined in more than one file. `hidden` is in nine. That is
+ * #75 exists because 170 class names are spread over sixteen stylesheets and
+ * 33 of them were defined in more than one file. `hidden` was in nine. That is
  * the number the migration is supposed to move, and a number nobody watches
  * moves the wrong way -- so this ratchets it: adding a duplicate fails the
  * build, removing one asks you to lower the line.
@@ -29,15 +29,51 @@ const BUILT = path.join(__dirname, "..", "out", "renderer", "assets");
 
 /**
  * How many duplicated class names are allowed. This is a ratchet, not a
- * target: it is the count on the day the plumbing landed, and every component
- * #62 redraws should take a bite out of it.
+ * target: every component that moves to utilities should take a bite out of it,
+ * and the number only ever goes down. 33 the day the plumbing landed; 32 once
+ * `hidden` stopped being nine per-area rules and became one utility.
  */
-const MAX_DUPLICATED = 33;
+const MAX_DUPLICATED = 32;
 
 const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, "");
 
 /** At-rules that hold style rules rather than declarations. */
 const GROUPING = /^@(media|supports|layer|container|scope|document)\b/;
+
+/**
+ * Drop the arguments of `:not()` and `:has()` from a selector.
+ *
+ * A class in there is a condition, not something being styled:
+ * `body:has(#welcome:not(.hidden)) #minBtn` styles a window button, and says
+ * nothing about `.hidden` or `#welcome`. Counting those as definitions makes a
+ * sheet look like it owns a name it only asks about -- which is the difference
+ * between "nine sheets define .hidden" and "one sheet looks for it".
+ *
+ * `:is()` and `:where()` are deliberately left alone: their arguments really do
+ * get styled.
+ */
+function withoutConditions(selector) {
+  let out = "";
+  let i = 0;
+  while (i < selector.length) {
+    const rest = selector.slice(i);
+    const m = /^:(not|has)\(/.exec(rest);
+    if (!m) {
+      out += selector[i];
+      i++;
+      continue;
+    }
+    let depth = 1;
+    let j = i + m[0].length;
+    while (j < selector.length && depth > 0) {
+      if (selector[j] === "(") depth++;
+      else if (selector[j] === ")") depth--;
+      j++;
+    }
+    i = j;
+  }
+  return out;
+}
 
 /**
  * Every class name a stylesheet defines.
@@ -53,8 +89,11 @@ function classesIn(css) {
   let prelude = "";
 
   const take = (selector) => {
-    for (const m of selector.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g))
+    for (const m of withoutConditions(selector).matchAll(
+      /\.(-?[_a-zA-Z][\w-]*)/g,
+    )) {
       found.add(m[1]);
+    }
   };
 
   const walk = () => {

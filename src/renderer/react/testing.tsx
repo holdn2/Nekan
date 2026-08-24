@@ -95,6 +95,25 @@ export function find<T extends HTMLElement = HTMLElement>(selector: string): T {
   return el;
 }
 
-/** Is it on screen? These components hide by class, never by unmounting. */
+/**
+ * Is it hidden by the `hidden` class? That class is a Tailwind utility now, so
+ * it is one rule for the whole app rather than one per area.
+ *
+ * This is a class check, and a class check cannot see whether anything is
+ * actually painted -- CLAUDE.md has the story of an account panel that showed
+ * both halves at once while every `classList.contains` said otherwise. It is
+ * enough here only because these components hide by class and never by
+ * unmounting; anything about layout still has to be looked at in the app.
+ */
 export const hidden = (selector: string) =>
   find(selector).classList.contains("hidden");
+
+/**
+ * Is it faded in? For the toast, which cannot use `hidden`.
+ *
+ * The utility sets `display: none`, and a box with no display cannot animate.
+ * So the toast carries its state in `data-open` and stays in the flow the whole
+ * time -- see toast.css.
+ */
+export const open = (selector: string) =>
+  find(selector).hasAttribute("data-open");

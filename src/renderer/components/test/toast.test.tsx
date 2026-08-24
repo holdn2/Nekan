@@ -4,7 +4,7 @@
  */
 
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { flush, find, hidden } from "../../react/testing.js";
+import { flush, find, hidden, open } from "../../react/testing.js";
 import { toast } from "../toast.js";
 
 beforeEach(() => {
@@ -23,7 +23,7 @@ afterEach(() => {
 test("shows the message it was given", async () => {
   await flush(() => toast("saved"));
   expect(find("#toastText").textContent).toBe("saved");
-  expect(hidden("#toast")).toBe(false);
+  expect(open("#toast")).toBe(true);
 });
 
 test("an error tints it", async () => {
@@ -54,11 +54,11 @@ test("a later toast never keeps the previous action", async () => {
 test("it fades rather than disappearing", async () => {
   await flush(() => toast("saved", { ms: 4000 }));
   await flush(() => vi.advanceTimersByTime(4000));
-  // Still in the document, still holding its words: .toast.hidden is a
+  // Still in the document, still holding its words: losing [data-open] is a
   // transition, and an element React had unmounted could not animate out.
   expect(document.querySelector("#toast")).not.toBeNull();
   expect(find("#toastText").textContent).toBe("saved");
-  expect(hidden("#toast")).toBe(true);
+  expect(open("#toast")).toBe(false);
 });
 
 test("a second toast restarts the clock", async () => {
@@ -66,7 +66,7 @@ test("a second toast restarts the clock", async () => {
   await flush(() => vi.advanceTimersByTime(3000));
   await flush(() => toast("second", { ms: 4000 }));
   await flush(() => vi.advanceTimersByTime(3000));
-  expect(hidden("#toast")).toBe(false);
+  expect(open("#toast")).toBe(true);
   await flush(() => vi.advanceTimersByTime(1000));
-  expect(hidden("#toast")).toBe(true);
+  expect(open("#toast")).toBe(false);
 });
