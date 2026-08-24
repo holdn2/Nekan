@@ -503,6 +503,15 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   **`APPLE_API_KEY`는 값이 아니라 `.p8`의 경로다** — 그래서 그 시크릿만 러너 디스크에 써야 하고,
   워크스페이스가 아니라 `$RUNNER_TEMP`에 둔다(패키저가 작업 트리를 훑고 업로드가 `dist/`를
   훑는다). `@electron/notarize`의 `notarize()`는 제출 뒤 **stapling까지 한다**(2.5.0 확인).
+- **서명 시크릿은 저장소 시크릿이고, 그건 쓰기 권한자가 한 명일 때만 괜찮다.** 지금은
+  `holdn2` 하나뿐이라(`gh api repos/holdn2/Nekan/collaborators`) `workflow_dispatch`를 누를 수
+  있는 사람과 시크릿을 읽을 수 있는 사람이 같다. **협업자가 둘이 되는 순간 달라진다** — 그
+  사람은 `pull_request` 워크플로를 하나 추가하는 것만으로 `MAC_CSC_LINK`를 가져갈 수 있다
+  (공개 저장소라 fork PR에는 시크릿이 안 가지만, 같은 저장소의 브랜치에는 간다).
+  **그때 Environment로 옮긴다.** 조건은 "릴리스 준비가 됐을 때"가 아니라 **"쓰기 권한자가 둘
+  이상이 됐을 때"**다. 지금 옮기면 소유자가 자기 실행을 자기가 승인하는 절차만 생기고,
+  **대상을 릴리스 브랜치로 좁히면 서명 검증 자체가 불가능해진다** — 위 항목대로 PR에서는
+  서명이 돌지 않으므로 기능 브랜치에 대고 손으로 돌리는 것이 유일한 확인 방법이다.
 - **빌드 로그의 "notarization successful"은 빌더의 자기 진술이다.** 실제로 열리는지는 OS에
   물어야 한다 — `codesign --verify --deep --strict` · `xcrun stapler validate` ·
   `spctl --assess --type execute`. 특히 stapler가 중요하다: 티켓이 발급됐지만 stapling이 안 되면
