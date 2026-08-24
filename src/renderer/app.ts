@@ -13,11 +13,7 @@
  * its own.
  */
 
-import {
-  normalizeTasks,
-  startOfToday,
-  startOfTomorrow,
-} from "../shared/core.js";
+import { normalizeTasks } from "../shared/core.js";
 import type { Task } from "../shared/types.js";
 
 /** The two shapes main pushes. Read off window.api so they cannot drift. */
@@ -25,16 +21,24 @@ type UpdateStatus = Parameters<
   Parameters<typeof window.api.onUpdateStatus>[0]
 >[0];
 type SyncStatus = Parameters<Parameters<typeof window.api.onSyncStatus>[0]>[0];
-import { acceptSynced, setClockOffset, setTasks } from "./store.js";
-import { notify, subscribe } from "./render-bus.js";
+import { setClockOffset, setTasks } from "./store.js";
+import { subscribe } from "./render-bus.js";
+import { scheduleDayRollover, watchForDayChange } from "./app/day-rollover.js";
+import { wireShortcuts } from "./app/shortcuts.js";
+import {
+  enterMode,
+  listenForPushes,
+  pushedMode,
+  pushedSync,
+  pushedTasks,
+  pushedUpdate,
+} from "./app/pushes.js";
 import { applyStaticStrings, currentLanguage, t } from "./i18n.js";
-import { $ } from "./dom.js";
 import { toast } from "./components/toast.js";
 import { mountMatrix } from "./views/matrix.js";
-import { applyInboxOpen, focusInbox, mountInbox } from "./views/inbox.js";
+import { applyInboxOpen, mountInbox } from "./views/inbox.js";
 import { mountArchive } from "./views/archive.js";
 import {
-  announceOverwritten,
   applySession,
   applySyncStatus,
   mountAccount,
@@ -43,7 +47,6 @@ import {
 import { mountMemo } from "./views/memo.js";
 import { dropStaleSelection } from "./selection.js";
 import { mountSettings } from "./views/settings.js";
-import { closeSettings } from "./panels.js";
 import {
   mountWelcome,
   needsWelcome,
@@ -56,15 +59,11 @@ import {
   applyTheme,
   applyUpdateStatus,
   applyVersion,
-  getTab,
   mountChrome,
-  setTab,
-  toggleTheme,
 } from "./window/chrome.js";
 import { applyMode, getMode, toggleSize } from "./window/mode.js";
 import { setLayout, wireMemoEdge, wireQuadEdges } from "./window/layout.js";
 import { wireDragAndDrop } from "./window/dnd.js";
-import { exportBoard } from "./window/export-ui.js";
 
 /* -------------------------------------------------------------- rendering */
 
@@ -85,125 +84,7 @@ function render() {
   dropStaleSelection();
 }
 
-/* --------------------------------------------------------- day rollover */
-
-/**
- * Every due-date label is relative to *today*, but this widget is meant to sit
- * on screen for days. Without a rollover, an item added yesterday keeps its
- * orange "today" chip until some unrelated click happens to re-render.
- */
-let dayTimer: ReturnType<typeof setTimeout> | null = null;
-let renderedDay = startOfToday().getTime();
-
-/** Redraw only if the date actually moved on. */
-function refreshIfDayChanged() {
-  const today = startOfToday().getTime();
-  if (today === renderedDay) return;
-  renderedDay = today;
-  // notify(), not render(): render() is what the bus calls, and it only drops
-  // a selection that has gone stale. Every due date on screen is worded
-  // relative to today, so the day changing has to reach the components -- and
-  // they hear it the same way every other change reaches them.
-  notify();
-}
-
-/** Re-arm for the next local midnight, and keep re-arming after that. */
-function scheduleDayRollover() {
-  if (dayTimer) clearTimeout(dayTimer);
-  // +1s of slack so a timer that fires a hair early doesn't re-render the
-  // day that is still ending and then wait another 24h.
-  const wait = startOfTomorrow().getTime() - Date.now() + 1000;
-  dayTimer = setTimeout(
-    () => {
-      refreshIfDayChanged();
-      scheduleDayRollover();
-    },
-    Math.max(1000, wait),
-  );
-}
-
-/* -------------------------------------------------------------- shortcuts */
-
-/**
- * The global keys. They live here rather than in the modules they drive
- * because each one crosses two of them (a tab *and* a focus, a mode *and* a
- * guard), and because one listener is easier to keep consistent than six.
- */
-function wireShortcuts() {
-  document.addEventListener("keydown", (e) => {
-    // Every shortcut here is Ctrl + one key. AltGr reports itself as
-    // ctrlKey+altKey on Windows, so without the altKey test a layout that types
-    // @ or € through AltGr would fire a shortcut *and* have preventDefault eat
-    // the character.
-    if (!e.ctrlKey || e.altKey) return;
-
-    if (e.key.toLowerCase() === "m") {
-      e.preventDefault();
-      toggleSize();
-      return;
-    }
-    if (e.key.toLowerCase() === "e") {
-      e.preventDefault();
-      // Nothing on screen to export from a bar, and the save dialog would open
-      // over a window with no board behind it.
-      if (getMode() === "collapsed") return;
-      closeSettings();
-      exportBoard();
-      return;
-    }
-    if (e.key.toLowerCase() === "d") {
-      e.preventDefault();
-      toggleTheme();
-      return;
-    }
-    // Ctrl+0 continues the Ctrl+1~4 run: 0 is the "not sorted yet" slot.
-    if (e.key === "0") {
-      e.preventDefault();
-      if (getMode() === "collapsed") return;
-      setTab("matrix");
-      focusInbox();
-      return;
-    }
-    if (["1", "2", "3", "4"].includes(e.key)) {
-      e.preventDefault();
-      if (getMode() === "collapsed") return;
-      setTab("matrix");
-      $(`[data-add="q${e.key}"] input[type="text"]`)?.focus();
-    }
-  });
-
-  // Waking from sleep or coming back to the window can also cross midnight,
-  // and either may happen while the rollover timer is still pending.
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) refreshIfDayChanged();
-  });
-  window.addEventListener("focus", refreshIfDayChanged);
-}
-
 /* ------------------------------------------------------------------- init */
-
-/**
- * applyMode, plus the one thing that must not survive a trip into the bar.
- *
- * collapsed.css hides the settings popover, but hiding is not closing:
- * views/settings.js would still believe it is open, and the first gear press
- * in the bar would spend itself closing something nobody can see. It lives
- * here rather than inside applyMode() because chrome.js must not import
- * settings.js -- that direction is already taken.
- */
-function enterMode(next: string) {
-  if (next === "collapsed") closeSettings();
-  applyMode(next);
-}
-
-/** Last mode pushed by the main process, which outranks the load snapshot. */
-let pushedMode: string | null = null;
-/** Same for the update status, for the same reason. */
-let pushedUpdate: UpdateStatus | null = null;
-/** Same again, for a sync that finished before the load snapshot arrived. */
-let pushedTasks: Task[] | null = null;
-/** And for its status, which is pushed on the same schedule. */
-let pushedSync: SyncStatus | null = null;
 
 /**
  * Load, wire, draw. The order is what matters here: the mode listener before
@@ -217,42 +98,14 @@ async function init() {
   document.documentElement.lang = currentLanguage();
   applyStaticStrings();
 
-  // Registered before the first await: the main process sends 'win:mode' from
-  // ready-to-show, and a listener attached later would miss it silently.
-  window.api.onMode((next) => {
-    pushedMode = next;
-    enterMode(next);
-  });
-
-  // Same race, longer odds: the first update check is seconds away, and the
-  // reply below could still be in flight when it lands.
-  window.api.onUpdateStatus((next) => {
-    pushedUpdate = next;
-    applyUpdateStatus(next, { announce: true });
-  });
-
-  // Same race as the two above, and the same fix: the first sync runs three
-  // seconds after launch and the reply below could still be in flight. Both
-  // lists come from main's one array, so the later one is the newer one.
-  window.api.onSyncTasks((tasks, offset, overwritten) => {
-    setClockOffset(offset);
-    pushedTasks = normalizeTasks(tasks);
-    acceptSynced(pushedTasks);
-    announceOverwritten(overwritten);
-  });
-
-  // Carries the session as well as the state. Main can end a session on its
-  // own when a token turns out to be revoked, and this is how the guide finds
-  // out rather than going on showing an email it no longer has.
-  window.api.onSyncStatus((next) => {
-    pushedSync = next;
-    applySession(next.session ?? null);
-    applySyncStatus(next);
-  });
+  // Registered before the first await. Main sends 'win:mode' from
+  // ready-to-show, and a listener attached after this point misses it in
+  // silence -- see the note in app/pushes.ts.
+  listenForPushes();
 
   const state = await window.api.load();
   setClockOffset(state.clockOffset);
-  setTasks(normalizeTasks(pushedTasks || state.tasks));
+  setTasks(normalizeTasks(pushedTasks() || state.tasks));
   // Every change ends on the render bus, so this one subscription is what keeps
   // the screen in step with the data.
   subscribe(render);
@@ -270,8 +123,8 @@ async function init() {
   // The session follows the same rule as the mode and the update status: a
   // value that was pushed while load() was in flight is the newer one, and
   // state.auth would otherwise put a signed-out snapshot back on screen.
-  applySession(pushedSync ? (pushedSync.session ?? null) : state.auth);
-  applySyncStatus(pushedSync || state.sync);
+  applySession(pushedSync() ? (pushedSync()!.session ?? null) : state.auth);
+  applySyncStatus(pushedSync() || state.sync);
 
   mountChrome();
   mountInbox();
@@ -280,6 +133,7 @@ async function init() {
   mountArchive();
   mountMemo();
   wireShortcuts();
+  watchForDayChange();
   wireDragAndDrop();
   wireQuadEdges();
   wireMemoEdge();
@@ -297,10 +151,10 @@ async function init() {
 
   // No announce: this is the state as it already stood, and a reload arrives
   // here too. Whatever landed as a push above has announced itself already.
-  applyUpdateStatus(pushedUpdate || state.update);
+  applyUpdateStatus(pushedUpdate() || state.update);
   // state.mode is a snapshot from before ready-to-show, so a mode that was
   // pushed in the meantime is the newer truth. This is also the first render.
-  enterMode(pushedMode || state.mode || "expanded");
+  enterMode(pushedMode() || state.mode || "expanded");
   scheduleDayRollover();
   releaseSwitches();
 }

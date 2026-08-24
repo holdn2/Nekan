@@ -6,13 +6,13 @@
 
 import { act } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import type { Task } from "../../shared/types.js";
-import { activeOf, setTasks } from "../store.js";
-import { setLanguage } from "../i18n.js";
-import { clearSelectionSilently } from "../selection.js";
-import { notify } from "../render-bus.js";
-import { find, mount } from "../react/testing.js";
-import { mountMatrix } from "./matrix.js";
+import type { Task } from "../../../shared/types.js";
+import { activeOf, setTasks } from "../../store.js";
+import { setLanguage } from "../../i18n.js";
+import { clearSelectionSilently } from "../../selection.js";
+import { notify } from "../../render-bus.js";
+import { find, mount } from "../../react/testing.js";
+import { mountMatrix } from "../matrix.js";
 
 const task = (n: number, over: Partial<Task> = {}): Task => ({
   id: `t${n}`,

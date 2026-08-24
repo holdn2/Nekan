@@ -6,12 +6,12 @@
  */
 
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import type { Task } from "../../shared/types.js";
-import { setTasks } from "../store.js";
-import { setLanguage } from "../i18n.js";
+import type { Task } from "../../../shared/types.js";
+import { setTasks } from "../../store.js";
+import { setLanguage } from "../../i18n.js";
 import { act } from "react";
-import { find, mount } from "../react/testing.js";
-import { mountArchive, resetArchivePaging } from "./archive.js";
+import { find, mount } from "../../react/testing.js";
+import { mountArchive, resetArchivePaging } from "../archive.js";
 
 const DAY = 86400000;
 
@@ -76,13 +76,13 @@ beforeEach(async () => {
   setLanguage("en");
   resetArchivePaging();
   shell();
-  const { setTab } = await import("../window/chrome.js");
+  const { setTab } = await import("../../window/chrome.js");
   setTab("history");
 });
 
 test("draws nothing while its tab is not the one on screen", async () => {
   setTasks([done(1)]);
-  const { setTab } = await import("../window/chrome.js");
+  const { setTab } = await import("../../window/chrome.js");
   const { flush } = await mount(<div />);
   draw();
   await flush(() => setTab("trash"));

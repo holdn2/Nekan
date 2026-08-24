@@ -623,3 +623,35 @@ account · settings · welcome)과 타이틀바가 `.tsx`다.
 
 **얻은 것** `strict`가 `src/` 전체로 올라갔다(렌더러 140개·메인 105개를 고치고). 그 과정에서
 조용히 어긋나는 종류의 결함 23개가 나왔다 — 목록은 그날 두 커밋의 메시지에 있다.
+
+## 2026-08-23 — 큰 파일을 폴더로 가르고, 테스트를 그 폴더의 `test/`로
+
+**무엇을** 200줄을 넘던 파일 열둘을 같은 이름의 폴더로 갈랐다. 밖에서 부르는 이름은 하나도
+바뀌지 않았다 — 옛 파일이 배럴로 남는다: `shared/core` · `shared/export` · `shared/sync` ·
+`main/api-client` · `main/sync` · `main/ipc` · `main/window` · `renderer/store` ·
+`renderer/app` · `renderer/views/archive` · `renderer/views/account` ·
+`renderer/window/chrome` · `renderer/window/layout`. 그리고 테스트는 전부 자기가 덮는 코드
+옆의 `test/`로 옮겼다 — 루트의 `test/`는 없어졌다.
+
+**왜 배럴을 남겼나** 26개 파일이 `shared/core.js`를 부르고 있었다. 경로를 26곳 고치는 변경은
+diff가 커져 **정작 위험한 부분(모듈 경계가 옳은가)이 묻힌다.** 배럴은 `export *`라 컴파일러가
+검사한다 — 손으로 적은 재수출 목록이 `core-bridge.js`에서 무엇을 했는지 기억할 것.
+
+**두 배럴만 `export *`가 아니다.** `main/api-client.ts`와 `renderer/store.ts`. 이유가 같다:
+쪼갠 조각들이 서로에게 **밖으로 나가면 안 되는 것**을 건네야 했다. 전자는 살아 있는 세션과
+진행 중인 갱신·로그아웃 카운터, 후자는 `tasks` 배열 자체(`allTasks()`)다. `export *`로 두면
+"토큰은 IPC를 건너지 않는다"와 "배열에 직접 push하지 않는다"가 **한 줄 import 거리**가 된다.
+
+**모듈 상태를 쪼갤 때는 읽기 함수로 바꿨다.** `let session` → `currentSession()`,
+`let updateStatus` → `currentUpdate()`. 내보낸 바인딩을 그대로 쓰면 import한 쪽이 **그 값이
+참이던 순간에 붙잡아 두게 되고**, 창이 생기기 전 메인이 보낸 null이 그대로 굳는다.
+
+**하지 않은 것** `views/welcome.tsx`(293줄)와 `styles/settings.css`는 손대지 않았다 — 그 시점에
+사용자가 #62로 작업 중인 파일이었다. `main/updater.ts`(215)·`views/inbox.tsx`(214)처럼
+200줄 언저리인 것도 그대로 뒀다: 자를 자리가 성격이 아니라 줄 수뿐이면 자르지 않는다.
+
+**대가와 함정** 파일이 깊어지면서 `__dirname` 기준 경로가 조용히 어긋났다
+(`main/window/state.ts`의 `SRC`). **타입검사도 두 러너도 전부 통과했고**, 앱을 띄워야만
+`ERR_FILE_NOT_FOUND`로 보였다. 이름을 정규식으로 바꾼 것도 두 번 문자열을 먹었다
+(`role="status"` · `className="app-version"`) — 새 파일들의 문자열 리터럴을 옛 파일의 것과
+통째로 대조해서 잡았다. **정규식으로 이름을 바꿨으면 문자열을 따로 검산할 것.**
