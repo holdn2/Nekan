@@ -127,11 +127,18 @@ function hasSource(rel, produced) {
   // exists to remove, wearing the face of a source file.
   if (ASSET_EXT.has(path.extname(rel))) return produced.has(rel);
 
-  // out/test/ is the same tree one level down: tsconfig.test.json has a
-  // rootDir of src/ and an outDir of out/test/, so out/test/shared/test/x.js
-  // came from src/shared/test/x.ts. Strip the prefix and ask src/ as usual.
-  const sub = rel.startsWith("test/") ? rel.slice("test/".length) : rel;
-  const root = SRC;
+  // out/test/ is the repository one level down: tsconfig.test.json has a
+  // rootDir of "." and an outDir of out/test/, so out/test/src/shared/test/x.js
+  // came from src/shared/test/x.ts and out/test/tools/test/y.js from
+  // tools/test/y.ts. Strip the prefix and ask the repository rather than src/:
+  // asking src/ looks for src/src/... and finds nothing, so prune deletes all
+  // nineteen compiled tests. It is not fatal -- prune runs before the
+  // compilers, so tsc writes them again -- but the test project is then rebuilt
+  // in full on every build, which is the cost this function exists to avoid
+  // (measured 2026-08-24: "19 stale removed" on three builds in a row).
+  const inTest = rel.startsWith("test/");
+  const sub = inTest ? rel.slice("test/".length) : rel;
+  const root = inTest ? ROOT : SRC;
   // A .js or a .d.ts in out/ was produced by the .ts or .js of the same name;
   // anything else was copied verbatim and keeps its name.
   const stem = sub.replace(/\.d\.ts$/, "").replace(/\.js$/, "");

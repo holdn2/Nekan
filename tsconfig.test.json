@@ -7,11 +7,19 @@
   // tests: `files` in package.json drops out/test/** from the package, and
   // out/shared/ is ES modules while these are not.
   //
-  // The sources sit beside what they cover -- src/shared/test/, src/main/test/
-  // -- so a rule and its test are in the same place. That works only because
-  // they import through #shared/* and #main/*, which name the built module
-  // from the package root: a relative path would follow the file here and
-  // point at nothing once the output moves to out/test/.
+  // The sources sit beside what they cover -- src/shared/test/, src/main/test/,
+  // tools/test/ -- so a rule and its test are in the same place. That works
+  // only because they import through #shared/*, #main/* and #tools/*, which
+  // name the module from the package root: a relative path would follow the
+  // file here and point at nothing once the output moves to out/test/.
+  //
+  // rootDir is the repository rather than src/ because one of the things under
+  // test is not in src/ at all: tools/check-release.js runs after the build,
+  // not as part of it, so its test sits beside it. A project has one rootDir,
+  // and the only directory holding both src/ and tools/ is the repository. So
+  // out/test/ mirrors the repository -- out/test/src/... and out/test/tools/...
+  // -- and tools/build.js has to look for their sources from here, not from
+  // src/.
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     // The one place that is not strict, and on purpose. Its 79 complaints are
@@ -20,14 +28,14 @@
     // the whole job of the file. Tightening it would buy a safety net for the
     // safety net.
     "strict": false,
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "out/test",
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "types": ["node"],
     "esModuleInterop": true
   },
-  "include": ["src/**/test/**/*.ts"],
+  "include": ["src/**/test/**/*.ts", "tools/**/test/**/*.ts"],
   "references": [
     { "path": "./tsconfig.shared.json" },
     { "path": "./tsconfig.main.json" }
