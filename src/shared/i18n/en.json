@@ -232,6 +232,7 @@
     "themeLight": "Light",
     "themeDark": "Dark",
     "export": "Export",
+    "exportShortcut": "{{mod}}+E",
     "sync": "Sync across devices",
     "language": "Language",
     "close": "Close"
