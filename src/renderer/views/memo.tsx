@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { clampMemo } from "../../shared/core.js";
 import { t } from "../i18n.js";
+import { accel } from "../keys.js";
 import { setMemo } from "../store.js";
 import {
   isMemoEditing,
@@ -139,13 +140,14 @@ export function MemoPanel() {
           spellCheck={false}
           onKeyDown={(e) => {
             // An IME is mid-word: the Escape that abandons a Korean syllable
-            // must not also close the note. Ctrl+Enter is safe either way, but
-            // the guard belongs to the handler rather than to one branch.
+            // must not also close the note. Accelerator+Enter is safe either
+            // way, but the guard belongs to the handler rather than to one
+            // branch.
             if (e.nativeEvent.isComposing) return;
             if (e.key === "Escape") {
               e.preventDefault();
               cancel();
-            } else if (e.key === "Enter" && e.ctrlKey) {
+            } else if (e.key === "Enter" && accel(e.nativeEvent)) {
               e.preventDefault();
               save();
             }

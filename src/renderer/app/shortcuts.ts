@@ -1,12 +1,14 @@
 /**
  * The keyboard, for the things that are not a button anywhere.
  *
- * Only Ctrl combinations are handled here. Escape belongs to whichever panel
- * is open and is bound by that panel, which is why closing the settings
- * popover is not in this file.
+ * Only accelerator combinations are handled here -- Cmd on macOS, Ctrl
+ * everywhere else; see keys.ts. Escape belongs to whichever panel is open and
+ * is bound by that panel, which is why closing the settings popover is not in
+ * this file.
  */
 
 import { $ } from "../dom.js";
+import { accel } from "../keys.js";
 import { focusInbox } from "../views/inbox.js";
 import { setTab, toggleTheme } from "../window/chrome.js";
 import { getMode, toggleSize } from "../window/mode.js";
@@ -20,11 +22,9 @@ import { exportBoard } from "../window/export-ui.js";
  */
 function wireShortcuts() {
   document.addEventListener("keydown", (e) => {
-    // Every shortcut here is Ctrl + one key. AltGr reports itself as
-    // ctrlKey+altKey on Windows, so without the altKey test a layout that types
-    // @ or € through AltGr would fire a shortcut *and* have preventDefault eat
-    // the character.
-    if (!e.ctrlKey || e.altKey) return;
+    // Every shortcut here is the accelerator + one key. Which key that is, and
+    // why AltGr and Option are ruled out, is keys.ts.
+    if (!accel(e)) return;
 
     if (e.key.toLowerCase() === "m") {
       e.preventDefault();
@@ -45,7 +45,7 @@ function wireShortcuts() {
       toggleTheme();
       return;
     }
-    // Ctrl+0 continues the Ctrl+1~4 run: 0 is the "not sorted yet" slot.
+    // 0 continues the 1~4 run: it is the "not sorted yet" slot.
     if (e.key === "0") {
       e.preventDefault();
       if (getMode() === "collapsed") return;

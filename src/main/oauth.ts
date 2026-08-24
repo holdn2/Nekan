@@ -61,7 +61,7 @@ function donePage(message: string) {
   return `<!doctype html><html lang="${language()}"><head><meta charset="utf-8">
 <title>Nekan</title><style>
 body{margin:0;height:100vh;display:grid;place-items:center;background:#f7f5ef;
-color:#23211d;font:16px/1.6 "Pretendard Variable","Pretendard","Malgun Gothic","Segoe UI",system-ui,sans-serif}
+color:#23211d;font:16px/1.6 "Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",-apple-system,"Segoe UI",system-ui,sans-serif}
 @media(prefers-color-scheme:dark){body{background:#171614;color:#e8e4da}}
 p{margin:0}</style></head><body><p>${message}</p></body></html>`;
 }

@@ -43,6 +43,10 @@ The **gear** in the title bar collects them in one place.
 
 Pressing it in bar mode expands the window first.
 
+On macOS read every `Ctrl` in this document, and in the guide tab, as `Cmd` --
+the app uses whichever modifier that OS means. The guide tab says the right word
+for the OS it is running on.
+
 **The language follows your computer on the first launch** — Korean in a Korean environment, English everywhere
 else. Once you pick one it is remembered, and a later change to the computer's language does not override it.
 Switching takes effect on the spot, with no restart, and exported documents come out in the language you picked.
