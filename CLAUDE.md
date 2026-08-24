@@ -57,6 +57,7 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
     panels.ts      설정 패널이 열려 있나. 톱니바퀴는 타이틀바가 그리고 Escape는 문서에
                    붙으므로, 뷰가 가질 수 없는 상태다
     dom.ts         $ · $$ · target · labelBtn
+    keys.ts        isMac · accel(e) · accelName(). 조합키가 어느 키인지 한 곳
     window-api.d.ts  window.api를 preload의 `typeof api`에서 받아 전역으로 선언
     components/    toast · due-chip · due-badge · memo-mark · memo-line ·
                    editable-text · add-form · language-select
@@ -592,6 +593,23 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   **정렬을 볼 때는 언어를 바꿔가며 볼 것** — 같은 폭의 낱말은 결함을 가린다.
 - 언어 선택은 `.switch`가 아니라 `<select>`다. 알약이 `calc(50% - 2px)` + `translateX(100%)`라
   **정확히 두 칸일 때만 맞는다** — 세 번째 언어를 넣는 날 깨진다.
+- **조합키는 macOS에서 Cmd다. 그것을 아는 곳이 `renderer/keys.ts` 하나뿐이어야 한다.**
+  `KeyboardEvent`는 Cmd를 `metaKey`, Ctrl을 `ctrlKey`로 따로 보고하므로 **`ctrlKey`만 보면
+  맥에서는 단축키가 이상하게 도는 게 아니라 하나도 안 돈다.** 판정은 `accel(e)`이 하고,
+  플랫폼은 `window.api.platform`에서 온다 — `process.platform`은 샌드박스 preload에도
+  남아 있는 몇 가지 중 하나라 argv 플래그도 IPC도 필요 없다.
+  **`altKey`를 함께 거르는 이유는 양쪽 다 있다**: Windows의 AltGr가 `ctrlKey+altKey`로 오고,
+  macOS의 Option은 글자를 조합한다. 둘 다 통과시키면 단축키가 돌면서 `preventDefault`가
+  글자를 먹는다.
+  **사용자가 읽는 낱말은 카탈로그가 아니라 보간이 정한다.** `{{mod}}`를 쓰고, 값은 렌더러와
+  메인 **두 i18next 초기화의 `interpolation.defaultVariables`**가 넣는다 — `applyStaticStrings()`는
+  키만 알고 인자를 못 주므로 호출부에서 넘기는 방식은 가이드 탭에 닿지 않는다. 메인에도 같은
+  기본값을 두는 이유는 카탈로그가 한 벌이라서다: 빠뜨리면 대화상자 제목에 `{{mod}}`가 그대로
+  나간다.
+  **미검증 하나**: macOS는 기본 메뉴를 자동으로 달고 그 가속기가 페이지보다 먼저 처리되므로,
+  **`Cmd`+`M`이 바 모드가 아니라 최소화로 갈 수 있다.** 맥이 없어 확인하지 못했다. 그렇다면
+  고칠 곳은 mac 전용 `Menu`를 하나 놓는 것이고, 그때까지도 타이틀바의 접기 버튼이 같은 일을 한다.
+
 - **`dueInfo()`는 계산만 한다** — `{ date, days, state, otherYear }`. 문자열은
   `formatDue(info, t, locale)`가 만들고, **`t`를 인자로 받는다**: `shared/`는 카탈로그를 들 수
   없다 — i18next 초기화는 메인과 렌더러가 각자 하고, `shared/`는 그 둘을 모른다. `state`는 CSS가 쓰는 값이라 계산 쪽에 남는다. 요일은

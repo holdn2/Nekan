@@ -115,7 +115,7 @@
     },
     "tasksTitle": "Working with tasks",
     "tasks": {
-      "add": "Type in the <b>box at the bottom of a quadrant</b> and press <code>Enter</code> to add a task there. The box clears itself so you can keep going, and <code>Ctrl</code> + <code>1</code>–<code>4</code> jumps straight to the box of the quadrant you want.",
+      "add": "Type in the <b>box at the bottom of a quadrant</b> and press <code>Enter</code> to add a task there. The box clears itself so you can keep going, and <code>{{mod}}</code> + <code>1</code>–<code>4</code> jumps straight to the box of the quadrant you want.",
       "order": "The number in front of a task is <b>its place within that quadrant</b>. Drag to reorder and the numbers follow; drag it into another quadrant and it moves there. Circumstances change and so should the quadrant — drag a task up to the <b>Brain dump</b> and back down from the other matrix to move it between <b>Work and Life</b>.",
       "edit": "<b>Double-click</b> a task to edit its text. <code>Enter</code> saves, <code>Esc</code> cancels.",
       "done": "The <b>circle</b> on the left completes a task: it leaves the list and stacks up by date in the <b>History</b>. Its note goes with it, so you can read back what you were thinking at the time.",
@@ -123,7 +123,7 @@
     },
     "dumpTitle": "The brain dump",
     "dump": {
-      "toggle": "Click <b>Brain dump</b> in the header to open the list, click it again to fold it away. <code>Ctrl</code> + <code>0</code> opens it and puts the cursor in the box. Open or folded is remembered after you quit.",
+      "toggle": "Click <b>Brain dump</b> in the header to open the list, click it again to fold it away. <code>{{mod}}</code> + <code>0</code> opens it and puts the cursor in the box. Open or folded is remembered after you quit.",
       "paste": "Paste <b>several lines at once</b> from a notepad or a chat and each line becomes its own task. Leading list markers like <code>-</code>, <code>*</code> or <code>1.</code> and blank lines are stripped for you (up to 100 lines at a time).",
       "later": "Text is all you need here. <b>Due dates, notes and completing a task only come once it is down in a quadrant.</b> While anything is still unsorted a hollow count chip shows, even in bar mode, so you know something is waiting."
     },
@@ -135,7 +135,7 @@
     "noteTitle": "Notes",
     "note": {
       "open": "<b>Click a task</b> and its note opens below the matrix — one note per task. Writing down why it is in this quadrant and what comes next makes the next look much quicker. A task with a note is marked, and hovering the mark previews what it says.",
-      "keys": "A task without a note opens straight into editing. <code>Ctrl</code> + <code>Enter</code> saves, <code>Esc</code> cancels. <b>Double-click</b> a saved note to edit it again, and <code>Delete</code> removes the note only — the task stays.",
+      "keys": "A task without a note opens straight into editing. <code>{{mod}}</code> + <code>Enter</code> saves, <code>Esc</code> cancels. <b>Double-click</b> a saved note to edit it again, and <code>Delete</code> removes the note only — the task stays.",
       "panel": "Opening a note <b>takes the room out of the matrix</b> — the window stays the size you left it. <b>Drag the top edge</b> of the card to change its height, and <b>double-click</b> to put it back. Click the same task again, or the <code>✕</code>, to close it.",
       "readonly": "In the History and the Trash a note shows under its task, <b>read-only</b>. A long one is cut to three lines and clicking it opens the rest. Restore a task from the trash and its note comes back with it."
     },
@@ -147,16 +147,16 @@
     },
     "exportTitle": "Export",
     "export": {
-      "run": "<b>Export in the settings (⚙)</b>, or <code>Ctrl</code> + <code>E</code>, saves the current <b>brain dump and four quadrants</b> to a file. Pick <b>PDF, HTML or Markdown</b> at the bottom of the save dialog, and once it is written <code>Open folder</code> takes you straight to it. It is a good way to keep the board as it stood for a weekly review or to share it.",
+      "run": "<b>Export in the settings (⚙)</b>, or <code>{{mod}}</code> + <code>E</code>, saves the current <b>brain dump and four quadrants</b> to a file. Pick <b>PDF, HTML or Markdown</b> at the bottom of the save dialog, and once it is written <code>Open folder</code> takes you straight to it. It is a good way to keep the board as it stood for a weekly review or to share it.",
       "what": "Only the <b>side you are on, Work or Life</b>, goes out. The document title and the file name say which, and the brain dump is shared so it appears in both. Flip the toggle and export again if you need the other one. <b>Completed tasks and the trash are not included</b> — only what is live right now."
     },
     "windowTitle": "The window and the keyboard",
     "window": {
-      "bar": "The <b>Shrink to the bar</b> button in the title bar, a <b>double-click</b> on the title bar, or <code>Ctrl</code> + <code>M</code> — any of the three folds the window down to a thin bar. The Work/Life toggle and the per-quadrant counts stay on it, and <b>clicking a count chip opens the window again.</b> It expands from wherever you parked the bar and folds back to the same place.",
+      "bar": "The <b>Shrink to the bar</b> button in the title bar, a <b>double-click</b> on the title bar, or <code>{{mod}}</code> + <code>M</code> — any of the three folds the window down to a thin bar. The Work/Life toggle and the per-quadrant counts stay on it, and <b>clicking a count chip opens the window again.</b> It expands from wherever you parked the bar and folds back to the same place.",
       "pin": "Turn on <b>Always on top</b> and the window stays above everything else. Position, size, mode, theme and the pin are all remembered when you quit, and <b>if you leave it as a bar it opens as a bar next time.</b>",
       "quads": "<b>Drag the edge between quadrants</b> to resize them. The horizontal and vertical edges are shared by all four, so growing one shrinks its neighbour, and grabbing the <b>crossing point</b> in the middle moves both at once. The same works on the <b>bottom edge of the brain dump</b> and the <b>top edge of a note</b> — the window stays the size you left it and the matrix gives up the difference. <b>Double-click</b> any edge to put it back.",
       "settings": "The <b>settings (⚙)</b> in the title bar hold <b>language, theme, export and syncing</b> in one place. Pressing it in bar mode expands the window first. The language follows your computer the first time the app runs; once you pick one it is remembered and takes effect on the spot, with no restart.",
-      "keys": "That is the whole keyboard: <code>Ctrl</code> + <code>M</code> for bar mode, <code>Ctrl</code> + <code>D</code> for the dark theme, <code>Ctrl</code> + <code>E</code> to export, <code>Ctrl</code> + <code>0</code> for the brain dump, <code>Ctrl</code> + <code>1</code>–<code>4</code> for a quadrant, <code>Enter</code> to add or save an edit, <code>Ctrl</code> + <code>Enter</code> to save a note, <code>Esc</code> to cancel."
+      "keys": "That is the whole keyboard: <code>{{mod}}</code> + <code>M</code> for bar mode, <code>{{mod}}</code> + <code>D</code> for the dark theme, <code>{{mod}}</code> + <code>E</code> to export, <code>{{mod}}</code> + <code>0</code> for the brain dump, <code>{{mod}}</code> + <code>1</code>–<code>4</code> for a quadrant, <code>Enter</code> to add or save an edit, <code>{{mod}}</code> + <code>Enter</code> to save a note, <code>Esc</code> to cancel."
     },
     "syncTitle": "Sync across devices",
     "sync": "Sign in and the tasks on this computer match your other devices. The app works as usual with no internet, and everything you changed in the meantime goes up on its own once you are connected again.",
@@ -207,7 +207,7 @@
     "panel": "Note",
     "close": "Close the note",
     "edit": "Double-click to edit",
-    "editing": "Ctrl+Enter to save · Esc to cancel",
+    "editing": "{{mod}}+Enter to save · Esc to cancel",
     "placeholder": "Write a note…",
     "field": "Note text",
     "confirmDelete": "Delete this note? This cannot be undone.",

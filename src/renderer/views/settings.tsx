@@ -19,6 +19,7 @@ import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { target } from "../dom.js";
 import { t } from "../i18n.js";
+import { accelName } from "../keys.js";
 import { getTheme, toggleTheme } from "../window/chrome.js";
 import { closeSettings, isSettingsOpen } from "../panels.js";
 import { exportBoard } from "../window/export-ui.js";
@@ -122,7 +123,11 @@ function SettingsBody() {
           }}
         >
           PDF · HTML · Markdown
-          <kbd>Ctrl+E</kbd>
+          {/* Not a catalogue string: there is no sentence here, only the name
+              of a key, and that name is decided by the OS rather than by the
+              language. It was hardcoded "Ctrl+E" and so read wrong on macOS --
+              and being English already, find-untranslated never saw it. */}
+          <kbd>{accelName()}+E</kbd>
         </button>
       </div>
 

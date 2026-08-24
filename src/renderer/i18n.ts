@@ -22,6 +22,7 @@ import i18next from "i18next";
 import ko from "../shared/i18n/ko.json";
 import en from "../shared/i18n/en.json";
 import { notify } from "./render-bus.js";
+import { accelName } from "./keys.js";
 
 /** What preload read out of argv, or the fallback if it somehow was not there. */
 const startupLanguage = (window.api && window.api.language) || "en";
@@ -33,7 +34,14 @@ i18next.init({
   // `settings.theme` on screen is a bug report.
   fallbackLng: "en",
   resources: { ko: { translation: ko }, en: { translation: en } },
-  interpolation: { escapeValue: false },
+  interpolation: {
+    escapeValue: false,
+    // The guide names the accelerator key in seven places and it is a different
+    // key on macOS. Naming it here rather than at each call site means
+    // applyStaticStrings, which only ever knows a key, still gets it right --
+    // and that the two catalogues cannot drift apart on it.
+    defaultVariables: { mod: accelName() },
+  },
 });
 
 /**

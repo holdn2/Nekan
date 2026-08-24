@@ -22,6 +22,18 @@ const language = flag("lang") || null;
 const languages = flag("langs").split(",").filter(Boolean);
 
 /**
+ * Which OS, for the one thing the renderer cannot work out for itself: the
+ * accelerator key is Cmd on macOS and Ctrl everywhere else, and those are two
+ * different fields on a KeyboardEvent.
+ *
+ * `process.platform` is one of the few things a sandboxed preload still has --
+ * no `require`, no argv flag needed -- so this costs nothing and, like the
+ * language above, is in hand before the first keystroke rather than an IPC
+ * round trip later.
+ */
+const platform = process.platform;
+
+/**
  * Everything the renderer is allowed to reach, and the only thing it can.
  *
  * Named rather than passed straight in so its type can be handed across: the
@@ -50,6 +62,7 @@ interface SyncStatus {
 const api = {
   language,
   languages,
+  platform,
   setLanguage: (next: string) => ipcRenderer.invoke("settings:language", next),
   load: () => ipcRenderer.invoke("state:load"),
   save: (tasks: unknown) => ipcRenderer.invoke("state:save", tasks),
