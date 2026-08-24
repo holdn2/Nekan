@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Entitlements for the hardened runtime, which notarisation requires.
+
+  Nothing here is a capability this app asked for: all three are what V8 needs
+  to run at all once the hardened runtime is on. Without them the packaged app
+  launches to a blank window and the crash is inside Electron, not our code.
+
+  This file does nothing until there is a signing certificate -- codesign is
+  what reads it, and electron-builder skips signing when no identity is found.
+  It is committed now so that turning signing on is a credentials change and
+  not a packaging change.
+
+  Deliberately not here: com.apple.security.app-sandbox and the network/file
+  entitlements that go with it. Those belong to the Mac App Store target, which
+  this app does not build -- it ships through GitHub Releases, and sandboxing
+  would take away the loopback listener that Google sign-in returns to.
+-->
+<plist version="1.0">
+  <dict>
+    <!-- V8 compiles JavaScript at runtime. -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+
+    <!-- Some of V8's memory is written and then executed, which the hardened
+         runtime otherwise refuses outright. -->
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+
+    <!-- Electron reads DYLD_* to find the frameworks inside the .app bundle. -->
+    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+    <true/>
+  </dict>
+</plist>

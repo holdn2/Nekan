@@ -1,0 +1,82 @@
+# Builds the macOS app so that the packaging config is checked by a machine
+# that can actually run it. Nobody here has a Mac, and electron-builder cannot
+# produce a mac target from Windows, so without this the config is unverified
+# until the day someone tries to release from it.
+#
+# This does NOT publish and does NOT sign. The artifact it uploads is for
+# reading the build log and confirming the bundle exists -- Gatekeeper will
+# refuse to open it on a real Mac, and electron-updater refuses to update an
+# unsigned mac app. Signing is a separate change that needs a Developer ID
+# certificate in the repository secrets; see issue #69.
+name: Mac build
+
+on:
+  workflow_dispatch:
+  # Only when something that decides the mac bundle changes. A full Electron
+  # build takes minutes of macOS runner time, which bills at ten times the
+  # Linux rate, so it is not worth spending on a CSS-only pull request.
+  pull_request:
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "build/**"
+      - "tools/build.js"
+      - ".github/workflows/mac-build.yml"
+
+# Read is all this needs: it builds and uploads an artifact, and never writes
+# to the repository. Without saying so the token inherits whatever the
+# repository or organisation defaults to, which is usually more.
+permissions:
+  contents: read
+
+concurrency:
+  group: mac-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # checkout leaves the token in .git/config unless told not to, and
+          # the next step is `npm ci` -- which runs install scripts from every
+          # dependency in the tree. None of them has any business holding a
+          # credential for this repository.
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # The unit tests do not know what platform they are on, which is the
+      # point: this is the first time they run anywhere but a Windows desktop,
+      # and a path separator baked into one of them would show up here.
+      - name: Unit tests
+        run: npm test
+
+      - name: Build the mac app
+        run: npm run dist:mac
+        env:
+          # Without this electron-builder goes looking through the runner's
+          # keychain for anything it could sign with. There is nothing valid
+          # there, and the failure it produces reads like a certificate problem
+          # rather than what it is. Turning discovery off makes the unsigned
+          # build the explicit outcome.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      # Named without a hash so the log is readable, and kept short because an
+      # unsigned build is only good for inspection.
+      - uses: actions/upload-artifact@v5
+        with:
+          name: mac-unsigned
+          retention-days: 7
+          path: |
+            dist/*.dmg
+            dist/*.zip
+            dist/latest-mac.yml
+            dist/*.blockmap
+          if-no-files-found: error
