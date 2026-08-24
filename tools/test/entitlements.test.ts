@@ -79,7 +79,7 @@ function granted(xml = source()) {
   return out;
 }
 
-test("the three hardened-runtime entitlements are all there", () => {
+test("the three hardened-runtime entitlements are all granted", () => {
   const xml = granted();
   // Not a taste in capabilities: the hardened runtime refuses each of these
   // outright, and Electron opens to a blank window with the crash inside V8.
@@ -88,7 +88,18 @@ test("the three hardened-runtime entitlements are all there", () => {
     "com.apple.security.cs.allow-unsigned-executable-memory",
     "com.apple.security.cs.allow-dyld-environment-variables",
   ]) {
-    assert.ok(xml.includes(`<key>${key}</key>`), `${key} is missing`);
+    const tag = `<key>${key}</key>`;
+    const at = xml.indexOf(tag);
+    assert.notEqual(at, -1, `${key} is missing`);
+    // Present is not the same as granted. A plist is a flat list of key
+    // followed by value, so <false/> here is a well-formed file that signs
+    // cleanly and hands V8 nothing -- the same blank window as leaving the key
+    // out, with none of the evidence.
+    const value = xml.slice(at + tag.length).trimStart();
+    assert.ok(
+      value.startsWith("<true/>"),
+      `${key} is present but not granted: the value after it is ${value.slice(0, 20)}`,
+    );
   }
 });
 
