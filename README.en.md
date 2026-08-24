@@ -287,7 +287,7 @@ src/                   # what you write (TypeScript)
     selection.ts       # whose note the panel is showing
     panels.ts          # whether the settings popover is open
     react/             # icons, the store subscription hook, test helpers
-    components/        # due chip, note marker, toast, inline edit, add form
+    components/        # due chip, note marker, toast, editable text, add form
     views/             # quadrants · brain dump · history/trash · note panel · account · settings · first run
     window/            # title bar and tabs · bar/window mode · quadrant edges ·
                        #   drag and drop · export

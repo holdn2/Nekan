@@ -373,10 +373,26 @@ function Trash() {
   );
 }
 
-/** Fill the two sections index.html left empty. Called once, from init(). */
+/**
+ * Fill the two sections index.html left empty. Called once, from init().
+ *
+ * Answers the roots it made. init() has no use for them -- they live as long as
+ * the window does -- but the tests call this once per case, and a root nobody
+ * can unmount goes on answering the render bus from a detached tree.
+ */
 export function mountArchive() {
+  const roots = [];
   const history = document.getElementById("historyView");
-  if (history) createRoot(history).render(<History />);
+  if (history) {
+    const root = createRoot(history);
+    root.render(<History />);
+    roots.push(root);
+  }
   const trash = document.getElementById("trashView");
-  if (trash) createRoot(trash).render(<Trash />);
+  if (trash) {
+    const root = createRoot(trash);
+    root.render(<Trash />);
+    roots.push(root);
+  }
+  return roots;
 }

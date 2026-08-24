@@ -167,6 +167,12 @@ function Welcome() {
    */
   const signOut = async () => {
     try {
+      // The resolved value is not inspected because there is nothing in it to
+      // inspect: main ends the session locally and answers { ok: true } before
+      // the revoke it fires is anywhere near the network. Logging out is
+      // something the user decided; it is not allowed to fail because a
+      // connection did. What can still fail is the call itself -- a handler
+      // that threw, or a channel that is not there -- and that arrives here.
       await window.api.logout();
     } catch (err) {
       say(t("welcome.signOutFailed", { code: messageOf(err) }), true);

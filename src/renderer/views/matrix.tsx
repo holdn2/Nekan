@@ -11,7 +11,7 @@
  * by it.
  */
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { QUADS, isCrowded } from "../../shared/core.js";
 import type { Quadrant, Task } from "../../shared/types.js";
@@ -47,12 +47,18 @@ function Row({ task, index }: { task: Task; index: number }) {
    * Click selects, double-click edits -- so a single click waits out the
    * double-click window before it acts. Still bound by hand because the rule
    * involves a timer shared across rows; see selection.ts.
+   *
+   * An effect rather than a callback ref. A ref written inline is a new
+   * function on every render, so React detaches the old one and attaches the
+   * new one -- and with nothing undoing the first, a row that redraws collects
+   * another pair of listeners each time. An effect gets to clean up.
    */
-  const wire = (node: HTMLLIElement | null) => {
-    li.current = node;
+  useEffect(() => {
+    const node = li.current;
     const text = node?.querySelector<HTMLElement>(".text");
-    if (node && text) wireRowSelection(node, text, task);
-  };
+    if (!node || !text) return;
+    return wireRowSelection(node, text, task);
+  }, [task]);
 
   /** The row stays on screen for the fade, so the button must not act twice. */
   const leaveAfterFade = (go: () => void) => {
@@ -62,7 +68,7 @@ function Row({ task, index }: { task: Task; index: number }) {
 
   return (
     <li
-      ref={wire}
+      ref={li}
       className={`item${isSelected(task.id) ? " selected" : ""}${removing ? " removing" : ""}`}
       data-id={task.id}
       draggable
@@ -141,10 +147,21 @@ function Quad({ quad }: { quad: Quadrant }) {
   );
 }
 
-/** Fill the four sections index.html left empty. Called once, from init(). */
+/**
+ * Fill the four sections index.html left empty. Called once, from init().
+ *
+ * Answers the roots it made, for the same reason mountArchive() does: init()
+ * never needs them, and a test that calls this per case would otherwise leave
+ * four trees subscribed to the render bus with no way to stop them.
+ */
 export function mountMatrix() {
+  const roots = [];
   for (const quad of QUADS) {
     const host = document.querySelector(`section[data-quad="${quad}"]`);
-    if (host) createRoot(host).render(<Quad quad={quad} />);
+    if (!host) continue;
+    const root = createRoot(host);
+    root.render(<Quad quad={quad} />);
+    roots.push(root);
   }
+  return roots;
 }

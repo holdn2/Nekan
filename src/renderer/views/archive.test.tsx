@@ -5,10 +5,11 @@
  * nothing, and the count of what is not drawn is on screen.
  */
 
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { Task } from "../../shared/types.js";
 import { setTasks } from "../store.js";
 import { setLanguage } from "../i18n.js";
+import { act } from "react";
 import { find, mount } from "../react/testing.js";
 import { mountArchive, resetArchivePaging } from "./archive.js";
 
@@ -52,6 +53,24 @@ function shell() {
 
 const rows = () => document.querySelectorAll("#historyView .hitem");
 
+/**
+ * The roots each case made, so the next one does not inherit them.
+ *
+ * shell() replaces the body, which detaches the sections but not the roots
+ * rendering into them -- they stay subscribed to the render bus, and every
+ * setTasks() after that redraws trees nobody can see.
+ */
+let roots: ReturnType<typeof mountArchive> = [];
+const draw = () => {
+  roots = mountArchive();
+};
+
+afterEach(async () => {
+  const made = roots;
+  roots = [];
+  await act(async () => made.forEach((root) => root.unmount()));
+});
+
 beforeEach(async () => {
   (window as unknown as { api: { save: unknown } }).api = { save: vi.fn() };
   setLanguage("en");
@@ -65,7 +84,7 @@ test("draws nothing while its tab is not the one on screen", async () => {
   setTasks([done(1)]);
   const { setTab } = await import("../window/chrome.js");
   const { flush } = await mount(<div />);
-  mountArchive();
+  draw();
   await flush(() => setTab("trash"));
   expect(document.querySelector("#historyView")?.childElementCount).toBe(0);
   await flush(() => setTab("history"));
@@ -75,7 +94,7 @@ test("draws nothing while its tab is not the one on screen", async () => {
 test("groups by day and numbers from one inside each day", async () => {
   setTasks([done(1), done(2), done(41), done(42)]);
   const { flush } = await mount(<div />);
-  mountArchive();
+  draw();
   await flush();
   expect(document.querySelectorAll("#historyView .day").length).toBe(2);
   const numbers = [...document.querySelectorAll("#historyView .num")].map(
@@ -87,7 +106,7 @@ test("groups by day and numbers from one inside each day", async () => {
 test("stops at a page and says how many it did not draw", async () => {
   setTasks(Array.from({ length: 130 }, (_, i) => done(i)));
   const { flush } = await mount(<div />);
-  mountArchive();
+  draw();
   await flush();
   expect(rows().length).toBe(100);
   const more = find("#historyView .more button");
@@ -105,7 +124,7 @@ test("search looks at everything, not at the page", async () => {
   tasks[120] = done(120, { text: "바늘", completedAt: 1 });
   setTasks(tasks);
   const { flush } = await mount(<div />);
-  mountArchive();
+  draw();
   await flush();
 
   const search = find<HTMLInputElement>("#historySearch");
@@ -124,7 +143,7 @@ test("search looks at everything, not at the page", async () => {
 test("says the list is empty differently from a search that found nothing", async () => {
   setTasks([]);
   const { flush } = await mount(<div />);
-  mountArchive();
+  draw();
   await flush();
   const empty = find("#historyView .empty");
   expect(empty.classList.contains("hidden")).toBe(false);

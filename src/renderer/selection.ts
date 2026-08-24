@@ -42,13 +42,19 @@ export function setMemoEditing(next: boolean) {
  * click has to wait out the double-click window before it acts. Without the
  * wait, a double-click would toggle the selection twice and the window would
  * grow and shrink under the cursor.
+ *
+ * Answers the function that takes both listeners off again. The caller is a
+ * component that re-renders on every notify(), and React hands the same <li>
+ * back each time: without this, a row collected one more pair of listeners per
+ * redraw. Measured before the fix -- one row, five notify() calls, six click
+ * listeners.
  */
 export function wireRowSelection(
   li: HTMLElement,
   textEl: HTMLElement,
   task: Task,
 ) {
-  li.addEventListener("click", (e: MouseEvent) => {
+  const onClick = (e: MouseEvent) => {
     if (e.detail > 1) return;
     if ((e.target as HTMLElement).closest("button, .duebox")) return;
     if (textEl.isContentEditable) return;
@@ -57,10 +63,18 @@ export function wireRowSelection(
       () => setSelected(isSelected(task.id) ? null : task.id),
       CLICK_DELAY,
     );
-  });
-  li.addEventListener("dblclick", () => {
+  };
+  const onDoubleClick = () => {
     if (clickTimer) clearTimeout(clickTimer);
-  });
+  };
+
+  li.addEventListener("click", onClick);
+  li.addEventListener("dblclick", onDoubleClick);
+
+  return () => {
+    li.removeEventListener("click", onClick);
+    li.removeEventListener("dblclick", onDoubleClick);
+  };
 }
 
 /**

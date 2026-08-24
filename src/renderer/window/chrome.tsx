@@ -41,11 +41,17 @@ import {
   UpdateIcon,
 } from "../react/window-icons.js";
 
-/** What main reports about an available update. */
-interface UpdateStatus {
-  state?: string;
-  version?: string;
-}
+/**
+ * What main reports about an available update.
+ *
+ * Read off the bridge rather than written out again: preload declares the
+ * payload, `window.api` is `typeof api`, and a second copy of the shape here
+ * is a second thing to keep in step. The last copy said `version?: string`
+ * while main was sending null.
+ */
+type UpdateStatus = Parameters<
+  Parameters<typeof window.api.onUpdateStatus>[0]
+>[0];
 
 let activeTab = "matrix";
 let theme = "light";
@@ -278,10 +284,16 @@ function TitleBar() {
             now, which costs the bar one button instead of two — and the dot
             gives sync a signal the bar can afford, where the old 56px chip
             could not. */}
+        {/* The name is here as well as in the account panel, which overwrites
+            both title and aria-label with the sync state once it has one. Its
+            two children are aria-hidden, so without this the button has no
+            accessible name at all until that panel has mounted. */}
         <button
           className="win-btn"
           id="settingsBtn"
           type="button"
+          title={t("settings.title")}
+          aria-label={t("settings.title")}
           aria-expanded={isSettingsOpen()}
           onClick={toggleSettings}
         >

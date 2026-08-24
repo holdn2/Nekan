@@ -26,7 +26,7 @@ type UpdateStatus = Parameters<
 >[0];
 type SyncStatus = Parameters<Parameters<typeof window.api.onSyncStatus>[0]>[0];
 import { acceptSynced, setClockOffset, setTasks } from "./store.js";
-import { subscribe } from "./render-bus.js";
+import { notify, subscribe } from "./render-bus.js";
 import { applyStaticStrings, currentLanguage, t } from "./i18n.js";
 import { $ } from "./dom.js";
 import { toast } from "./components/toast.js";
@@ -100,7 +100,11 @@ function refreshIfDayChanged() {
   const today = startOfToday().getTime();
   if (today === renderedDay) return;
   renderedDay = today;
-  render();
+  // notify(), not render(): render() is what the bus calls, and it only drops
+  // a selection that has gone stale. Every due date on screen is worded
+  // relative to today, so the day changing has to reach the components -- and
+  // they hear it the same way every other change reaches them.
+  notify();
 }
 
 /** Re-arm for the next local midnight, and keep re-arming after that. */

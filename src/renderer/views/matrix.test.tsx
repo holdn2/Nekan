@@ -4,7 +4,8 @@
  * crowding hint is a hint, and a row stays on screen long enough to fade.
  */
 
-import { beforeEach, expect, test, vi } from "vitest";
+import { act } from "react";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { Task } from "../../shared/types.js";
 import { activeOf, setTasks } from "../store.js";
 import { setLanguage } from "../i18n.js";
@@ -43,6 +44,20 @@ function shell() {
 const rows = (quad: string) =>
   document.querySelectorAll(`[data-list="${quad}"] .item`);
 
+/**
+ * The roots each case made, so the next one does not inherit them.
+ *
+ * shell() replaces the body, which detaches the four sections but not the
+ * roots rendering into them -- those stay subscribed to the render bus, and
+ * every notify() after that redraws trees nobody can see. It is not only
+ * wasted work: the listener count below is taken across every row in the
+ * document, and a stale tree's rows are in it.
+ */
+let roots: ReturnType<typeof mountMatrix> = [];
+const draw = () => {
+  roots = mountMatrix();
+};
+
 beforeEach(() => {
   (window as unknown as { api: { save: unknown } }).api = { save: vi.fn() };
   setLanguage("en");
@@ -50,10 +65,16 @@ beforeEach(() => {
   shell();
 });
 
+afterEach(async () => {
+  const made = roots;
+  roots = [];
+  await act(async () => made.forEach((root) => root.unmount()));
+});
+
 test("draws each quadrant's own tasks, numbered from one", async () => {
   setTasks([task(1), task(2), task(3, { quadrant: "q3" })]);
   const { flush } = await mount(<div />);
-  mountMatrix();
+  draw();
   await flush();
 
   expect(rows("q1").length).toBe(2);
@@ -70,7 +91,7 @@ test("draws each quadrant's own tasks, numbered from one", async () => {
 test("a row carries a memo marker only when there is a memo", async () => {
   setTasks([task(1, { memo: "적어둔 것" }), task(2)]);
   const { flush } = await mount(<div />);
-  mountMatrix();
+  draw();
   await flush();
   expect(document.querySelectorAll('[data-list="q1"] .memo-mark').length).toBe(
     1,
@@ -82,7 +103,7 @@ test("a row carries a memo marker only when there is a memo", async () => {
 test("the crowding hint is a hint, and only q1 has a number", async () => {
   setTasks(Array.from({ length: 5 }, (_, i) => task(i)));
   const { flush } = await mount(<div />);
-  mountMatrix();
+  draw();
   await flush();
   expect(find('[data-count="q1"]').classList.contains("crowded")).toBe(false);
 
@@ -106,7 +127,7 @@ test("the crowding hint is a hint, and only q1 has a number", async () => {
 test("the add box files into its own quadrant, with the date it holds", async () => {
   setTasks([]);
   const { flush } = await mount(<div />);
-  mountMatrix();
+  draw();
   await flush();
 
   const form = find<HTMLFormElement>('form[data-add="q3"]');
@@ -141,7 +162,7 @@ test("completing a row lets it fade before the store hears", async () => {
   vi.useFakeTimers();
   setTasks([task(1)]);
   const { flush } = await mount(<div />);
-  mountMatrix();
+  draw();
   await flush();
 
   await flush(() => find('[data-list="q1"] .check').click());
@@ -155,4 +176,47 @@ test("completing a row lets it fade before the store hears", async () => {
   await flush(() => vi.advanceTimersByTime(200));
   expect(activeOf("q1").length).toBe(0);
   vi.useRealTimers();
+});
+
+test("a row does not collect a listener every time it redraws", async () => {
+  // The leak this replaced was invisible: every handler cleared the timer the
+  // one before it set, so the click still did exactly one thing. What grew was
+  // the row -- one more pair of listeners per notify(), for as long as the
+  // window stayed open.
+  const counted: Record<string, number> = { click: 0, dblclick: 0 };
+  const real = HTMLElement.prototype.addEventListener;
+  const realOff = HTMLElement.prototype.removeEventListener;
+  const isRow = (el: HTMLElement) => el.classList?.contains("item");
+  HTMLElement.prototype.addEventListener = function (
+    this: HTMLElement,
+    type: string,
+    ...rest: unknown[]
+  ) {
+    if (isRow(this) && type in counted) counted[type] += 1;
+    return (real as never).call(this, type, ...(rest as never[]));
+  } as typeof real;
+  HTMLElement.prototype.removeEventListener = function (
+    this: HTMLElement,
+    type: string,
+    ...rest: unknown[]
+  ) {
+    if (isRow(this) && type in counted) counted[type] -= 1;
+    return (realOff as never).call(this, type, ...(rest as never[]));
+  } as typeof realOff;
+
+  try {
+    setTasks([task()]);
+    draw();
+    const { flush } = await mount(<div />);
+    await flush();
+    const afterFirstDraw = { ...counted };
+
+    for (let i = 0; i < 5; i += 1) await flush(() => notify());
+
+    expect(counted).toEqual(afterFirstDraw);
+    expect(counted.click).toBe(1);
+  } finally {
+    HTMLElement.prototype.addEventListener = real;
+    HTMLElement.prototype.removeEventListener = realOff;
+  }
 });

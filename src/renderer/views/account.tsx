@@ -154,12 +154,16 @@ function Account() {
     const gear = document.getElementById("settingsBtn");
     if (!gear) return;
     gear.dataset.sync = state;
-    gear.title =
+    // Both, or the label a screen reader reads is the plain one the title bar
+    // draws while the tooltip a pointer sees says something else.
+    const name =
       state === "offline"
         ? t("account.gearOffline")
         : words
           ? t("account.gearState", { state: words })
           : t("settings.title");
+    gear.title = name;
+    gear.ariaLabel = name;
   });
 
   // Signing out and straight back in as somebody else would otherwise hand the

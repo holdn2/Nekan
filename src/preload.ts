@@ -35,8 +35,10 @@ const languages = flag("langs").split(",").filter(Boolean);
  * here is a callback typed over there.
  */
 interface UpdateStatus {
-  state?: string;
-  version?: string;
+  /** Always present: main starts at "idle" and only ever replaces it. */
+  state: string;
+  /** Null until there is a version on offer, which is most of the time. */
+  version: string | null;
 }
 
 interface SyncStatus {
