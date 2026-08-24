@@ -132,6 +132,16 @@ npm run release   # build + upload to a GitHub Release (see GH_TOKEN below)
 
 `latest.yml` is the update feed. Upload the installer on its own and nobody updates.
 
+**That procedure is Windows only.** There is no Mac here, so the mac bundle is
+built by the `Mac build` workflow on GitHub Actions. Run it **manually** from the
+Actions tab and it signs and notarises as well (`dmg` · `zip` · blockmap ·
+`latest-mac.yml`) and uploads the result as an artifact -- **a pull-request build
+does not sign.** electron-builder refuses to sign a PR build, which is why a
+manual run is the only way to check it. **Publishing is not wired up yet**: the
+mac assets have to be attached to the draft by hand, and
+`node tools/check-release.js` is what says whether that draft has drifted from
+the Windows one.
+
 > **electron-builder makes two drafts for the same tag.** The uploads run in parallel, both decide "there is no
 > release yet" and each creates one — a race, and it split that way on **both** v1.0.0 and v1.0.1 (the `.blockmap`
 > came away on its own each time). So `npm run release` finishes by running `tools/check-release.js`, which

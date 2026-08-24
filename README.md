@@ -132,6 +132,14 @@ npm run release   # 빌드 + GitHub Release에 업로드 (아래 GH_TOKEN 참고
 
 `latest.yml`이 곧 업데이트 피드다. 설치 파일만 따로 올리면 아무도 업데이트되지 않는다.
 
+**위 절차는 Windows만이다.** 맥 번들은 이 저장소에 맥이 없어서 GitHub Actions의
+`Mac build` 워크플로가 만든다. Actions 탭에서 **수동 실행**하면 서명·공증까지 하고
+(`dmg` · `zip` · blockmap · `latest-mac.yml`) 아티팩트로 올려 준다 —
+**PR 빌드에서는 서명이 되지 않는다.** electron-builder가 PR 빌드에서 서명을 거부하기
+때문이고, 그래서 확인은 수동 실행으로만 된다. **아직 Release로 올리는 배선은 없다**:
+맥 자산은 손으로 draft에 붙여야 하고, 그 draft가 Windows 것과 갈라지지 않는지는
+`node tools/check-release.js`가 본다.
+
 > **electron-builder는 같은 태그로 draft를 두 개 만든다.** 업로드가 병렬로 돌면서 둘 다
 > "릴리스가 없네"라고 판단해 각자 만드는 경쟁 상태이고, v1.0.0과 v1.0.1 **두 번 다** 이렇게
 > 갈렸다(매번 `.blockmap`이 혼자 떨어져 나갔다). 그래서 `npm run release`가 끝에
