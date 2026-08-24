@@ -14,6 +14,8 @@
 import { useSyncExternalStore } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
+import { cn } from "../react/cn.js";
+
 type ToastAction = { label: string; onClick: () => void };
 type ToastOptions = {
   error?: boolean;
@@ -75,12 +77,12 @@ function Toast() {
       // on the spacing scale -- written as they were rather than rounded onto
       // it, since moving a toast two pixels is a design decision and not a
       // side effect of changing how it is spelled.
-      className={
-        "toast fixed left-1/2 bottom-[18px] z-50 flex items-center gap-lg" +
-        " max-w-[calc(100%-40px)] px-2xl py-md rounded-pill border bg-panel" +
-        " shadow-toast" +
-        (error ? " border-danger text-danger" : " border-line-strong text-text")
-      }
+      className={cn(
+        "toast fixed bottom-[18px] left-1/2 z-50 flex items-center gap-lg",
+        "max-w-[calc(100%-40px)] rounded-pill border bg-panel px-2xl py-md",
+        "shadow-toast",
+        error ? "border-danger text-danger" : "border-line-strong text-text",
+      )}
       data-open={open ? "" : undefined}
       role="status"
       aria-live="polite"
@@ -93,11 +95,11 @@ function Toast() {
       </span>
       <button
         id="toastAct"
-        className={
-          "shrink-0 rounded-pill border-0 px-lg py-2xs text-sm" +
-          " bg-accent-soft text-accent hover:bg-accent hover:text-on-accent" +
-          (action ? "" : " hidden")
-        }
+        className={cn(
+          "shrink-0 rounded-pill border-0 bg-accent-soft px-lg py-2xs text-sm",
+          "text-accent hover:bg-accent hover:text-on-accent",
+          !action && "hidden",
+        )}
         type="button"
         onClick={action ? action.onClick : undefined}
       >
