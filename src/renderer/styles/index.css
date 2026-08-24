@@ -72,7 +72,8 @@
 @import "./inbox.css" layer(nekan);
 @import "./matrix.css" layer(nekan);
 @import "./due-chip.css" layer(nekan);
-@import "./archive.css" layer(nekan);
+/* archive.css was here. Every rule in it moved to utilities; the history
+   and trash tabs are drawn entirely from their components now. */
 @import "./guide.css" layer(nekan);
 @import "./account.css" layer(nekan);
 @import "./settings.css" layer(nekan);
@@ -108,6 +109,18 @@
  * `:root`. Those three are deliberately *not* mapped below: they are layout
  * plumbing, not design tokens, there is no utility anyone should want for them,
  * and they must stay exactly where the JS expects them.
+ *
+ * ONE CONSEQUENCE THAT COSTS TIME IF IT IS NOT KNOWN: numeric spacing
+ * utilities do not exist. `m-0`, `p-0`, `min-h-0`, `gap-2` are all
+ * `calc(var(--spacing) * n)`, and with no `--spacing` they do not compile --
+ * silently, because an unknown utility is simply not emitted. `min-h-0` on a
+ * scroll box therefore does nothing at all and the box stops scrolling. Write
+ * `min-h-[0px]` and `m-[0px]`; the named steps (`p-md`) are unaffected.
+ *
+ * Two more that look like the declaration they replace and are not:
+ *   flex-1      is `1 1 0%`; `flex: 1 1 auto` is `flex-auto`
+ *   break-words is `overflow-wrap`; `word-break: break-word` is a different
+ *               property, so it needs `[word-break:break-word]`
  *
  * Tailwind's own default theme is not imported. This app's palette is the only
  * one it should be possible to spell -- `bg-red-500` failing to compile is the

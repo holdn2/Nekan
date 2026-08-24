@@ -8,16 +8,23 @@
  */
 
 import { dueInfo, formatDue } from "../../shared/core.js";
+import { cn } from "../react/cn.js";
 import { currentLanguage, t } from "../i18n.js";
 
-export function DueBadge({ value }: { value: string | null }) {
+export function DueBadge({
+  value,
+  className,
+}: {
+  value: string | null;
+  className?: string;
+}) {
   const info = dueInfo(value);
   if (!info) return null;
   // formatDue answers null only for a null info, which is already handled.
   const { text, hint } = formatDue(info, t, currentLanguage())!;
 
   return (
-    <span className={`duebox set ${info.state} readonly`}>
+    <span className={cn("duebox set readonly", info.state, className)}>
       <span className="due" title={t("due.chip", { date: text, hint })}>
         <span className="face">{text}</span>
       </span>

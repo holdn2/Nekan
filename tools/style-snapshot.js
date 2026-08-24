@@ -93,6 +93,18 @@ const PROPS = [
   "minWidth",
   "maxWidth",
   "maxHeight",
+  // Added when archive.css moved: every one of these is a place a utility
+  // can differ from the declaration it replaced without moving a pixel in
+  // the states this captures -- and then differ visibly in one it does not.
+  "wordBreak",
+  "overflowWrap",
+  "textDecorationLine",
+  "listStyleType",
+  "userSelect",
+  "fontVariantNumeric",
+  "webkitLineClamp",
+  "pointerEvents",
+  "transitionProperty",
 ];
 
 /** Runs inside the page. Returns JSON, because CDP hands back a value. */

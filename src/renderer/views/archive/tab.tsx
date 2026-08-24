@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { GhostButton } from "../../components/ghost-button.js";
+import { cn } from "../../react/cn.js";
 import type { Task } from "../../../shared/types.js";
 import { t } from "../../i18n.js";
 import { useRenderSignal } from "../../react/use-store.js";
@@ -79,7 +80,10 @@ function ArchiveTab<T extends Task>({
       lastDay = day;
       index = 0;
       rows.push(
-        <li className="day" key={`day-${task.id}`}>
+        <li
+          className="day px-md pt-lg pb-xs text-xs font-semibold tracking-wide text-muted"
+          key={`day-${task.id}`}
+        >
           {day}
         </li>,
       );
@@ -98,7 +102,7 @@ function ArchiveTab<T extends Task>({
 
   return (
     <>
-      <div className="history-bar">
+      <div className="history-bar flex gap-md">
         <input
           type="search"
           id={`${which}Search`}
@@ -136,17 +140,24 @@ function ArchiveTab<T extends Task>({
           </GhostButton>
         ))}
       </div>
-      <div className="history-scroll">
-        <ul className="history-list">
+      {/* Takes what is left of the tab and scrolls inside it, so the bar above
+          stays put. */}
+      <div className="history-scroll min-h-[0px] flex-auto overflow-y-auto rounded-panel border border-line bg-panel shadow-default">
+        <ul className="history-list m-[0px] list-none p-sm">
           {rows}
           {/* The rest are there, they are just not drawn. Saying how many is
               the point: a list that stops without a word is indistinguishable
               from data that is gone, and this list is the one people come to
               when they think something is missing. */}
           {remaining > 0 ? (
-            <li className="more">
+            <li className="more flex justify-center pt-lg pb-xs">
               <button
                 type="button"
+                className={cn(
+                  "rounded-pill border border-line bg-panel-2 px-3xl py-sm",
+                  "text-sm text-muted",
+                  "hover:border-line-strong hover:bg-panel-3 hover:text-text",
+                )}
                 onClick={() => {
                   shown[which] += PAGE;
                   redraw((n) => n + 1);
