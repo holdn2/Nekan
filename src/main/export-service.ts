@@ -125,12 +125,30 @@ async function runExport(parent: BrowserWindow | null) {
     return { ok: false, reason: "error", message: messageOf(err) };
   }
 
+  written.add(target);
   return { ok: true, path: target, name: path.basename(target) };
 }
 
-/** Show the written file in Explorer — the toast's "Open the folder". */
-function revealExport(target: string) {
-  if (typeof target === "string" && target) shell.showItemInFolder(target);
+/**
+ * Every file this process has actually written, this run.
+ *
+ * A set rather than one path: somebody who exports three times and then goes
+ * back to the toast from the first one is asking a reasonable thing.
+ */
+const written = new Set<string>();
+
+/**
+ * Show an exported file in the file manager.
+ *
+ * Only a file this process wrote. The path arrives from the renderer, and a
+ * handler that opened whatever it was given would be a way to point Explorer
+ * at anything the moment a task's text could reach it -- which is the same
+ * reason update:notes and legal:privacy take no argument at all. The renderer
+ * has no reason to name a path it did not receive from runExport().
+ */
+function revealExport(target: unknown) {
+  if (typeof target !== "string" || !written.has(target)) return;
+  shell.showItemInFolder(target);
 }
 
 export { runExport, revealExport };
