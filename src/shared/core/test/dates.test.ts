@@ -33,13 +33,17 @@ test("parseDue accepts only real YYYY-MM-DD days", () => {
 test("dueInfo classifies days relative to today", () => {
   // No strings in here on purpose: dueInfo counts days and names the state the
   // stylesheet colours by, and the words are formatDue's problem below.
-  assert.equal(dueInfo(dayString(-2)).state, "overdue");
-  assert.equal(dueInfo(dayString(-2)).days, -2);
-  assert.equal(dueInfo(dayString(0)).state, "today");
-  assert.equal(dueInfo(dayString(1)).days, 1);
-  assert.equal(dueInfo(dayString(1)).state, "soon");
-  assert.equal(dueInfo(dayString(3)).state, "soon");
-  assert.equal(dueInfo(dayString(4)).state, "far");
+  // One `now` for both sides. dayString() and dueInfo() each read the clock,
+  // and a run that crosses midnight between the two calls asks about a
+  // different day than it built -- which fails once a night and never again.
+  const now = new Date();
+  assert.equal(dueInfo(dayString(-2, now), now).state, "overdue");
+  assert.equal(dueInfo(dayString(-2, now), now).days, -2);
+  assert.equal(dueInfo(dayString(0, now), now).state, "today");
+  assert.equal(dueInfo(dayString(1, now), now).days, 1);
+  assert.equal(dueInfo(dayString(1, now), now).state, "soon");
+  assert.equal(dueInfo(dayString(3, now), now).state, "soon");
+  assert.equal(dueInfo(dayString(4, now), now).state, "far");
   assert.equal(dueInfo(null), null);
 });
 

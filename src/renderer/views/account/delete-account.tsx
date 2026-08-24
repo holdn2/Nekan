@@ -36,8 +36,14 @@ export function DeleteAccount({ visible, say }: Props) {
 
   // Signing out and straight back in as somebody else would otherwise hand the
   // new account an open "계정 삭제" that nobody there asked for.
+  //
+  // Closed on either change, not only on the way out. The identity is in the
+  // list below because a session can be *replaced* without passing through
+  // null -- main can end one and start another between two pushes -- and a
+  // body that only acted on `!visible` left the question standing in front of
+  // whoever arrived.
   useEffect(() => {
-    if (!visible) setConfirming(false);
+    setConfirming(false);
   }, [visible, currentSession()?.userId]);
 
   const deleteAccount = async () => {
