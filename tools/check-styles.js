@@ -33,9 +33,20 @@ const BUILT = path.join(__dirname, "..", "out", "renderer", "assets");
  * and the number only ever goes down. 33 the day the plumbing landed; 32 once
  * `hidden` stopped being nine per-area rules and became one utility; 30 with the tab strip; 28 once the
  * dot and the ghost button became components; 22 when archive.css went away
- * entirely; 15 with the memo panel and the matrix.
+ * entirely; 15 with the memo panel and the matrix; 10 once the guide, the due
+ * chip and the settings/account/welcome cluster went in parallel.
  */
-const MAX_DUPLICATED = 15;
+const MAX_DUPLICATED = 10;
+
+/**
+ * And how many definitions those names add up to. The count above is of names,
+ * so a name already defined twice could be defined a third time for free --
+ * `.item` lives in matrix.css and memo.css, and adding it to a third sheet, a
+ * brand new cross-sheet override and the exact thing this file exists to stop,
+ * left the number at 10 and passed. Found by making the check fail rather than
+ * by reading it. 20 with the three parallel chunks in.
+ */
+const MAX_DUPLICATE_DEFS = 20;
 
 const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, "");
 
@@ -300,6 +311,7 @@ function auditStyles({
   builtCss = "",
   cnSource = "",
   max = MAX_DUPLICATED,
+  maxDefs = MAX_DUPLICATE_DEFS,
 }) {
   const where = definitionsBySheet(sheets);
   const duplicated = [...where.entries()]
@@ -318,9 +330,15 @@ function auditStyles({
   const shadowed = [...where.keys()].filter((c) => utilities.has(c)).sort();
 
   const errors = [];
+  const defs = duplicated.reduce((n, d) => n + d.files.length, 0);
   if (duplicated.length > max) {
     errors.push(
       `${duplicated.length} class names are defined in more than one sheet, and the line is ${max}`,
+    );
+  }
+  if (defs > maxDefs) {
+    errors.push(
+      `those names add up to ${defs} definitions, and the line is ${maxDefs} -- widening a name that is already duplicated counts`,
     );
   }
   for (const key of circular) {
@@ -343,13 +361,16 @@ function auditStyles({
     shadowed,
     utilities: utilities.size,
     errors,
-    /** Set when the count dropped, so the ratchet can be tightened. */
+    defs,
+    /** Set when either count dropped, so the ratchet can be tightened. */
     slack: max - duplicated.length,
+    defsSlack: maxDefs - defs,
   };
 }
 
 module.exports = {
   MAX_DUPLICATED,
+  MAX_DUPLICATE_DEFS,
   themeNames,
   mergeScales,
   auditMergeConfig,
@@ -391,6 +412,9 @@ if (require.main === module) {
   console.log(`check-styles: ${sheets.length} sheets, ${r.classes} classes`);
   console.log(
     `  defined in more than one sheet: ${r.duplicated.length} (line: ${MAX_DUPLICATED})`,
+  );
+  console.log(
+    `  those names, counted per sheet: ${r.defs} (line: ${MAX_DUPLICATE_DEFS})`,
   );
   for (const { cls, files } of r.duplicated.slice(0, 8)) {
     console.log(`    ${cls} -- ${files.join(", ")}`);
