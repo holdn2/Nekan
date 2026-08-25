@@ -17,17 +17,23 @@
 
 /* Layer order, declared before anything can join a layer implicitly.
  *
- * `nekan` holds every hand-written sheet. It sits after `theme` so this app's
- * tokens win over any Tailwind default of the same name (`--radius-sm` and its
- * three siblings are defined on both sides), and before `utilities` so a
+ * `nekan` holds every hand-written sheet. It sits before `utilities` so a
  * utility can override a component rule -- which is the whole point of adding
  * utilities to a codebase that already has component CSS.
  *
- * This also settles the bar-mode trap for free. For `!important` declarations
- * the cascade reverses layer order, so `collapsed.css`'s eight `!important`
- * rules still beat anything in `utilities`. Bar mode cannot be undone by a
- * stray `block` on some element -- and bar mode breaking silently is exactly
- * the failure this repo has already had once. */
+ * `theme` is declared but stays empty: Tailwind's own theme is never imported,
+ * and this app's tokens do not land in it either. `@theme static` below writes
+ * its values to a bare `:root`, OUTSIDE every layer, and unlayered normal
+ * declarations beat all layered ones. So those tokens cannot be re-declared
+ * from a sheet -- see the note on that block before adding a themed value to
+ * it.
+ *
+ * The bar-mode trap is NOT settled by layer order, which is what this comment
+ * used to claim. Layer order beats specificity, so `body.collapsed .titlebar`
+ * loses to a bare `h-md` no matter how many selectors it has. Only `!important`
+ * reverses layer order, which is why every declaration in `collapsed.css`
+ * carries one. Bar mode breaking silently is a failure this repo has already
+ * had once, and it is one utility away at all times. */
 @layer theme, nekan, utilities;
 
 @import "tailwindcss/utilities.css" layer(utilities);
@@ -224,6 +230,12 @@
  * nothing to call the utility. base.css described this one as "a panel", which
  * is where the name came from. Its eleven call sites moved with it.
  */
+/* These land in an UNLAYERED `:root`, which outranks every layer. That is
+   fine for values with one setting and no theme, and it is why only such
+   values are here -- a `:root[data-theme="dark"]` override in base.css sits
+   in `nekan` and would silently lose to this block. Anything that needs to
+   change with the theme belongs in base.css instead, the way `--shadow`
+   does. */
 @theme static {
   --radius-xs: 4px;
   --radius-sm: 6px;

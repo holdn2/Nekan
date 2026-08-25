@@ -38,7 +38,7 @@
     <!-- `inbox` stays a class: it is a `quadrant` value as well as this panel,
          and collapsed.css and the drop-target code both reach for it by name.
          Shrinkable but never growing, so the matrix keeps what this does not
-         use; min-h-0 is what lets the shrink reach the list inside. -->
+         use; min-h-[0px] is what lets the shrink reach the list inside -- the bare min-h-0 does not compile here. -->
     <section
       id="inboxPanel"
       class="inbox mx-xl mt-md flex min-h-[0px] shrink flex-col overflow-hidden rounded-panel border border-line bg-panel shadow-default transition-[border-color] duration-[120ms]"
@@ -47,7 +47,7 @@
 
     <!-- A 2×2 grid: the shared row/column lines are dragged straight from the
          quadrant edges, so there are no separate splitter elements. -->
-    <!-- basis-0 rather than auto: the grid must fill what is left, not ask for
+    <!-- basis-[0px] rather than auto -- the bare basis-0 does not compile here: the grid must fill what is left, not ask for
          its own content height. See matrix.css. -->
     <main
       id="matrixView"

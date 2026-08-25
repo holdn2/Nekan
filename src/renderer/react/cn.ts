@@ -28,8 +28,9 @@
  * silently, in the one direction nothing would catch.
  *
  * The lists therefore have to match the theme, and a copy of a list is a thing
- * that drifts. `react/test/cn.test.tsx` reads `styles/index.css` and fails if
- * they ever disagree, so this is checked rather than remembered.
+ * that drifts. `tools/check-styles.js` reads `styles/index.css` and this file
+ * and fails if they ever disagree, so this is checked rather than remembered --
+ * and `npm test` is what runs it. `cn.test.tsx` asserts behaviour, not drift.
  */
 
 import { extendTailwindMerge } from "tailwind-merge";

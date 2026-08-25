@@ -152,9 +152,19 @@ function definitionsBySheet(sheets) {
  * theme variable is in use" and emits it.
  */
 function circularThemeKeys(entryCss, sheetsCss) {
-  const block = stripComments(entryCss).match(/@theme[^{]*\{([\s\S]*?)\n\}/);
-  if (!block) return [];
-  const keys = [...block[1].matchAll(/^\s*(--[\w-]+)\s*:/gm)].map((m) => m[1]);
+  // Every `inline` block, and only the `inline` ones. Looking at just the
+  // first `@theme` was right by accident of block order: put `@theme static`
+  // first and it calls that block's keys circular, which they are not --
+  // static emits the literal, not a self-reference -- and a second inline
+  // block after a static one goes unseen entirely.
+  const keys = [
+    ...stripComments(entryCss).matchAll(/@theme([^{]*)\{([\s\S]*?)\n\}/g),
+  ]
+    .filter((m) => /\binline\b/.test(m[1]))
+    .flatMap((m) =>
+      [...m[2].matchAll(/^\s*(--[\w-]+)\s*:/gm)].map((k) => k[1]),
+    );
+  if (!keys.length) return [];
   const read = new Set(
     [...stripComments(sheetsCss).matchAll(/var\(\s*(--[\w-]+)/g)].map(
       (m) => m[1],
@@ -171,10 +181,14 @@ function circularThemeKeys(entryCss, sheetsCss) {
  * checking against without anyone maintaining a list.
  */
 function emittedUtilities(builtCss) {
-  const i = builtCss.indexOf("@layer utilities{");
-  if (i < 0) return new Set();
+  // Matched rather than indexed: minified output is `@layer utilities{`, but a
+  // build with cssMinify off writes `@layer utilities {`, and a literal lookup
+  // then finds nothing -- which reads as "nothing to shadow" rather than as
+  // "this check did not run".
+  const head = builtCss.match(/@layer\s+utilities\s*\{/);
+  if (!head) return new Set();
   let depth = 1;
-  let j = i + "@layer utilities{".length;
+  let j = head.index + head[0].length;
   const start = j;
   while (j < builtCss.length && depth > 0) {
     if (builtCss[j] === "{") depth++;

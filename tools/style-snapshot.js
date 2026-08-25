@@ -29,7 +29,7 @@
  *   - Elements are keyed by their position in the tree, not by class or id,
  *     because the class list is the thing being changed.
  *
- * It captures six states, because most of this app is not on screen at once and
+ * It captures seven states, because most of this app is not on screen at once and
  * a rule that only applies inside the trash tab is exactly the kind that gets
  * lost. Bar mode is captured at the real bar size so its layout is the real
  * one.
@@ -153,8 +153,23 @@ const STATES = [
       'document.querySelector("#settingsBtn").click();' +
       'window.api.expand().then(()=>{document.querySelector("[data-tab=matrix]").click();return 1})',
   ],
-  ["history", 'document.querySelector("[data-tab=history]").click(); 1'],
-  ["trash", 'document.querySelector("[data-tab=trash]").click(); 1'],
+  // Both lists ask for a row before they are believed. A throwaway profile has
+  // no finished and no deleted tasks, and an empty list still captures cleanly:
+  // the two states would then differ by nothing because they contained nothing,
+  // and the sheet that draws those rows would read as verified without ever
+  // having been drawn. Seed the profile before capturing.
+  [
+    "history",
+    '(() => { document.querySelector("[data-tab=history]").click();' +
+      'if (!document.querySelector("#historyView .history-list li")) throw new Error("history is empty -- seed the profile");' +
+      " return 1; })()",
+  ],
+  [
+    "trash",
+    '(() => { document.querySelector("[data-tab=trash]").click();' +
+      'if (!document.querySelector("#trashView .history-list li")) throw new Error("trash is empty -- seed the profile");' +
+      " return 1; })()",
+  ],
   ["guide", 'document.querySelector("[data-tab=guide]").click(); 1'],
   // Opening the note takes a click on a quadrant row's text, not any row: the
   // brain dump's rows have no note by design, so clicking one selects nothing
@@ -169,17 +184,37 @@ const STATES = [
   [
     "memo",
     'document.querySelector("[data-tab=matrix]").click();' +
+      // Wrapped, and var-free: `Runtime.evaluate` compiles into the page's
+      // global lexical scope, so a bare `const` here survives the call and the
+      // next capture against the same page dies on the redeclaration.
+      "(() => {" +
       'const row = document.querySelector(".quad .item .text");' +
       'if (!row) throw new Error("no quadrant row to open a note on");' +
-      "row.click(); 1",
+      "row.click(); return 1; })()",
   ],
+  // The gear is a toggle, so this state depends on the panel being shut when it
+  // starts -- which the matrix reset above only manages when the panel still
+  // announces itself with `hidden`. Check the panel is open rather than assume
+  // the toggle went the way we wanted.
   [
     "settings",
-    'document.querySelector("#memoClose")?.click(); document.querySelector("#settingsBtn").click(); 1',
+    '(() => { document.querySelector("#memoClose")?.click();' +
+      'document.querySelector("#settingsBtn").click();' +
+      'if (document.querySelector("#settingsPanel").classList.contains("hidden")) throw new Error("settings did not open");' +
+      " return 1; })()",
   ],
+  // `collapse()` resolves when the main process has moved the window; the class
+  // arrives separately, on the `win:mode` push. Capturing between the two would
+  // photograph an expanded layout squeezed into 684x48 and file it as bar mode
+  // -- a reading of the one sheet that is known to fail quietly.
   [
     "bar",
-    'document.querySelector("#settingsBtn").click(); window.api.collapse().then(()=>1)',
+    'document.querySelector("#settingsBtn").click();' +
+      "window.api.collapse().then(async () => {" +
+      "for (let i = 0; i < 60; i++) {" +
+      'if (document.body.classList.contains("collapsed")) return 1;' +
+      " await new Promise((r) => setTimeout(r, 50)); }" +
+      ' throw new Error("window did not reach bar mode"); })',
   ],
 ];
 

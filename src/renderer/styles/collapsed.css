@@ -12,13 +12,20 @@ body.collapsed .toast {
   display: none !important;
 }
 
+/* Every declaration here carries !important, and it is load-bearing rather
+   than shouting. These rules sit in `nekan` and the utilities land in a later
+   layer, and layer order beats specificity for normal declarations -- so
+   `body.collapsed .titlebar` (three selectors) loses to a bare `h-md` on the
+   same element. Important declarations are the one thing that reverses layer
+   order, which is why bar mode cannot be expressed any other way while the
+   title bar is on utilities. */
 body.collapsed .titlebar {
-  height: 100%;
-  border-bottom: 0;
+  height: 100% !important;
+  border-bottom: 0 !important;
 }
 
 body.expanded .bar-summary .chip {
-  cursor: default;
+  cursor: default !important;
 }
 
 /* The bar keeps everything that means something at a glance: the icon, both
@@ -34,7 +41,7 @@ body.expanded .bar-summary .chip {
    squeezed further. */
 body.collapsed .title,
 body.collapsed .app-version {
-  display: none;
+  display: none !important;
 }
 
 /* The settings panel is 320px wide and the bar is 48px tall, so the gear opens
@@ -42,10 +49,10 @@ body.collapsed .app-version {
    way into a bar, it goes with the window it belonged to. */
 body.collapsed .settings,
 body.collapsed .settings-backdrop {
-  display: none;
+  display: none !important;
 }
 
 body.collapsed .titlebar {
-  padding: 0 var(--sp-sm) 0 var(--sp-lg);
-  gap: var(--sp-md);
+  padding: 0 var(--sp-sm) 0 var(--sp-lg) !important;
+  gap: var(--sp-md) !important;
 }
