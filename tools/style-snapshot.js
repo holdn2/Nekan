@@ -222,20 +222,30 @@ async function capture(port, out) {
 
   await send("Page.bringToFront", {});
   const all = {};
-  for (const [name, setup] of STATES) {
-    await evalIn(setup);
-    const v = name === "bar" ? BAR : VIEW;
-    await send("Emulation.setDeviceMetricsOverride", {
-      ...v,
-      deviceScaleFactor: 1,
-      mobile: false,
-    });
-    await new Promise((r) => setTimeout(r, 700));
-    all[name] = JSON.parse(await evalIn(SNAPSHOT));
+  // The window outlives this script, so a throw halfway through would leave it
+  // in whatever state the failing case had put it -- bar mode, under a viewport
+  // override. The next run would then measure that instead of a fresh app, and
+  // a snapshot taken from a polluted start is worse than no snapshot: it looks
+  // like a real reading. Hence the restore runs whether or not we got here.
+  try {
+    for (const [name, setup] of STATES) {
+      await evalIn(setup);
+      const v = name === "bar" ? BAR : VIEW;
+      await send("Emulation.setDeviceMetricsOverride", {
+        ...v,
+        deviceScaleFactor: 1,
+        mobile: false,
+      });
+      await new Promise((r) => setTimeout(r, 700));
+      all[name] = JSON.parse(await evalIn(SNAPSHOT));
+    }
+  } finally {
+    // Each step on its own: if clearing the override fails there is still a
+    // window stuck in bar mode, and giving up on the rest would leave it there.
+    await send("Emulation.clearDeviceMetricsOverride", {}).catch(() => {});
+    await evalIn("window.api.expand().then(()=>1)").catch(() => {});
+    close();
   }
-  await send("Emulation.clearDeviceMetricsOverride", {});
-  await evalIn("window.api.expand().then(()=>1)");
-  close();
 
   fs.writeFileSync(out, JSON.stringify(all));
   const counts = Object.values(all).map((s) => Object.keys(s).length);

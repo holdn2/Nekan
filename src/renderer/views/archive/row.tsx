@@ -99,7 +99,7 @@ function Row({
           className={cn(
             "act flex-none rounded-sm border border-line-strong bg-transparent",
             "px-md py-2xs text-xs whitespace-nowrap text-muted opacity-0",
-            "group-hover:opacity-100",
+            "group-hover:opacity-100 focus-visible:opacity-100",
             action.danger
               ? "hover:border-danger hover:bg-danger-soft hover:text-danger"
               : "hover:border-accent hover:bg-accent-soft hover:text-accent",

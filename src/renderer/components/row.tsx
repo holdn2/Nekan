@@ -78,7 +78,9 @@ export function DeleteButton({
       className={cn(
         "del inline-flex h-[20px] w-[20px] flex-none items-center justify-center",
         "rounded-sm border-0 bg-transparent p-[0px] leading-none text-faint",
-        "opacity-0 group-hover:opacity-100",
+        // focus-visible as well as hover: the button stays tabbable while it is
+        // transparent, so without this a keyboard lands on a mark nobody can see.
+        "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
         "hover:bg-danger-soft hover:text-danger",
       )}
       type="button"

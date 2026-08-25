@@ -77,7 +77,7 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
                    layout.ts + layout/(grid·quad-edges·memo-edge) ·
                    dnd.ts · export-ui.ts — 뒤의 둘은 React가 아니고 그게 맞다:
                    그릴 마크업이 없고 이벤트와 한 번의 호출이다
-    styles/        base부터 scrollbars까지 16개 + 진입점 index.css
+    styles/        base부터 scrollbars까지 15개 + 진입점 index.css
                    index.css의 `@import` 순서가 캐스케이드다 (옛날엔 index.html의
                    <link> 순서였다) — 셋 다 layer(nekan)로 들어간다
                    switch.css만 영역이 아니라 부품이다 — 두 곳이 쓰므로 base 바로 뒤
@@ -441,6 +441,8 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   아직 하나도 만들어지지 않는다** (#75 0·1단계). 알아야 할 것은 넷이다.
   ① **`@import` 순서가 캐스케이드다.** 옛날엔 `index.html`의 `<link>` 열여섯 줄이 그 일을
   했고, 지금은 `index.css`의 `@import` 열여섯 줄이 한다. **줄을 옮기면 캐스케이드가 옮겨간다.**
+  **양쪽의 열여섯은 같은 열여섯이 아니다** — 옛 `<link>`는 시트 열여섯이었고, 지금 `@import`
+  열여섯 중 하나는 Tailwind의 유틸리티다(`archive.css`가 없어져 시트는 열다섯이다).
   ② **손으로 쓴 CSS는 전부 `layer(nekan)`에 있다.** 레이어 순서는 `theme, nekan, utilities`다.
   중요한 것은 **`!important`는 레이어 순서가 뒤집힌다**는 것 — 그래서 `collapsed.css`의
   `!important` 여덟 개가 앞으로도 유틸리티를 이긴다. 바 모드는 유틸리티로 풀 수 없다.
@@ -452,8 +454,10 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   **화면에서 뭔가를 숨길 때는 `hidden` 클래스면 된다. 새로 규칙을 쓰지 말 것.**
   ④ **`@theme`에 시트가 읽는 이름과 똑같은 키를 넣지 말 것.** Tailwind가 "내 변수가 쓰이는군"
   으로 읽고 `--radius-xs: var(--radius-xs)`를 **레이어 밖 `:root`에** 뱉는다. 레이어 밖이
-  레이어 안을 이기고 자기 참조는 무효라, **모서리 네 개와 그림자 네 개가 조용히 사라진다.**
-  그래서 **모서리·그림자 아홉은 `base.css`가 아니라 `index.css`의 `@theme`이 갖는다** —
+  레이어 안을 이기고 자기 참조는 무효라, **그 이름을 쓰는 모서리와 그림자가 통째로 조용히
+  사라진다**(발견한 날 실측은 넷과 넷이었다).
+  그래서 **모서리 여섯과 그림자 넷은 `base.css`가 아니라 `index.css`의 `@theme static`이
+  갖는다** —
   값이 하나뿐이라 테마를 안 타는 것들이다. **테마를 타는 것만 `base.css`에 남는다**
   (`--shadow`가 그렇다). `--radius`는 네임스페이스 뒤에 이름이 없어서 `--radius-panel`이 됐다.
   ⑤ **간격은 이름 있는 단계뿐이다.** `--spacing`을 정의하지 않아서 `p-4`는 없고 `p-md`가 있다 —
