@@ -5,10 +5,18 @@
  * state:load says so; this is offered on that answer alone. It exists because
  * syncing has to be verifiable without a person clicking a consent screen --
  * removing it would leave no way to test the sync loop automatically.
+ *
+ * It wraps, because this block lives in a 320px panel rather than in the width
+ * of the guide it came from: the two fields share a line and the button takes
+ * one of its own.
  */
 
 import { useState } from "react";
 import { t } from "../../i18n.js";
+
+/** Both fields, which share a line and give up width before anything else. */
+const FIELD =
+  "flex-[1_1_120px] min-w-[0px] rounded-xs border border-line bg-bg px-md py-xs text-sm text-text";
 
 interface Props {
   /**
@@ -25,13 +33,24 @@ export function DevSignIn({ onSubmit }: Props) {
 
   return (
     <form
-      className="account-dev"
+      // Not `border-dashed`: that sets border-style on all four sides, and the
+      // three this form does not draw take their width from the UA's `medium`
+      // the moment they stop being `none` -- a 2.4px box appears around the
+      // form and everything below it moves down. The arbitrary property names
+      // the one side, and it is emitted after `border-t`, so it wins.
+      className="account-dev flex basis-full flex-wrap gap-sm border-t border-line [border-top-style:dashed] pt-lg"
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit(dev.email, dev.password);
       }}
     >
+      {/* No font-family: an <input> does not inherit one and never did here,
+          so asking for it now would change the face these two are drawn in.
+          min-w-[0px] rather than min-w-0 -- there is no numeric spacing scale,
+          so the numeric form compiles to nothing and the fields stop shrinking
+          below their content. */}
       <input
+        className={FIELD}
         id="devEmail"
         type="email"
         value={dev.email}
@@ -40,6 +59,7 @@ export function DevSignIn({ onSubmit }: Props) {
         autoComplete="off"
       />
       <input
+        className={FIELD}
         id="devPassword"
         type="password"
         value={dev.password}
@@ -47,7 +67,12 @@ export function DevSignIn({ onSubmit }: Props) {
         placeholder={t("account.devPassword")}
         autoComplete="off"
       />
-      <button type="submit">{t("account.devSignIn")}</button>
+      <button
+        className="basis-full rounded-xs border border-line bg-transparent px-md py-xs text-sm text-muted"
+        type="submit"
+      >
+        {t("account.devSignIn")}
+      </button>
     </form>
   );
 }

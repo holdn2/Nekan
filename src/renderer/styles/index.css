@@ -81,7 +81,8 @@
 /* archive.css was here. Every rule in it moved to utilities; the history
    and trash tabs are drawn entirely from their components now. */
 @import "./guide.css" layer(nekan);
-@import "./account.css" layer(nekan);
+/* account.css was here. Every rule in it moved to utilities; the account block
+   is drawn entirely from views/account.tsx and views/account/ now. */
 @import "./settings.css" layer(nekan);
 /* Right after settings.css: the first-run card's language picker is a
    `.settings-select` and this paints over it. */
