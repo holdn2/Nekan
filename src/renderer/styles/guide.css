@@ -1,55 +1,17 @@
 /**
- * The 가이드 tab. Static markup in index.html, so nothing here is JS-driven.
+ * What is left of the 가이드 tab's sheet.
+ *
+ * The tab is prose written straight into index.html rather than drawn by a
+ * component, so its boxes are spelled on the elements as utilities and the
+ * whole sheet went with them -- except for the three rules below, which have
+ * nowhere on the page to be spelled.
  */
 
-/* ---------- guide ---------- */
-.guide {
-  display: flex;
-  flex-direction: column;
-}
-
-.guide-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-panel);
-  box-shadow: var(--shadow);
-}
-
-.guide-doc {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: var(--sp-5xl) var(--sp-6xl) var(--sp-7xl);
-  line-height: var(--lh-relaxed);
-  user-select: text;
-}
-
-.guide-doc h1 {
-  margin: 0 0 var(--sp-lg);
-  font-size: var(--fs-3xl);
-  letter-spacing: var(--ls-tight);
-}
-
-.guide-doc h2 {
-  margin: var(--sp-6xl) 0 var(--sp-xl);
-  padding-top: var(--sp-3xl);
-  border-top: 1px solid var(--line);
-  font-size: var(--fs-lg);
-  letter-spacing: var(--ls-wide);
-}
-
-.guide-doc p {
-  margin: 0 0 var(--sp-xl);
-  color: var(--muted);
-}
-
-.guide-doc .lead {
-  color: var(--text);
-  font-size: var(--fs-lg);
-}
-
+/* The <b> and <em> inside a paragraph are not in the markup: a paragraph is
+   one catalogue key, the emphasis travels inside the translated sentence, and
+   tNodes() builds those elements at runtime. There is no element here to carry
+   a class, so these stay descendant rules -- and `guide-doc` stays a class in
+   index.html for them to hang off. */
 .guide-doc em {
   color: var(--text);
   font-style: normal;
@@ -60,178 +22,14 @@
   color: var(--text);
 }
 
-.guide-doc blockquote {
-  margin: var(--sp-3xl) 0;
-  padding: var(--sp-xl) var(--sp-3xl);
-  border-left: 3px solid var(--accent);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
-  background: var(--accent-soft);
-  color: var(--text);
-}
-
-.guide-doc cite {
-  display: block;
-  margin-top: var(--sp-sm);
-  color: var(--muted);
-  font-size: var(--fs-xs);
-  font-style: normal;
-}
-
-.guide-axes {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--sp-lg);
-  margin-bottom: var(--sp-xl);
-}
-
-.axis {
-  padding: var(--sp-xl) var(--sp-2xl);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-panel);
-  background: var(--panel-2);
-}
-
-.axis h3 {
-  margin: 0 0 var(--sp-sm);
-  font-size: var(--fs-md);
-}
-
-.axis p {
-  margin: 0;
-  font-size: var(--fs-sm);
-}
-
-.guide-doc .note {
-  padding: var(--sp-lg) var(--sp-2xl);
-  border-radius: var(--radius-md);
-  background: var(--panel-2);
-  font-size: var(--fs-sm);
-}
-
-.guide-quads {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--sp-lg);
-}
-
-.guide-quad {
-  padding: var(--sp-2xl);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-panel);
-  background: var(--panel-2);
-}
-
-.guide-quad.q1 {
-  border-top: 2px solid var(--q1);
-}
-.guide-quad.q2 {
-  border-top: 2px solid var(--q2);
-}
-.guide-quad.q3 {
-  border-top: 2px solid var(--q3);
-}
-.guide-quad.q4 {
-  border-top: 2px solid var(--q4);
-}
-
-.guide-quad > header {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--sp-sm);
-  margin-bottom: var(--sp-md);
-}
-
-.guide-quad h3 {
-  margin: 0;
-  font-size: var(--fs-md);
-}
-
-.guide-quad .tag {
-  color: var(--muted);
-  font-size: var(--fs-xs);
-}
-
-.guide-quad p {
-  margin: 0 0 var(--sp-sm);
-  font-size: var(--fs-sm);
-}
-
-.guide-quad .ex {
-  color: var(--faint);
-}
-
-.guide-quad .tip {
-  margin: var(--sp-md) 0 0;
-  padding-top: var(--sp-md);
-  border-top: 1px solid var(--line);
-}
-
-.guide-steps,
-.guide-points {
-  margin: 0;
-  padding-left: var(--sp-4xl);
-  color: var(--muted);
-}
-
-.guide-steps li,
-.guide-points li {
-  margin-bottom: var(--sp-sm);
-}
-
-.guide-points.app {
-  padding: var(--sp-xl) var(--sp-2xl) var(--sp-xl) var(--sp-6xl);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-panel);
-  background: var(--panel-2);
-  font-size: var(--fs-sm);
-}
-
+/* Not the guide's, despite the address. views/archive/tab.tsx draws the
+   "nothing here" line with this class, and archive.css is gone, so the rule
+   outlived the sheet it belonged to. It stays until whoever owns that view
+   moves it onto the element -- deleting it here would take the styling of the
+   empty history and trash lists with it. */
 .empty {
   margin: 0;
   padding: var(--sp-5xl) var(--sp-xl);
   text-align: center;
   color: var(--faint);
-}
-
-/* Version and update state, at the end of the document rather than in the
-   title bar — see the comment on .guide-about in index.html. Quiet on purpose:
-   it is the answer to a question, not something to notice while working. */
-.guide-about {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-lg);
-  flex-wrap: wrap;
-  margin-top: var(--sp-6xl);
-  padding-top: var(--sp-3xl);
-  border-top: 1px solid var(--line);
-  color: var(--faint);
-  font-size: var(--fs-sm);
-}
-
-.guide-about .about-app b {
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Empty whenever nothing truthful can be said (see UPDATE_TEXT), and an empty
-   flex item would still leave its gap behind. */
-.about-update:empty {
-  display: none;
-}
-
-.about-link {
-  margin-left: auto;
-  padding: var(--sp-2xs) var(--sp-lg);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-pill);
-  background: transparent;
-  color: var(--muted);
-  font-size: var(--fs-sm);
-}
-
-.about-link:hover {
-  border-color: var(--line-strong);
-  background: var(--panel-3);
-  color: var(--text);
 }

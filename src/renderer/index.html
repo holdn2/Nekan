@@ -115,40 +115,102 @@
          this tab starts hidden regardless. -->
     <section
       id="guideView"
-      class="view guide hidden min-h-[0px] flex-auto px-xl pt-md pb-xl"
+      class="view guide hidden flex flex-col min-h-[0px] flex-auto px-xl pt-md pb-xl"
     >
-      <div class="guide-scroll">
-        <article class="guide-doc">
-          <h1 data-i18n="guide.title">What is the Eisenhower matrix?</h1>
-          <p class="lead" data-i18n="guide.lead"></p>
+      <div
+        class="min-h-[0px] flex-auto overflow-y-auto rounded-panel border border-line bg-panel shadow-default"
+      >
+        <!-- `guide-doc` stays a class, and it is the only one left in here.
+             The emphasis inside a paragraph is not written in this file: the
+             paragraph is one catalogue key and tNodes() builds the <b> and
+             <em> from the translation at runtime, so there is no element to
+             spell a utility on and guide.css keeps two descendant rules for
+             them. Everything else on this page is spelled on the element. -->
+        <article
+          class="guide-doc mx-auto max-w-[760px] px-6xl pt-5xl pb-7xl leading-relaxed select-text"
+        >
+          <h1
+            class="mt-[0px] mb-lg text-3xl tracking-tight"
+            data-i18n="guide.title"
+          >
+            What is the Eisenhower matrix?
+          </h1>
+          <p
+            class="mt-[0px] mb-xl text-lg text-text"
+            data-i18n="guide.lead"
+          ></p>
 
           <!-- The quotation is wrapped because the attribution below it is a
                separate string; a bare text node would be replaced along with
                it. -->
-          <blockquote>
+          <!-- The horizontal margin is spelled because the browser gives a
+               blockquote 40px of its own on each side, and the sheet this
+               replaced set it to zero. -->
+          <blockquote
+            class="mx-[0px] my-3xl rounded-r-md border-l-[3px] border-l-accent bg-accent-soft px-3xl py-xl text-text"
+          >
             <span data-i18n="guide.quote"></span>
-            <cite data-i18n="guide.quoteCite"></cite>
+            <cite
+              class="mt-sm block text-xs text-muted not-italic"
+              data-i18n="guide.quoteCite"
+            ></cite>
           </blockquote>
 
-          <p data-i18n="guide.origin"></p>
+          <p class="mt-[0px] mb-xl text-muted" data-i18n="guide.origin"></p>
 
-          <h2 data-i18n="guide.axesTitle">The two axes</h2>
-          <div class="guide-axes">
-            <div class="axis">
-              <h3 data-i18n="guide.importanceTitle">Importance</h3>
-              <p data-i18n="guide.importance"></p>
+          <h2
+            class="mt-6xl mb-xl border-t border-t-line pt-3xl text-lg tracking-wide"
+            data-i18n="guide.axesTitle"
+          >
+            The two axes
+          </h2>
+          <!-- The columns are written out rather than asked for as
+               grid-cols-2, which is repeat(2, minmax(0, 1fr)): that lets a
+               column shrink below its own content, and these two hold prose
+               the sheet let set its own floor. -->
+          <div class="mb-xl grid grid-cols-[1fr_1fr] gap-lg">
+            <div
+              class="rounded-panel border border-line bg-panel-2 px-2xl py-xl"
+            >
+              <h3
+                class="mt-[0px] mb-sm text-md"
+                data-i18n="guide.importanceTitle"
+              >
+                Importance
+              </h3>
+              <p
+                class="m-[0px] text-sm text-muted"
+                data-i18n="guide.importance"
+              ></p>
             </div>
-            <div class="axis">
-              <h3 data-i18n="guide.urgencyTitle">Urgency</h3>
-              <p data-i18n="guide.urgency"></p>
+            <div
+              class="rounded-panel border border-line bg-panel-2 px-2xl py-xl"
+            >
+              <h3 class="mt-[0px] mb-sm text-md" data-i18n="guide.urgencyTitle">
+                Urgency
+              </h3>
+              <p
+                class="m-[0px] text-sm text-muted"
+                data-i18n="guide.urgency"
+              ></p>
             </div>
           </div>
-          <p class="note" data-i18n="guide.axesNote"></p>
+          <p
+            class="mt-[0px] mb-xl rounded-md bg-panel-2 px-2xl py-lg text-sm text-muted"
+            data-i18n="guide.axesNote"
+          ></p>
 
-          <h2 data-i18n="guide.quadsTitle">The four quadrants</h2>
-          <div class="guide-quads">
-            <section class="guide-quad q1">
-              <header>
+          <h2
+            class="mt-6xl mb-xl border-t border-t-line pt-3xl text-lg tracking-wide"
+            data-i18n="guide.quadsTitle"
+          >
+            The four quadrants
+          </h2>
+          <div class="grid grid-cols-[1fr_1fr] gap-lg">
+            <section
+              class="q1 rounded-panel border border-line bg-panel-2 p-2xl border-t-2 border-t-q1"
+            >
+              <header class="mb-md flex flex-wrap items-center gap-sm">
                 <!-- Spelled out rather than drawn by components/dot.tsx: the guide
                      is markup, not components, so it cannot call one. The four
                      below are the only dots in the app that are not that
@@ -156,79 +218,139 @@
                 <span
                   class="dot inline-block h-md w-md shrink-0 rounded-[50%] q1 bg-q1"
                 ></span>
-                <h3 data-i18n="quad.q1.title">Urgent &amp; Important</h3>
-                <span class="tag" data-i18n="guide.q1.tag">Do · right now</span>
+                <h3 class="m-[0px] text-md" data-i18n="quad.q1.title">
+                  Urgent &amp; Important
+                </h3>
+                <span class="text-xs text-muted" data-i18n="guide.q1.tag"
+                  >Do · right now</span
+                >
               </header>
-              <p data-i18n="guide.q1.body"></p>
-              <p class="ex" data-i18n="guide.q1.example"></p>
-              <p class="tip" data-i18n="guide.q1.tip"></p>
+              <p
+                class="mt-[0px] mb-sm text-sm text-muted"
+                data-i18n="guide.q1.body"
+              ></p>
+              <p
+                class="mt-[0px] mb-sm text-sm text-faint"
+                data-i18n="guide.q1.example"
+              ></p>
+              <p
+                class="mt-md mb-[0px] border-t border-t-line pt-md text-sm text-muted"
+                data-i18n="guide.q1.tip"
+              ></p>
             </section>
 
-            <section class="guide-quad q2">
-              <header>
+            <section
+              class="q2 rounded-panel border border-line bg-panel-2 p-2xl border-t-2 border-t-q2"
+            >
+              <header class="mb-md flex flex-wrap items-center gap-sm">
                 <span
                   class="dot inline-block h-md w-md shrink-0 rounded-[50%] q2 bg-q2"
                 ></span>
-                <h3 data-i18n="quad.q2.title">Important &amp; Not Urgent</h3>
-                <span class="tag" data-i18n="guide.q2.tag"
+                <h3 class="m-[0px] text-md" data-i18n="quad.q2.title">
+                  Important &amp; Not Urgent
+                </h3>
+                <span class="text-xs text-muted" data-i18n="guide.q2.tag"
                   >Plan · book the time</span
                 >
               </header>
-              <p data-i18n="guide.q2.body"></p>
-              <p class="ex" data-i18n="guide.q2.example"></p>
-              <p class="tip" data-i18n="guide.q2.tip"></p>
+              <p
+                class="mt-[0px] mb-sm text-sm text-muted"
+                data-i18n="guide.q2.body"
+              ></p>
+              <p
+                class="mt-[0px] mb-sm text-sm text-faint"
+                data-i18n="guide.q2.example"
+              ></p>
+              <p
+                class="mt-md mb-[0px] border-t border-t-line pt-md text-sm text-muted"
+                data-i18n="guide.q2.tip"
+              ></p>
             </section>
 
-            <section class="guide-quad q3">
-              <header>
+            <section
+              class="q3 rounded-panel border border-line bg-panel-2 p-2xl border-t-2 border-t-q3"
+            >
+              <header class="mb-md flex flex-wrap items-center gap-sm">
                 <span
                   class="dot inline-block h-md w-md shrink-0 rounded-[50%] q3 bg-q3"
                 ></span>
-                <h3 data-i18n="quad.q3.title">Urgent &amp; Not Important</h3>
-                <span class="tag" data-i18n="guide.q3.tag"
+                <h3 class="m-[0px] text-md" data-i18n="quad.q3.title">
+                  Urgent &amp; Not Important
+                </h3>
+                <span class="text-xs text-muted" data-i18n="guide.q3.tag"
                   >Delegate · hand off or cut down</span
                 >
               </header>
-              <p data-i18n="guide.q3.body"></p>
-              <p class="ex" data-i18n="guide.q3.example"></p>
-              <p class="tip" data-i18n="guide.q3.tip"></p>
+              <p
+                class="mt-[0px] mb-sm text-sm text-muted"
+                data-i18n="guide.q3.body"
+              ></p>
+              <p
+                class="mt-[0px] mb-sm text-sm text-faint"
+                data-i18n="guide.q3.example"
+              ></p>
+              <p
+                class="mt-md mb-[0px] border-t border-t-line pt-md text-sm text-muted"
+                data-i18n="guide.q3.tip"
+              ></p>
             </section>
 
-            <section class="guide-quad q4">
-              <header>
+            <section
+              class="q4 rounded-panel border border-line bg-panel-2 p-2xl border-t-2 border-t-q4"
+            >
+              <header class="mb-md flex flex-wrap items-center gap-sm">
                 <span
                   class="dot inline-block h-md w-md shrink-0 rounded-[50%] q4 bg-q4"
                 ></span>
-                <h3 data-i18n="quad.q4.title">
+                <h3 class="m-[0px] text-md" data-i18n="quad.q4.title">
                   Not Urgent &amp; Not Important
                 </h3>
-                <span class="tag" data-i18n="guide.q4.tag"
+                <span class="text-xs text-muted" data-i18n="guide.q4.tag"
                   >Delete · get rid of it</span
                 >
               </header>
-              <p data-i18n="guide.q4.body"></p>
-              <p class="ex" data-i18n="guide.q4.example"></p>
-              <p class="tip" data-i18n="guide.q4.tip"></p>
+              <p
+                class="mt-[0px] mb-sm text-sm text-muted"
+                data-i18n="guide.q4.body"
+              ></p>
+              <p
+                class="mt-[0px] mb-sm text-sm text-faint"
+                data-i18n="guide.q4.example"
+              ></p>
+              <p
+                class="mt-md mb-[0px] border-t border-t-line pt-md text-sm text-muted"
+                data-i18n="guide.q4.tip"
+              ></p>
             </section>
           </div>
 
-          <h2 data-i18n="guide.stepsTitle">How to use it</h2>
-          <ol class="guide-steps">
-            <li data-i18n="guide.steps.dump"></li>
-            <li data-i18n="guide.steps.board"></li>
-            <li data-i18n="guide.steps.importance"></li>
-            <li data-i18n="guide.steps.urgency"></li>
-            <li data-i18n="guide.steps.place"></li>
-            <li data-i18n="guide.steps.reserve"></li>
-            <li data-i18n="guide.steps.review"></li>
+          <h2
+            class="mt-6xl mb-xl border-t border-t-line pt-3xl text-lg tracking-wide"
+            data-i18n="guide.stepsTitle"
+          >
+            How to use it
+          </h2>
+          <ol class="my-[0px] pl-4xl text-muted">
+            <li class="mb-sm" data-i18n="guide.steps.dump"></li>
+            <li class="mb-sm" data-i18n="guide.steps.board"></li>
+            <li class="mb-sm" data-i18n="guide.steps.importance"></li>
+            <li class="mb-sm" data-i18n="guide.steps.urgency"></li>
+            <li class="mb-sm" data-i18n="guide.steps.place"></li>
+            <li class="mb-sm" data-i18n="guide.steps.reserve"></li>
+            <li class="mb-sm" data-i18n="guide.steps.review"></li>
           </ol>
 
-          <h2 data-i18n="guide.pointsTitle">Worth remembering</h2>
-          <ul class="guide-points">
-            <li data-i18n="guide.points.notTheSame"></li>
-            <li data-i18n="guide.points.quadOne"></li>
-            <li data-i18n="guide.points.tooMany"></li>
-            <li data-i18n="guide.points.dropping"></li>
+          <h2
+            class="mt-6xl mb-xl border-t border-t-line pt-3xl text-lg tracking-wide"
+            data-i18n="guide.pointsTitle"
+          >
+            Worth remembering
+          </h2>
+          <ul class="my-[0px] pl-4xl text-muted">
+            <li class="mb-sm" data-i18n="guide.points.notTheSame"></li>
+            <li class="mb-sm" data-i18n="guide.points.quadOne"></li>
+            <li class="mb-sm" data-i18n="guide.points.tooMany"></li>
+            <li class="mb-sm" data-i18n="guide.points.dropping"></li>
           </ul>
 
           <!-- Everything from here down is the manual. The guide is the only
@@ -237,81 +359,151 @@
                installing, for what is under the floor, and for whoever works
                on this. The three points here are judgement rather than
                mechanics; the sections after them are the mechanics. -->
-          <h2 data-i18n="guide.appTitle">In this app</h2>
-          <ul class="guide-points app">
-            <li data-i18n="guide.app.dumpFirst"></li>
-            <li data-i18n="guide.app.notStorage"></li>
-            <li data-i18n="guide.app.boards"></li>
+          <h2
+            class="mt-6xl mb-xl border-t border-t-line pt-3xl text-lg tracking-wide"
+            data-i18n="guide.appTitle"
+          >
+            In this app
+          </h2>
+          <ul
+            class="my-[0px] rounded-panel border border-line bg-panel-2 py-xl pr-2xl pl-6xl text-sm text-muted"
+          >
+            <li class="mb-sm" data-i18n="guide.app.dumpFirst"></li>
+            <li class="mb-sm" data-i18n="guide.app.notStorage"></li>
+            <li class="mb-sm" data-i18n="guide.app.boards"></li>
           </ul>
 
-          <h2 data-i18n="guide.tasksTitle">Working with tasks</h2>
-          <ul class="guide-points app">
-            <li data-i18n="guide.tasks.add"></li>
-            <li data-i18n="guide.tasks.order"></li>
-            <li data-i18n="guide.tasks.edit"></li>
-            <li data-i18n="guide.tasks.done"></li>
-            <li data-i18n="guide.tasks.trash"></li>
+          <h2
+            class="mt-6xl mb-xl border-t border-t-line pt-3xl text-lg tracking-wide"
+            data-i18n="guide.tasksTitle"
+          >
+            Working with tasks
+          </h2>
+          <ul
+            class="my-[0px] rounded-panel border border-line bg-panel-2 py-xl pr-2xl pl-6xl text-sm text-muted"
+          >
+            <li class="mb-sm" data-i18n="guide.tasks.add"></li>
+            <li class="mb-sm" data-i18n="guide.tasks.order"></li>
+            <li class="mb-sm" data-i18n="guide.tasks.edit"></li>
+            <li class="mb-sm" data-i18n="guide.tasks.done"></li>
+            <li class="mb-sm" data-i18n="guide.tasks.trash"></li>
           </ul>
 
-          <h2 data-i18n="guide.dumpTitle">The brain dump</h2>
-          <ul class="guide-points app">
-            <li data-i18n="guide.dump.toggle"></li>
-            <li data-i18n="guide.dump.paste"></li>
-            <li data-i18n="guide.dump.later"></li>
+          <h2
+            class="mt-6xl mb-xl border-t border-t-line pt-3xl text-lg tracking-wide"
+            data-i18n="guide.dumpTitle"
+          >
+            The brain dump
+          </h2>
+          <ul
+            class="my-[0px] rounded-panel border border-line bg-panel-2 py-xl pr-2xl pl-6xl text-sm text-muted"
+          >
+            <li class="mb-sm" data-i18n="guide.dump.toggle"></li>
+            <li class="mb-sm" data-i18n="guide.dump.paste"></li>
+            <li class="mb-sm" data-i18n="guide.dump.later"></li>
           </ul>
 
-          <h2 data-i18n="guide.dueTitle">Due dates</h2>
-          <ul class="guide-points app">
-            <li data-i18n="guide.due.set"></li>
-            <li data-i18n="guide.due.colors"></li>
+          <h2
+            class="mt-6xl mb-xl border-t border-t-line pt-3xl text-lg tracking-wide"
+            data-i18n="guide.dueTitle"
+          >
+            Due dates
+          </h2>
+          <ul
+            class="my-[0px] rounded-panel border border-line bg-panel-2 py-xl pr-2xl pl-6xl text-sm text-muted"
+          >
+            <li class="mb-sm" data-i18n="guide.due.set"></li>
+            <li class="mb-sm" data-i18n="guide.due.colors"></li>
           </ul>
 
-          <h2 data-i18n="guide.noteTitle">Notes</h2>
-          <ul class="guide-points app">
-            <li data-i18n="guide.note.open"></li>
-            <li data-i18n="guide.note.keys"></li>
-            <li data-i18n="guide.note.panel"></li>
-            <li data-i18n="guide.note.readonly"></li>
+          <h2
+            class="mt-6xl mb-xl border-t border-t-line pt-3xl text-lg tracking-wide"
+            data-i18n="guide.noteTitle"
+          >
+            Notes
+          </h2>
+          <ul
+            class="my-[0px] rounded-panel border border-line bg-panel-2 py-xl pr-2xl pl-6xl text-sm text-muted"
+          >
+            <li class="mb-sm" data-i18n="guide.note.open"></li>
+            <li class="mb-sm" data-i18n="guide.note.keys"></li>
+            <li class="mb-sm" data-i18n="guide.note.panel"></li>
+            <li class="mb-sm" data-i18n="guide.note.readonly"></li>
           </ul>
 
-          <h2 data-i18n="guide.logTitle">History and trash</h2>
-          <ul class="guide-points app">
-            <li data-i18n="guide.log.history"></li>
-            <li data-i18n="guide.log.trash"></li>
-            <li data-i18n="guide.log.search"></li>
+          <h2
+            class="mt-6xl mb-xl border-t border-t-line pt-3xl text-lg tracking-wide"
+            data-i18n="guide.logTitle"
+          >
+            History and trash
+          </h2>
+          <ul
+            class="my-[0px] rounded-panel border border-line bg-panel-2 py-xl pr-2xl pl-6xl text-sm text-muted"
+          >
+            <li class="mb-sm" data-i18n="guide.log.history"></li>
+            <li class="mb-sm" data-i18n="guide.log.trash"></li>
+            <li class="mb-sm" data-i18n="guide.log.search"></li>
           </ul>
 
-          <h2 data-i18n="guide.exportTitle">Export</h2>
-          <ul class="guide-points app">
-            <li data-i18n="guide.export.run"></li>
-            <li data-i18n="guide.export.what"></li>
+          <h2
+            class="mt-6xl mb-xl border-t border-t-line pt-3xl text-lg tracking-wide"
+            data-i18n="guide.exportTitle"
+          >
+            Export
+          </h2>
+          <ul
+            class="my-[0px] rounded-panel border border-line bg-panel-2 py-xl pr-2xl pl-6xl text-sm text-muted"
+          >
+            <li class="mb-sm" data-i18n="guide.export.run"></li>
+            <li class="mb-sm" data-i18n="guide.export.what"></li>
           </ul>
 
-          <h2 data-i18n="guide.windowTitle">The window and the keyboard</h2>
-          <ul class="guide-points app">
-            <li data-i18n="guide.window.bar"></li>
-            <li data-i18n="guide.window.pin"></li>
-            <li data-i18n="guide.window.quads"></li>
-            <li data-i18n="guide.window.settings"></li>
-            <li data-i18n="guide.window.keys"></li>
+          <h2
+            class="mt-6xl mb-xl border-t border-t-line pt-3xl text-lg tracking-wide"
+            data-i18n="guide.windowTitle"
+          >
+            The window and the keyboard
+          </h2>
+          <ul
+            class="my-[0px] rounded-panel border border-line bg-panel-2 py-xl pr-2xl pl-6xl text-sm text-muted"
+          >
+            <li class="mb-sm" data-i18n="guide.window.bar"></li>
+            <li class="mb-sm" data-i18n="guide.window.pin"></li>
+            <li class="mb-sm" data-i18n="guide.window.quads"></li>
+            <li class="mb-sm" data-i18n="guide.window.settings"></li>
+            <li class="mb-sm" data-i18n="guide.window.keys"></li>
           </ul>
 
-          <h2 data-i18n="guide.syncTitle">Sync across devices</h2>
-          <p data-i18n="guide.sync"></p>
-          <p class="guide-note" data-i18n="guide.syncNote"></p>
-          <p data-i18n="guide.syncGear"></p>
-          <ul class="guide-points app">
-            <li data-i18n="guide.syncSignIn"></li>
-            <li data-i18n="guide.syncDot"></li>
-            <li data-i18n="guide.syncConflict"></li>
-            <li data-i18n="guide.syncMerge"></li>
-            <li data-i18n="guide.syncLeave"></li>
+          <h2
+            class="mt-6xl mb-xl border-t border-t-line pt-3xl text-lg tracking-wide"
+            data-i18n="guide.syncTitle"
+          >
+            Sync across devices
+          </h2>
+          <p class="mt-[0px] mb-xl text-muted" data-i18n="guide.sync"></p>
+          <p class="mt-[0px] mb-xl text-muted" data-i18n="guide.syncNote"></p>
+          <p class="mt-[0px] mb-xl text-muted" data-i18n="guide.syncGear"></p>
+          <ul
+            class="my-[0px] rounded-panel border border-line bg-panel-2 py-xl pr-2xl pl-6xl text-sm text-muted"
+          >
+            <li class="mb-sm" data-i18n="guide.syncSignIn"></li>
+            <li class="mb-sm" data-i18n="guide.syncDot"></li>
+            <li class="mb-sm" data-i18n="guide.syncConflict"></li>
+            <li class="mb-sm" data-i18n="guide.syncMerge"></li>
+            <li class="mb-sm" data-i18n="guide.syncLeave"></li>
           </ul>
 
-          <h2 data-i18n="guide.updateTitle">Updates</h2>
-          <ul class="guide-points app">
-            <li data-i18n="guide.update.auto"></li>
-            <li data-i18n="guide.update.now"></li>
+          <h2
+            class="mt-6xl mb-xl border-t border-t-line pt-3xl text-lg tracking-wide"
+            data-i18n="guide.updateTitle"
+          >
+            Updates
+          </h2>
+          <ul
+            class="my-[0px] rounded-panel border border-line bg-panel-2 py-xl pr-2xl pl-6xl text-sm text-muted"
+          >
+            <li class="mb-sm" data-i18n="guide.update.auto"></li>
+            <li class="mb-sm" data-i18n="guide.update.now"></li>
           </ul>
 
           <!-- The only place the running version is shown. It is not in the
@@ -323,15 +515,23 @@
                The update line says what is actually known -- "this is the
                latest version" only after a check came back saying so. Never
                claim it because a check failed. -->
-          <footer class="guide-about">
-            <span class="about-app">Nekan <b id="appVersion">—</b></span>
-            <span class="about-update" id="updateState"></span>
+          <footer
+            class="mt-6xl flex flex-wrap items-center gap-lg border-t border-t-line pt-3xl text-sm text-faint"
+          >
+            <span
+              >Nekan
+              <b id="appVersion" class="text-muted tabular-nums">—</b></span
+            >
+            <!-- Empty whenever nothing truthful can be said (see UPDATE_TEXT),
+                 and an empty flex item would still leave its gap behind. The
+                 variant carries the `:empty` the stylesheet used to. -->
+            <span class="empty:hidden" id="updateState"></span>
             <!-- The one place the policy is reachable in every state. The
                  account panel carries it too, but only where an account is;
                  somebody who never signs in still deserves to find out what
                  the app would send if they did. -->
             <button
-              class="about-link"
+              class="ml-auto rounded-pill border border-line bg-transparent px-lg py-2xs text-sm text-muted hover:border-line-strong hover:bg-panel-3 hover:text-text"
               id="guidePrivacy"
               type="button"
               data-i18n="legal.privacy"
@@ -339,7 +539,7 @@
               Privacy policy
             </button>
             <button
-              class="about-link"
+              class="ml-auto rounded-pill border border-line bg-transparent px-lg py-2xs text-sm text-muted hover:border-line-strong hover:bg-panel-3 hover:text-text"
               id="releaseNotes"
               type="button"
               data-i18n="update.releaseNotes"
