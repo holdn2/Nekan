@@ -20,23 +20,39 @@
 }
 :root {
   color-scheme: light dark;
-  --bg: #fbf9f5;
-  --fg: #24211c;
-  --muted: #6b655c;
-  --line: #e2dcd2;
-  --card: #fff;
-  --accent: #b4623a;
-  --code-bg: #f2ede5;
+  /* The app's palette, value for value -- src/renderer/styles/base.css. These
+     had drifted apart: seven tokens differed in both themes, so a page next to
+     a screenshot of the app read as a different product.
+
+     `--fg` is the app's `--text`, `--card` is `--panel`, `--code-bg` is
+     `--panel-2`. The names differ because this page predates the app's
+     vocabulary; the values do not. */
+  --bg: #f0eee6;
+  --fg: #1f1e1c;
+  --muted: #6f6b61;
+  --line: #e2ded1;
+  --card: #faf9f5;
+  --accent: #d97757;
+  --code-bg: #f2f0e8;
+  /* The one place the app's value cannot be copied. The app never puts the
+     accent on body-sized text -- it tints, borders and fills with it -- but
+     every link on this site is accent-coloured, and #d97757 on this background
+     is 2.69:1, under WCAG AA for text and under AA for large text too. This is
+     that same accent at 74%, which measures 4.54:1. Derived rather than
+     invented, so it moves when the brand does. */
+  --accent-link: #a15840;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #191714;
-    --fg: #e8e3da;
-    --muted: #9a9288;
-    --line: #332f29;
-    --card: #201d19;
-    --accent: #d98a5e;
-    --code-bg: #262220;
+    --bg: #1f1e1d;
+    --fg: #f2f0ea;
+    --muted: #a7a299;
+    --line: #383734;
+    --card: #262624;
+    --accent: #e08765;
+    --code-bg: #302f2c;
+    /* No darkening needed here: the accent on a dark ground is 6.20:1. */
+    --accent-link: #e08765;
   }
 }
 * {
@@ -122,7 +138,7 @@ th {
   margin-bottom: 0;
 }
 a {
-  color: var(--accent);
+  color: var(--accent-link);
 }
 .lang {
   float: right;
