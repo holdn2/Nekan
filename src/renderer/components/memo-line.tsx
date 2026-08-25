@@ -21,6 +21,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { t } from "../i18n.js";
 import { NoteIcon } from "../react/icons.js";
+import { cn } from "../react/cn.js";
 
 export function MemoLine({ memo }: { memo: string }) {
   const text = useRef<HTMLParagraphElement>(null);
@@ -50,7 +51,14 @@ export function MemoLine({ memo }: { memo: string }) {
 
   return (
     <div
-      className={`hmemo${clamped ? " clamped" : ""}${open ? " open" : ""}`}
+      className={cn(
+        "hmemo flex items-start gap-sm rounded-md bg-panel-2 px-md py-sm",
+        "text-sm text-muted",
+        // The icon marks the memo's first line, so it must not drift to the
+        // middle of a multi-line one -- items-start above, and the mark's own
+        // nudge below.
+        clamped && "cursor-pointer hover:bg-panel-3 hover:text-text",
+      )}
       title={clamped ? t(open ? "memo.collapse" : "memo.expand") : undefined}
       // A button only while there is something to expand. Given a role and a
       // tab stop unconditionally, every memo on the tab would be another stop
@@ -73,10 +81,17 @@ export function MemoLine({ memo }: { memo: string }) {
         setOpen((was) => !was);
       }}
     >
-      <span className="memo-mark" aria-hidden="true">
+      <span className="memo-mark mt-2xs" aria-hidden="true">
         <NoteIcon />
       </span>
-      <p className="hmemo-text" ref={text}>
+      <p
+        className={cn(
+          "hmemo-text m-[0px] min-w-[0px] leading-normal [word-break:break-word]",
+          "whitespace-pre-wrap select-text",
+          open ? "line-clamp-none" : "line-clamp-3",
+        )}
+        ref={text}
+      >
         {memo}
       </p>
     </div>

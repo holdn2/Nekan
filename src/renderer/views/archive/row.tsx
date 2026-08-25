@@ -9,10 +9,13 @@
  */
 
 import type { Task } from "../../../shared/types.js";
+import { Dot } from "../../components/dot.js";
 import { DueBadge } from "../../components/due-badge.js";
+import { cn } from "../../react/cn.js";
 import { MemoLine } from "../../components/memo-line.js";
 import { QUAD_LABEL, timeLabel } from "./paging.js";
 
+import { RowNumber } from "../../components/row.js";
 interface BulkAction<T extends Task> {
   /**
    * The key, not the words.
@@ -48,26 +51,59 @@ function Row({
   actions: Action[];
 }) {
   return (
-    <li className={`hitem${task.memo ? " has-memo" : ""}`}>
-      <span className="num">{index + 1}.</span>
-      <span
-        className={`dot ${task.quadrant}`}
+    // `group` is what makes the row's buttons appear on hover without a
+    // descendant rule. With a memo the row is several lines tall, so everything
+    // beside the title lines up with it rather than floating to the middle --
+    // which is the `mt-*` on the four things that follow.
+    <li
+      className={cn(
+        "hitem group flex gap-lg rounded-md p-md hover:bg-panel-2",
+        task.memo ? "items-start" : "items-center",
+      )}
+    >
+      <RowNumber className={cn("-mr-xs leading-none", task.memo && "mt-xs")}>
+        {index + 1}.
+      </RowNumber>
+      <Dot
+        place={task.quadrant}
         title={QUAD_LABEL[task.quadrant]?.() || ""}
+        className={task.memo ? "mt-xs" : undefined}
       />
       {/* Title and memo share one column, so the memo lines up under the title
           and stops where the date column starts instead of running alongside
           it. */}
-      <div className="hmain">
-        <span className="text">{task.text}</span>
+      <div className="hmain flex min-w-[0px] flex-auto flex-col gap-xs">
+        <span className="text flex-auto [word-break:break-word] font-light text-muted line-through select-text">
+          {task.text}
+        </span>
         {task.memo ? <MemoLine memo={task.memo} /> : null}
       </div>
-      <DueBadge value={task.dueDate} />
-      <span className="time">{timeLabel(at)}</span>
+      <DueBadge
+        value={task.dueDate}
+        className={task.memo ? "mt-hair" : undefined}
+      />
+      {/* The title column is the only thing that may give up width, so the
+          timestamp and the buttons keep one line and stay aligned across rows. */}
+      <span
+        className={cn(
+          "time flex-none text-xs whitespace-nowrap text-faint tabular-nums",
+          task.memo && "mt-hair",
+        )}
+      >
+        {timeLabel(at)}
+      </span>
       {actions.map((action) => (
         <button
           key={action.label}
           type="button"
-          className={action.danger ? "act danger" : "act"}
+          className={cn(
+            "act flex-none rounded-sm border border-line-strong bg-transparent",
+            "px-md py-2xs text-xs whitespace-nowrap text-muted opacity-0",
+            "group-hover:opacity-100 focus-visible:opacity-100",
+            action.danger
+              ? "hover:border-danger hover:bg-danger-soft hover:text-danger"
+              : "hover:border-accent hover:bg-accent-soft hover:text-accent",
+          )}
           onClick={action.onClick}
         >
           {action.label}

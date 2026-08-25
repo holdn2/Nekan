@@ -9,6 +9,8 @@
  */
 
 import { INBOX, QUADS } from "../../../shared/core.js";
+import { cn } from "../../react/cn.js";
+import { Dot } from "../../components/dot.js";
 import type { Place } from "../../../shared/types.js";
 import { t } from "../../i18n.js";
 import { activeOf, getSpace, inboxTasks } from "../../store.js";
@@ -33,6 +35,15 @@ import {
   setTab,
 } from "./state.js";
 
+/**
+ * One window button. `win-btn` stays as a name because welcome.css reaches two
+ * of these by id and says so, and because it is what the bar is read by from
+ * outside. Nothing defines it any more.
+ */
+const WIN_BTN =
+  "win-btn grid h-[30px] w-[30px] place-items-center rounded-md border-0 " +
+  "bg-transparent text-muted hover:bg-panel-3 hover:text-text";
+
 /* ------------------------------------------------------------- components */
 
 /** One count chip. In a bar these are the only thing on screen. */
@@ -43,7 +54,15 @@ function Chip({ place, count }: { place: Place; count: number }) {
       : `titlebar.count${place.toUpperCase()}`;
   return (
     <button
-      className={`chip${place === INBOX ? " inbox-chip" : ""}${place === INBOX && count === 0 ? " hidden" : ""}`}
+      className={cn(
+        // `chip` is collapsed.css's name for these, and it is the one thing on
+        // screen in bar mode.
+        "chip flex items-center gap-sm rounded-pill border border-line",
+        "bg-panel-2 px-md py-xs text-muted",
+        "hover:border-line-strong hover:bg-panel-3 hover:text-text",
+        place === INBOX && "inbox-chip",
+        place === INBOX && count === 0 && "hidden",
+      )}
       id={place === INBOX ? "inboxChip" : undefined}
       type="button"
       data-jump={place}
@@ -60,8 +79,13 @@ function Chip({ place, count }: { place: Place; count: number }) {
         if (place === INBOX) applyInboxOpen(true);
       }}
     >
-      <i className={`dot ${place}`} />
-      <b id={place === INBOX ? "cInbox" : `c${place[1]}`}>{count}</b>
+      <Dot place={place} as="i" />
+      <b
+        className="tabular-nums text-text"
+        id={place === INBOX ? "cInbox" : `c${place[1]}`}
+      >
+        {count}
+      </b>
     </button>
   );
 }
@@ -78,14 +102,26 @@ function TitleBar() {
 
   return (
     <>
-      <div className="brand">
-        <img className="logo" src="../assets/icon.png" alt="" />
-        <span className="title">Nekan</span>
+      <div className="flex min-w-[0px] items-center gap-md">
+        <img
+          className="h-[18px] w-[18px] flex-none [-webkit-user-drag:none]"
+          src="../assets/icon.png"
+          alt=""
+        />
+        {/* The app's own name, and the one word in the bar that is a title
+            rather than a label -- so it takes the title rank the quadrant
+            headings use. `title` is collapsed.css's name for it. */}
+        <span className="title overflow-hidden font-semibold tracking-wide text-ellipsis whitespace-nowrap">
+          Nekan
+        </span>
         {/* Costs the bar nothing: collapsed.css drops it with the app name,
             the way the export button goes. Only the number is here — the
             update state and the release link are in the guide, which is where
             someone goes to read rather than to work. */}
-        <span className="app-version" id="titleVersion">
+        <span
+          className="app-version flex-none text-xs text-faint tabular-nums whitespace-nowrap"
+          id="titleVersion"
+        >
           {currentVersion()}
         </span>
       </div>
@@ -95,7 +131,7 @@ function TitleBar() {
           export all follow it. The one thing it does NOT scope is the inbox
           below, which is why that panel says so on its own header. */}
       <div
-        className="switch space-switch"
+        className="switch [-webkit-app-region:no-drag]"
         id="spaceSwitch"
         role="group"
         aria-label={t("titlebar.boards")}
@@ -117,7 +153,10 @@ function TitleBar() {
         ))}
       </div>
 
-      <div className="bar-summary" id="barSummary">
+      <div
+        className="bar-summary ml-auto flex items-center gap-sm [-webkit-app-region:no-drag]"
+        id="barSummary"
+      >
         {/* Hidden while the inbox is empty, so a visible count always means
             "there is something you have not classified yet". */}
         <Chip place={INBOX} count={waiting} />
@@ -126,14 +165,25 @@ function TitleBar() {
         ))}
       </div>
 
-      <div className="win-actions">
+      <div className="ml-sm flex items-center gap-2xs [-webkit-app-region:no-drag]">
         {/* The one button that is not always here. It appears only once a new
             version has finished downloading, so seeing it at all is the
             message; until then the update is silent and would be applied on
             quit anyway. It stays in bar mode on purpose — that is where this
             widget is usually left, and `BAR.width` is sized to hold it. */}
         <button
-          className={`win-btn${updateReady ? "" : " hidden"}`}
+          className={cn(
+            WIN_BTN,
+            // Accent rather than the muted window-button grey: it is only ever
+            // on screen when there is something to act on. It has to name the
+            // hover as well, or the shared hover above would grey it on the way
+            // past -- which is what the old rule meant by the id outranking
+            // `.win-btn:hover`.
+            "bg-accent-soft text-accent",
+            "hover:bg-accent-soft hover:text-accent",
+            "hover:shadow-[inset_0_0_0_1px_var(--accent)]",
+            !updateReady && "hidden",
+          )}
           id="updateBtn"
           type="button"
           title={t("titlebar.updateReady")}
@@ -147,7 +197,7 @@ function TitleBar() {
             gives sync a signal the bar can afford, where the old 56px chip
             could not. */}
         <button
-          className="win-btn"
+          className={WIN_BTN}
           id="settingsBtn"
           type="button"
           title={t("settings.title")}
@@ -159,7 +209,16 @@ function TitleBar() {
           <i className="sync-dot" aria-hidden="true" />
         </button>
         <button
-          className={`win-btn${isPinned() ? " on" : ""}`}
+          className={cn(
+            WIN_BTN,
+            // The hover has to be named too, the same as the update button
+            // above. `.win-btn.on` and `.win-btn:hover` were the same
+            // specificity and `.on` came later, so a pinned button kept its
+            // accent under the pointer; a hover utility outranks a plain one,
+            // so without saying this the pin goes grey when you reach for it.
+            isPinned() &&
+              "bg-accent-soft text-accent hover:bg-accent-soft hover:text-accent",
+          )}
           id="pinBtn"
           type="button"
           title={t(isPinned() ? "titlebar.unpin" : "titlebar.pin")}
@@ -179,7 +238,7 @@ function TitleBar() {
           <PinIcon />
         </button>
         <button
-          className="win-btn"
+          className={WIN_BTN}
           id="sizeBtn"
           type="button"
           title={t(sizeKey)}
@@ -189,7 +248,7 @@ function TitleBar() {
           <ShrinkIcon />
         </button>
         <button
-          className="win-btn"
+          className={WIN_BTN}
           id="minBtn"
           type="button"
           title={t("titlebar.minimize")}
@@ -199,7 +258,7 @@ function TitleBar() {
           <MinimiseIcon />
         </button>
         <button
-          className="win-btn danger"
+          className={cn(WIN_BTN, "hover:bg-danger-soft hover:text-danger")}
           id="closeBtn"
           type="button"
           title={t("titlebar.close")}

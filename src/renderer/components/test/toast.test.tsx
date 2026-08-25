@@ -4,7 +4,7 @@
  */
 
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { flush, find, hidden } from "../../react/testing.js";
+import { flush, find, hidden, open } from "../../react/testing.js";
 import { toast } from "../toast.js";
 
 beforeEach(() => {
@@ -23,12 +23,24 @@ afterEach(() => {
 test("shows the message it was given", async () => {
   await flush(() => toast("saved"));
   expect(find("#toastText").textContent).toBe("saved");
-  expect(hidden("#toast")).toBe(false);
+  expect(open("#toast")).toBe(true);
 });
 
 test("an error tints it", async () => {
   await flush(() => toast("broken", { error: true }));
-  expect(find("#toast").classList.contains("error")).toBe(true);
+  // The tint is two utilities rather than an `error` class now, so this names
+  // them. It reads like an implementation detail and is not one: the class list
+  // *is* the styling here, and there is no stylesheet left to ask instead.
+  const cls = find("#toast").classList;
+  expect(cls.contains("text-danger")).toBe(true);
+  expect(cls.contains("border-danger")).toBe(true);
+});
+
+test("without an error it keeps the ordinary colours", async () => {
+  await flush(() => toast("saved"));
+  const cls = find("#toast").classList;
+  expect(cls.contains("text-danger")).toBe(false);
+  expect(cls.contains("border-line-strong")).toBe(true);
 });
 
 test("the action carries its own label and handler", async () => {
@@ -54,11 +66,11 @@ test("a later toast never keeps the previous action", async () => {
 test("it fades rather than disappearing", async () => {
   await flush(() => toast("saved", { ms: 4000 }));
   await flush(() => vi.advanceTimersByTime(4000));
-  // Still in the document, still holding its words: .toast.hidden is a
+  // Still in the document, still holding its words: losing [data-open] is a
   // transition, and an element React had unmounted could not animate out.
   expect(document.querySelector("#toast")).not.toBeNull();
   expect(find("#toastText").textContent).toBe("saved");
-  expect(hidden("#toast")).toBe(true);
+  expect(open("#toast")).toBe(false);
 });
 
 test("a second toast restarts the clock", async () => {
@@ -66,7 +78,7 @@ test("a second toast restarts the clock", async () => {
   await flush(() => vi.advanceTimersByTime(3000));
   await flush(() => toast("second", { ms: 4000 }));
   await flush(() => vi.advanceTimersByTime(3000));
-  expect(hidden("#toast")).toBe(false);
+  expect(open("#toast")).toBe(true);
   await flush(() => vi.advanceTimersByTime(1000));
-  expect(hidden("#toast")).toBe(true);
+  expect(open("#toast")).toBe(false);
 });

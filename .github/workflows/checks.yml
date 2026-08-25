@@ -1,0 +1,69 @@
+# What every pull request has to pass.
+#
+# This exists because the only workflow that ran `npm test` was the mac build,
+# and that one is gated on five paths -- package.json, the lockfile, build/,
+# tools/build.js and its own file. A pull request that changes nothing but
+# `src/` therefore ran no checks at all, which is most of them: the whole
+# Tailwind migration touches stylesheets and views and nothing else. The
+# ratchet, the circular-theme check, the utility-shadowing check and both test
+# runners were all sitting there being green by never executing.
+#
+# Linux, because none of this needs a desktop and the macOS runner bills at ten
+# times the rate.
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Read is all this needs: it builds into the workspace and reports, and never
+# writes to the repository.
+permissions:
+  contents: read
+
+# A second push to the same branch makes the first run's answer worthless.
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Nothing here needs a token, and a compromised action in the tree has
+          # no business holding one for this repository.
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Both runners plus tools/check-styles.js, which reads the built CSS and
+      # so has to come after the build `npm test` performs.
+      - name: Tests and style checks
+        run: npm test
+
+      # After, not before. The main and renderer projects reference the shared
+      # project's declaration files, so on a tree that has never been built
+      # `npm run typecheck` does not report type errors -- it dies with TS6305
+      # saying the outputs are missing. Measured on a clean tree: 60-odd of
+      # them, and not one is a type error. `npm test` builds, so this runs
+      # second.
+      - name: Typecheck
+        run: npm run typecheck
+
+      # The repo writes its comments and commits in English and its user-facing
+      # strings through the catalogue; this is the one that can regress without
+      # anyone noticing, because a Korean string left in the source still looks
+      # right to the person who wrote it.
+      - name: No untranslated strings
+        run: node tools/find-untranslated.js
+
+      - name: Formatting
+        run: npx prettier --check .

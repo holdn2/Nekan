@@ -1,147 +1,52 @@
 /**
- * "다 꺼내기" — the staging list above the matrix. --inbox-max-h and the 26vh
- * cap are what stop a growing list from pushing the quadrants off screen.
+ * What is left of "다 꺼내기" after it moved to utilities.
+ *
+ * The panel's box is on the <section> in index.html, and the header, the list
+ * and the add form are spelled in views/inbox.tsx.
+ *
+ * The `section` in the selectors is
+ * load-bearing, not decoration: `inbox` is also a `quadrant` value, so a bare
+ * `.inbox` rule would style the 8px dots in the summary chip and in
+ * history/trash rows as if they were this panel.
+ *
+ * The fold itself is not here any more. It was `section.inbox.open
+ * .inbox-body`, and it stopped working the moment that body carried `hidden`:
+ * that is a utility now, and utilities sit in a later layer than the
+ * hand-written rules, so it won however specific the rule was. React holds the
+ * answer anyway, so the body and the chevron read it directly.
  */
 
-/* ---------- inbox ("다 꺼내기") ---------- */
-/* Sits between the tabs and the matrix as its own flex row. flex-basis auto
-   with no grow means it is exactly as tall as its content, so the matrix keeps
-   everything the inbox does not use. */
-/* The `section` in these selectors is load-bearing, not decoration: `inbox` is
-   also a `quadrant` value, so `.dot.inbox` marks the unclassified dot in the
-   summary chip and in history/trash rows. A bare `.inbox` rule would style
-   those 8px dots as if they were this panel — margins, box shadow and all —
-   and `body.collapsed .inbox` would delete the dot out of the bar chip. */
-section.inbox {
-  /* Shrinkable, but never growing. `0 0 auto` took its content height and
-     refused to give any of it back, which is fine until the matrix hits the
-     px floor under its grid rows — past that the quadrants simply ran off the
-     bottom of the window. Yielding here is what the 26vh cap alone cannot do,
-     because that cap is a share of the window and not of what is left over. */
-  flex: 0 1 auto;
-  /* Both needed for the shrink to reach the list: a flex item defaults to
-     min-height:auto (its content) and a block child would keep its own height
-     while the box around it shrank -- the panel would overlap the matrix
-     instead of making room, and body's overflow:hidden would hide that. */
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  margin: var(--sp-md) var(--sp-xl) 0;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-  transition: border-color 0.12s ease;
-}
-
-section.inbox.hidden {
-  display: none !important;
-}
-
+/* Drop target, set by window/dnd.ts. Important because the panel carries
+   `border-line` and `shadow-default` as utilities, and a utility beats this
+   layer whatever the selector -- without it, dragging into the brain dump
+   shows nothing at all. */
 section.inbox.drop {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent) inset;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 1px var(--accent) inset !important;
 }
 
-.inbox-head {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: var(--sp-lg);
-  padding: 0 var(--sp-xl) 0 0;
-}
+/* The list's height, which is two declarations and needs to be both.
+   max-height alone only caps: a list with four rows in it would ignore a drag
+   downwards entirely, because nothing was pushing against the cap. height is
+   what makes the panel the size it was dragged to.
 
-.inbox-toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-md);
-  /* Spans the row so the count can sit at the far right, the way the quadrant
-     headers and the tab badges do. A header that stops halfway also looked
-     clickable only halfway. */
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: var(--sp-md) var(--sp-xl);
-  border: 0;
-  background: transparent;
-  font-weight: var(--fw-medium);
-}
+   --inbox-h is written by window/layout.ts when the edge above the matrix has
+   been dragged; until then the declaration is invalid at computed-value time
+   and height falls back to auto, which is the content-sized default this panel
+   has always had. The 26vh fallback stays here rather than being copied into
+   the variable, because it is a share of the window and a pixel value written
+   once would stop following it.
 
-.inbox-toggle:hover {
-  color: var(--accent);
-}
-
-/* Points right when folded, down when open — the only moving part of the
-   header, so it carries the whole open/closed signal. */
-.chev {
-  flex: 0 0 auto;
-  color: var(--faint);
-  transition: transform 0.15s ease;
-}
-
-section.inbox.open .chev {
-  transform: rotate(90deg);
-}
-
-.inbox-toggle:hover .chev {
-  color: var(--accent);
-}
-
-/* The header toggle scopes the rest of the app, so this list has to say out
-   loud that it is the exception. */
-/* The quadrants' .sub, worn by the one panel that is not a quadrant --
-   and a step fainter than theirs, because a quadrant's sub names the action
-   you take there while this one only says who the list belongs to. */
-.inbox-sub {
-  flex: 0 1 auto;
-  min-width: 0;
-  color: var(--faint);
-  font-size: var(--fs-xs);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.inbox-body {
-  display: none;
-  border-top: 1px solid var(--line);
-}
-
-section.inbox.open .inbox-body {
-  /* A column so the shrink lands on the list and not on the add form: the
-     input is the whole point of the panel and must not be the part that gets
-     squeezed out. */
-  display: flex;
-  flex-direction: column;
-  flex: 0 1 auto;
-  min-height: 0;
-}
-
+   Left as CSS because the pair only makes sense together and the comment above
+   is most of why. */
 .inbox-list {
-  list-style: none;
-  margin: 0;
-  padding: var(--sp-sm);
-  /* The cap in normal use. When the window is too short for the matrix's own
-     floor, flex shrinks the list below this and it scrolls -- min-height:0 is
-     what lets it, since a flex item otherwise refuses to go under its
-     content. */
-  flex: 0 1 auto;
-  min-height: 0;
-  /* --inbox-h is written by layout.js when the edge above the matrix has been
-     dragged; until then the stylesheet's own cap applies. The fallback stays
-     here rather than being copied into the variable, because 26vh is a share
-     of the window and a pixel value written once would stop following it. */
-  /* Both, and for different reasons. max-height alone only caps: a list with
-     four rows in it would ignore a drag downwards entirely, because nothing
-     was pushing against the cap. height is what makes the panel the size it
-     was dragged to. While --inbox-h is unset the declaration is invalid at
-     computed-value time and height falls back to auto, which is the
-     content-sized default this panel has always had. */
   height: var(--inbox-h);
   max-height: var(--inbox-h, min(var(--inbox-max-h), 26vh));
-  overflow-y: auto;
 }
 
+/* The empty-list message, the same way a quadrant does it: a pseudo-element
+   reading an attribute, so the words can come from the catalogue. `:empty`
+   only matches because the message is an attribute and not a child. */
 .inbox-list:empty::after {
   content: attr(data-empty);
   display: block;
@@ -149,34 +54,4 @@ section.inbox.open .inbox-body {
   color: var(--faint);
   font-size: var(--fs-xs);
   text-align: center;
-}
-
-/* The one part of the panel that never gives up height. When the window is too
-   short the list above shrinks and scrolls; the input has to stay, because a
-   panel you cannot type into is not a smaller panel, it is a broken one. */
-.inbox-add {
-  flex: 0 0 auto;
-}
-
-/* No due chip, no check, no memo mark — the inbox is for getting it out of your
-   head, and the rest of the fields appear once it lands in a quadrant. */
-.inbox-item .text {
-  font-weight: var(--fw-light);
-  flex: 1 1 auto;
-  line-height: var(--lh-snug);
-  word-break: break-word;
-  white-space: pre-wrap;
-  user-select: text;
-}
-
-/* Hollow instead of coloured: the inbox is not a fifth quadrant, it is the
-   "no colour yet" state. Kept at 1.5px so the hole stays visible at 8px —
-   2px would fill in and read as just another solid dot. */
-.dot.inbox {
-  background: transparent;
-  border: 1.5px solid var(--muted);
-}
-
-.chip.hidden {
-  display: none !important;
 }

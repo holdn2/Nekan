@@ -1,27 +1,14 @@
-/* The first-run screen.
-
-   Loaded straight after settings.css, which is where these rules used to live
-   and where two of them still have to sit relative to: the language picker on
-   this card is a `.settings-select`, and the card's own `.hidden` has to come
-   after anything that sets display on it. */
-
-/* No global `.hidden` in this project — every area declares its own, because a
-   bare one-class rule loses to any later rule that sets display, and the
-   blocks below set one. */
-.welcome.hidden,
-.welcome .hidden {
-  display: none;
-}
-
-.welcome {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: grid;
-  place-items: center;
-  padding: var(--sp-3xl);
-  background: var(--bg);
-}
+/**
+ * What is left of the first-run screen after it moved to utilities.
+ *
+ * The overlay's own box is in index.html, because that <div> is index.html's;
+ * the card, the two choices, the merge question, the message line and the
+ * footer are spelled on the elements in views/welcome.tsx and views/welcome/.
+ *
+ * One rule stayed, and it could not be anything else: it is a `:has()` on
+ * <body> that styles two buttons in the title bar, which is neither this
+ * screen's markup nor this branch's file.
+ */
 
 /* The window has no OS frame, so these two buttons are the only way out of the
    app from inside it. Covering the title bar is the point of this screen —
@@ -32,171 +19,16 @@
 
    #sizeBtn deliberately stays underneath. main refuses to collapse while the
    question is open, so lifting it would only produce a button that does
-   nothing, which reads as broken rather than disallowed. */
+   nothing, which reads as broken rather than disallowed.
+
+   Important on both, which the note here used to say would be needed the day
+   the title bar moved onto utilities. That day is this commit. Nothing on those
+   buttons sets position or z-index today, so this changes nothing now -- but a
+   single `relative` added to the window buttons later would take the card's
+   escape hatch away without a word, and layer order means no amount of selector
+   here would win it back. */
 body:has(#welcome:not(.hidden)) #minBtn,
 body:has(#welcome:not(.hidden)) #closeBtn {
-  position: relative;
-  z-index: 61;
-}
-
-/* Top-LEFT, because the two window buttons that stay usable are lifted above
-   this overlay at the top-right and a control tucked under them would be one
-   you cannot press. Taken out of the flow so the card keeps the height it was
-   measured at against a 760x520 window. */
-.welcome-lang {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  /* It sits inside the title bar's strip, and a draggable region hands its
-     mouse input to the OS rather than to the page -- so without this the
-     dropdown simply never opens. Painting over the bar is not enough: the
-     region is hit-tested from the CSS property, not from what is on top.
-     Verified with a real click: the select did not even take focus. */
-  -webkit-app-region: no-drag;
-}
-
-.welcome-card {
-  width: 100%;
-  max-width: 380px;
-  text-align: center;
-}
-
-.welcome-logo {
-  width: 36px;
-  height: 36px;
-}
-
-.welcome-card h1 {
-  margin: var(--sp-md) 0 var(--sp-2xs);
-  font-size: var(--fs-3xl);
-  letter-spacing: var(--ls-tight);
-}
-
-.welcome-text {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  justify-content: center;
-  align-items: center;
-}
-
-.welcome-lede {
-  margin: 0 0 var(--sp-6xl);
-  font-size: var(--fs-md);
-  color: var(--muted);
-}
-
-.welcome-choice {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xl);
-  width: 100%;
-  margin-bottom: var(--sp-md);
-  padding: var(--sp-xl) var(--sp-2xl);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--panel);
-  color: var(--text);
-  text-align: left;
-  cursor: pointer;
-}
-
-.welcome-choice:hover {
-  border-color: var(--muted);
-}
-
-/* Emphasis without a fill. `.primary` was the obvious class name and the wrong
-   one twice over: memo.css already owns it and would have painted this in the
-   app's accent, and Google asks that its button keep neutral chrome so the
-   wordmark colours stay the only colour on it. */
-.welcome-choice.recommended {
-  border-color: var(--line-strong);
-  box-shadow: var(--shadow-knob);
-}
-
-.welcome-choice.recommended .welcome-badge {
-  margin-left: var(--sp-sm);
-  padding: var(--sp-hair) var(--sp-sm);
-  border-radius: var(--radius-pill);
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-medium);
-  vertical-align: 1px;
-}
-
-.welcome-choice:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-
-.welcome-choice-text {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-hair);
-}
-
-.welcome-choice-text b {
-  font-size: var(--fs-md);
-  font-weight: var(--fw-semibold);
-}
-
-.welcome-choice-text small {
-  font-size: var(--fs-xs);
-  color: var(--muted);
-}
-
-.welcome-adopt {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-sm);
-  margin-top: var(--sp-xl);
-  font-size: var(--fs-sm);
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.welcome-msg {
-  margin: var(--sp-lg) 0 0;
-  min-height: 1.2em;
-  font-size: var(--fs-sm);
-  color: var(--muted);
-}
-
-.welcome-msg.error {
-  color: var(--danger);
-}
-
-/* Under the message, and only while the browser has the sign-in. It moves the
-   footer down a line for as long as that lasts, which is the right trade: a
-   reserved row would be empty space on every launch, and this one is only
-   there while there is something to cancel. */
-.welcome-cancel {
-  margin-top: var(--sp-xs);
-  font-size: var(--fs-sm);
-}
-
-/* Two rows, because there are two things being said: the choice is
-   reversible, and signing in stores something. Run together they wrapped
-   mid-sentence and left "다." stranded on a line of its own.
-
-   keep-all is what stops that. Korean has no need of spaces to be readable, so
-   the default breaks between syllables -- fine for a paragraph, wrong for two
-   short lines where the break lands inside a word. */
-.welcome-foot {
-  display: grid;
-  justify-items: center;
-  gap: var(--sp-xs);
-  margin: var(--sp-4xl) 0 0;
-  font-size: var(--fs-xs);
-  line-height: var(--lh-snug);
-  color: var(--faint);
-  word-break: keep-all;
-  text-wrap: pretty;
-}
-
-/* The link is the end of the sentence it belongs to, not a third line. */
-.welcome-foot-legal {
-  display: inline;
+  position: relative !important;
+  z-index: 61 !important;
 }

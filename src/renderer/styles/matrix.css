@@ -1,57 +1,28 @@
 /**
- * The 2x2 grid, the quadrants and the task rows in them. The track ratios are
- * set from JS; the gutters here are what the edge drag measures against.
+ * What is left of the 2x2 grid after it moved to utilities.
+ *
+ * The view slot, the grid, each quadrant's box and header, the lists and the
+ * rows in them are spelled on the elements now -- in views/matrix.tsx, and in
+ * index.html for the grid and the four <section>s, which are index.html's.
+ *
+ * What stayed is here because it is not a thing an element can carry: state a
+ * pointer handler puts on <body> while a drag is in flight, a pseudo-element,
+ * an animation, and the two rules the matrix shares with the memo panel.
  */
 
-/* ---------- views ---------- */
-.view {
-  flex: 1 1 auto;
-  min-height: 0;
-  padding: var(--sp-md) var(--sp-xl) var(--sp-xl);
-}
+/* ---------------------------------------------------------- drag feedback */
 
-.view.hidden {
-  display: none !important;
-}
+/* The grid's own cursor while an edge is under the pointer. layout.ts toggles
+   these on the grid as the pointer moves, so they are class state rather than
+   anything a component renders -- and cursor inherits, which is how the
+   quadrant edges get it too: the padding a drag actually starts on belongs to
+   the grid, not to any quadrant.
 
-/* Take what is left, rather than asking for content height and growing from
-   there. With a basis of `auto` the grid's own content — four quadrants' worth
-   of rows — is its base size, which over-subscribes the column even at the
-   default window size. That was invisible while the matrix was the only thing
-   in the column that could shrink; it absorbed the whole squeeze. The moment
-   the inbox became shrinkable too they split it proportionally and the inbox
-   lost 10px it did not need to give. A zero basis makes "the matrix fills the
-   rest" literally true, so nothing is over-subscribed until the window really
-   is too short — and then the min-height applyLayout() sets is what stops the
-   matrix and hands the shortfall to the inbox. */
-.view.matrix {
-  flex-basis: 0;
-}
-
-/* A 2×2 grid whose two track ratios are set from JS. The gutters are wide
-   enough to grab, and the hit zone reaches a few px into each quadrant so the
-   edges themselves are the handle — there is no separate splitter element. */
-.matrix {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: var(--gutter);
-  min-width: 0;
-}
-
-/* The horizontal grab zone lands on these, never on .list — so they can opt
-   out of touch panning without costing the lists their scroll. */
-.quad > header,
-.quad .add {
-  touch-action: none;
-}
-
-/* Cursor is inherited, so setting it on the grid covers the quadrant edges
-   too — the padding areas a drag actually starts on. */
-/* The top edge of the grid is the boundary with the brain dump above it. It
-   is a row edge like any other, even though the two boxes on either side are
+   The top edge of the grid is the boundary with the brain dump above it. It is
+   a row edge like any other, even though the two boxes either side of it are
    not both quadrants. */
-.matrix.edge-inbox {
+.matrix.edge-inbox,
+.matrix.edge-row {
   cursor: row-resize;
 }
 
@@ -59,15 +30,15 @@
   cursor: col-resize;
 }
 
-.matrix.edge-row {
-  cursor: row-resize;
-}
-
 .matrix.edge-both {
   cursor: nwse-resize;
 }
 
-/* While dragging, keep the whole window on the resize cursor. */
+/* While a drag is running, the whole window holds the resize cursor -- every
+   element, hence the `*` and the !important, because each of them has a cursor
+   of its own that would otherwise win under the pointer. <body> is not a React
+   element and these classes are put on it by a pointer handler, so there is
+   nothing to hang a utility from. */
 body.resizing-col,
 body.resizing-col * {
   cursor: col-resize !important;
@@ -95,119 +66,49 @@ body.resizing-memo {
   user-select: none;
 }
 
-.quad {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  overflow: hidden;
-  box-shadow: var(--shadow);
-  transition: border-color 0.12s ease;
+/* The horizontal grab zone lands on these, never on .list -- so they can opt
+   out of touch panning without costing the lists their scroll. */
+.quad > header,
+.quad .add {
+  touch-action: none;
 }
 
-/* The edges being dragged light up on both quadrants that share them.
-   (No top-edge rule: q3/q4 keep their coloured accent bar there.) */
+/* The edges being dragged light up on both quadrants that share them. Toggled
+   by the same pointer handler as the cursors above. (No top-edge rule: q3 and
+   q4 keep their coloured accent bar there.)
+
+   Important, and it has to be. The section carries `border-line` and
+   `shadow-default` from index.html, those are utilities, and utilities are a
+   later layer than this one -- so they win over these however many selectors
+   are stacked here. Putting the state in the markup instead is not open to us:
+   a pointer handler sets it on every pointermove, and lifting that into React
+   redraws the matrix each time the mouse moves a pixel. */
 .quad.edge-r {
-  border-right-color: var(--accent);
+  border-right-color: var(--accent) !important;
 }
 .quad.edge-l {
-  border-left-color: var(--accent);
+  border-left-color: var(--accent) !important;
 }
 .quad.edge-b {
-  border-bottom-color: var(--accent);
+  border-bottom-color: var(--accent) !important;
 }
 
+/* Drop target, set by window/dnd.ts on the section index.html owns. Important
+   for the reason above: this is the only thing that says where a dragged task
+   will land, and `border-line` plus `shadow-default` would otherwise erase both
+   halves of it. */
 .quad.drop {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent) inset;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 1px var(--accent) inset !important;
 }
 
-.quad > header {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-md);
-  padding: var(--sp-lg) var(--sp-xl);
-  border-bottom: 1px solid var(--line);
-}
+/* ------------------------------------------------------------------- rows */
 
-.quad h2 {
-  margin: 0;
-  font-size: var(--fs-md);
-  font-weight: var(--fw-semibold);
-}
-
-.quad .sub {
-  color: var(--muted);
-  font-size: var(--fs-xs);
-}
-
-/* inline-flex, not a bare inline: text-align only centres across, and a number
-   in a pill has to be centred both ways or the eye reads the pill as crooked.
-   line-height 1 makes the height padding plus the digit and nothing else, so
-   the shape is set here rather than by whatever the font thinks a line is. */
-.quad .count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: auto;
-  /* Vertical padding in px, and 1px heavier on top. That asymmetry belongs to
-     the font, not to the design: flex centres the line box and a reader sees
-     the ink, which in Pretendard sits high in its own line. Solved from the
-     glyph metrics rather than guessed -- with equal padding the digit was
-     1.2px above centre. Re-measure when --font changes. */
-  padding: 3.5px var(--sp-sm) 2.5px;
-  border-radius: var(--radius-pill);
-  background: var(--panel-3);
-  color: var(--muted);
-  font-size: var(--fs-xs);
-  line-height: var(--lh-none);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Past the point where the quadrant stops meaning anything — see isCrowded in
-   shared/core.js. Deliberately a tint and not a warning: this is the app
-   noticing, not the app objecting, and the add form right below still works. */
-.quad .count.crowded {
-  background: var(--danger-soft);
-  color: var(--danger);
-  cursor: help;
-}
-
-.quad.q1 {
-  border-top: 2px solid var(--q1);
-}
-.quad.q2 {
-  border-top: 2px solid var(--q2);
-}
-.quad.q3 {
-  border-top: 2px solid var(--q3);
-}
-.quad.q4 {
-  border-top: 2px solid var(--q4);
-}
-
-.list {
-  list-style: none;
-  margin: 0;
-  padding: var(--sp-sm);
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  /* A column so the rows can be separated by a gap rather than by their own
-     margins: the rows are also the drop targets, and a margin would put dead
-     space inside the target where a gap leaves it between them. Four pixels
-     rather than two: two was enough to read the rows apart and still looked
-     cramped, and this is the width of the step above. It is not free -- every
-     gap is height a full quadrant does not get -- so do not reach for the next
-     step without looking at a full one. */
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-xs);
-}
-
+/* The empty-list message. A pseudo-element reading an attribute, and that is
+   deliberate rather than incidental: a CSS-only empty state cannot be
+   translated, so the words come from `data-empty` and the catalogue reaches
+   them through applyStaticStrings. `:empty` only matches because the attribute
+   is an attribute and not a child. */
 .list:empty::after {
   content: attr(data-empty);
   display: block;
@@ -217,23 +118,14 @@ body.resizing-memo {
   text-align: center;
 }
 
-.item {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--sp-md);
-  padding: var(--sp-sm) var(--sp-md);
-  border-radius: var(--radius-md);
-  cursor: grab;
-}
-
-.item:hover {
-  background: var(--panel-2);
-}
-
 .item.dragging {
   opacity: 0.4;
 }
 
+/* The row stays on screen while it fades, so the change lands unseen -- see
+   REMOVE_MS in views/matrix.tsx, which has to agree with this duration. A
+   timing curve, so it stays a declaration for the same reason the toast's
+   does. */
 .item.removing {
   opacity: 0;
   transform: translateX(14px);
@@ -242,73 +134,11 @@ body.resizing-memo {
     transform 0.16s ease;
 }
 
-.num {
-  flex: 0 0 auto;
-  min-width: 15px;
-  text-align: right;
-  color: var(--faint);
-  font-size: var(--fs-xs);
-  line-height: var(--lh-relaxed);
-  font-variant-numeric: tabular-nums;
-}
-
-.check {
-  flex: 0 0 auto;
-  width: 16px;
-  height: 16px;
-  margin-top: var(--sp-hair);
-  border: 1.6px solid var(--line-strong);
-  border-radius: 50%;
-  background: transparent;
-  padding: 0;
-}
-
-.check:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.item .text {
-  flex: 1 1 auto;
-  font-weight: var(--fw-light);
-  line-height: var(--lh-snug);
-  word-break: break-word;
-  white-space: pre-wrap;
-  user-select: text;
-}
-
+/* Inline editing, entered by double-click. The outline rather than a border so
+   the text does not move when it starts. */
 .item .text[contenteditable="true"] {
   outline: 1px solid var(--accent);
   border-radius: var(--radius-xs);
   padding: 0 var(--sp-2xs);
   background: var(--input-bg);
-}
-
-/* Holds a drawn cross, not the × character. As text it sat 1.36px low -- that
-   glyph centres on the font's maths axis rather than on its box -- and the fix
-   was a padding tuned by measurement, which stops being right the moment the
-   font changes. A path centred in its viewBox needs no number here at all. */
-.del {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--faint);
-  line-height: var(--lh-none);
-  opacity: 0;
-}
-
-.item:hover .del {
-  opacity: 1;
-}
-
-.del:hover {
-  background: var(--danger-soft);
-  color: var(--danger);
 }

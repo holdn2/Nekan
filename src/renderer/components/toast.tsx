@@ -14,6 +14,8 @@
 import { useSyncExternalStore } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
+import { cn } from "../react/cn.js";
+
 type ToastAction = { label: string; onClick: () => void };
 type ToastOptions = {
   error?: boolean;
@@ -59,23 +61,45 @@ function Toast() {
     () => state,
   );
 
-  // Always rendered, never conditional: `.toast.hidden` fades out rather than
+  // Always rendered, never conditional: the strip fades out rather than
   // disappearing, and an element React has unmounted cannot animate on its way
   // off screen. The ids stay for the same reason the classes do -- the
   // stylesheet and anything looking at this from outside still name them.
+  //
+  // Open is an attribute, not a class. `hidden` is a utility now and utilities
+  // set display:none, which would stop the animation this element exists for.
   return (
     <div
       id="toast"
-      className={`toast${open ? "" : " hidden"}${error ? " error" : ""}`}
+      // The box is utilities; the fade stays in toast.css and says why there.
+      // `toast` itself is kept because collapsed.css hides it by name in bar
+      // mode. 18px and calc(100% - 40px) are the two values here that are not
+      // on the spacing scale -- written as they were rather than rounded onto
+      // it, since moving a toast two pixels is a design decision and not a
+      // side effect of changing how it is spelled.
+      className={cn(
+        "toast fixed bottom-[18px] left-1/2 z-50 flex items-center gap-lg",
+        "max-w-[calc(100%-40px)] rounded-pill border bg-panel px-2xl py-md",
+        "shadow-toast",
+        error ? "border-danger text-danger" : "border-line-strong text-text",
+      )}
+      data-open={open ? "" : undefined}
       role="status"
       aria-live="polite"
     >
-      <span id="toastText" className="toast-text">
+      <span
+        id="toastText"
+        className="overflow-hidden text-ellipsis whitespace-nowrap"
+      >
         {message}
       </span>
       <button
         id="toastAct"
-        className={`toast-act${action ? "" : " hidden"}`}
+        className={cn(
+          "shrink-0 rounded-pill border-0 bg-accent-soft px-lg py-2xs text-sm",
+          "text-accent hover:bg-accent hover:text-on-accent",
+          !action && "hidden",
+        )}
         type="button"
         onClick={action ? action.onClick : undefined}
       >

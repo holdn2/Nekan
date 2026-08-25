@@ -13,6 +13,9 @@
  */
 
 import { useEffect } from "react";
+
+import { Badge } from "../../components/badge.js";
+import { cn } from "../../react/cn.js";
 import { t } from "../../i18n.js";
 import { $ } from "../../dom.js";
 import { doneTasks, trashedTasks } from "../../store.js";
@@ -56,7 +59,15 @@ function Tabs() {
       {["matrix", "history", "trash", "guide"].map((tab) => (
         <button
           key={tab}
-          className={`tab${getTab() === tab ? " active" : ""}`}
+          className={cn(
+            // `tab` is kept only because the active one is found by it in
+            // tests and by anything looking in from outside; nothing styles it.
+            "tab flex items-center gap-sm rounded-t-md border px-2xl py-md",
+            "leading-none",
+            getTab() === tab
+              ? "border-line border-b-panel bg-panel font-medium text-text"
+              : "border-transparent bg-transparent text-muted hover:text-text",
+          )}
           type="button"
           data-tab={tab}
           onClick={() => setTab(tab)}
@@ -65,12 +76,9 @@ function Tabs() {
               element rather than sharing a text node with it. */}
           <span>{t(`tabs.${tab}`)}</span>
           {tab in badges ? (
-            <span
-              className="badge"
-              id={tab === "history" ? "doneCount" : "trashCount"}
-            >
+            <Badge id={tab === "history" ? "doneCount" : "trashCount"}>
               {badges[tab]}
-            </span>
+            </Badge>
           ) : null}
         </button>
       ))}
