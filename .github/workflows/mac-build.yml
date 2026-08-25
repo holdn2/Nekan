@@ -88,9 +88,16 @@ jobs:
   preflight:
     runs-on: ubuntu-latest
     permissions:
-      # Reading a release, including a draft. No checkout, no npm ci: the token
-      # is here and the dependency tree is not.
-      contents: read
+      # Write, and only to be allowed to read. GitHub shows draft releases to
+      # tokens with push access and to nobody else, and the draft is the only
+      # thing this job asks about -- measured on the first real publish run,
+      # where `contents: read` reported "there is no release for v1.0.1" while
+      # the draft was sitting there with three assets.
+      #
+      # The separation that matters is still kept: this job checks out and runs
+      # two shell commands, and the job that runs npm ci -- install scripts from
+      # every dependency in the tree -- has no token at all.
+      contents: write
     steps:
       # The branch is answered by the event, so it is asked first and without
       # cloning anything.
@@ -128,16 +135,20 @@ jobs:
           tag="v$(node -p "require('./package.json').version")"
           echo "looking for a draft release $tag"
 
-          if ! draft=$(gh release view "$tag" --json isDraft --jq '.isDraft' 2>/dev/null); then
+          # The list, not /releases/tags/$tag. A draft has no git tag yet, so
+          # that endpoint answers 404 for one even with a token that can see it
+          # -- measured. gh release view happens to fall back to the list, but
+          # asking for the list outright says what this depends on.
+          state=$(gh api "repos/$GITHUB_REPOSITORY/releases"             --jq "[.[] | select(.tag_name == \"$tag\")] | first | if . == null then \"missing\" elif .draft then \"draft\" else \"published\" end")
+
+          if [ "$state" = "missing" ]; then
             echo "there is no release for $tag." >&2
             echo "Windows makes the draft: run npm run release there first." >&2
             echo "This workflow fills in the mac half and never creates one." >&2
-            echo "(If the draft does exist, then this token cannot see drafts," >&2
-            echo " and the lookup is what needs fixing -- not the release.)" >&2
             exit 1
           fi
 
-          if [ "$draft" != "true" ]; then
+          if [ "$state" != "draft" ]; then
             echo "$tag is already published." >&2
             echo "Uploading into it would replace assets people are already" >&2
             echo "downloading. Bump the version in package.json and make a new" >&2
