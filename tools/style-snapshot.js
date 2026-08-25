@@ -142,16 +142,46 @@ const SNAPSHOT = `(() => {
 const VIEW = { width: 1000, height: 700 };
 const BAR = { width: 684, height: 48 };
 
+/**
+ * Every setup runs as an async IIFE, and that is not a style choice.
+ *
+ * Two things forced it. `Runtime.evaluate` with `awaitPromise` collects a bare
+ * promise expression before it settles -- the error reads "Promise was
+ * collected" and names nothing useful -- so the promise has to be awaited
+ * inside the expression rather than handed back. And the views are React: a
+ * `.click()` on a tab schedules a render, it does not perform one, so anything
+ * asserted on the next line is asserted against the previous screen. Both
+ * failures look like a broken guard rather than a missing await.
+ *
+ * The IIFE also keeps `const` out of the page's global lexical scope, where it
+ * would survive the call and make the second capture against one page load die
+ * on a redeclaration.
+ */
+const UNTIL = `const until = async (fn, what) => {
+  for (let i = 0; i < 80; i++) {
+    const v = fn();
+    if (v) return v;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  throw new Error(what);
+};`;
+
+const state = (body) => `(async () => { ${UNTIL} ${body} })()`;
+
 const STATES = [
   // Every run starts from the same place. Without the resets, a note left open
   // by the previous run is captured as if it were the resting state, and two
   // captures of the same build then differ by fifteen elements.
   [
     "matrix",
-    'document.querySelector("#memoClose")?.click();' +
-      'document.querySelector("#settingsPanel")?.classList.contains("hidden") === false &&' +
-      'document.querySelector("#settingsBtn").click();' +
-      'window.api.expand().then(()=>{document.querySelector("[data-tab=matrix]").click();return 1})',
+    state(`
+      document.querySelector("#memoClose")?.click();
+      if (document.querySelector("#settingsPanel")?.classList.contains("hidden") === false)
+        document.querySelector("#settingsBtn").click();
+      await window.api.expand();
+      document.querySelector("[data-tab=matrix]").click();
+      await until(() => document.querySelector(".quad .item"), "the matrix drew no rows -- seed the profile");
+      return 1;`),
   ],
   // Both lists ask for a row before they are believed. A throwaway profile has
   // no finished and no deleted tasks, and an empty list still captures cleanly:
@@ -160,48 +190,56 @@ const STATES = [
   // having been drawn. Seed the profile before capturing.
   [
     "history",
-    '(() => { document.querySelector("[data-tab=history]").click();' +
-      'if (!document.querySelector("#historyView .history-list li")) throw new Error("history is empty -- seed the profile");' +
-      " return 1; })()",
+    state(`
+      document.querySelector("[data-tab=history]").click();
+      await until(() => document.querySelector("#historyView .history-list li"), "history is empty -- seed the profile");
+      return 1;`),
   ],
   [
     "trash",
-    '(() => { document.querySelector("[data-tab=trash]").click();' +
-      'if (!document.querySelector("#trashView .history-list li")) throw new Error("trash is empty -- seed the profile");' +
-      " return 1; })()",
+    state(`
+      document.querySelector("[data-tab=trash]").click();
+      await until(() => document.querySelector("#trashView .history-list li"), "trash is empty -- seed the profile");
+      return 1;`),
   ],
-  ["guide", 'document.querySelector("[data-tab=guide]").click(); 1'],
+  [
+    "guide",
+    state(`
+      document.querySelector("[data-tab=guide]").click();
+      await until(() => {
+        const g = document.querySelector("#guideView");
+        return g && !g.classList.contains("hidden");
+      }, "the guide tab never came up");
+      return 1;`),
+  ],
   // Opening the note takes a click on a quadrant row's text, not any row: the
   // brain dump's rows have no note by design, so clicking one selects nothing
   // and this state would capture a closed panel while looking like it worked.
-  //
-  // Which is why the row is required rather than optional. `?.` would have let
-  // an empty board through: the expression still evaluates to 1, the capture
-  // still runs, and the `memo` state records a closed panel. A snapshot that
-  // proves nothing is worse than a missing one -- it reads as a pass. This
-  // state was already blind once for a different reason, and that is how it
-  // was found: by asking what it would have said if it had been.
+  // So the row is required and the panel is waited for, rather than either
+  // being assumed -- a snapshot that proves nothing is worse than a missing
+  // one, because it reads as a pass.
   [
     "memo",
-    'document.querySelector("[data-tab=matrix]").click();' +
-      // Wrapped, and var-free: `Runtime.evaluate` compiles into the page's
-      // global lexical scope, so a bare `const` here survives the call and the
-      // next capture against the same page dies on the redeclaration.
-      "(() => {" +
-      'const row = document.querySelector(".quad .item .text");' +
-      'if (!row) throw new Error("no quadrant row to open a note on");' +
-      "row.click(); return 1; })()",
+    state(`
+      document.querySelector("[data-tab=matrix]").click();
+      const row = await until(() => document.querySelector(".quad .item .text"), "no quadrant row to open a note on");
+      row.click();
+      await until(() => {
+        const m = document.querySelector("#memoPanel");
+        return m && !m.classList.contains("hidden");
+      }, "the note panel never opened");
+      return 1;`),
   ],
   // The gear is a toggle, so this state depends on the panel being shut when it
-  // starts -- which the matrix reset above only manages when the panel still
-  // announces itself with `hidden`. Check the panel is open rather than assume
-  // the toggle went the way we wanted.
+  // starts. Wait for it to be open rather than assume the toggle went the way
+  // we wanted.
   [
     "settings",
-    '(() => { document.querySelector("#memoClose")?.click();' +
-      'document.querySelector("#settingsBtn").click();' +
-      'if (document.querySelector("#settingsPanel").classList.contains("hidden")) throw new Error("settings did not open");' +
-      " return 1; })()",
+    state(`
+      document.querySelector("#memoClose")?.click();
+      document.querySelector("#settingsBtn").click();
+      await until(() => !document.querySelector("#settingsPanel").classList.contains("hidden"), "settings did not open");
+      return 1;`),
   ],
   // `collapse()` resolves when the main process has moved the window; the class
   // arrives separately, on the `win:mode` push. Capturing between the two would
@@ -209,12 +247,11 @@ const STATES = [
   // -- a reading of the one sheet that is known to fail quietly.
   [
     "bar",
-    'document.querySelector("#settingsBtn").click();' +
-      "window.api.collapse().then(async () => {" +
-      "for (let i = 0; i < 60; i++) {" +
-      'if (document.body.classList.contains("collapsed")) return 1;' +
-      " await new Promise((r) => setTimeout(r, 50)); }" +
-      ' throw new Error("window did not reach bar mode"); })',
+    state(`
+      document.querySelector("#settingsBtn").click();
+      await window.api.collapse();
+      await until(() => document.body.classList.contains("collapsed"), "window did not reach bar mode");
+      return 1;`),
   ],
 ];
 
@@ -259,6 +296,18 @@ function connect(url) {
         if (m.id !== myId) return;
         clearTimeout(timer);
         ws.removeEventListener("message", onMsg);
+        // A protocol-level failure comes back as `error`, with no `result` at
+        // all. Resolving that as undefined pushed the crash one frame down, to
+        // whoever read a property off it -- so the message you got named the
+        // reader rather than the fault.
+        if (m.error) {
+          rej(
+            new Error(
+              `${method}: ${m.error.message || JSON.stringify(m.error)}`,
+            ),
+          );
+          return;
+        }
         res(m.result);
       };
       ws.addEventListener("message", onMsg);
@@ -297,6 +346,18 @@ async function capture(port, out) {
         ...v,
         deviceScaleFactor: 1,
         mobile: false,
+      });
+      // Park the pointer before reading. Hover is not ours to leave to chance:
+      // whether the physical cursor happens to rest over the window decides
+      // whether a row is painted hovered, and two captures of one build then
+      // differ by three properties on whichever row it was over. A synthetic
+      // move retargets hover, so 0,0 -- the corner of the title bar, which has
+      // no hover of its own -- makes the answer the same every time.
+      await send("Input.dispatchMouseEvent", {
+        type: "mouseMoved",
+        x: 0,
+        y: 0,
+        buttons: 0,
       });
       await new Promise((r) => setTimeout(r, 700));
       all[name] = JSON.parse(await evalIn(SNAPSHOT));
