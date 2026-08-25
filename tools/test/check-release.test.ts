@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { auditAssets, macArches } from "#tools/check-release.js";
+import { auditAssets, macArches, planFold } from "#tools/check-release.js";
 
 // The names electron-builder actually produced for v1.0.0.
 const WIN = [
@@ -143,4 +143,63 @@ test("a file no platform claims stops the release", () => {
   // release at all. This is what the old three-asset count was really saying.
   const { unexpected } = auditAssets([...WIN, "Nekan-1.0.0.AppImage"], ARCHES);
   assert.deepEqual(unexpected, ["Nekan-1.0.0.AppImage"]);
+});
+
+const draft = (id: number, assets: string[], name?: string) => ({
+  id,
+  name,
+  assets: assets.map((n) => ({ name: n })),
+});
+
+test("the draft holding latest.yml is the one that survives", () => {
+  // It is the feed: the file installed apps actually read.
+  const a = draft(1, ["Nekan-Setup-1.0.1.exe"]);
+  const b = draft(2, ["latest.yml"]);
+  assert.equal(planFold([a, b]).keep.id, 2);
+  assert.deepEqual(
+    planFold([a, b]).fold.map((r) => r.id),
+    [1],
+  );
+});
+
+test("a draft with no assets is left alone, not deleted", () => {
+  // This is the one irreversible thing the script does, and it cannot tell who
+  // made a draft -- the filter upstream is only "draft, and this tag". An empty
+  // one is far more likely to be a person drafting release notes than an upload
+  // that split. Folding it would move nothing, so deleting it gains nothing and
+  // can cost the notes, which GitHub does not give back.
+  const notes = draft(1, [], "1.0.1 release notes");
+  const built = draft(2, ["latest.yml", "Nekan-Setup-1.0.1.exe"]);
+  const plan = planFold([notes, built]);
+  assert.equal(plan.keep.id, 2);
+  assert.deepEqual(plan.fold, []);
+  assert.deepEqual(
+    plan.leave.map((r) => r.id),
+    [1],
+  );
+});
+
+test("a real split is still folded", () => {
+  // What the function is for: electron-builder's uploaders racing and each
+  // making a draft, with the blockmap landing on its own.
+  const withFeed = draft(1, ["latest.yml", "Nekan-Setup-1.0.1.exe"]);
+  const stray = draft(2, ["Nekan-Setup-1.0.1.exe.blockmap"]);
+  const plan = planFold([withFeed, stray]);
+  assert.equal(plan.keep.id, 1);
+  assert.deepEqual(
+    plan.fold.map((r) => r.id),
+    [2],
+  );
+  assert.deepEqual(plan.leave, []);
+});
+
+test("with no latest.yml anywhere it keeps the first and folds the rest", () => {
+  // A run that died before writing the feed. Nothing is deleted that has files
+  // in it without those files moving first.
+  const plan = planFold([draft(1, ["a.exe"]), draft(2, ["b.blockmap"])]);
+  assert.equal(plan.keep.id, 1);
+  assert.deepEqual(
+    plan.fold.map((r) => r.id),
+    [2],
+  );
 });
