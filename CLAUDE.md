@@ -909,6 +909,34 @@ require해서 `buildSnapshot` → `toMarkdown`/`toHtml` → 숨은 창에서 `pr
 같은 측정 안에서 확인할 것(첫 행 노드가 바뀌었는지, 개수가 늘었는지). 안 그러면 아무 일도 안
 일어난 것을 "빠르다"로 읽는다.
 
+**스타일을 고쳤으면 `tools/style-snapshot.js`로 확인한다 — 그런데 그 도구가 볼 수 있는 것은
+정지 상태뿐이다.** 일곱 상태에서 요소 전체의 계산값과 기하를 떠서 비교하고, **선언이 옮겨가다
+사라진 것을 볼 수 있는 유일한 검사**다(vitest는 happy-dom이라 캐스케이드가 없고 `node --test`는
+렌더러를 안 건드린다). **하지만 `:hover`·`:focus`·`:disabled`·`::placeholder`와 JS가 토글하는
+상태 클래스는 하나도 안 본다.** 2026-08-25에 사용자에게 보이는 회귀 넷이 전부 그 사각지대에서
+나왔다 — 드래그 드롭 표시, 분면 엣지 표시, 선택된 행의 강조색, 메모 편집기 글자 크기.
+**그 도구가 "0 차이"라고 해도 상태 의존 동작은 아직 아무도 안 본 것이다.** 상태는 CDP
+`CSS.forcePseudoState`나 클래스를 직접 붙여서 따로 재야 한다.
+
+**돌리는 법에 조건이 넷 붙는다. 넷 다 실측으로 얻었다(2026-08-25).**
+① **프로필을 씨앗 데이터로 채우고 `settings.startupChoice`를 넣어야 한다** — 안 채우면 히스토리·
+휴지통이 비어서 그 상태가 아무것도 증명하지 못하고(지금은 가드가 던진다), `startupChoice`가
+없으면 첫 실행 카드가 모든 클릭을 삼킨다. **그 파일을 PowerShell로 쓰지 말 것**(BOM).
+② **Electron에 `--disable-background-timer-throttling --disable-renderer-backgrounding
+--disable-backgrounding-occluded-windows`를 줘야 한다** — 가려진 창은 타이머가 얼어서 폴링이
+CDP 타임아웃까지 멈춘다.
+③ **실제 마우스 커서가 창 위에 있으면 그 행이 호버로 찍힌다.** 같은 빌드 두 번이 3개 달랐다.
+도구가 읽기 전에 합성 포인터를 0,0에 세우는 이유다.
+④ **워크트리마다 `--user-data-dir`를 달리 줄 것.** 단일 인스턴스 락이 그 디렉터리 단위라,
+남의 프로필을 재사용하면 앱이 **조용히 즉시 종료**된다 — 크래시와 똑같아 보인다.
+
+**계산값을 잴 때 두 가지에 속는다.**
+① **`transition-*`이 걸린 요소는 클래스를 붙인 직후에 읽으면 옛 값이 나온다.** 분면에
+`transition-[border-color] 120ms`가 있어서, 고쳐진 드롭 표시를 "안 고쳐졌다"로 읽었다.
+**전이 시간이 지난 뒤에 잴 것.**
+② **`offsetParent`는 `position: fixed`인 요소에서 늘 null이다.** 그걸로 가시성을 판정하면
+조용히 거짓이 된다. `getClientRects().length`와 계산된 `display`를 볼 것.
+
 성능은 **레이아웃까지 동기로 강제해서** 재야 한다
 (`document.body.offsetHeight`) — `requestAnimationFrame`은 창이 가려지면 아예 안 돌아서
 2ms 같은 값이 나온다. 실측 기준: 히스토리 행 하나가 약 180µs, 그래서 렌더 상한이 100이다
