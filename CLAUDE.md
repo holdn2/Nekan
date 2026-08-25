@@ -551,12 +551,15 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   쪽이면 모두가 매번 전체를 받는다.
 - **저장소 안에서 패키징이 파일 락에 막히면 `NEKAN_DIST`로 밖에 내보낸다.**
   `EBUSY ... unlink ...\dist\win-unpacked\resources\app.asar`로 죽고, 그 폴더는 **지울 수도
-  이름을 바꿀 수도 없다.** electron-builder는 시작할 때 출력 폴더를 비우므로 그대로는 못 돈다.
+  이름을 바꿀 수도 없다.** electron-builder가 Electron을 풀기 전에 `<출력>/win-unpacked`를
+  비우기 때문이다(`ElectronFramework.js`의 `emptyDir(appOutDir)`). **출력 폴더 전체를 비우는
+  것이 아니다** — 한때 그렇게 적어 두었는데 틀린 문장이었다.
   **우리 프로세스가 아니다** — 그 경로를 실행 경로로 갖는 프로세스가 0개인데도 그렇고,
   `dist`·`dist2`·`dist-verify` 셋이 하루가 지나도 각자의 `.asar`에서 잠겨 있었다
   (2026-08-23·24·25 실측). 저장소 **밖**은 매번 첫 시도에 성공한다.
-  **값을 읽는 곳은 `tools/dist.js` 하나뿐이고**, 거기서 electron-builder와
-  `check-release.js` 양쪽에 넘긴다. 둘이 각자 읽으면 언젠가 어긋나는데, 어긋나면 빌드는
+  **값을 정하는 곳은 `tools/dist.js`이고**, 거기서 electron-builder와 `check-release.js`
+  양쪽에 넘긴다(`check-release.js`도 같은 환경변수를 읽지만 그건 손으로 단독 실행할 때를 위한
+  폴백이고, 인자가 이긴다). 둘이 각자 읽으면 언젠가 어긋나는데, 어긋나면 빌드는
   멀쩡하고 **검사만 "파일이 없다"고 말한다** — 디스크에 있는 파일을 두고. 그 검사가 draft가
   갈라졌을 때 바이트를 다시 올리는 유일한 수단이라 그렇다.
 - **`electron-builder`를 두 개 동시에 돌리지 않는다.** `npm run dist`·`npm run release`가 같은

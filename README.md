@@ -128,16 +128,19 @@ npm run release   # 빌드 + GitHub Release에 업로드 (아래 GH_TOKEN 참고
 
 > **`EBUSY ... unlink ...\dist\win-unpacked\resources\app.asar`로 죽으면** 저장소 밖으로
 > 내보내면 된다. 이 기계에서는 그 경로의 `.asar`를 무언가가 계속 붙잡고 있고(실시간 검사로
-> 보인다) 폴더를 지우지도 이름을 바꾸지도 못하는데, electron-builder는 시작할 때 출력 폴더를
-> 비운다. 우리 프로세스가 잡는 것이 아니다 — 그 경로에서 도는 것은 하나도 없다.
+> 보인다) 폴더를 지우지도 이름을 바꾸지도 못하는데, electron-builder는 Electron을 풀기 전에
+> `<출력>/win-unpacked`를 비운다. 우리 프로세스가 잡는 것이 아니다 — 그 경로에서 도는 것은
+> 하나도 없다.
 >
-> ```sh
-> NEKAN_DIST="$LOCALAPPDATA/Temp/nekan-dist" npm run release
+> ```powershell
+> $env:NEKAN_DIST = "$env:LOCALAPPDATA\Temp\nekan-dist"
+> npm run release
 > ```
 >
-> `tools/dist.js`가 그 값을 **한 번 읽어** electron-builder와 `check-release.js` 양쪽에
-> 넘긴다. 둘이 같은 곳을 봐야 하기 때문이다 — draft가 갈라졌을 때 검사가 디스크에서 파일을
-> 다시 올리는데, 빌드가 쓴 곳을 봐야 찾는다.
+> `tools/dist.js`가 그 값을 정해 electron-builder와 `check-release.js` 양쪽에 넘긴다. 둘이
+> 같은 곳을 봐야 하기 때문이다 — draft가 갈라졌을 때 검사가 디스크에서 파일을 다시 올리는데,
+> 빌드가 쓴 곳을 봐야 찾는다. **맥 워크플로는 따라오지 않는다**: 자산 글롭과 codesign 단계가
+> `dist`를 그대로 적고 있어서, `build.directories.output`을 옮기려면 거기도 함께 고쳐야 한다.
 
 **릴리스 절차**
 
@@ -287,7 +290,8 @@ powershell -ExecutionPolicy Bypass -File tools\make-icon.ps1
 build/icon.ico         # exe / 작업표시줄 아이콘
 tools/make-icon.ps1    # 아이콘 생성 스크립트
 tools/seed-dev-data.js # 대량 더미 데이터 생성 (성능 확인용)
-tools/check-release.js # 릴리스 draft 검사·복구 (release 스크립트가 부름)
+tools/dist.js          # 패키징 진행자 — dist · dist:mac · release 셋이 여기를 지난다
+tools/check-release.js # 릴리스 draft 검사·복구 (dist.js 가 부름)
 tools/find-untranslated.js # 소스에 남은 한글 줄 수를 셈
 src/                   # 쓰는 곳 (TypeScript)
   main.ts              # 앱 생명주기와 조립

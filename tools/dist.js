@@ -4,8 +4,9 @@
  * That last part is the whole reason this file exists. On this machine
  * something outside the project holds handles on the .asar files under
  * D:\_Nekan\dist -- Defender's real-time scan is the likeliest candidate -- and
- * electron-builder wipes its output directory before it starts. So a build
- * dies with
+ * electron-builder empties <output>/win-unpacked before it unpacks Electron
+ * into it (app-builder-lib/out/electron/ElectronFramework.js, emptyDir on
+ * appOutDir). So a build dies with
  *
  *   EBUSY: resource busy or locked, unlink ...\dist\win-unpacked\resources\app.asar
  *
@@ -13,12 +14,13 @@
  * processes: nothing runs from that path. Building anywhere outside the
  * repository works on the first try, every time.
  *
- * Setting NEKAN_DIST moves the output. It is read here and nowhere else, and
- * passed on to both electron-builder and the release check -- which is the
- * point. Those two have to agree about where the files are: the check re-uploads
- * assets from disk when a draft splits, and it can only do that if it is looking
- * in the directory the build actually wrote to. Two places reading the same
- * variable is how they would eventually disagree.
+ * Setting NEKAN_DIST moves the output, and this file hands the answer to both
+ * electron-builder and the release check. Those two have to agree about where
+ * the files are: the check re-uploads assets from disk when a draft splits, and
+ * it can only do that if it is looking where the build wrote. check-release.js
+ * reads the variable too, so that running it by hand in a shell that has it
+ * exported still works -- but on the path through here it is passed as an
+ * argument, which wins, so there is one answer per run.
  *
  *   NEKAN_DIST=/c/Users/me/AppData/Local/Temp/nekan-dist npm run release
  *
@@ -77,10 +79,44 @@ function builderCli() {
   );
 }
 
+/**
+ * Read the two flags this script takes, and refuse anything else.
+ *
+ * `args.includes("--publish")` on its own is a trap. npm appends everything
+ * after `--` to the script, so `npm run dist -- --publish never` -- which is
+ * what the old package.json literally said, and therefore what is in muscle
+ * memory and in the git history -- would set publish to true and upload for
+ * real. The word meaning "definitely do not" would cause the thing.
+ *
+ * Refusing unknown arguments also stops them being silently dropped. Nothing
+ * here is forwarded to electron-builder, so `-- --dir` or `-- --arm64` used to
+ * look like it did something and did not.
+ */
+function parseArgs(argv) {
+  const known = new Set(["--mac", "--publish"]);
+  const unknown = argv.filter((arg) => !known.has(arg));
+  if (unknown.length > 0) {
+    throw new Error(
+      [
+        `unknown argument: ${unknown.join(" ")}`,
+        `  This takes --mac and --publish, and nothing else reaches`,
+        `  electron-builder. "--publish never" reads as --publish and would`,
+        `  upload, which is why an unknown argument is an error, not a guess.`,
+      ].join("\n"),
+    );
+  }
+  return { mac: argv.includes("--mac"), publish: argv.includes("--publish") };
+}
+
 function main() {
-  const args = process.argv.slice(2);
-  const mac = args.includes("--mac");
-  const publish = args.includes("--publish");
+  let mac, publish;
+  try {
+    ({ mac, publish } = parseArgs(process.argv.slice(2)));
+  } catch (e) {
+    // The message is the point; a stack trace would bury it.
+    console.error(e.message);
+    process.exit(2);
+  }
   const out = outputDir();
 
   if (out !== (pkg.build?.directories?.output ?? "dist")) {
@@ -101,6 +137,6 @@ function main() {
   run(path.join(__dirname, "check-release.js"), [out]);
 }
 
-module.exports = { outputDir, builderCli };
+module.exports = { outputDir, builderCli, parseArgs };
 
 if (require.main === module) main();

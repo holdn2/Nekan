@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 
-import { builderCli, outputDir } from "#tools/dist.js";
+import { builderCli, outputDir, parseArgs } from "#tools/dist.js";
 
 /** What package.json configures, read the way the entitlements test reads its file. */
 const configured = () =>
@@ -52,8 +52,9 @@ test("NEKAN_DIST wins, which is the whole reason it exists", () => {
 
 test("an empty NEKAN_DIST is not an answer", () => {
   // Exporting it as "" is how a shell says "I meant to set this and did not".
-  // Taking it literally would put the build at the repository root and delete
-  // the repository, since electron-builder clears its output directory first.
+  // Taken literally it points the build at the repository root: a hundred
+  // megabytes of installer and a win-unpacked/ tree land there as untracked
+  // files, and .gitignore covers dist/ and dist*/ but not the root itself.
   withEnv("", () => assert.equal(outputDir(), configured()));
 });
 
@@ -66,4 +67,36 @@ test("electron-builder's CLI is where its package says it is", () => {
   const cli = builderCli();
   assert.ok(cli.endsWith(".js"), `expected a .js entry, got ${cli}`);
   assert.ok(fs.existsSync(cli), `${cli} does not exist`);
+});
+
+test("--publish never is refused rather than read as --publish", () => {
+  // npm appends everything after `--` to the script, and "--publish never" is
+  // what package.json said one commit ago -- so it is in muscle memory and in
+  // the git history someone greps. A membership test would see --publish, set
+  // publish, and upload for real. The word meaning "definitely do not" would
+  // cause the thing.
+  assert.throws(() => parseArgs(["--publish", "never"]), /unknown argument/);
+  assert.throws(() => parseArgs(["--publish=never"]), /unknown argument/);
+});
+
+test("a flag meant for electron-builder is refused, not dropped", () => {
+  // Nothing is forwarded, so these used to look like they did something.
+  for (const flag of [
+    "--dir",
+    "--arm64",
+    "--x64",
+    "-c.extraMetadata.version=9",
+  ]) {
+    assert.throws(() => parseArgs([flag]), /unknown argument/, flag);
+  }
+});
+
+test("the two flags it does take still work, together and apart", () => {
+  assert.deepEqual(parseArgs([]), { mac: false, publish: false });
+  assert.deepEqual(parseArgs(["--mac"]), { mac: true, publish: false });
+  assert.deepEqual(parseArgs(["--publish"]), { mac: false, publish: true });
+  assert.deepEqual(parseArgs(["--mac", "--publish"]), {
+    mac: true,
+    publish: true,
+  });
 });
