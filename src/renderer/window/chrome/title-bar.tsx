@@ -209,7 +209,16 @@ function TitleBar() {
           <i className="sync-dot" aria-hidden="true" />
         </button>
         <button
-          className={cn(WIN_BTN, isPinned() && "bg-accent-soft text-accent")}
+          className={cn(
+            WIN_BTN,
+            // The hover has to be named too, the same as the update button
+            // above. `.win-btn.on` and `.win-btn:hover` were the same
+            // specificity and `.on` came later, so a pinned button kept its
+            // accent under the pointer; a hover utility outranks a plain one,
+            // so without saying this the pin goes grey when you reach for it.
+            isPinned() &&
+              "bg-accent-soft text-accent hover:bg-accent-soft hover:text-accent",
+          )}
           id="pinBtn"
           type="button"
           title={t(isPinned() ? "titlebar.unpin" : "titlebar.pin")}
