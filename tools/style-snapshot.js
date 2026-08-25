@@ -151,7 +151,7 @@ const STATES = [
     'document.querySelector("#memoClose")?.click();' +
       'document.querySelector("#settingsPanel")?.classList.contains("hidden") === false &&' +
       'document.querySelector("#settingsBtn").click();' +
-      'window.api.expand().then(()=>{document.querySelector("[data-tab=matrix]")?.click();return 1})',
+      'window.api.expand().then(()=>{document.querySelector("[data-tab=matrix]").click();return 1})',
   ],
   ["history", 'document.querySelector("[data-tab=history]").click(); 1'],
   ["trash", 'document.querySelector("[data-tab=trash]").click(); 1'],
@@ -159,9 +159,19 @@ const STATES = [
   // Opening the note takes a click on a quadrant row's text, not any row: the
   // brain dump's rows have no note by design, so clicking one selects nothing
   // and this state would capture a closed panel while looking like it worked.
+  //
+  // Which is why the row is required rather than optional. `?.` would have let
+  // an empty board through: the expression still evaluates to 1, the capture
+  // still runs, and the `memo` state records a closed panel. A snapshot that
+  // proves nothing is worse than a missing one -- it reads as a pass. This
+  // state was already blind once for a different reason, and that is how it
+  // was found: by asking what it would have said if it had been.
   [
     "memo",
-    'document.querySelector("[data-tab=matrix]").click(); document.querySelector(".quad .item .text")?.click(); 1',
+    'document.querySelector("[data-tab=matrix]").click();' +
+      'const row = document.querySelector(".quad .item .text");' +
+      'if (!row) throw new Error("no quadrant row to open a note on");' +
+      "row.click(); 1",
   ],
   [
     "settings",
@@ -174,7 +184,9 @@ const STATES = [
 ];
 
 async function pageSocket(port) {
-  const res = await fetch(`http://127.0.0.1:${port}/json`);
+  const res = await fetch(`http://127.0.0.1:${port}/json`, {
+    signal: AbortSignal.timeout(10000),
+  });
   const targets = await res.json();
   const page = targets.find((t) => t.type === "page");
   if (!page) throw new Error(`no page on port ${port} -- is the app up?`);
@@ -184,7 +196,22 @@ async function pageSocket(port) {
 function connect(url) {
   const ws = new WebSocket(url);
   let id = 0;
-  const ready = new Promise((res) => ws.addEventListener("open", res));
+  // A hang is worse than a crash here: the script prints nothing either way,
+  // but a crash ends and a hang has to be noticed. The open handshake gets the
+  // same bound as a request below, and error/close reject rather than being
+  // ignored -- without that, a socket that never opened simply waited.
+  const ready = new Promise((res, rej) => {
+    const timer = setTimeout(
+      () => rej(new Error("timeout: cdp connect")),
+      20000,
+    );
+    ws.addEventListener("open", () => {
+      clearTimeout(timer);
+      res();
+    });
+    ws.addEventListener("error", () => rej(new Error("cdp socket error")));
+    ws.addEventListener("close", () => rej(new Error("cdp socket closed")));
+  });
   const send = (method, params) =>
     new Promise((res, rej) => {
       const myId = ++id;
@@ -207,7 +234,6 @@ function connect(url) {
 
 async function capture(port, out) {
   const { ready, send, close } = connect(await pageSocket(port));
-  await ready;
   const evalIn = async (expression) => {
     const r = await send("Runtime.evaluate", {
       expression,
@@ -220,7 +246,6 @@ async function capture(port, out) {
     return r.result.value;
   };
 
-  await send("Page.bringToFront", {});
   const all = {};
   // The window outlives this script, so a throw halfway through would leave it
   // in whatever state the failing case had put it -- bar mode, under a viewport
@@ -228,6 +253,8 @@ async function capture(port, out) {
   // a snapshot taken from a polluted start is worse than no snapshot: it looks
   // like a real reading. Hence the restore runs whether or not we got here.
   try {
+    await ready;
+    await send("Page.bringToFront", {});
     for (const [name, setup] of STATES) {
       await evalIn(setup);
       const v = name === "bar" ? BAR : VIEW;
