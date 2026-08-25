@@ -1,6 +1,6 @@
 # Nekan
 
-An Eisenhower matrix desktop widget. Built on Electron, for Windows.
+An Eisenhower matrix desktop widget. Built on Electron, for Windows and macOS.
 Ships with a warm Claude-style light theme and a dark one.
 
 The name comes from the four boxes (_ne_ = four, _kan_ = box). It is spelled `Nekan` everywhere, in the app and out of it.
@@ -13,12 +13,31 @@ The website is **[holdn2.github.io/Nekan](https://holdn2.github.io/Nekan/)** —
 
 ## Install
 
-Grab the latest `Nekan-Setup-x.y.z.exe` from [Releases](https://github.com/holdn2/Nekan/releases) and run it. (`x.y.z` - version)
+Everything is on [Releases](https://github.com/holdn2/Nekan/releases). (`x.y.z` - version)
+
+**Windows** — grab `Nekan-Setup-x.y.z.exe` and run it.
 One click and it is done, and it **never asks for administrator rights** — it installs into your own user folder.
 When it finishes you get a **Nekan** shortcut on the desktop and in the Start menu.
 
 > The build is not code-signed yet, so Windows SmartScreen puts up a "Windows protected your PC" warning.
 > **More info → Run anyway** installs it.
+
+**macOS** — grab the `.dmg` for your chip.
+
+| Mac                               | File                    |
+| --------------------------------- | ----------------------- |
+| Apple Silicon (M1 · M2 · M3 · M4) | `Nekan-x.y.z-arm64.dmg` |
+| Intel                             | `Nekan-x.y.z-x64.dmg`   |
+
+Apple menu → About This Mac tells you which: `Chip` means Apple Silicon,
+`Processor` with Intel in it means Intel. Open the `.dmg` and drag Nekan into
+**Applications**.
+
+> The `.zip` beside it is what the app uses to update itself, so there is no
+> need to download it.
+>
+> **On macOS the modifier is `Cmd`, not `Ctrl`.** Read every `Ctrl` in this
+> document as `Cmd`; the guide tab says the right word for the OS it runs on.
 
 ## The first launch
 
