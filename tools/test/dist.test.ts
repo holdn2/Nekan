@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 
-import { outputDir } from "#tools/dist.js";
+import { builderCli, outputDir } from "#tools/dist.js";
 
 /** What package.json configures, read the way the entitlements test reads its file. */
 const configured = () =>
@@ -55,4 +55,15 @@ test("an empty NEKAN_DIST is not an answer", () => {
   // Taking it literally would put the build at the repository root and delete
   // the repository, since electron-builder clears its output directory first.
   withEnv("", () => assert.equal(outputDir(), configured()));
+});
+
+test("electron-builder's CLI is where its package says it is", () => {
+  // The whole reason for resolving it is that npx cannot be spawned without a
+  // shell on Windows, and a shell would re-parse the output path: a directory
+  // with a space in it arrives as several arguments, and anything after an `&`
+  // runs as its own command. If a future electron-builder moves its bin, this
+  // says so now rather than during a release.
+  const cli = builderCli();
+  assert.ok(cli.endsWith(".js"), `expected a .js entry, got ${cli}`);
+  assert.ok(fs.existsSync(cli), `${cli} does not exist`);
 });

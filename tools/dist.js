@@ -44,6 +44,39 @@ function outputDir() {
   return process.env.NEKAN_DIST || configured;
 }
 
+/**
+ * Run a Node program as a child, without a shell.
+ *
+ * `shell: true` is what tools/build.js uses to reach npx, and it is fine there
+ * because every argument it passes is a literal written in that file. Here one
+ * argument is a path out of the environment, and a shell would parse it again:
+ * `C:/Program Files/nekan dist` arrives as three arguments, and anything after
+ * an `&` runs as a separate command. Measured, not assumed.
+ *
+ * Resolving the bin from the package rather than going through npx is what lets
+ * the shell go. npx is a .cmd on Windows and Node refuses to spawn one without
+ * a shell; a .js file is just a file, and process.execPath is already Node.
+ */
+function run(script, args) {
+  const result = spawnSync(process.execPath, [script, ...args], {
+    cwd: ROOT,
+    stdio: "inherit",
+  });
+  if (result.error) throw result.error;
+  // A signal leaves status null. Exiting 0 there would report a killed build as
+  // a finished one.
+  if (result.status !== 0) process.exit(result.status ?? 1);
+}
+
+/** Where electron-builder's own bin lives, asked of the package itself. */
+function builderCli() {
+  const manifest = require.resolve("electron-builder/package.json");
+  return path.join(
+    path.dirname(manifest),
+    require(manifest).bin["electron-builder"],
+  );
+}
+
 function main() {
   const args = process.argv.slice(2);
   const mac = args.includes("--mac");
@@ -54,36 +87,20 @@ function main() {
     console.log(`packaging into ${out} (NEKAN_DIST)`);
   }
 
-  const builder = [
-    "electron-builder",
+  run(builderCli(), [
     ...(mac ? ["--mac"] : ["--win", "nsis"]),
     "--publish",
     publish ? "always" : "never",
     `-c.directories.output=${out}`,
-  ];
-  const built = spawnSync("npx", builder, {
-    cwd: ROOT,
-    stdio: "inherit",
-    shell: true,
-  });
-  if (built.status !== 0) process.exit(built.status ?? 1);
+  ]);
 
   // Only after a real upload is there a draft to put back together. The check
   // is told where the files are rather than assuming, for the reason in the
   // header.
   if (!publish) return;
-  const checked = spawnSync(
-    "node",
-    [path.join("tools", "check-release.js"), out],
-    {
-      cwd: ROOT,
-      stdio: "inherit",
-      shell: true,
-    },
-  );
-  if (checked.status !== 0) process.exit(checked.status ?? 1);
+  run(path.join(__dirname, "check-release.js"), [out]);
 }
 
-module.exports = { outputDir };
+module.exports = { outputDir, builderCli };
 
 if (require.main === module) main();

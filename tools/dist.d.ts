@@ -17,3 +17,12 @@
  * where the build actually wrote them.
  */
 export function outputDir(): string;
+
+/**
+ * The path to electron-builder's own CLI entry, asked of its package manifest.
+ *
+ * Resolved rather than reached through npx, because npx is a .cmd on Windows
+ * and Node will not spawn one without a shell -- and a shell would re-parse the
+ * output path, splitting it on spaces and cutting it at an `&`.
+ */
+export function builderCli(): string;
