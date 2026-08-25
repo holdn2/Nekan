@@ -9,6 +9,10 @@
  * The message line belongs to the panel, so `say` comes in as a prop. The
  * open/closed state does not: nobody outside needs it, and closing it when the
  * account changes is this component's own business.
+ *
+ * The block is deliberately the quietest thing in the panel. It has to be
+ * findable -- an account you cannot leave is the complaint it exists to answer
+ * -- without sitting next to 로그아웃 as an equal choice.
  */
 
 import { useEffect, useState } from "react";
@@ -22,6 +26,13 @@ import {
   currentSession,
   reasonFor,
 } from "./status.js";
+
+/** The two sentences above the buttons. */
+const SENTENCE = "m-[0px] mb-sm text-sm leading-normal break-keep";
+
+/** The two buttons, minus the colours that tell them apart. */
+const ACT =
+  "rounded-sm border px-xl py-sm text-sm disabled:cursor-default disabled:opacity-[0.55]";
 
 interface Props {
   /** Signed in. The block is in the markup either way, hidden when not. */
@@ -83,30 +94,42 @@ export function DeleteAccount({ visible, say }: Props) {
   };
 
   return (
-    <div className={`account-danger${visible ? "" : " hidden"}`}>
+    <div
+      className={`account-danger mt-xl border-t border-line pt-lg${visible ? "" : " hidden"}`}
+    >
       {confirming ? (
-        <div className="account-confirm">
+        <div className="account-confirm mt-lg rounded-md border border-danger bg-danger-soft p-xl">
           {/* Both sentences carry their own <b> through the catalogue.
               Splitting them into bold and not-bold keys would be asking a
               translator for sentence fragments, and where the emphasis falls
-              moves with the language. */}
-          <p className="account-confirm-lede">
+              moves with the language.
+
+              break-keep is `word-break: keep-all`. The panel is narrow enough
+              to split 되돌릴 수 없습니다 across two lines in the middle of the
+              word -- fine for a task somebody typed, not for the one sentence
+              in the app that has to be read before an irreversible button. */}
+          <p className={`account-confirm-lede ${SENTENCE}`}>
             <RichText k="account.confirmLede" />
           </p>
-          <p className="account-confirm-keep">
+          <p className={`account-confirm-keep ${SENTENCE} text-muted`}>
             <RichText k="account.confirmKeep" />
           </p>
-          <div className="account-confirm-row">
+          <div className="account-confirm-row mt-lg flex justify-end gap-md">
             <button
-              className="account-confirm-cancel"
+              className={`account-confirm-cancel ${ACT} border-line bg-panel text-text`}
               type="button"
               disabled={deleting}
               onClick={() => setConfirming(false)}
             >
               {t("common.cancel")}
             </button>
+            {/* Not on-accent and not #fff. --danger is a deep red on the light
+                theme but a light salmon on the dark one, and white on salmon is
+                barely there -- measured on screen. The page background is the
+                opposite of the theme's fill in both, so it is the one token
+                that stays legible on this button either way. */}
             <button
-              className="account-confirm-go"
+              className={`account-confirm-go ${ACT} border-danger bg-danger text-bg`}
               type="button"
               disabled={deleting}
               onClick={deleteAccount}
@@ -117,7 +140,7 @@ export function DeleteAccount({ visible, say }: Props) {
         </div>
       ) : (
         <button
-          className="account-leave-btn"
+          className="account-leave-btn border-0 bg-transparent p-[0px] text-sm text-muted underline underline-offset-[3px] hover:text-danger"
           type="button"
           onClick={() => {
             setConfirming(true);

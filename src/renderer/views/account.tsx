@@ -6,6 +6,14 @@
  * "동기화됨" unless a sync came back saying so, and never let a failure pass
  * without a sentence. The dot only lights for the two states a person can act
  * on -- the same test the update button had to pass.
+ *
+ * account.css is gone; the two halves and everything in them are spelled here
+ * and in ./account/. `hidden` on either half is written by hand rather than
+ * through cn(), and that is on purpose: cn() would see `flex` and `hidden` as
+ * one display and drop the `flex`, leaving markup that no longer says what the
+ * block is when it comes back. The utility layer emits `hidden` after `flex`,
+ * so writing both is both honest and correct -- and it is what index.html does
+ * with the settings panel.
  */
 
 import { useEffect, useState } from "react";
@@ -13,6 +21,7 @@ import { messageOf } from "../../shared/errors.js";
 import { t } from "../i18n.js";
 import { activeCount } from "../store.js";
 import { useRenderSignal } from "../react/use-store.js";
+import { cn } from "../react/cn.js";
 import { RichText } from "../react/rich-text.js";
 import { GoogleMark } from "../react/brand-icons.js";
 
@@ -37,6 +46,23 @@ export {
   setDevLogin,
   announceOverwritten,
 } from "./account/status.js";
+
+/**
+ * One of the two halves. Exactly one is on screen; the other carries `hidden`.
+ *
+ * Both wrap, because this block lives in a 320px panel rather than in the width
+ * of the guide it came from.
+ */
+const HALF = "flex flex-wrap items-center gap-lg";
+
+/**
+ * A line of small print under a control, on its own row.
+ *
+ * -2px is not on the spacing scale and is not rounded onto it: it pulls the
+ * sentence back up against the thing it explains, and which step it is nearest
+ * is not the question.
+ */
+const HINT = "account-hint m-[0px] mt-[-2px] basis-full text-sm text-muted";
 
 export function Account() {
   useRenderSignal();
@@ -135,9 +161,28 @@ export function Account() {
 
   return (
     <>
-      <div className={`account-out${inside ? " hidden" : ""}`}>
+      <div className={`account-out ${HALF}${inside ? " hidden" : ""}`}>
+        {/* Google asks that its button keep white/grey chrome and the wordmark
+            colours, which is why this one does not follow the app's button
+            styling. Those four literals are the only colours in the app that do
+            not come from a token, and they must stay that way: pointing them at
+            the palette would make the button follow the theme, which is the
+            thing the guidelines forbid. If a sweep reports "4 hardcoded
+            colours", this is all of them.
+
+            The type is ours, so it goes through the tokens and follows the app
+            if the family or the scale changes. It was one `font:` shorthand;
+            that cannot come back as an arbitrary property, because those are
+            emitted after the leading-* utilities and would carry an inherited
+            line-height -- so the four parts are asked for by name. */}
         <button
-          className="google-btn"
+          className={cn(
+            "google-btn inline-flex items-center gap-md rounded-sm border",
+            "border-[#dadce0] bg-[#fff] px-3xl py-md text-[#3c4043]",
+            "hover:bg-[#f7f8f8]",
+            "font-sans text-md leading-none font-medium",
+            "disabled:cursor-default disabled:opacity-[0.55]",
+          )}
           type="button"
           disabled={busy}
           onClick={() => finish(window.api.signInWithGoogle(adoptMode()))}
@@ -149,7 +194,7 @@ export function Account() {
         {/* The other door into the same decision. Signing in is reachable from
             here as well as the first-run card, so the notice has to be in both
             or it leaks out of one of them. */}
-        <p className="account-hint">
+        <p className={HINT}>
           <span>{t("legal.notice")}</span>
           {privacy}
         </p>
@@ -158,8 +203,12 @@ export function Account() {
             fresh machine has no decision to make. */}
         {count > 0 ? (
           <>
-            <label className="account-adopt">
+            {/* Not a flex row. The words around the count would each become
+                their own flex item, and at the panel's 320px that breaks the
+                sentence into three stacked pieces. */}
+            <label className="account-adopt block basis-full cursor-pointer text-sm leading-normal text-muted">
               <input
+                className="mr-sm align-[-1px]"
                 type="checkbox"
                 checked={adopt}
                 onChange={(e) => setAdopt(e.target.checked)}
@@ -171,7 +220,7 @@ export function Account() {
                 <RichText k="account.adopt" params={{ count }} />
               </span>
             </label>
-            <p className="account-hint">{t("account.adoptHint")}</p>
+            <p className={HINT}>{t("account.adoptHint")}</p>
           </>
         ) : null}
 
@@ -186,13 +235,23 @@ export function Account() {
         ) : null}
       </div>
 
-      <div className={`account-in${inside ? "" : " hidden"}`}>
-        <span className="account-who">{currentSession()?.email ?? ""}</span>
-        <span className="account-state">{words}</span>
+      <div className={`account-in ${HALF}${inside ? "" : " hidden"}`}>
+        <span className="account-who font-medium">
+          {currentSession()?.email ?? ""}
+        </span>
+        <span className="account-state text-sm text-muted">{words}</span>
         {/* The notice above this lives in the signed-out block, which is
             hidden by then -- this is the only copy a signed-in person sees. */}
         {privacy}
-        <button className="account-out-btn" type="button" onClick={signOut}>
+        <button
+          className={cn(
+            "account-out-btn ml-auto rounded-sm border border-line",
+            "bg-transparent px-xl py-sm text-sm text-muted",
+            "hover:border-muted hover:text-text",
+          )}
+          type="button"
+          onClick={signOut}
+        >
           {t("account.signOut")}
         </button>
       </div>
@@ -204,7 +263,12 @@ export function Account() {
       <DeleteAccount visible={inside} say={say} />
 
       <p
-        className={`account-msg${message?.isError ? " error" : ""}`}
+        className={cn(
+          "account-msg m-[0px] mt-lg min-h-[1.2em] text-sm",
+          // A reserved line, so a message appearing does not shove the rest of
+          // the panel down. 1.2em is the height of one line of it.
+          message?.isError ? "text-danger" : "text-muted",
+        )}
         role="status"
       >
         {message ? message.render() : ""}
@@ -213,8 +277,12 @@ export function Account() {
           does not own, and closing it tells the loopback server nothing. Kept
           outside the live region above for the same reason it is there. */}
       {busy ? (
+        // [align-self:start] rather than self-start: the utility is
+        // `flex-start`, and this carries the declaration across as it was.
+        // It does nothing today -- the panel is not a flex container -- but it
+        // is the twin of the first-run card's cancel, where it does.
         <button
-          className="text-link account-cancel"
+          className="text-link account-cancel mt-xs text-sm [align-self:start]"
           type="button"
           onClick={() => window.api.cancelSignIn().catch(() => {})}
         >

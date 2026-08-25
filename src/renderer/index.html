@@ -571,10 +571,22 @@
          which is a button the bar gets back.
 
          A popover rather than a tab: tabs are for the lists, and a settings tab
-         would sit in that row implying it holds a fourth list. -->
-    <div class="settings-backdrop hidden" id="settingsBackdrop"></div>
+         would sit in that row implying it holds a fourth list.
+
+         `settings` and `settings-backdrop` earn nothing here any more, and they
+         both stay: collapsed.css hides these two BY THOSE NAMES, and it is the
+         only thing that does. Dropping either would leave a 320px panel inside
+         a 48px bar with no check anywhere that would notice.
+
+         Transparent backdrop on purpose: this is a widget, and dimming the
+         board behind a settings sheet would read as modal in a window that is
+         900px wide. It is here to catch the click that closes the panel. -->
+    <div
+      class="settings-backdrop fixed inset-[0px] z-40 hidden"
+      id="settingsBackdrop"
+    ></div>
     <section
-      class="settings hidden"
+      class="settings fixed top-[42px] right-[10px] z-41 max-h-[calc(100vh-56px)] w-[320px] max-w-[calc(100vw-20px)] overflow-y-auto rounded-lg border border-line bg-panel px-3xl pt-2xl pb-3xl shadow-pop hidden"
       id="settingsPanel"
       role="dialog"
       aria-modal="true"
@@ -590,8 +602,16 @@
 
     <!-- The first thing a new install shows, in place of the matrix. It is the
          only moment where "this app can also use an account" can be said at
-         all; put off, it becomes a feature nobody ever finds. -->
-    <div class="welcome hidden" id="welcome">
+         all; put off, it becomes a feature nobody ever finds.
+
+         It covers the window, title bar included, which is why it is fixed and
+         above everything. `hidden` and `grid` are both on it on purpose: the
+         utility layer emits `hidden` after `grid`, so the card is a centred
+         grid when it is up and nothing at all when it is not. -->
+    <div
+      class="welcome fixed inset-[0px] z-60 grid place-items-center bg-bg p-3xl hidden"
+      id="welcome"
+    >
       <!-- Filled by views/welcome.tsx. The overlay stays here because it
            covers the window, title bar included, and the stylesheet hides it
            by class. -->
