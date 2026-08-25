@@ -402,8 +402,16 @@
 
     <!-- The first thing a new install shows, in place of the matrix. It is the
          only moment where "this app can also use an account" can be said at
-         all; put off, it becomes a feature nobody ever finds. -->
-    <div class="welcome hidden" id="welcome">
+         all; put off, it becomes a feature nobody ever finds.
+
+         It covers the window, title bar included, which is why it is fixed and
+         above everything. `hidden` and `grid` are both on it on purpose: the
+         utility layer emits `hidden` after `grid`, so the card is a centred
+         grid when it is up and nothing at all when it is not. -->
+    <div
+      class="welcome fixed inset-[0px] z-60 grid place-items-center bg-bg p-3xl hidden"
+      id="welcome"
+    >
       <!-- Filled by views/welcome.tsx. The overlay stays here because it
            covers the window, title bar included, and the stylesheet hides it
            by class. -->

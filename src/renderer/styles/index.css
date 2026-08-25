@@ -84,8 +84,10 @@
 /* account.css was here. Every rule in it moved to utilities; the account block
    is drawn entirely from views/account.tsx and views/account/ now. */
 @import "./settings.css" layer(nekan);
-/* Right after settings.css: the first-run card's language picker is a
-   `.settings-select` and this paints over it. */
+/* This used to have to sit right after settings.css, because the first-run
+   card's language picker was a `.settings-select` and this painted over it.
+   Neither sheet owns either of those any more -- the picker carries its own
+   look, in components/language-select.tsx -- so the position is now free. */
 @import "./welcome.css" layer(nekan);
 @import "./memo.css" layer(nekan);
 @import "./toast.css" layer(nekan);
