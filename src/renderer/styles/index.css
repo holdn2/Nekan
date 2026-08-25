@@ -37,7 +37,6 @@
 @layer theme, nekan, utilities;
 
 @import "tailwindcss/utilities.css" layer(utilities);
-@source "../**/*.{ts,tsx,html}";
 
 /* `hidden` is one utility now, and getting there was the whole gate.
  *
@@ -93,6 +92,12 @@
 @import "./toast.css" layer(nekan);
 @import "./collapsed.css" layer(nekan);
 @import "./scrollbars.css" layer(nekan);
+
+/* Below every @import, because that is where the cascade puts them: an
+   @import has to come before any other at-rule, and Tailwind does not mind
+   which side of it this sits on -- the sheets reach the bundle either way,
+   checked by building both. */
+@source "../**/*.{ts,tsx,html}";
 
 /* Dark mode is an attribute here, not a media query.
  *

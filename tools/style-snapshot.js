@@ -273,16 +273,20 @@ function connect(url) {
   // same bound as a request below, and error/close reject rather than being
   // ignored -- without that, a socket that never opened simply waited.
   const ready = new Promise((res, rej) => {
-    const timer = setTimeout(
-      () => rej(new Error("timeout: cdp connect")),
-      20000,
-    );
-    ws.addEventListener("open", () => {
+    // One place settles it, so the timer is cleared on every path. Clearing it
+    // only in the open handler left it running after a rejected connection --
+    // harmless to the promise, which is already settled, but it holds the event
+    // loop open for the rest of its twenty seconds after the script has failed.
+    let timer;
+    const settle = (err) => {
       clearTimeout(timer);
-      res();
-    });
-    ws.addEventListener("error", () => rej(new Error("cdp socket error")));
-    ws.addEventListener("close", () => rej(new Error("cdp socket closed")));
+      if (err) rej(err);
+      else res();
+    };
+    timer = setTimeout(() => settle(new Error("timeout: cdp connect")), 20000);
+    ws.addEventListener("open", () => settle());
+    ws.addEventListener("error", () => settle(new Error("cdp socket error")));
+    ws.addEventListener("close", () => settle(new Error("cdp socket closed")));
   });
   const send = (method, params) =>
     new Promise((res, rej) => {
