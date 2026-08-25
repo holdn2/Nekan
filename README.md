@@ -1,6 +1,6 @@
 # Nekan
 
-아이젠하워 매트릭스 데스크톱 위젯. Electron 기반, Windows용.
+아이젠하워 매트릭스 데스크톱 위젯. Electron 기반, Windows와 macOS용.
 Claude 계열의 밝은 베이지 테마 + 다크 테마를 지원합니다.
 
 이름은 네 칸(4분면)에서 왔습니다. 앱 안팎에서 표기는 `Nekan` 하나로 통일합니다.
@@ -13,12 +13,30 @@ Claude 계열의 밝은 베이지 테마 + 다크 테마를 지원합니다.
 
 ## 설치
 
-[Releases](https://github.com/holdn2/Nekan/releases)에서 최신 `Nekan-Setup-x.y.z.exe`를 받아 실행하면 됩니다. (`x.y.z`는 버전입니다.)
+[Releases](https://github.com/holdn2/Nekan/releases)에서 받습니다. (`x.y.z`는 버전입니다.)
+
+**Windows** — `Nekan-Setup-x.y.z.exe`를 받아 실행합니다.
 클릭 한 번으로 끝나고 **관리자 권한을 묻지 않습니다** — 내 계정 폴더에만 설치되기 때문입니다.
 설치가 끝나면 바탕화면과 시작 메뉴에 **Nekan** 바로가기가 생깁니다.
 
 > 코드 서명을 아직 하지 않아서 Windows SmartScreen이 "PC를 보호했습니다" 경고를 띄웁니다.
 > **추가 정보 → 실행**을 누르면 설치됩니다.
+
+**macOS** — 쓰는 칩에 맞는 `.dmg`를 받습니다.
+
+| 맥                                | 파일                    |
+| --------------------------------- | ----------------------- |
+| Apple Silicon (M1 · M2 · M3 · M4) | `Nekan-x.y.z-arm64.dmg` |
+| Intel                             | `Nekan-x.y.z-x64.dmg`   |
+
+어느 쪽인지는 **애플 메뉴 → 이 Mac에 관하여**에서 봅니다 — `칩`이면 Apple Silicon,
+`프로세서`에 Intel이 보이면 Intel입니다. `.dmg`를 열어 Nekan을 **응용 프로그램**으로
+옮기면 끝입니다.
+
+> 같이 올라가는 `.zip`은 앱이 스스로 업데이트할 때 쓰는 파일이라 따로 받지 않습니다.
+>
+> **맥에서는 단축키가 `Ctrl` 대신 `Cmd`입니다.** 이 문서의 `Ctrl`을 전부 `Cmd`로 읽으면
+> 되고, 가이드 탭은 도는 운영체제에 맞춰 스스로 바꿔 적습니다.
 
 ## 처음 켰을 때
 
