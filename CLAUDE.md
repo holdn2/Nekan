@@ -77,7 +77,8 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
                    layout.ts + layout/(grid·quad-edges·memo-edge) ·
                    dnd.ts · export-ui.ts — 뒤의 둘은 React가 아니고 그게 맞다:
                    그릴 마크업이 없고 이벤트와 한 번의 호출이다
-    styles/        base부터 scrollbars까지 15개 + 진입점 index.css
+    styles/        13장 + 진입점 index.css. #75로 열둘이 유틸리티가 됐고
+                   archive·account·titlebar 셋은 아예 없어졌다
                    index.css의 `@import` 순서가 캐스케이드다 (옛날엔 index.html의
                    <link> 순서였다) — 셋 다 layer(nekan)로 들어간다
                    switch.css만 영역이 아니라 부품이다 — 두 곳이 쓰므로 base 바로 뒤
@@ -395,7 +396,9 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   633 → **657px**(영어)로 뛰어 660 기준 여유가 **3px**만 남았다. 줄이는 대신 바를 넓혀 갚았고,
   지금 여유는 한국어 **41px** · 영어 **27px**(들어가는 최소 폭 643 / 657)이다. **영어가 늘 최악이다.**
   **2026-08-23에 타이틀바가 React가 되면서 다시 쟀다: 한국어 49px · 영어 35px**(들어가는 최소
-  폭 635 / 649). 여덟 픽셀이 늘었고, 줄어든 것이 아니라 늘어난 것이므로 무언가 빠진 것은
+  폭 635 / 649). **2026-08-25에 타이틀바가 유틸리티로 옮겨간 뒤 같은 절차로 다시 쟀고 값이
+  그대로다**(처음 넘치는 폭 634 / 648). `titlebar.css`는 그때 없어졌으니, 이제 바에 뭔가를
+  더할 때 고치는 곳은 `window/chrome/title-bar.tsx`다. 여덟 픽셀이 늘었고, 줄어든 것이 아니라 늘어난 것이므로 무언가 빠진 것은
   아닌지 세어 확인했다 — 창 버튼 6개·칩 5개·스위치·브랜드 전부 있고 넘침 0이다.
   **재는 방법은 그대로다**(뷰포트를 1px씩 줄여 `.titlebar`의 `scrollWidth > clientWidth`가
   처음 참이 되는 폭을 찾는다). 이제는 `renderCounts()` 대신 컴포넌트가 개수를 되돌리므로,
@@ -442,7 +445,9 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   ① **`@import` 순서가 캐스케이드다.** 옛날엔 `index.html`의 `<link>` 열여섯 줄이 그 일을
   했고, 지금은 `index.css`의 `@import` 열여섯 줄이 한다. **줄을 옮기면 캐스케이드가 옮겨간다.**
   **양쪽의 열여섯은 같은 열여섯이 아니다** — 옛 `<link>`는 시트 열여섯이었고, 지금 `@import`
-  열여섯 중 하나는 Tailwind의 유틸리티다(`archive.css`가 없어져 시트는 열다섯이다).
+  는 열넷이며 그중 하나는 Tailwind의 유틸리티다(시트 열셋). `@source`는 그 아래에 있다:
+  `@import`가 다른 at-rule보다 먼저여야 한다는 CSS 규칙 때문이고, **Tailwind는 어느 쪽이든
+  같은 산출물을 낸다**(옮기기 전후가 바이트 단위로 같았다).
   ② **손으로 쓴 CSS는 전부 `layer(nekan)`에 있다.** 레이어 순서는 `theme, nekan, utilities`다.
   중요한 것은 **`!important`는 레이어 순서가 뒤집힌다**는 것 — 그래서 `collapsed.css`의
   **`collapsed.css`는 모든 선언에 `!important`를 단다.** 한때 여기 "여덟 개"라고 적혀 있었는데
