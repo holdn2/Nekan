@@ -1,62 +1,34 @@
 /**
- * The due-date chip in both forms, and the four urgency states it can be in.
+ * What is left of the due chip after it moved to utilities.
+ *
+ * The chip in both forms -- editable and read-only -- and the four urgency
+ * states it can be in are spelled on the elements now, in
+ * components/due-chip.tsx and components/due-badge.tsx. So are both add forms,
+ * which this sheet also owned: it defined `.add` and styled through `.item`,
+ * so a mistake in it showed up in the matrix and the brain dump rather than
+ * here. Those two names are gone from this file; the classes stay on the
+ * elements because matrix.css and selection.ts still look for them.
+ *
+ * What could not come along is below, and it is two things with nothing in
+ * common but that.
  */
 
-/* ---------- due date chip ---------- */
-.duebox {
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-}
+/* ------------------------------------------------ the native date picker */
 
-.due {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 20px;
-  min-width: 24px;
-  padding: 0 var(--sp-sm);
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  color: var(--faint);
-  font-size: var(--fs-xs);
-  line-height: var(--lh-none);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-/* The face carries either the date text or, when there is no date, the calendar
-   icon. An inline <svg> is placed on the text baseline, not on the box's centre,
-   which left the icon 0.7px high while the drawn + beside it measured exact.
-   Block display takes it out of inline flow, and the flexbox above centres it. */
-.due .face svg {
-  display: block;
-}
-
-/* The native input sits invisibly on top so a click anywhere opens the picker. */
-.due input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-/* Only the picker indicator remains, stretched to fill the chip, so a click
-   anywhere on it opens the native calendar instead of focusing a text field.
-
-   Note what this costs: with the datetime edit gone there are no date segments
-   to focus, so Delete and Backspace do nothing -- the keys reach the input and
-   the value does not move -- and the clear button is hidden here as well. The
-   calendar's own 삭제 is therefore the *only* way to clear a date, which is
-   what makes it worth having measured rather than assumed. It was, on
-   2026-08-16: clicking it emptied the value, fired change, returned the chip to
-   its icon, and wrote dueDate: null to disk. */
+/* Pseudo-elements, so there is no element for a utility to sit on. `.due` is
+   still the hook because the input has no class of its own and none would help
+   -- these select parts of the control that only the engine draws.
+ *
+ * Only the picker indicator remains, stretched to fill the chip, so a click
+ * anywhere on it opens the native calendar instead of focusing a text field.
+ *
+ * Note what this costs: with the datetime edit gone there are no date segments
+ * to focus, so Delete and Backspace do nothing -- the keys reach the input and
+ * the value does not move -- and the clear button is hidden here as well. The
+ * calendar's own 삭제 is therefore the *only* way to clear a date, which is
+ * what makes it worth having measured rather than assumed. It was, on
+ * 2026-08-16: clicking it emptied the value, fired change, returned the chip to
+ * its icon, and wrote dueDate: null to disk. */
 .due input::-webkit-datetime-edit,
 .due input::-webkit-inner-spin-button,
 .due input::-webkit-clear-button {
@@ -73,79 +45,14 @@
   cursor: pointer;
 }
 
-.duebox:not(.set) .due {
-  opacity: 0;
-}
+/* ------------------------------------------- the history and trash search */
 
-.item:hover .duebox:not(.set) .due,
-.duebox:not(.set) .due:focus-within {
-  opacity: 1;
-}
-
-.due:hover {
-  border-color: var(--line-strong);
-  background: var(--panel-3);
-  color: var(--text);
-}
-
-.duebox.set .due {
-  border-color: var(--line);
-  background: var(--panel-2);
-  color: var(--muted);
-}
-
-.duebox.set.soon .due {
-  border-color: var(--q3);
-  color: var(--q3);
-}
-
-.duebox.set.today .due {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.duebox.set.overdue .due {
-  border-color: var(--danger);
-  background: var(--danger-soft);
-  color: var(--danger);
-}
-
-/* Renamed off `static`, which is a Tailwind utility (position: static) and so
-   would have won this rule's element on layer order alone. Harmless while
-   .duebox sets no position -- and a silent break the day it does. */
-.duebox.readonly .due {
-  cursor: default;
-  opacity: 0.75;
-}
-
-.add {
-  display: flex;
-  gap: var(--sp-sm);
-  padding: var(--sp-md);
-  border-top: 1px solid var(--line);
-}
-
-.add .due {
-  height: 30px;
-  min-width: 30px;
-  border-radius: var(--radius-md);
-  border-color: var(--line-strong);
-  background: var(--panel-2);
-  opacity: 1;
-}
-
-.add .duebox:not(.set) .due {
-  opacity: 1;
-}
-
-.add .due:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.add input[type="text"],
+/* Not this sheet's subject and never was: it shared a rule with the add form's
+   text box because the two boxes look alike, and the add form has taken its
+   half onto the element. This half styles an <input> that views/archive/tab.tsx
+   renders, which this chunk does not own -- so it stays a declaration until
+   whoever owns that markup can put it there. Nothing about it needs to be CSS.
+   Kept verbatim, so moving it later is a copy rather than a decision. */
 .history-bar input {
   flex: 1 1 auto;
   min-width: 0;
@@ -159,39 +66,11 @@
   user-select: text;
 }
 
-.add input[type="text"]::placeholder,
 .history-bar input::placeholder {
   color: var(--faint);
 }
 
-.add input[type="text"]:focus,
 .history-bar input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-soft);
-}
-
-/* The + is drawn too; see icons.js. Centring is the flexbox's job now.
-   The box is stated in full -- both axes -- because this button and the due
-   chip beside it are read as a pair, and it was neither: 32px wide against the
-   chip's 30, and no height at all, so it stretched to the text input's 31.2 and
-   stood 1.2px taller as well. A height also has to be set to *stop* stretching;
-   align-self then puts the shorter box back on the row's centre line. */
-.add button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  align-self: center;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-md);
-  background: var(--panel-2);
-  color: var(--muted);
-}
-
-.add button:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
 }

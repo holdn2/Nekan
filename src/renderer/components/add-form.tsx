@@ -14,6 +14,7 @@ import { useRef, useState } from "react";
 import type { Place } from "../../shared/types.js";
 import { t } from "../i18n.js";
 import { addTask } from "../store.js";
+import { cn } from "../react/cn.js";
 import { DueChip } from "./due-chip.js";
 import { PlusIcon } from "../react/icons.js";
 
@@ -37,10 +38,16 @@ export function AddForm({ place, placeholderKey, withDue, onPaste }: Props) {
 
   return (
     <form
+      // `add` stays a class: matrix.css opts the quadrants' forms out of touch
+      // panning by it, and that rule is not this chunk's to move.
+      //
       // The dump's add box never gives up height: when the window is too short
       // the list above shrinks and scrolls, because a panel you cannot type
       // into is not a smaller panel, it is a broken one.
-      className={withDue ? "add" : "add inbox-add flex-none"}
+      className={cn(
+        "add flex gap-sm border-t border-line p-md",
+        !withDue && "inbox-add flex-none",
+      )}
       data-add={place}
       onSubmit={(e) => {
         e.preventDefault();
@@ -52,6 +59,18 @@ export function AddForm({ place, placeholderKey, withDue, onPaste }: Props) {
     >
       <input
         ref={input}
+        className={cn(
+          "min-w-[0px] flex-auto rounded-md border border-line-strong",
+          // font-[inherit] is the family only. The rule this replaced said
+          // `font: inherit`, and the shorthand cannot come back: Tailwind
+          // emits arbitrary properties after the leading-* utilities, so it
+          // would carry an inherited line-height. The size is asked for by
+          // name instead; the weight already matches what a text input
+          // inherits, so there is nothing to say about it.
+          "bg-input-bg px-lg py-sm font-[inherit] text-md text-text",
+          "outline-none select-text placeholder:text-faint",
+          "focus:border-accent focus:shadow-[0_0_0_2px_var(--accent-soft)]",
+        )}
         type="text"
         id={place === "inbox" ? "inboxInput" : undefined}
         value={text}
@@ -63,8 +82,20 @@ export function AddForm({ place, placeholderKey, withDue, onPaste }: Props) {
         maxLength={200}
         autoComplete="off"
       />
-      {withDue ? <DueChip value={due} onChange={setDue} /> : null}
+      {withDue ? <DueChip value={due} onChange={setDue} inAddForm /> : null}
+      {/* The + is drawn; see react/icons.tsx. Centring is the flexbox's job.
+          The box is stated in full -- both axes -- because this button and the
+          due chip beside it are read as a pair, and it was neither: 32px wide
+          against the chip's 30, and no height at all, so it stretched to the
+          text input's 31.2 and stood 1.2px taller as well. A height also has
+          to be set to *stop* stretching; self-center then puts the shorter box
+          back on the row's centre line. */}
       <button
+        className={cn(
+          "inline-flex h-[30px] w-[30px] items-center justify-center self-center",
+          "rounded-md border border-line-strong bg-panel-2 p-[0px] text-muted",
+          "hover:border-accent hover:bg-accent-soft hover:text-accent",
+        )}
         type="submit"
         title={t("common.add")}
         aria-label={t("common.add")}
