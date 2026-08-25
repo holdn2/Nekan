@@ -34,9 +34,10 @@ const BUILT = path.join(__dirname, "..", "out", "renderer", "assets");
  * `hidden` stopped being nine per-area rules and became one utility; 30 with the tab strip; 28 once the
  * dot and the ghost button became components; 22 when archive.css went away
  * entirely; 15 with the memo panel and the matrix; 10 once the guide, the due
- * chip and the settings/account/welcome cluster went in parallel.
+ * chip and the settings/account/welcome cluster went in parallel; 5 with the
+ * title bar, which was the last sheet.
  */
-const MAX_DUPLICATED = 10;
+const MAX_DUPLICATED = 5;
 
 /**
  * And how many definitions those names add up to. The count above is of names,
@@ -44,9 +45,9 @@ const MAX_DUPLICATED = 10;
  * `.item` lives in matrix.css and memo.css, and adding it to a third sheet, a
  * brand new cross-sheet override and the exact thing this file exists to stop,
  * left the number at 10 and passed. Found by making the check fail rather than
- * by reading it. 20 with the three parallel chunks in.
+ * by reading it. 20 with the three parallel chunks in, 10 with the title bar.
  */
-const MAX_DUPLICATE_DEFS = 20;
+const MAX_DUPLICATE_DEFS = 10;
 
 const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, "");
 

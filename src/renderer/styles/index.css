@@ -72,7 +72,6 @@
 @import "./base.css" layer(nekan);
 /* Shared by two areas, so it goes before both of them. */
 @import "./switch.css" layer(nekan);
-@import "./titlebar.css" layer(nekan);
 @import "./tabs.css" layer(nekan);
 @import "./inbox.css" layer(nekan);
 @import "./matrix.css" layer(nekan);

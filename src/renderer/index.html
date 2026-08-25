@@ -15,7 +15,9 @@
   <!-- `booting` holds the switch pills still until the saved board and theme
        have been applied; app.js drops it at the end of init(). -->
   <body class="expanded booting">
-    <header class="titlebar">
+    <header
+      class="titlebar flex h-[48px] flex-none items-center gap-lg border-b border-b-line bg-panel pr-sm pl-xl [-webkit-app-region:drag]"
+    >
       <!-- Filled by window/chrome.tsx. The header stays here because the
            stylesheet lays the window out by it and collapsed.css hides parts
            of it by name. -->
