@@ -1,152 +1,26 @@
-/* The settings popover, and the dot on the gear that stands in for the sync
-   chip.
-
-   Loaded after account.css so the account block keeps its own look inside the
-   panel, and before collapsed.css so bar mode can still hide what it must.
-   The first-run screen used to be in here too and is welcome.css now, which
-   loads immediately after this file. */
-
-/* ---------------------------------------------------------------- popover */
-
-/* Catches the click that closes the panel. Transparent on purpose: this is a
-   widget, and dimming the board behind a settings sheet would read as modal
-   in a window that is 900px wide. */
-.settings-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-}
-
-.settings {
-  position: fixed;
-  top: 42px;
-  right: 10px;
-  z-index: 41;
-  width: 320px;
-  max-width: calc(100vw - 20px);
-  max-height: calc(100vh - 56px);
-  overflow-y: auto;
-  padding: var(--sp-2xl) var(--sp-3xl) var(--sp-3xl);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: var(--panel);
-  box-shadow: var(--shadow-pop);
-}
-
-.settings-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--sp-lg);
-}
-
-.settings-head h2 {
-  margin: 0;
-  font-size: var(--fs-lg);
-  font-weight: var(--fw-semibold);
-}
-
-.settings-close {
-  border: 0;
-  background: none;
-  color: var(--muted);
-  font-size: var(--fs-2xl);
-  line-height: var(--lh-none);
-  padding: var(--sp-2xs) var(--sp-sm);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-}
-
-.settings-close:hover {
-  color: var(--text);
-  background: var(--panel-2);
-}
-
-.settings-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-xl);
-  padding: var(--sp-md) 0;
-  border-top: 1px solid var(--line);
-}
-
-.settings-block {
-  padding: var(--sp-md) 0 0;
-  border-top: 1px solid var(--line);
-}
-
-.settings-label {
-  font-size: var(--fs-sm);
-  color: var(--muted);
-}
-
-/* The theme toggle is the shared `.switch` (switch.css) — the same control as
-   업무/일상 in the title bar, because it is the same question. Nothing is needed
-   here: the row already places it. */
-
-.settings-action {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-md);
-  padding: var(--sp-xs) var(--sp-lg);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text);
-  font-size: var(--fs-sm);
-  cursor: pointer;
-}
-
-.settings-action:hover {
-  border-color: var(--muted);
-}
-
-/* Matches .settings-action so the row reads as one kind of control, but it is a
-   real <select>: the list grows with every language and the OS knows how to
-   present a long one better than anything drawn here would. */
-.settings-select {
-  padding: var(--sp-xs) var(--sp-lg);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text);
-  font-family: inherit;
-  font-size: var(--fs-sm);
-  cursor: pointer;
-}
-
-.settings-select:hover {
-  border-color: var(--muted);
-}
-
-/* The popup is drawn by the OS, which does not inherit the transparent
-   background above -- on the dark theme that left dark text on dark. */
-.settings-select option {
-  background: var(--panel);
-  color: var(--text);
-}
-
-.settings-action kbd {
-  font-family: inherit;
-  font-size: var(--fs-xs);
-  color: var(--muted);
-}
-
-/* The account block came from the guide, where it had a card of its own. In
-   here the panel is the card. */
-.settings .account {
-  margin: var(--sp-md) 0 0;
-  padding: 0;
-  border: 0;
-  background: none;
-}
-
-/* --------------------------------------------------------------- the dot */
+/**
+ * What is left of the settings popover after it moved to utilities.
+ *
+ * The panel's own box is in index.html, because that <section> and its backdrop
+ * are index.html's; everything inside it -- the head, the rows, the labels, the
+ * two controls and the account block -- is spelled on the elements in
+ * views/settings.tsx.
+ *
+ * The dot stayed. It is not a thing this branch can put on an element: it hangs
+ * off the gear, and the gear is the title bar's.
+ */
 
 /* What the 56px sync chip used to say, in something the bar can afford. Only
    the two states worth acting on get a colour; "동기화됨" shows nothing,
-   because a widget that is fine should not be asking for attention. */
+   because a widget that is fine should not be asking for attention.
+
+   Three reasons this cannot be a utility, and any one of them would be enough:
+   the dot is drawn by window/chrome/title-bar.tsx, which is another branch's
+   file; the state that decides it is a `data-sync` attribute main pushes onto
+   the gear, not something a render passes down; and `display: none` here would
+   be the `hidden` utility, which is exactly the class this element must NOT
+   carry -- account.tsx would then have to add and remove it, which is the
+   arrangement the attribute replaced. */
 .sync-dot {
   position: absolute;
   top: 4px;

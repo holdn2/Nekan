@@ -1,13 +1,10 @@
-/* The account block in the guide, and the sync chip in the title bar.
-   Loaded after guide.css so it can lean on the guide's type scale. */
+/* The account block, which is only ever drawn inside the settings panel.
+   Loaded after guide.css so it can lean on the guide's type scale.
 
-.account {
-  margin: var(--sp-2xl) 0 var(--sp-sm);
-  padding: var(--sp-2xl) var(--sp-3xl);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-panel);
-  background: var(--panel);
-}
+   The `.account` box that used to open this file is gone with the
+   `.settings .account` rule that unpainted it: a card and its undoing, for one
+   element, in two sheets. What is left of it is a margin, spelled on the
+   <section> in views/settings.tsx. */
 
 .account-out,
 .account-in {

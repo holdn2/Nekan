@@ -17,14 +17,23 @@
  * and nothing else. Each is named in its own language: a person looking for
  * theirs is looking for a word they recognise, not for its name written in a
  * script they cannot read -- which is exactly the state they are in here.
+ *
+ * The look is here rather than at the two call sites, and that settles an
+ * ordering the stylesheets used to carry: `.settings-select` was defined in
+ * settings.css and welcome.css was loaded straight after it so the first-run
+ * card could paint over the picker. Nothing overpaints anything now -- the card
+ * adds where the picker sits and this decides what it looks like -- so that
+ * one line of cascade is gone rather than moved.
  */
 
 import { t, currentLanguage, setLanguage } from "../i18n.js";
+import { cn } from "../react/cn.js";
 import { useRenderSignal } from "../react/use-store.js";
 
 interface Props {
   id: string;
-  className: string;
+  /** Where it sits, when a caller has an opinion. The look is not a caller's. */
+  className?: string;
   /** Only where there is no <label> pointing at it -- see the settings row. */
   ariaLabel?: string;
 }
@@ -35,7 +44,16 @@ export function LanguageSelect({ id, className, ariaLabel }: Props) {
   return (
     <select
       id={id}
-      className={className}
+      // Shaped like the export button beside it so the row reads as one kind of
+      // control, but a real <select>: the list grows with every language and
+      // the OS knows how to present a long one better than anything drawn here
+      // would. font-[inherit] is the family only -- a <select> comes out of the
+      // UA stylesheet in the system UI face, and the size is asked for by name.
+      className={cn(
+        "cursor-pointer rounded-md border border-line bg-transparent",
+        "px-lg py-xs font-[inherit] text-sm text-text hover:border-muted",
+        className,
+      )}
       aria-label={ariaLabel}
       value={currentLanguage()}
       onChange={(e) => {
@@ -46,7 +64,9 @@ export function LanguageSelect({ id, className, ariaLabel }: Props) {
       }}
     >
       {(window.api.languages || []).map((code) => (
-        <option key={code} value={code}>
+        // The popup is drawn by the OS, which does not inherit the transparent
+        // background above -- on the dark theme that left dark text on dark.
+        <option key={code} className="bg-panel text-text" value={code}>
           {t(`language.${code}`)}
         </option>
       ))}
