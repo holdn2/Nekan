@@ -30,3 +30,24 @@ export function macArches(pkg?: unknown): string[];
  * against a configuration other than this repository's.
  */
 export function auditAssets(names: string[], arches?: string[]): ReleaseAudit;
+
+/** One draft on a tag, as much of it as the fold decision looks at. */
+export interface DraftRelease {
+  id: number;
+  name?: string | null;
+  assets: { name: string }[];
+}
+
+/**
+ * Split several drafts on one tag into the one to keep, the ones to fold in,
+ * and the ones to leave alone.
+ *
+ * `leave` is the drafts with no assets. Nothing can be folded out of them, and
+ * this cannot tell a person's release-notes draft from an upload that split --
+ * so deleting one would risk notes GitHub does not give back, to gain nothing.
+ */
+export function planFold(drafts: DraftRelease[]): {
+  keep: DraftRelease;
+  fold: DraftRelease[];
+  leave: DraftRelease[];
+};

@@ -53,6 +53,11 @@ on:
       - "package-lock.json"
       - "build/**"
       - "tools/build.js"
+      # The mac invocation used to live in package.json, which is on this list.
+      # It moved into tools/dist.js, and `npm run dist:mac` is only ever
+      # exercised here -- so without this line a change to how the mac target is
+      # chosen goes green on a pull request and breaks at release time.
+      - "tools/dist.js"
       - ".github/workflows/mac-build.yml"
 
 # The default for every job here. The one that needs more says so itself, so

@@ -115,7 +115,37 @@ function auditAssets(names, arches = macArches()) {
   return { platforms: present.map((p) => p.name), missing, unexpected };
 }
 
-module.exports = { auditAssets, macArches };
+/**
+ * Of several drafts on one tag, which to keep and which to fold into it.
+ *
+ * Pure, so the rule can be tested without a GitHub draft -- and the rule is
+ * worth testing, because getting it wrong deletes something GitHub will not
+ * give back.
+ *
+ * The one holding latest.yml is the feed, so it is the one that survives; that
+ * file is what installed apps read.
+ *
+ * A draft with no assets is left alone. This function cannot tell who made a
+ * draft -- the filter upstream is "draft, and this tag" -- and an empty one is
+ * far more likely to be a person drafting release notes than an
+ * electron-builder upload that split. Folding it would move nothing, so
+ * deleting it buys nothing and can cost the notes. Skipping empties gives that
+ * case up without giving up the repair, which only ever mattered for drafts
+ * that hold files.
+ */
+function planFold(drafts) {
+  const keep =
+    drafts.find((r) => r.assets.some((a) => a.name === "latest.yml")) ||
+    drafts[0];
+  const others = drafts.filter((r) => r.id !== keep.id);
+  return {
+    keep,
+    fold: others.filter((r) => r.assets.length > 0),
+    leave: others.filter((r) => r.assets.length === 0),
+  };
+}
+
+module.exports = { auditAssets, macArches, planFold };
 
 // Everything below talks to GitHub. Guarded so that requiring this file for
 // the function above does not start a release check -- and, without a token,
@@ -129,6 +159,20 @@ if (require.main === module) {
 
   const version = require("../package.json").version;
   const tag = `v${version}`;
+
+  /**
+   * Where this machine's build left its files.
+   *
+   * tools/dist.js decides it and passes it in, so the build and this check
+   * cannot end up looking in different directories -- the header there says why
+   * the output ever moves. Standing alone, which is how the mac workflow runs
+   * it, the default is the configured one.
+   */
+  const DIST =
+    process.argv[2] ||
+    process.env.NEKAN_DIST ||
+    require("../package.json").build?.directories?.output ||
+    "dist";
 
   const api = async (url, init = {}) => {
     const res = await fetch(
@@ -171,10 +215,10 @@ if (require.main === module) {
    * publishing question, not a race to repair, so it says so and stops.
    */
   const attach = async (releaseId, name) => {
-    const file = path.join("dist", name);
+    const file = path.join(DIST, name);
     if (!fs.existsSync(file)) {
       throw new Error(
-        `${name} is in a split draft but not in this machine's dist/.\n` +
+        `${name} is in a split draft but not in this machine's ${DIST}/.\n` +
           `  Assets move only by re-uploading their bytes, and this run did not build that file.\n` +
           `  If another machine built it, fold the drafts there -- or publish every target from one place.`,
       );
@@ -199,14 +243,16 @@ if (require.main === module) {
       process.exit(1);
     }
 
-    // The one holding latest.yml is the feed, so it is the one to keep -- that
-    // file is what installed apps actually read.
-    const keep =
-      drafts.find((r) => r.assets.some((a) => a.name === "latest.yml")) ||
-      drafts[0];
-    const extras = drafts.filter((r) => r.id !== keep.id);
+    const { keep, fold, leave } = planFold(drafts);
 
-    for (const extra of extras) {
+    for (const empty of leave) {
+      console.log(
+        `check-release: leaving empty draft ${empty.id} (${empty.name || "untitled"}) alone` +
+          ` -- nothing to fold, so nothing to gain by deleting it`,
+      );
+    }
+
+    for (const extra of fold) {
       console.log(
         `check-release: folding split draft ${extra.id} into ${keep.id}`,
       );
@@ -215,8 +261,10 @@ if (require.main === module) {
           await attach(keep.id, asset.name);
         }
       }
+      // Named as well as numbered, so the one irreversible line in this script
+      // says what went.
       await api(`/repos/${REPO}/releases/${extra.id}`, { method: "DELETE" });
-      console.log(`  deleted ${extra.id}`);
+      console.log(`  deleted ${extra.id} (${extra.name || "untitled"})`);
     }
 
     const final = await api(`/repos/${REPO}/releases/${keep.id}`);

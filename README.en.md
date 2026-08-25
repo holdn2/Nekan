@@ -127,6 +127,25 @@ npm run dist      # dist\Nekan-Setup-1.0.0.exe -- local check, not uploaded
 npm run release   # build + upload to a GitHub Release (see GH_TOKEN below)
 ```
 
+> **If it dies with `EBUSY ... unlink ...\dist\win-unpacked\resources\app.asar`,**
+> build outside the repository. Something on this machine keeps handles on the
+> `.asar` files under that path -- real-time scanning, most likely -- and the
+> directory can be neither deleted nor renamed, while electron-builder empties
+> `<output>/win-unpacked` before unpacking Electron into it. It is not one of
+> ours: nothing runs there.
+>
+> ```powershell
+> $env:NEKAN_DIST = "$env:LOCALAPPDATA\Temp\nekan-dist"
+> npm run release
+> ```
+>
+> `tools/dist.js` settles that and hands it to both electron-builder and
+> `check-release.js`, because the two have to agree: the check re-uploads assets
+> from disk when a draft splits, and can only find them where the build wrote
+> them. **The mac workflow does not follow it** -- its artifact globs and its
+> codesign step name `dist` literally, so moving `build.directories.output` means
+> changing those too.
+
 **Release procedure**
 
 1. Bump `version` in `package.json` and commit it.
@@ -281,7 +300,8 @@ copying `data.json` does not carry your account with it.
 build/icon.ico         # exe / taskbar icon
 tools/make-icon.ps1    # icon generator
 tools/seed-dev-data.js # bulk dummy data (for performance checks)
-tools/check-release.js # inspects and repairs release drafts (called by the release script)
+tools/dist.js          # packaging entry point -- dist, dist:mac and release all go through it
+tools/check-release.js # inspects and repairs release drafts (called by dist.js)
 tools/find-untranslated.js # counts the Korean still baked into the source
 src/                   # what you write (TypeScript)
   main.ts              # app lifecycle and assembly
