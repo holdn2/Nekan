@@ -16,10 +16,13 @@
  * answer anyway, so the body and the chevron read it directly.
  */
 
-/* Drop target, set by window/dnd.ts. */
+/* Drop target, set by window/dnd.ts. Important because the panel carries
+   `border-line` and `shadow-default` as utilities, and a utility beats this
+   layer whatever the selector -- without it, dragging into the brain dump
+   shows nothing at all. */
 section.inbox.drop {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent) inset;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 1px var(--accent) inset !important;
 }
 
 /* The list's height, which is two declarations and needs to be both.

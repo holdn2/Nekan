@@ -75,7 +75,7 @@ function Row({ task, index }: { task: Task; index: number }) {
       ref={li}
       className={cn(
         ROW,
-        isSelected(task.id) && "selected",
+        isSelected(task.id) && "selected hover:bg-accent-soft",
         removing && "removing",
       )}
       data-id={task.id}
@@ -148,9 +148,9 @@ function Quad({ quad }: { quad: Quadrant }) {
         <Badge
           className={cn(
             "count ml-auto",
-            // `crowded` stays a class: the title bar's chip carries the same
-            // state into bar mode and styles it by that name, and it is what
-            // this rule is asserted by.
+            // `crowded` stays a class because the test asserts by it. It used
+            // to be here for the title bar's chip as well, but nothing has ever
+            // put `crowded` on a chip, so that rule was dead and is gone.
             crowded && "crowded cursor-help bg-danger-soft text-danger",
           )}
           data-count={quad}

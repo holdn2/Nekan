@@ -14,8 +14,8 @@
 
    It stays CSS because it is not on the spacing scale and must not be rounded
    onto it: 3.5px and 2.5px are what the measurement gave. Re-measure when
-   --font changes, and note that the quadrant count in matrix.css carries the
-   same correction for the same reason. */
+   --font changes. The quadrant count gets the same correction from the same
+   place -- it is a Badge too, so this rule is the only copy. */
 .badge {
   padding: 3.5px var(--sp-sm) 2.5px;
 }

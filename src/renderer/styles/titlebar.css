@@ -92,17 +92,6 @@
   color: var(--text);
 }
 
-/* The same hint as the quadrant count, carried into the bar — where the chip
-   is the only thing left on screen. */
-.chip.crowded {
-  border-color: var(--danger);
-  background: var(--danger-soft);
-}
-
-.chip.crowded b {
-  color: var(--danger);
-}
-
 .win-actions {
   -webkit-app-region: no-drag;
   display: flex;

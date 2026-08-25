@@ -136,8 +136,8 @@ export function CalendarIcon() {
  *
  * Points right when folded, down when open -- the only moving part of the
  * header, so it carries the whole open/closed signal. Which way it points is
- * inbox.css's one remaining rule, because the state lives as a class on the
- * <section> that index.html owns.
+ * the `open` prop and a rotate utility now; inbox.css used to decide it from a
+ * class on the <section>, and stopped when the fold moved into React.
  */
 export function ChevronIcon({ open }: { open?: boolean }) {
   return (

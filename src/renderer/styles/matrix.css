@@ -75,21 +75,31 @@ body.resizing-memo {
 
 /* The edges being dragged light up on both quadrants that share them. Toggled
    by the same pointer handler as the cursors above. (No top-edge rule: q3 and
-   q4 keep their coloured accent bar there.) */
+   q4 keep their coloured accent bar there.)
+
+   Important, and it has to be. The section carries `border-line` and
+   `shadow-default` from index.html, those are utilities, and utilities are a
+   later layer than this one -- so they win over these however many selectors
+   are stacked here. Putting the state in the markup instead is not open to us:
+   a pointer handler sets it on every pointermove, and lifting that into React
+   redraws the matrix each time the mouse moves a pixel. */
 .quad.edge-r {
-  border-right-color: var(--accent);
+  border-right-color: var(--accent) !important;
 }
 .quad.edge-l {
-  border-left-color: var(--accent);
+  border-left-color: var(--accent) !important;
 }
 .quad.edge-b {
-  border-bottom-color: var(--accent);
+  border-bottom-color: var(--accent) !important;
 }
 
-/* Drop target, set by window/dnd.ts on the section index.html owns. */
+/* Drop target, set by window/dnd.ts on the section index.html owns. Important
+   for the reason above: this is the only thing that says where a dragged task
+   will land, and `border-line` plus `shadow-default` would otherwise erase both
+   halves of it. */
 .quad.drop {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent) inset;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 1px var(--accent) inset !important;
 }
 
 /* ------------------------------------------------------------------- rows */

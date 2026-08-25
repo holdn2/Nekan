@@ -161,7 +161,14 @@ export function MemoPanel() {
           id="memoInput"
           className={cn(
             "min-h-[0px] w-full flex-auto resize-none rounded-md border",
-            "border-line-strong bg-input-bg px-md py-sm font-[inherit]",
+            // font-[inherit] is the family only. The rule this replaced said
+            // `font: inherit`, which is where the size came from too, and the
+            // shorthand cannot come back: Tailwind emits arbitrary properties
+            // after the leading-* utilities, so writing the shorthand here would
+            // carry an inherited line-height over the one asked for below.
+            // (Spelling it in this comment would also emit it -- @source reads
+            // prose, so a class name written anywhere becomes a real rule.)
+            "border-line-strong bg-input-bg px-md py-sm font-[inherit] text-md",
             "leading-normal text-text outline-none select-text",
             "placeholder:text-faint",
             "focus:border-accent focus:shadow-[0_0_0_2px_var(--accent-soft)]",
