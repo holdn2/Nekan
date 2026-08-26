@@ -10,8 +10,8 @@
  */
 
 import { expect, test } from "vitest";
-import { mount } from "../../react/testing.js";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover.js";
+import { mount } from "../../../react/testing.js";
+import { Popover, PopoverContent, PopoverTrigger } from "../popover.js";
 
 function panel() {
   return document.querySelector<HTMLElement>('[data-slot="popover-content"]');

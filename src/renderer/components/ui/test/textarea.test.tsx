@@ -9,9 +9,9 @@
  */
 
 import { expect, test, vi } from "vitest";
-import { find, mount } from "../../react/testing.js";
+import { find, mount } from "../../../react/testing.js";
 import { classCompiled } from "./compiled-css.js";
-import { Textarea } from "../ui/textarea.js";
+import { Textarea } from "../textarea.js";
 
 test("renders a textarea carrying data-slot", async () => {
   await mount(<Textarea id="t" placeholder="notes" />);

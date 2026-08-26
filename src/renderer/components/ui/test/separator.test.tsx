@@ -14,9 +14,9 @@
  */
 
 import { expect, test } from "vitest";
-import { find, mount } from "../../react/testing.js";
+import { find, mount } from "../../../react/testing.js";
 import { classCompiled } from "./compiled-css.js";
-import { Separator } from "../ui/separator.js";
+import { Separator } from "../separator.js";
 
 test("defaults to horizontal, decorative, and data-slot", async () => {
   await mount(<Separator id="s" />);

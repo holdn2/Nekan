@@ -17,7 +17,7 @@
  */
 
 import { expect, test } from "vitest";
-import { mount, flush } from "../../react/testing.js";
+import { mount, flush } from "../../../react/testing.js";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,7 +26,7 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogTitle,
-} from "../ui/alert-dialog.js";
+} from "../alert-dialog.js";
 
 function pressEscape() {
   document.dispatchEvent(

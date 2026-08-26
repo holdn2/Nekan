@@ -20,8 +20,8 @@
  */
 
 import { expect, test } from "vitest";
-import { mount, flush } from "../../react/testing.js";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs.js";
+import { mount, flush } from "../../../react/testing.js";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../tabs.js";
 
 function trigger(label: string): HTMLElement {
   const el = [
@@ -43,6 +43,21 @@ function click(el: HTMLElement) {
   );
 }
 
+/**
+ * The node, or a readable failure instead of a TypeError.
+ *
+ * These panels are queried while they are closed or inactive, and Radix wraps
+ * both in `Presence`: today it keeps the node mounted and marks it `hidden`,
+ * which is what these tests assert. If a later version unmounts it instead,
+ * a bare `!` would surface as "cannot read property of null" somewhere below.
+ * This says which element went missing.
+ */
+function must(id: string): HTMLElement {
+  const el = document.getElementById(id);
+  expect(el, `#${id} was not in the DOM`).not.toBeNull();
+  return el as HTMLElement;
+}
+
 test("clicking a trigger shows its panel and hides the other", async () => {
   await mount(
     <Tabs defaultValue="a">
@@ -59,8 +74,8 @@ test("clicking a trigger shows its panel and hides the other", async () => {
     </Tabs>,
   );
 
-  const panelA = document.getElementById("panel-a")!;
-  const panelB = document.getElementById("panel-b")!;
+  const panelA = must("panel-a");
+  const panelB = must("panel-b");
 
   expect(panelA.hidden).toBe(false);
   expect(panelB.hidden).toBe(true);

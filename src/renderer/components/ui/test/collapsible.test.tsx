@@ -18,12 +18,27 @@
  */
 
 import { expect, test } from "vitest";
-import { mount, flush } from "../../react/testing.js";
+import { mount, flush } from "../../../react/testing.js";
 import {
   Collapsible,
   CollapsibleTrigger,
   CollapsibleContent,
-} from "../ui/collapsible.js";
+} from "../collapsible.js";
+
+/**
+ * The node, or a readable failure instead of a TypeError.
+ *
+ * These panels are queried while they are closed or inactive, and Radix wraps
+ * both in `Presence`: today it keeps the node mounted and marks it `hidden`,
+ * which is what these tests assert. If a later version unmounts it instead,
+ * a bare `!` would surface as "cannot read property of null" somewhere below.
+ * This says which element went missing.
+ */
+function must(id: string): HTMLElement {
+  const el = document.getElementById(id);
+  expect(el, `#${id} was not in the DOM`).not.toBeNull();
+  return el as HTMLElement;
+}
 
 test("opens on trigger click and closes again on the next click", async () => {
   await mount(
@@ -36,7 +51,7 @@ test("opens on trigger click and closes again on the next click", async () => {
   const opener = document.querySelector<HTMLElement>(
     '[data-slot="collapsible-trigger"]',
   )!;
-  const panel = document.getElementById("panel")!;
+  const panel = must("panel");
 
   expect(panel.hidden).toBe(true);
   expect(panel.getAttribute("data-state")).toBe("closed");

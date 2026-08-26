@@ -6,13 +6,13 @@
  */
 
 import { expect, test } from "vitest";
-import { mount } from "../../react/testing.js";
+import { mount } from "../../../react/testing.js";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "../ui/tooltip.js";
+} from "../tooltip.js";
 
 function panel() {
   return document.querySelector<HTMLElement>('[data-slot="tooltip-content"]');

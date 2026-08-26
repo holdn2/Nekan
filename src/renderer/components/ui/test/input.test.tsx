@@ -9,9 +9,9 @@
  */
 
 import { expect, test, vi } from "vitest";
-import { find, mount } from "../../react/testing.js";
+import { find, mount } from "../../../react/testing.js";
 import { classCompiled } from "./compiled-css.js";
-import { Input } from "../ui/input.js";
+import { Input } from "../input.js";
 
 test("renders an input carrying data-slot and the given type", async () => {
   await mount(<Input id="i" type="email" placeholder="you@example.com" />);

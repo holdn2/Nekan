@@ -10,9 +10,9 @@
  */
 
 import { expect, test } from "vitest";
-import { find, mount } from "../../react/testing.js";
+import { find, mount } from "../../../react/testing.js";
 import { classCompiled } from "./compiled-css.js";
-import { Badge } from "../ui/badge.js";
+import { Badge } from "../badge.js";
 
 test("renders as a span carrying data-slot and data-variant", async () => {
   await mount(<Badge id="b">todo</Badge>);

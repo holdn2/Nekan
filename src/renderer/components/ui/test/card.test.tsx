@@ -5,7 +5,7 @@
  */
 
 import { expect, test } from "vitest";
-import { mount } from "../../react/testing.js";
+import { mount } from "../../../react/testing.js";
 import {
   Card,
   CardAction,
@@ -14,7 +14,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "../ui/card.js";
+} from "../card.js";
 
 test("every slot renders with its data-slot marker and its own text", async () => {
   await mount(
