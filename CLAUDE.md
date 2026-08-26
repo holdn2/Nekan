@@ -63,11 +63,23 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
     dom.ts         $ · $$ · target · labelBtn
     keys.ts        isMac · accel(e) · accelName(). 조합키가 어느 키인지 한 곳
     window-api.d.ts  window.api를 preload의 `typeof api`에서 받아 전역으로 선언
-    components/    toast · due-chip · due-badge · memo-mark · memo-line ·
-                   editable-text · add-form · language-select
+    components/    toast · due-chip · due-calendar · due-badge · memo-mark ·
+                   memo-line · editable-text · add-form · language-select
                    (task를 모르는 조각들). 전부 .tsx다
+                   **OS 위젯이 뚫고 나오던 두 곳은 2026-08-26에 없어졌다**:
+                   language-select는 Radix Select이고, due-chip은 네이티브
+                   `<input type="date">` 대신 Radix Popover 안의 react-day-picker다
+                   (due-calendar.tsx). 날짜를 **타이핑하는 길은 일부러 없앴고**
+                   지우기는 팝오버 안의 `common.delete` 버튼이다 — 네이티브 선택기가
+                   주던 지우기가 사라졌기 때문이라, 그 버튼을 없애면 날짜를 못 지운다
     react/         React 쪽 배관 — icons.tsx(아이콘)·window-icons.tsx(창 버튼)·
                    brand-icons.tsx(구글 마크) · use-store.ts(훅) ·
+                   **앞의 둘은 2026-08-26부터 `lucide-react`를 감싼다.** 크기와 굵기는
+                   여전히 그 모듈이 정한다 — 이 앱은 10~14px로 그리는데 Lucide 기본은
+                   24px/2라, `strokeWidth`를 `원래값 * 24/16`으로 넘겨 무게를 맞춘다
+                   (렌더 크기는 약분돼서 사라진다). **핀만 손으로 그린 채 남았다**:
+                   켜짐을 칠로 읽히게 해야 하는데 Lucide의 `Pin`은 열린 선이다.
+                   brand-icons는 브랜드 규격이라 영원히 예외다 ·
                    rich-text.tsx(문자열 속 <b>) · testing.tsx(테스트 헬퍼)
     views/         matrix · inbox · memo · settings(계정 블록까지 그린다),
                    그리고 폴더가 된 셋:
@@ -406,6 +418,22 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   **재는 방법은 그대로다**(뷰포트를 1px씩 줄여 `.titlebar`의 `scrollWidth > clientWidth`가
   처음 참이 되는 폭을 찾는다). 이제는 `renderCounts()` 대신 컴포넌트가 개수를 되돌리므로,
   **접은 다음에 숫자를 바꾸라는 규칙은 그대로 유효하다.**
+  **2026-08-26에 아이콘이 Lucide가 되면서 다시 쟀다. 값은 한 픽셀도 안 변했다** — 손그림과
+  Lucide가 처음 넘치는 폭 **576(ko) / 592(en)**로 같았다(두 자리 기준). 아이콘 교체는 바 폭을
+  쓰지 않는다.
+  **다만 그 스캔이 내놓은 여유는 107px(ko) / 91px(en)이고, 위에 적힌 49 / 35와 맞지 않는다.**
+  원인을 찾지 못했다. 확인한 것: 첫 실행 카드 탓이 아니고(유효한 `startupChoice`로 다시 쟀다),
+  이번 작업 탓도 아니다(변경 전후가 같다). **여유가 줄어든 것이 아니라 늘어난 방향이라 급하지는
+  않지만, 둘 중 하나는 틀린 숫자다.** 바에 무언가를 더하기 전에 먼저 이 불일치부터 풀 것.
+  **재는 절차에 가드를 걸지 않으면 조용히 틀린 답이 나온다. 실제로 세 번 나왔다**(2026-08-26):
+  ① 펼친 상태에서 재면 챙이 다르게 그려져 여유가 100px대로 보인다 — `body`에 `collapsed`가
+  실제로 붙었는지, `.title`·`.tabs`의 계산된 `display`가 `none`인지 먼저 확인할 것.
+  ② **인박스 칩은 인박스가 비면 `hidden`이라 처음부터 없다** — 칩이 다섯 개 다 보이는지 세고
+  들어갈 것. ③ 개수를 넣을 노드는 칩이 아니라 그 안의 `<b id="c1">`이다. 칩에 대고
+  `querySelector('*')`를 쓰면 앞의 점(`<i>`)에 들어가서 숫자가 안 바뀐다.
+  그리고 **언어는 argv(`--nekan-lang`)로 오므로 `setLanguage()`로는 안 바뀐다** —
+  `settings.language`를 심어 **언어마다 앱을 새로 띄울 것.** 스위치 글자가
+  `업무일상`/`WorkLife`로 갈리는지가 그 확인이다.
   칩 하나의 `gap` 2px이 24px을 먹는다 — 칩이 다섯이고 그 뒤가 눌리기 때문이다.
   이 override 방식을 쓰는 이유가 하나 더 있다: **가려진 Electron 창은 리레이아웃을 하지 않아서**
   진짜로 `collapse()`를 해도 `window.innerWidth`가 확장 모드 값을 계속 돌려준다

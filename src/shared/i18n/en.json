@@ -129,7 +129,7 @@
     },
     "dueTitle": "Due dates",
     "due": {
-      "set": "The <b>calendar button</b> beside the input sets a date as you add the task; for a task that already exists, <b>click the date chip</b> on the right to open the calendar. The <code>×</code> next to the chip clears the date and nothing else.",
+      "set": "The <b>calendar button</b> beside the input sets a date as you add the task; for a task that already exists, <b>click the date chip</b> on the right to open the calendar. <code>Delete</code> at the foot of the calendar clears the date and nothing else.",
       "colors": "The chip changes colour with the time left, so urgency is something you can see: <b>overdue</b> is red, <b>today</b> orange, <b>within three days</b> yellow, anything further out grey. Leave the app running for days and the colour and the count roll over at midnight on their own."
     },
     "noteTitle": "Notes",
