@@ -1,14 +1,36 @@
 /**
- * A due date you can change: a native date input stretched invisibly over a
- * compact face, so a click anywhere on the chip opens the OS date picker.
+ * A due date you can change: a chip that opens a calendar popover, so a click
+ * anywhere on it lets you pick a date instead of typing one.
  *
- * No clear button of its own -- the picker already has one, and a second way
- * to do the same thing was costing a control in every row and every add form.
- * Clearing arrives through the same change event, which is why removing it
- * cost nothing.
+ * Used to be a native `<input type="date">` stretched invisibly over this
+ * same face -- see docs/DECISIONS.md, 2026-08-26, for why that had to go (the
+ * OS drew it, and this app no longer lets the OS draw anything but two
+ * things, of which this was one). The calendar itself is
+ * components/due-calendar.tsx; this file keeps the trigger, the face, and the
+ * tints, none of which changed shape.
+ *
+ * CLEARING MOVED, IT DID NOT DISAPPEAR
+ *
+ * The native input needed no clear button of its own because the OS picker
+ * already drew one. That picker is gone, so due-calendar.tsx now carries an
+ * explicit clear control -- see its file comment. What has not changed is the
+ * value that leaves this component when a date is cleared: `onChange(null)`,
+ * same as the old `change` event with an empty string.
+ *
+ * WHAT OPENING THE POPOVER COSTS THE HOVER RULE BELOW
+ *
+ * A row's chip is invisible until the row is hovered or the chip has focus --
+ * see the measured asymmetry a few paragraphs down for where that comes from.
+ * Radix moves focus into the popover's content when it opens, and that
+ * content is portalled to the end of `<body>`, outside this chip's DOM
+ * subtree -- so `:focus-within` on the wrapper stops seeing it the moment the
+ * calendar opens, which would fade the chip out from under an open calendar.
+ * `open` is tracked in this component for exactly that one line: forcing
+ * `opacity-100` whenever the popover is open, regardless of where focus
+ * physically sits.
  *
  * The read-only version, for rows that record a date rather than set one, is
- * components/due-badge.tsx, and it builds its box out of the two exports
+ * components/due-badge.tsx, and it builds its box out of the three exports
  * below so the two chips cannot drift apart.
  *
  * WHAT THE CLASSES HERE REPLACED, AND WHY THEY LOOK ASYMMETRIC
@@ -36,11 +58,14 @@
  * which is here, since `dueInfo` already computes it.
  */
 
+import { useState } from "react";
+import * as Popover from "@radix-ui/react-popover";
 import { dueInfo, formatDue } from "../../shared/core.js";
 import type { DueState } from "../../shared/types.js";
 import { currentLanguage, t } from "../i18n.js";
 import { cn } from "../react/cn.js";
 import { CalendarIcon } from "../react/icons.js";
+import { DueCalendar } from "./due-calendar.js";
 
 /** The wrapper. `duebox` stays a class: selection.ts closes on it. */
 export const DUE_BOX = "duebox inline-flex flex-none items-center";
@@ -93,64 +118,68 @@ export function DueChip({ value, onChange, inAddForm }: Props) {
   const info = dueInfo(value);
   // formatDue answers null only for a null info, which is the branch below.
   const words = info ? formatDue(info, t, currentLanguage())! : null;
+  const [open, setOpen] = useState(false);
 
   return (
     <span
       className={cn(DUE_BOX, info && `set ${info.state}`)}
       // The row this sits in is draggable, and a drag started on the chip
-      // would take the row instead of opening the picker.
+      // would take the row instead of opening the calendar. A <button>
+      // is not draggable by default, but this stays for the row's own
+      // pointerdown handler, which does not know what it landed on.
       draggable={false}
     >
-      <span
-        className={cn(
-          DUE_FACE,
-          inAddForm && "h-[30px] min-w-[30px] rounded-md",
-          info
-            ? DUE_TINT[info.state]
-            : inAddForm
-              ? "border-line-strong bg-panel-2"
-              : // Out of the way until the row is hovered -- `group` is on the
-                // row, in components/row.tsx -- or until the picker has focus,
-                // which is how a keyboard reaches it.
-                "opacity-0 group-hover:opacity-100 focus-within:opacity-100",
-          inAddForm
-            ? info
-              ? ADD_HOVER[info.state]
-              : "hover:border-accent hover:bg-accent-soft hover:text-accent"
-            : // A dated chip in a row does not answer hover at all; only the
-              // empty one does.
-              !info &&
-                "hover:border-line-strong hover:bg-panel-3 hover:text-text",
-        )}
-        title={
-          words
-            ? t("due.chip", { date: words.text, hint: words.hint })
-            : t("due.set")
-        }
-      >
-        {/* The native input sits invisibly on top so a click anywhere opens
-            the picker. Only its calendar indicator is left, stretched to fill
-            the chip -- that part is in due-chip.css, where the pseudo-elements
-            have to live. */}
-        <input
-          className={cn(
-            "absolute inset-[0px] m-[0px] h-full w-full cursor-pointer",
-            "border-0 p-[0px] opacity-0",
-          )}
-          type="date"
-          value={value ?? ""}
-          aria-label={t("due.field")}
-          onChange={(e) => onChange(e.target.value || null)}
+      <Popover.Root open={open} onOpenChange={setOpen}>
+        <Popover.Trigger asChild>
+          <button
+            type="button"
+            className={cn(
+              DUE_FACE,
+              inAddForm && "h-[30px] min-w-[30px] rounded-md",
+              info
+                ? DUE_TINT[info.state]
+                : inAddForm
+                  ? "border-line-strong bg-panel-2"
+                  : // Out of the way until the row is hovered -- `group` is on
+                    // the row, in components/row.tsx -- or until the trigger
+                    // has focus, which is how a keyboard reaches it.
+                    "opacity-0 group-hover:opacity-100 focus-within:opacity-100",
+              // Forced back on while the calendar is open -- see the file
+              // comment for why `focus-within` alone stops covering this.
+              !inAddForm && !info && open && "opacity-100",
+              inAddForm
+                ? info
+                  ? ADD_HOVER[info.state]
+                  : "hover:border-accent hover:bg-accent-soft hover:text-accent"
+                : // A dated chip in a row does not answer hover at all; only
+                  // the empty one does.
+                  !info &&
+                    "hover:border-line-strong hover:bg-panel-3 hover:text-text",
+            )}
+            aria-label={t("due.field")}
+            title={
+              words
+                ? t("due.chip", { date: words.text, hint: words.hint })
+                : t("due.set")
+            }
+          >
+            {/* The face carries either the date text or, when there is no
+                date, the calendar icon. An inline <svg> is placed on the text
+                baseline, not on the box's centre, which left the icon 0.7px
+                high while the drawn + beside it measured exact. Block display
+                takes it out of inline flow, and the flexbox above centres
+                it. */}
+            <span className="face [&>svg]:block">
+              {words ? words.text : <CalendarIcon />}
+            </span>
+          </button>
+        </Popover.Trigger>
+        <DueCalendar
+          value={value}
+          onChange={onChange}
+          onClose={() => setOpen(false)}
         />
-        {/* The face carries either the date text or, when there is no date,
-            the calendar icon. An inline <svg> is placed on the text baseline,
-            not on the box's centre, which left the icon 0.7px high while the
-            drawn + beside it measured exact. Block display takes it out of
-            inline flow, and the flexbox above centres it. */}
-        <span className="face [&>svg]:block">
-          {words ? words.text : <CalendarIcon />}
-        </span>
-      </span>
+      </Popover.Root>
     </span>
   );
 }

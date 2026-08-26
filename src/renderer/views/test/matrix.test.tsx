@@ -132,7 +132,6 @@ test("the add box files into its own quadrant, with the date it holds", async ()
 
   const form = find<HTMLFormElement>('form[data-add="q3"]');
   const text = form.querySelector<HTMLInputElement>('input[type="text"]')!;
-  const date = form.querySelector<HTMLInputElement>('input[type="date"]')!;
   const type = (el: HTMLInputElement, value: string) => {
     const setter = Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
@@ -143,7 +142,25 @@ test("the add box files into its own quadrant, with the date it holds", async ()
   };
 
   await flush(() => type(text, "새 할 일"));
-  await flush(() => type(date, "2026-09-01"));
+
+  // Setting a date goes through the calendar popover now rather than a
+  // native <input type="date"> -- see components/due-chip.tsx and
+  // components/due-calendar.tsx. Today's cell is always on screen the moment
+  // the calendar opens with nothing set yet, since it defaults to the
+  // current month.
+  const dueButton = form.querySelector<HTMLButtonElement>(".due")!;
+  await flush(() => dueButton.click());
+  const todayCell = document.querySelector<HTMLButtonElement>(
+    '[data-today="true"] button',
+  )!;
+  await flush(() => todayCell.click());
+  const today = new Date();
+  const expectedDue = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0"),
+  ].join("-");
+
   await flush(() =>
     form.dispatchEvent(
       new Event("submit", { bubbles: true, cancelable: true }),
@@ -152,10 +169,11 @@ test("the add box files into its own quadrant, with the date it holds", async ()
 
   const filed = activeOf("q3");
   expect(filed.map((t) => t.text)).toEqual(["새 할 일"]);
-  expect(filed[0].dueDate).toBe("2026-09-01");
-  // And the box is empty again, date included.
+  expect(filed[0].dueDate).toBe(expectedDue);
+  // And the box is empty again, date included -- the chip is back to its
+  // icon rather than a date, which is what an unset chip renders.
   expect(text.value).toBe("");
-  expect(date.value).toBe("");
+  expect(dueButton.querySelector("svg")).not.toBeNull();
 });
 
 test("completing a row lets it fade before the store hears", async () => {
