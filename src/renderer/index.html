@@ -15,19 +15,31 @@
   <!-- `booting` holds the switch pills still until the saved board and theme
        have been applied; app.js drops it at the end of init(). -->
   <body class="expanded booting">
-    <header
-      class="titlebar flex h-[48px] flex-none items-center gap-lg border-b border-b-line bg-panel pr-sm pl-xl [-webkit-app-region:drag]"
+    <!-- The title bar and the tab strip are one surface. Grouping them is what
+         separates chrome from content: before this the strip floated on the
+         page background and the active tab read as a pill rather than a tab.
+         Rounded at the bottom only -- the top follows the window's own edge.
+
+         `chrome` stays a class because collapsed.css has to undo this by name:
+         in bar mode the window is 48px tall and the strip is gone, so the
+         padding and the radius have to go with it. -->
+    <div
+      class="chrome flex flex-none flex-col rounded-b-panel bg-panel pb-md shadow-default"
     >
-      <!-- Filled by window/chrome.tsx. The header stays here because the
+      <header
+        class="titlebar flex h-[48px] flex-none items-center gap-lg pr-sm pl-xl [-webkit-app-region:drag]"
+      >
+        <!-- Filled by window/chrome.tsx. The header stays here because the
            stylesheet lays the window out by it and collapsed.css hides parts
            of it by name. -->
-    </header>
+      </header>
 
-    <!-- `tabs` stays a class: collapsed.css hides this whole strip by name in
+      <!-- `tabs` stays a class: collapsed.css hides this whole strip by name in
          bar mode. The rest is utilities. -->
-    <nav class="tabs flex flex-none items-center gap-xs px-xl pt-md">
-      <!-- Filled by window/chrome.tsx -->
-    </nav>
+      <nav class="tabs flex flex-none items-center gap-xs px-xl pt-md">
+        <!-- Filled by window/chrome.tsx -->
+      </nav>
+    </div>
 
     <!-- "다 꺼내기": the staging list where tasks are written down before they
          are classified. Unlike the memo panel this does NOT grow the window —

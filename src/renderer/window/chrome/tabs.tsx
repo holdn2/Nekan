@@ -85,10 +85,15 @@ function Tabs() {
             className={cn(
               // `tab` is kept only because the active one is found by it in
               // tests and by anything looking in from outside; nothing styles it.
-              "tab flex items-center gap-sm rounded-t-md border px-2xl py-md",
+              // Rounded all round, not just at the top: the strip shares its
+              // surface with the title bar above, so a tab is a pill sitting on
+              // that surface rather than a folder tab breaking a line. The
+              // active one is tinted for the same reason -- it used to be white
+              // against a grey strip, and white on white says nothing.
+              "tab flex items-center gap-sm rounded-md border px-2xl py-md",
               "leading-none",
               getTab() === tab
-                ? "border-line border-b-panel bg-panel font-medium text-text"
+                ? "border-line bg-accent-soft font-medium text-text"
                 : "border-transparent bg-transparent text-muted hover:text-text",
             )}
             type="button"
