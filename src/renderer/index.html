@@ -18,14 +18,13 @@
     <!-- The title bar and the tab strip are one surface. Grouping them is what
          separates chrome from content: before this the strip floated on the
          page background and the active tab read as a pill rather than a tab.
-         Rounded at the bottom only -- the top follows the window's own edge.
+         Square: the panel spans the full width, so a rounded bottom would
+         curve away from edges it is still touching.
 
          `chrome` stays a class because collapsed.css has to undo this by name:
          in bar mode the window is 48px tall and the strip is gone, so the
          padding and the radius have to go with it. -->
-    <div
-      class="chrome flex flex-none flex-col rounded-b-panel bg-panel pb-md shadow-default"
-    >
+    <div class="chrome flex flex-none flex-col bg-panel pb-md shadow-default">
       <header
         class="titlebar flex h-[48px] flex-none items-center gap-lg pr-sm pl-xl [-webkit-app-region:drag]"
       >
@@ -36,7 +35,7 @@
 
       <!-- `tabs` stays a class: collapsed.css hides this whole strip by name in
          bar mode. The rest is utilities. -->
-      <nav class="tabs flex flex-none items-center gap-xs px-xl pt-md">
+      <nav class="tabs flex flex-none items-center gap-xs px-xl pt-xs">
         <!-- Filled by window/chrome.tsx -->
       </nav>
     </div>
