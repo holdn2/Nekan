@@ -207,7 +207,6 @@
     "panel": "Note",
     "close": "Close the note",
     "edit": "Double-click to edit",
-    "editing": "{{mod}}+Enter to save · Esc to cancel",
     "placeholder": "Write a note…",
     "field": "Note text",
     "confirmDelete": "Delete this note? This cannot be undone.",

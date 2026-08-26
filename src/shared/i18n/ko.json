@@ -205,7 +205,6 @@
     "panel": "메모",
     "close": "메모 닫기",
     "edit": "더블클릭하여 수정",
-    "editing": "{{mod}}+Enter 저장 · Esc 취소",
     "placeholder": "메모를 입력하세요…",
     "field": "메모 내용",
     "confirmDelete": "이 메모를 삭제할까요? 되돌릴 수 없습니다.",
