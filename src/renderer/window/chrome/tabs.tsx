@@ -12,7 +12,7 @@
  * shows another" impossible instead of remembered.
  */
 
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import {
   CircleHelp,
   Clock,
@@ -57,8 +57,45 @@ const TAB_ICONS: Record<string, LucideIcon> = {
   guide: CircleHelp,
 };
 
+/**
+ * How far the rule runs past its label, per side. The tab's own px-xl is 12px,
+ * so at 8px the rule overhangs by 4. The two are a pair -- change the padding
+ * and this has to follow, or the overhang changes with it.
+ */
+const RULE_INSET = 8;
+
 function Tabs() {
   useRenderSignal();
+
+  // A rule per tab could only fade in and out; one rule that moves is the whole
+  // point, and where it moves to has to be measured -- the four tabs are
+  // different widths, so the `:has()` trick the two-way switch uses cannot
+  // work here.
+  const rule = useRef<HTMLSpanElement>(null);
+  const settled = useRef(false);
+  useLayoutEffect(() => {
+    const bar = rule.current;
+    const active = bar?.parentElement?.querySelector<HTMLElement>(
+      `[data-tab="${getTab()}"]`,
+    );
+    if (!bar || !active) return;
+    // Bar mode hides the strip, so everything measures zero. Writing that in
+    // would collapse the rule and then animate it back out on the way home.
+    if (!active.offsetWidth) return;
+    // The first placement must not travel: the saved tab arrives after an IPC
+    // round trip, so a transition here would slide the rule in from the left
+    // every time the app opens -- the same reason body.booting exists for the
+    // switch pill. Reading offsetWidth between the two writes is what keeps
+    // them from being collapsed into one style recalculation.
+    if (!settled.current) bar.style.transition = "none";
+    bar.style.width = `${active.offsetWidth - RULE_INSET * 2}px`;
+    bar.style.transform = `translateX(${active.offsetLeft + RULE_INSET}px)`;
+    if (!settled.current) {
+      void bar.offsetWidth;
+      bar.style.transition = "";
+      settled.current = true;
+    }
+  });
 
   // Every render, not once: the effect is how the sections learn, so it has to
   // run whenever the answer it reads can have changed.
@@ -77,6 +114,17 @@ function Tabs() {
 
   return (
     <>
+      {/* Absolute against the strip, which carries `relative` in index.html.
+          left-0 rather than a left offset: the position is a transform, so it
+          animates on the compositor instead of relaying out the strip. */}
+      <span
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none absolute bottom-[-1px] left-0 h-2xs w-[0px]",
+          "bg-text transition-[transform,width] duration-[180ms] ease-out",
+        )}
+        ref={rule}
+      />
       {["matrix", "history", "trash", "guide"].map((tab) => {
         const Icon = TAB_ICONS[tab];
         return (
@@ -99,14 +147,8 @@ function Tabs() {
               // tabs into outlined boxes.
               "tab relative flex items-center gap-sm border-0 bg-transparent",
               "px-xl py-md leading-none",
-              // Inset less than the tab's own px-xl, so the rule runs a little
-              // past the label on each side rather than stopping flush with it.
-              // The two are a pair: the gap between them IS the overhang, so
-              // changing the padding without changing this changes the look.
-              "after:absolute after:inset-x-md after:bottom-[-1px]",
-              "after:h-2xs after:bg-text after:opacity-0 after:transition-opacity",
               getTab() === tab
-                ? "font-medium text-text after:opacity-100"
+                ? "font-medium text-text"
                 : "text-muted hover:text-text",
             )}
             type="button"
