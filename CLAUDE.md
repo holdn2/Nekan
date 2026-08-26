@@ -582,7 +582,27 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   당한 실패 방식이다.
   **업데이터가 받는 것은 `.zip`이고 `.dmg`가 아니다.** `latest-mac.yml`이 피드다. 둘 중
   하나라도 빠지면 **아무 오류 없이** 맥 사용자가 영영 업데이트를 못 받거나 매번 전체를 받는다.
-  `check-release.js`의 맥 규칙이 그 셋을 필수로 두는 이유다.
+  그래서 `check-release.js`의 맥 규칙은 **아키텍처마다** `.dmg` · `.zip` · `.zip.blockmap`
+  셋을 요구하고 거기에 `latest-mac.yml`을 더한다 — 아키텍처 목록은 `build.mac.target`
+  한 곳에서 읽는다(`macArches()`). **"`.zip`이 하나 있으면 통과"가 아니다**: arm64만 올라간
+  릴리스가 그렇게 통과하면 인텔 맥이 영영 업데이트를 못 받는다. **`.dmg.blockmap`은
+  일부러 뺐다** — 빌드가 만들지만 아무도 읽지 않는다(맥 업데이트는 zip에서 온다).
+- **`Mac build` 워크플로의 잡 셋은 권한으로 갈라져 있다. 그 배치가 규칙이다.**
+  `preflight`는 **토큰을 들지만 `npm ci`를 돌리지 않고**(체크아웃은 `package.json` 하나
+  때문이다), `build`는 **`npm ci`와 `npm test`를 돌리지만 토큰이 없다**, `publish`만
+  업로드한다. 의존성 트리 전체의 설치 스크립트와 쓰기 토큰을 같은 잡에 두지 않는 것이
+  여기서 지키는 분리다. **`npm test`는 `build`에 있다** — preflight가 하는 일은
+  브랜치 판정과 draft 조회 둘뿐이다.
+- **draft 릴리스는 두 가지 이유로 "없는 것"처럼 보인다. 둘이 겹쳐서 증상이 같다.**
+  ① `GET /repos/{}/releases/tags/<태그>`가 draft에는 **404**다 — 전체 권한 토큰으로도 그렇다.
+  draft에는 아직 git 태그가 없기 때문이고, `gh release view <태그>`가 되는 것은 gh가 404 뒤
+  **목록으로 폴백**해서다. ② GitHub은 draft를 **push 권한이 있는 토큰에게만** 보여준다 —
+  그래서 워크플로가 draft를 **읽기만 하는데도 `contents: write`가 필요하다.**
+  v1.0.1의 맥 절반이 이 둘로 첫 시도에 15초 만에 죽었다(`there is no release for v1.0.1`,
+  그 draft는 자산 셋을 달고 멀쩡히 있었다). **목록으로 물으면 한 번에 셋을 가른다:**
+  `[.[] | select(.tag_name == "<태그>")] | first | if . == null then "missing" elif .draft
+then "draft" else "published" end` (실측: `v1.0.1 -> draft`, `v1.0.0 -> published`,
+  `v9.9.9 -> missing`). **페이지네이션이 없어서 기본 30개까지만 본다** — 이슈 #88.
 - **electron-builder가 만드는 것은 draft다.** 업로드가 끝나도 공개되지 않는다 —
   `gh release edit v<버전> --notes-file <파일> --draft=false --latest`로 노트를 넣고 공개한다.
   릴리스 노트는 **사용자가 주는 문구를 그대로** 쓴다.

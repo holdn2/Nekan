@@ -20,6 +20,7 @@
 const fs = require("fs");
 const path = require("path");
 const { spawn, spawnSync } = require("child_process");
+const { writeTheme, writeSite } = require("./build-theme.js");
 
 const ROOT = path.join(__dirname, "..");
 const SRC = path.join(ROOT, "src");
@@ -150,6 +151,38 @@ function hasSource(rel, produced) {
 }
 
 /**
+ * Regenerate the palette whenever the compiled module changes.
+ *
+ * Watch mode is the only path that needs this. `compile(true)` starts tsc and
+ * returns, so the writers above run once, against whatever out/shared/theme.js
+ * happened to be there; every later edit to src/shared/theme.ts recompiles that
+ * file and nothing turns it back into CSS. The renderer would go on serving the
+ * old colours for as long as the watch ran.
+ *
+ * It spawns a child rather than calling the writers again, and that is not
+ * squeamishness. out/shared is an ES module, and `delete require.cache[path]`
+ * does not evict one -- measured: the second require answered the first
+ * require's value. Calling in-process would write the *old* palette while
+ * reporting success, which is worse than not regenerating at all. A new process
+ * has a new module registry.
+ *
+ * tsc writes the file more than once per save, hence the small debounce.
+ */
+function watchTheme() {
+  const dir = path.join(OUT, "shared");
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const generator = require.resolve("./build-theme.js");
+  let pending = null;
+  fs.watch(dir, (_event, file) => {
+    if (file !== "theme.js") return;
+    clearTimeout(pending);
+    pending = setTimeout(() => {
+      spawnSync(process.execPath, [generator], { cwd: ROOT, stdio: "inherit" });
+    }, 120);
+  });
+}
+
+/**
  * Delete anything in out/ with no source behind it.
  *
  * Without this a renamed or deleted file keeps running: the stale output stays
@@ -217,6 +250,13 @@ function compile(watch) {
 const watch = process.argv.includes("--watch");
 const removed = prune();
 compile(watch);
+// Between the compilers and the bundler, because it reads out/shared/theme.js
+// and writes a stylesheet Vite is about to bundle. markSharedAsEsm has to have
+// run for that require() to work; it is idempotent, and copyAssets calls it
+// again below.
+markSharedAsEsm();
+writeTheme({ quiet: watch });
+writeSite({ quiet: watch });
 bundleRenderer(watch);
 
 if (watch) {
@@ -229,7 +269,8 @@ if (watch) {
   fs.watch(SRC, { recursive: true }, (_event, file) => {
     if (file && ASSET_EXT.has(path.extname(file))) copyAssets();
   });
-  console.log("watching src/ for assets");
+  watchTheme();
+  console.log("watching src/ for assets and the palette");
 } else {
   const copied = copyAssets();
   console.log(

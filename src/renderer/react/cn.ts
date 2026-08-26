@@ -51,9 +51,17 @@ export const COLORS = [
   "input-bg",
   "accent",
   "accent-soft",
+  "on-accent",
+  "ring",
   "danger",
   "danger-soft",
-  "on-accent",
+  "ok",
+  // The four interaction states. Before these there was no `hover` at all --
+  // eleven call sites reached for `panel-3`, which is a surface, so tuning a
+  // hover moved a panel with it.
+  "hover",
+  "active",
+  "disabled",
   "scroll",
   "scroll-hover",
   "q1",

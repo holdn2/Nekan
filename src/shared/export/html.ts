@@ -14,14 +14,26 @@ import type {
   ExportSection,
   Snapshot,
 } from "./types.js";
+import { PALETTE } from "../theme.js";
 
-/** Print colours, matching the light palette in styles.css. */
+/**
+ * The document is always the light theme -- it is print, and a PDF has no
+ * `prefers-color-scheme`. These were the light palette copied by value, and
+ * they had already drifted: the app moved to Salt and pepper and the exported
+ * page went on printing the old cream one.
+ */
+const P = PALETTE.light;
+
+/** The dot beside each section heading. */
 const QUAD_COLOR = {
-  inbox: "#8d887d",
-  q1: "#c85a4d",
-  q2: "#4a72b8",
-  q3: "#c1892c",
-  q4: "#8d887d",
+  // The brain dump is a shared area rather than a fifth quadrant, so it is not
+  // given one of the four colours. On screen it is an outline; there is no
+  // hover here to make an outline legible, so it prints as a grey fill.
+  inbox: P.faint,
+  q1: P.q1,
+  q2: P.q2,
+  q3: P.q3,
+  q4: P.q4,
 };
 
 export const escapeHtml = (text: unknown) =>
@@ -111,37 +123,37 @@ export function toHtml(
     margin: 0; padding: 18px 20px 24px;
     font-family: "Pretendard Variable", "Pretendard", "Apple SD Gothic Neo",
       "Malgun Gothic", -apple-system, "Segoe UI", system-ui, sans-serif;
-    font-size: 11.5px; line-height: 1.5; color: #1f1e1c; background: #fff;
+    font-size: 11.5px; line-height: 1.5; color: ${P.text}; background: ${P.panel};
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
   .head { display: flex; align-items: baseline; gap: 10px;
-    border-bottom: 2px solid #1f1e1c; padding-bottom: 8px; margin-bottom: 14px; }
+    border-bottom: 2px solid ${P.text}; padding-bottom: 8px; margin-bottom: 14px; }
   .head h1 { font-size: 17px; margin: 0; letter-spacing: .2px; }
-  .head .board { font-size: 12px; color: #6f6b61; border: 1px solid #d3cebe;
+  .head .board { font-size: 12px; color: ${P.muted}; border: 1px solid ${P["line-strong"]};
     border-radius: 99px; padding: 1px 8px; }
-  .head .meta { margin-left: auto; color: #6f6b61; font-size: 11px; }
-  section { border: 1px solid #d3cebe; border-radius: 8px; padding: 9px 12px 11px;
+  .head .meta { margin-left: auto; color: ${P.muted}; font-size: 11px; }
+  section { border: 1px solid ${P["line-strong"]}; border-radius: 8px; padding: 9px 12px 11px;
     break-inside: avoid; }
   section header { display: flex; align-items: center; gap: 7px;
-    border-bottom: 1px solid #e2ded1; padding-bottom: 6px; margin-bottom: 7px; }
+    border-bottom: 1px solid ${P.line}; padding-bottom: 6px; margin-bottom: 7px; }
   section h2 { font-size: 12.5px; margin: 0; }
   .dot { width: 9px; height: 9px; border-radius: 99px; flex: 0 0 auto; }
-  .act { color: #6f6b61; font-size: 10.5px; }
-  .n { margin-left: auto; color: #6f6b61; font-variant-numeric: tabular-nums; }
+  .act { color: ${P.muted}; font-size: 10.5px; }
+  .n { margin-left: auto; color: ${P.muted}; font-variant-numeric: tabular-nums; }
   ol { margin: 0; padding-left: 20px; }
   li { margin: 0 0 3px; break-inside: avoid; }
   .row { display: flex; align-items: baseline; gap: 7px; }
   .t { flex: 1 1 auto; }
   .due { flex: 0 0 auto; font-size: 10px; padding: 0 5px; border-radius: 99px;
-    border: 1px solid #d3cebe; color: #6f6b61; white-space: nowrap; }
-  .due.overdue { color: #b4453c; border-color: #b4453c; }
-  .due.today { color: #c05621; border-color: #c05621; }
-  .due.soon { color: #8a6a1f; border-color: #c1892c; }
-  .memo { margin: 2px 0 5px; padding-left: 8px; border-left: 2px solid #e2ded1;
-    color: #6f6b61; font-size: 10.5px; white-space: pre-wrap; }
-  .empty { margin: 2px 0; color: #a29d90; }
-  .more { margin: 4px 0 0; color: #a29d90; font-size: 10px; }
-  .inbox { margin-bottom: 12px; background: #faf9f5; }
+    border: 1px solid ${P["line-strong"]}; color: ${P.muted}; white-space: nowrap; }
+  .due.overdue { color: ${P.danger}; border-color: ${P.danger}; }
+  .due.today { color: ${P.accent}; border-color: ${P.accent}; }
+  .due.soon { color: ${P.q3}; border-color: ${P.q3}; }
+  .memo { margin: 2px 0 5px; padding-left: 8px; border-left: 2px solid ${P.line};
+    color: ${P.muted}; font-size: 10.5px; white-space: pre-wrap; }
+  .empty { margin: 2px 0; color: ${P.faint}; }
+  .more { margin: 4px 0 0; color: ${P.faint}; font-size: 10px; }
+  .inbox { margin-bottom: 12px; background: ${P["panel-2"]}; }
   /* The rows get a floor so a short board still prints as a 2x2 matrix instead
      of four boxes stacked at the top of an empty page; they grow past it when
      there is more to show. */

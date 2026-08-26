@@ -38,6 +38,11 @@
 
 @import "tailwindcss/utilities.css" layer(utilities);
 
+/* The palette, generated from src/shared/theme.ts. Unlayered on purpose: these
+   are the raw values `@theme` below points the token names at, and an unlayered
+   custom property is what both a stylesheet and a utility can reach. */
+@import "./palette.css";
+
 /* `hidden` is one utility now, and getting there was the whole gate.
  *
  * Tailwind scans the renderer and emits a utility for every word that looks
@@ -169,8 +174,16 @@
   --color-accent-soft: var(--accent-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
-  --shadow-default: var(--shadow);
+  --shadow-default: var(--sh-card);
   --color-on-accent: var(--on-accent);
+  /* The four states that had no name before this. `hover` was eleven call
+     sites reaching for `panel-3`, `active` and `disabled` did not exist, and a
+     focus ring was whatever the browser drew. */
+  --color-hover: var(--hover);
+  --color-active: var(--active);
+  --color-disabled: var(--disabled);
+  --color-ring: var(--ring);
+  --color-ok: var(--ok);
   --color-scroll: var(--scroll);
   --color-scroll-hover: var(--scroll-hover);
   --color-q1: var(--q1);
@@ -251,15 +264,19 @@
   --radius-lg: 12px;
   --radius-pill: 999px;
 
-  /* Written as literals in four different files before they were collected. */
-  --shadow-knob: 0 1px 2px rgb(0 0 0 / 0.12);
-  /* Directionless, for something sitting in a gap too tight to fall into: an
-     offset shadow fills the space below and leaves the space above clean, and
-     the thing then reads as riding high even when it is centred to the pixel.
-     Carrying a little more weight than --shadow-knob because it is doing more
-     work -- the switch's pill and its track are nine levels of luminance apart,
-     so this edge is most of what separates them. */
-  --shadow-even: 0 0 3px rgb(0 0 0 / 0.18);
-  --shadow-pop: 0 10px 30px #00000022, 0 2px 6px #00000014;
-  --shadow-toast: 0 6px 20px #00000026;
+  /* Five elevations, and until now only --shadow followed the theme: the other
+     four were light-theme values sitting on a dark window. The values live in
+     src/shared/theme.ts and arrive as --sh-*; these lines only give the
+     utilities their names, which is why every call site kept working.
+
+     --shadow-even is the odd one and stays. Directionless, for something in a
+     gap too tight to fall into: an offset shadow fills the space below and
+     leaves the space above clean, and the thing reads as riding high even when
+     it is centred to the pixel. The switch's pill is its only user, and its
+     track is nine levels of luminance away, so that edge is most of what
+     separates them. */
+  --shadow-knob: var(--sh-knob);
+  --shadow-even: var(--sh-even);
+  --shadow-pop: var(--sh-pop);
+  --shadow-toast: var(--sh-toast);
 }
