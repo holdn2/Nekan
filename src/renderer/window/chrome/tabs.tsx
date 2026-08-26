@@ -21,11 +21,9 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { Badge } from "../../components/badge.js";
 import { cn } from "../../react/cn.js";
 import { t } from "../../i18n.js";
 import { $ } from "../../dom.js";
-import { doneTasks, trashedTasks } from "../../store.js";
 import { useRenderSignal } from "../../react/use-store.js";
 import {
   UPDATE_TEXT,
@@ -57,12 +55,11 @@ const TAB_ICONS: Record<string, LucideIcon> = {
   guide: CircleHelp,
 };
 
-/**
- * How far the rule runs past its label, per side. The tab's own px-xl is 12px,
- * so at 8px the rule overhangs by 4. The two are a pair -- change the padding
- * and this has to follow, or the overhang changes with it.
- */
-const RULE_INSET = 8;
+/** How far the rule runs past the label, per side. */
+const RULE_OVERHANG = 4;
+
+/** The tab's own horizontal padding (px-xl), where its content starts. */
+const TAB_PAD = 12;
 
 function Tabs() {
   useRenderSignal();
@@ -79,17 +76,25 @@ function Tabs() {
       `[data-tab="${getTab()}"]`,
     );
     if (!bar || !active) return;
+    const label = active.querySelector<HTMLElement>("[data-label]");
+    if (!label) return;
     // Bar mode hides the strip, so everything measures zero. Writing that in
     // would collapse the rule and then animate it back out on the way home.
     if (!active.offsetWidth) return;
+    // Measured to the end of the label, not the end of the button: history and
+    // trash carry a count beside theirs, and spanning that made their rule far
+    // longer than the matrix tab's -- and it would jump whenever a count went
+    // from one digit to two. The label's offsetLeft is against the button,
+    // which is `relative`.
+    const span = label.offsetLeft + label.offsetWidth - TAB_PAD;
     // The first placement must not travel: the saved tab arrives after an IPC
     // round trip, so a transition here would slide the rule in from the left
     // every time the app opens -- the same reason body.booting exists for the
     // switch pill. Reading offsetWidth between the two writes is what keeps
     // them from being collapsed into one style recalculation.
     if (!settled.current) bar.style.transition = "none";
-    bar.style.width = `${active.offsetWidth - RULE_INSET * 2}px`;
-    bar.style.transform = `translateX(${active.offsetLeft + RULE_INSET}px)`;
+    bar.style.width = `${span + RULE_OVERHANG * 2}px`;
+    bar.style.transform = `translateX(${active.offsetLeft + TAB_PAD - RULE_OVERHANG}px)`;
     if (!settled.current) {
       void bar.offsetWidth;
       bar.style.transition = "";
@@ -106,11 +111,6 @@ function Tabs() {
     // The dump belongs to the matrix and leaves with it.
     $("#inboxPanel").classList.toggle("hidden", tab !== "matrix");
   });
-
-  const badges: Record<string, number> = {
-    history: doneTasks().length,
-    trash: trashedTasks().length,
-  };
 
   return (
     <>
@@ -156,14 +156,9 @@ function Tabs() {
             onClick={() => setTab(tab)}
           >
             <Icon size={14} strokeWidth={1.75} aria-hidden="true" />
-            {/* The label is wrapped so the badge beside it survives as its own
-                element rather than sharing a text node with it. */}
-            <span>{t(`tabs.${tab}`)}</span>
-            {tab in badges ? (
-              <Badge id={tab === "history" ? "doneCount" : "trashCount"}>
-                {badges[tab]}
-              </Badge>
-            ) : null}
+            {/* Still wrapped rather than a bare text node: the rule under the
+                tab is measured to the end of this element. */}
+            <span data-label>{t(`tabs.${tab}`)}</span>
           </button>
         );
       })}
