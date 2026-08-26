@@ -28,6 +28,9 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
   preload.ts       contextBridge → window.api. 그 객체의 `typeof`가 렌더러의 타입이다
   shared/          메인·렌더러·테스트가 공유. 여기만 테스트가 덮는다
     types.ts       Task · Place · Space · Layout · Session · DueInfo · Rect 등 어휘
+    theme.ts       색의 유일한 집. RAMP 14 · PALETTE 역할 26 × 2테마 · SHADOW 5 × 2테마
+                   여기가 shared인 이유: 앱·내보내기·사이트·로그인 콜백이 같은 값을 읽어야
+                   하고, 모바일이 붙으면 다섯째가 된다. CSS는 tools/build-theme.js가 만든다
     core.ts        + core/  places · text · dates · order · tasks · layout · placement
                    순수 로직. 배럴은 `export *`이고, 26곳이 여전히 core.js를 부른다
     export.ts      + export/  types · snapshot · markdown · html
@@ -60,11 +63,23 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
     dom.ts         $ · $$ · target · labelBtn
     keys.ts        isMac · accel(e) · accelName(). 조합키가 어느 키인지 한 곳
     window-api.d.ts  window.api를 preload의 `typeof api`에서 받아 전역으로 선언
-    components/    toast · due-chip · due-badge · memo-mark · memo-line ·
-                   editable-text · add-form · language-select
+    components/    toast · due-chip · due-calendar · due-badge · memo-mark ·
+                   memo-line · editable-text · add-form · language-select
                    (task를 모르는 조각들). 전부 .tsx다
+                   **OS 위젯이 뚫고 나오던 두 곳은 2026-08-26에 없어졌다**:
+                   language-select는 Radix Select이고, due-chip은 네이티브
+                   `<input type="date">` 대신 Radix Popover 안의 react-day-picker다
+                   (due-calendar.tsx). 날짜를 **타이핑하는 길은 일부러 없앴고**
+                   지우기는 팝오버 안의 `common.delete` 버튼이다 — 네이티브 선택기가
+                   주던 지우기가 사라졌기 때문이라, 그 버튼을 없애면 날짜를 못 지운다
     react/         React 쪽 배관 — icons.tsx(아이콘)·window-icons.tsx(창 버튼)·
                    brand-icons.tsx(구글 마크) · use-store.ts(훅) ·
+                   **앞의 둘은 2026-08-26부터 `lucide-react`를 감싼다.** 크기와 굵기는
+                   여전히 그 모듈이 정한다 — 이 앱은 10~14px로 그리는데 Lucide 기본은
+                   24px/2라, `strokeWidth`를 `원래값 * 24/16`으로 넘겨 무게를 맞춘다
+                   (렌더 크기는 약분돼서 사라진다). **핀만 손으로 그린 채 남았다**:
+                   켜짐을 칠로 읽히게 해야 하는데 Lucide의 `Pin`은 열린 선이다.
+                   brand-icons는 브랜드 규격이라 영원히 예외다 ·
                    rich-text.tsx(문자열 속 <b>) · testing.tsx(테스트 헬퍼)
     views/         matrix · inbox · memo · settings(계정 블록까지 그린다),
                    그리고 폴더가 된 셋:
@@ -77,7 +92,7 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
                    layout.ts + layout/(grid·quad-edges·memo-edge) ·
                    dnd.ts · export-ui.ts — 뒤의 둘은 React가 아니고 그게 맞다:
                    그릴 마크업이 없고 이벤트와 한 번의 호출이다
-    styles/        13장 + 진입점 index.css. #75로 열둘이 유틸리티가 됐고
+    styles/        14장 + 진입점 index.css. #75로 열둘이 유틸리티가 됐고
                    archive·account·titlebar 셋은 아예 없어졌다
                    index.css의 `@import` 순서가 캐스케이드다 (옛날엔 index.html의
                    <link> 순서였다) — 셋 다 layer(nekan)로 들어간다
@@ -403,6 +418,22 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   **재는 방법은 그대로다**(뷰포트를 1px씩 줄여 `.titlebar`의 `scrollWidth > clientWidth`가
   처음 참이 되는 폭을 찾는다). 이제는 `renderCounts()` 대신 컴포넌트가 개수를 되돌리므로,
   **접은 다음에 숫자를 바꾸라는 규칙은 그대로 유효하다.**
+  **2026-08-26에 아이콘이 Lucide가 되면서 다시 쟀다. 값은 한 픽셀도 안 변했다** — 손그림과
+  Lucide가 처음 넘치는 폭 **576(ko) / 592(en)**로 같았다(두 자리 기준). 아이콘 교체는 바 폭을
+  쓰지 않는다.
+  **다만 그 스캔이 내놓은 여유는 107px(ko) / 91px(en)이고, 위에 적힌 49 / 35와 맞지 않는다.**
+  원인을 찾지 못했다. 확인한 것: 첫 실행 카드 탓이 아니고(유효한 `startupChoice`로 다시 쟀다),
+  이번 작업 탓도 아니다(변경 전후가 같다). **여유가 줄어든 것이 아니라 늘어난 방향이라 급하지는
+  않지만, 둘 중 하나는 틀린 숫자다.** 바에 무언가를 더하기 전에 먼저 이 불일치부터 풀 것.
+  **재는 절차에 가드를 걸지 않으면 조용히 틀린 답이 나온다. 실제로 세 번 나왔다**(2026-08-26):
+  ① 펼친 상태에서 재면 챙이 다르게 그려져 여유가 100px대로 보인다 — `body`에 `collapsed`가
+  실제로 붙었는지, `.title`·`.tabs`의 계산된 `display`가 `none`인지 먼저 확인할 것.
+  ② **인박스 칩은 인박스가 비면 `hidden`이라 처음부터 없다** — 칩이 다섯 개 다 보이는지 세고
+  들어갈 것. ③ 개수를 넣을 노드는 칩이 아니라 그 안의 `<b id="c1">`이다. 칩에 대고
+  `querySelector('*')`를 쓰면 앞의 점(`<i>`)에 들어가서 숫자가 안 바뀐다.
+  그리고 **언어는 argv(`--nekan-lang`)로 오므로 `setLanguage()`로는 안 바뀐다** —
+  `settings.language`를 심어 **언어마다 앱을 새로 띄울 것.** 스위치 글자가
+  `업무일상`/`WorkLife`로 갈리는지가 그 확인이다.
   칩 하나의 `gap` 2px이 24px을 먹는다 — 칩이 다섯이고 그 뒤가 눌리기 때문이다.
   이 override 방식을 쓰는 이유가 하나 더 있다: **가려진 Electron 창은 리레이아웃을 하지 않아서**
   진짜로 `collapse()`를 해도 `window.innerWidth`가 확장 모드 값을 계속 돌려준다
@@ -466,11 +497,43 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   사라진다**(발견한 날 실측은 넷과 넷이었다).
   그래서 **모서리 여섯과 그림자 넷은 `base.css`가 아니라 `index.css`의 `@theme static`이
   갖는다** —
-  값이 하나뿐이라 테마를 안 타는 것들이다. **테마를 타는 것만 `base.css`에 남는다**
-  (`--shadow`가 그렇다). `--radius`는 네임스페이스 뒤에 이름이 없어서 `--radius-panel`이 됐다.
+  값이 하나뿐이라 테마를 안 타는 것들이다. `--radius`는 네임스페이스 뒤에 이름이 없어서
+  `--radius-panel`이 됐다.
+  **테마를 타는 것은 이제 `base.css`가 아니라 `palette.css`에 있다** (2026-08-26, PR #92) —
+  `base.css`에는 색도 그림자도 한 줄도 없다. 그림자 다섯이 `--shadow-*`가 아니라 **`--sh-*`인
+  것은 이 ④ 때문이다**: Tailwind가 `--shadow-*` 네임스페이스를 소유해서 그 이름으로 두면
+  레이어 밖 `:root`가 레이어 안을 이긴다. `index.css`가 `--shadow-default: var(--sh-card)`
+  식으로 잇는다.
   ⑤ **간격은 이름 있는 단계뿐이다.** `--spacing`을 정의하지 않아서 `p-4`는 없고 `p-md`가 있다 —
   스물세 개를 열세 단계로 줄여 만든 스케일이라 숫자 탈출구를 열면 도로 자란다. Tailwind 기본
   테마도 안 들였다(`bg-red-500`이 컴파일 안 되는 것이 기능이다). **둘 다 한 줄로 되돌린다.**
+- **Tailwind의 preflight가 없다. shadcn 계열 컴포넌트를 가져올 때 이것부터 물린다.**
+  `index.css`가 들이는 것은 `tailwindcss/utilities.css` **하나**이고 전체 `tailwindcss`가
+  아니라서, 리셋(preflight)이 통째로 없다. 그 결과 **`<button>`이 OS 기본 크롬을 그대로 쓴다** —
+  회색 배경·테두리·글꼴이 붙어 있다. 위쪽 유틸리티가 배경을 정하지 않는 컴포넌트
+  (shadcn의 `ghost` 변형처럼 "평소엔 투명")를 가져오면 **평소 상태가 회색 상자로 보인다.**
+  2026-08-26에 캘린더의 모든 날짜 칸이 회색으로 칠해진 것이 이것이었다. 고치는 법은
+  가져온 컴포넌트의 기본 클래스에 **`bg-transparent`를 명시**하는 것이다(`components/ui/button.tsx`).
+  **preflight를 들이는 것으로 고치지 말 것** — 손으로 쓴 시트 열넷이 전부 리셋 없는 것을
+  전제로 쓰여 있다.
+- **가져온 컴포넌트는 `src/renderer/components/ui/`에 둔다** (2026-08-26, watermelon 레지스트리에서
+  이식한 `button.tsx`·`calendar.tsx`). **파일 맨 위에 출처와 라이선스를 적는다**(MIT).
+  이식할 때 반드시 손대야 하는 것 셋: ① 토큰 이름(`bg-primary` → `bg-accent` 등)
+  ② **숫자 간격 유틸리티는 컴파일되지 않는다** — `p-2`·`gap-1`·`size-4`를 `p-md`·`gap-xs`·
+  `size-3xl`로. 반지름은 **이름이 아니라 픽셀을 맞춘다**(저쪽 `rounded-lg`는 8px, 우리는 12px)
+  ③ `dark:` 변형은 지운다 — 우리 토큰이 이미 테마를 탄다.
+- **색 리터럴은 `src/shared/theme.ts` 밖에 있으면 안 된다** (2026-08-26, PR #92). `palette.css`도
+  `site/style.css`의 `/* palette:start */`~`/* palette:end */` 사이도 **생성물이고 커밋된다** —
+  손으로 고치면 다음 빌드가 되돌린다. 고칠 곳은 `theme.ts` 한 곳이고 `npm run build`가
+  `tools/build-theme.js`로 둘 다 다시 쓴다(강조색 교체 실측 19초).
+  **`node tools/check-colors.js`가 래칫이다**(`npm test`가 부른다): 팔레트 밖 hex는
+  `ALLOWED`에 적힌 넷뿐이고(브랜드 마크 둘·측정된 예외 하나·팔레트 자기 테스트) 늘면 실패한다.
+  **`prettier --check .`는 `npm test`에 없고 CI에만 있다** — 생성물이 걸리면 `--write`가 아니라
+  `theme.ts`의 값을 프리티어가 원하는 모양으로 적어야 한다.
+  **watch 중에는 생성기를 자식 프로세스로 돌린다** — `out/shared/`가 ESM이라
+  `delete require.cache`가 안 먹고, 한 프로세스 안에서 다시 읽으면 **옛 팔레트를 쓰면서
+  성공이라 보고한다.**
+
   **위 넷(②는 빼고)은 `node tools/check-styles.js`가 지킨다**(`npm test`가 부른다). 중복
   클래스 수가 래칫이라 늘면 실패하고, 줄면 숫자를 내리라고 말한다. 유틸리티 충돌은
   **빌드 산출물을 읽어서** 판정하므로 목록을 손으로 관리할 필요가 없다.
@@ -759,10 +822,12 @@ then "draft" else "published" end` (실측: `v1.0.1 -> draft`, `v1.0.0 -> publis
 
 ## 검증
 
-**`npm test`가 러너 둘을 돌린다.** `node --test`가 `out/test/`의 159개로 `src/shared/`의 순수
+**`npm test`는 검사 둘 + 러너 둘이다** — 빌드 → `check-styles.js` → `check-colors.js` →
+`node --test` → `vitest run`. **`prettier --check .`는 여기 없다**(CI 관문이라 커밋 전에 따로
+돌릴 것). `node --test`가 `out/test/`의 231개로 `src/shared/`의 순수
 함수를 덮고 — 데이터가 날아가는 규칙(정규화 기본값, quadrant 유효성, temp+rename 저장, 손상
 파일 폴백)이 거기 있으니 그 파일들을 건드렸으면 반드시 돌린다 — 이어서 `vitest run`이
-**React로 옮긴 렌더러 조각**을 덮는다.
+**React로 옮긴 렌더러 조각** 52개를 덮는다.
 
 **러너가 둘인 이유**: 번들러가 생기면서 렌더러가 **Node가 require할 수 있는 파일로 존재하지
 않게 됐다.** Vite가 한 덩어리로 묶으니 모듈 단위로 import할 것이 없다. vitest는 그 Vite 파이프라인을

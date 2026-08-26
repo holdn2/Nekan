@@ -34,18 +34,14 @@
 }
 
 /* The "has a memo" marker on list rows. Still a class because the matrix
-   builds the rows it appears on and matrix.css has not moved yet; the two
-   rules below are that sheet's, sitting here because they are about this
-   marker. They go when the matrix does. */
+   builds the rows it appears on and matrix.css has not moved yet; the
+   selected-row rule below is that sheet's, sitting here because it is about
+   this marker. It goes when the matrix does. */
 .memo-mark {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   color: var(--faint);
-}
-
-.item .memo-mark {
-  margin-top: var(--sp-2xs);
 }
 
 .item.selected {

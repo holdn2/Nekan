@@ -197,10 +197,13 @@ export function MemoPanel() {
         />
       </div>
 
-      <footer className="memo-foot flex items-center gap-sm px-lg pb-md">
-        <span className="memo-hint flex-auto text-xs text-faint" id="memoHint">
-          {t(editing ? "memo.editing" : "memo.edit")}
-        </span>
+      {/* The hint that used to sit here ("double-click to edit", then the save
+          and cancel keys) is gone: the buttons beside it already say what they
+          do, and the panel only ever opens by the gesture it was describing.
+          justify-end replaces the hint's flex-auto, which was what pushed these
+          buttons to the right. `memo.edit` survives as the title on the body
+          above -- that one is a tooltip, not a line of prose on screen. */}
+      <footer className="memo-foot flex items-center justify-end gap-sm px-lg pb-md">
         <GhostButton
           danger
           className={cn(FOOT_BTN, (editing || !original) && "hidden")}
