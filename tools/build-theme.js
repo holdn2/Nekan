@@ -25,6 +25,28 @@ const path = require("path");
 const ROOT = path.join(__dirname, "..");
 const COMPILED = path.join(ROOT, "out", "shared", "theme.js");
 const TARGET = path.join(ROOT, "src", "renderer", "styles", "palette.css");
+const SITE = path.join(ROOT, "site", "style.css");
+
+/**
+ * The site's names, which predate the app's vocabulary, mapped to the roles.
+ *
+ * `--accent-link` used to be the accent darkened to 74%, because a terracotta
+ * link on cream measured 2.69:1. It does not need darkening now and does not
+ * get a hue either: with an ink accent a link is body-coloured and underlined,
+ * which is what WCAG asks for anyway -- colour is never the only signal.
+ */
+const SITE_MAP = {
+  "--bg": "bg",
+  "--fg": "text",
+  "--muted": "muted",
+  "--line": "line",
+  "--card": "panel",
+  "--accent": "accent",
+  "--code-bg": "panel-2",
+  "--accent-link": "accent",
+};
+const SITE_START = "/* palette:start";
+const SITE_END = "/* palette:end */";
 
 /**
  * Colours keep the names the stylesheets already use, so `--color-panel:
@@ -97,6 +119,56 @@ function writeTheme({ quiet = false } = {}) {
   return before === null ? "created" : "changed";
 }
 
-module.exports = { writeTheme, paletteCss, TARGET, COMPILED, SHADOW_PREFIX };
+/** The site's two blocks, in the site's own names. */
+function siteCss(theme) {
+  const rows = (name, indent) =>
+    Object.entries(SITE_MAP)
+      .map(([css, role]) => `${indent}${css}: ${theme.PALETTE[name][role]};`)
+      .join("\n");
+  return [
+    ":root {",
+    rows("light", "  "),
+    "}",
+    "@media (prefers-color-scheme: dark) {",
+    "  :root {",
+    rows("dark", "    "),
+    "  }",
+    "}",
+  ].join("\n");
+}
 
-if (require.main === module) writeTheme();
+/** Replace what sits between the markers, and answer whether it moved. */
+function writeSite({ quiet = false } = {}) {
+  if (!fs.existsSync(COMPILED)) return "skipped";
+  const before = fs.readFileSync(SITE, "utf8");
+  const open = before.indexOf(SITE_START);
+  const close = before.indexOf(SITE_END);
+  if (open === -1 || close === -1) {
+    throw new Error(`${SITE} has lost its palette markers`);
+  }
+  const head = before.slice(0, before.indexOf("*/", open) + 3);
+  const after = [head, siteCss(require(COMPILED)), before.slice(close)].join(
+    "\n",
+  );
+  if (after === before) return "unchanged";
+  fs.writeFileSync(SITE, after);
+  if (!quiet) console.log(`theme: wrote ${path.relative(ROOT, SITE)}`);
+  return "changed";
+}
+
+module.exports = {
+  writeTheme,
+  writeSite,
+  paletteCss,
+  siteCss,
+  TARGET,
+  SITE,
+  COMPILED,
+  SHADOW_PREFIX,
+  SITE_MAP,
+};
+
+if (require.main === module) {
+  writeTheme();
+  writeSite();
+}

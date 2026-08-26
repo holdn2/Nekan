@@ -20,7 +20,7 @@
 const fs = require("fs");
 const path = require("path");
 const { spawn, spawnSync } = require("child_process");
-const { writeTheme } = require("./build-theme.js");
+const { writeTheme, writeSite } = require("./build-theme.js");
 
 const ROOT = path.join(__dirname, "..");
 const SRC = path.join(ROOT, "src");
@@ -224,6 +224,7 @@ compile(watch);
 // again below.
 markSharedAsEsm();
 writeTheme({ quiet: watch });
+writeSite({ quiet: watch });
 bundleRenderer(watch);
 
 if (watch) {

@@ -20,6 +20,7 @@ import http from "http";
 import { app, shell } from "electron";
 
 import { language, t } from "./i18n";
+import { PALETTE } from "../shared/theme";
 
 /** Long enough that a user can read a consent screen, short enough to give up. */
 const WINDOW_MS = 5 * 60 * 1000;
@@ -57,12 +58,18 @@ function pkcePair() {
  * over loopback for a line of text that is on screen for a second is not worth
  * the route.
  */
+/* The page the browser lands on after consent. It is a document served to
+   whatever browser the person happens to use, so it cannot read the app's
+   stylesheet and has to carry its colours -- but from the palette rather than
+   by hand. These were the old cream theme, left behind when the app changed. */
+const { light: L, dark: D } = PALETTE;
+
 function donePage(message: string) {
   return `<!doctype html><html lang="${language()}"><head><meta charset="utf-8">
 <title>Nekan</title><style>
-body{margin:0;height:100vh;display:grid;place-items:center;background:#f7f5ef;
-color:#23211d;font:16px/1.6 "Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",-apple-system,"Segoe UI",system-ui,sans-serif}
-@media(prefers-color-scheme:dark){body{background:#171614;color:#e8e4da}}
+body{margin:0;height:100vh;display:grid;place-items:center;background:${L.bg};
+color:${L.text};font:16px/1.6 "Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",-apple-system,"Segoe UI",system-ui,sans-serif}
+@media(prefers-color-scheme:dark){body{background:${D.bg};color:${D.text}}}
 p{margin:0}</style></head><body><p>${message}</p></body></html>`;
 }
 

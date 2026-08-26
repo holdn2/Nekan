@@ -10,6 +10,7 @@
 import path from "node:path";
 import { BrowserWindow } from "electron";
 import { SUPPORTED } from "../../shared/i18n/locales";
+import { PALETTE } from "../../shared/theme";
 import { getSettings } from "../store";
 import { collapse } from "./fold";
 import {
@@ -37,7 +38,12 @@ function createWindow() {
     minHeight: EXPANDED.minHeight,
     frame: false,
     show: false,
-    backgroundColor: settings.theme === "dark" ? "#1f1e1d" : "#f0eee6",
+    // What shows between the window appearing and the renderer's first paint,
+    // and what a resize exposes. Read from the palette rather than repeated
+    // here: these were the previous theme's two values, still sitting in the
+    // main process after the colours moved, so the window opened cream and
+    // then turned grey.
+    backgroundColor: PALETTE[settings.theme === "dark" ? "dark" : "light"].bg,
     icon: path.join(SRC, "assets", "icon.ico"),
     alwaysOnTop: settings.alwaysOnTop !== false,
     skipTaskbar: false,

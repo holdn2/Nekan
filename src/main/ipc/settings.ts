@@ -11,6 +11,7 @@ import { sanitizeLayout, sanitizeSpace } from "../../shared/core";
 import { getSettings, persist, persistNow } from "../store";
 import { getWindow } from "../window";
 import { storedLanguage } from "../../shared/i18n/locales";
+import { PALETTE } from "../../shared/theme";
 import { setMainLanguage } from "../i18n";
 
 function registerSettingsIpc() {
@@ -32,7 +33,12 @@ function registerSettingsIpc() {
     settings.theme = theme === "dark" ? "dark" : "light";
     const win = getWindow();
     if (win) {
-      win.setBackgroundColor(settings.theme === "dark" ? "#1f1e1d" : "#f0eee6");
+      // The same value create.ts opens with, from the same place. A literal
+      // here is a copy that goes stale silently: nothing draws it except a
+      // resize, so a wrong one can sit unnoticed for a long time.
+      win.setBackgroundColor(
+        PALETTE[settings.theme === "dark" ? "dark" : "light"].bg,
+      );
     }
     persist();
     return settings.theme;
