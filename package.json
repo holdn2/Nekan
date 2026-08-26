@@ -26,6 +26,7 @@
   "dependencies": {
     "@radix-ui/react-popover": "^1.1.23",
     "@radix-ui/react-select": "^2.3.7",
+    "class-variance-authority": "^0.7.1",
     "date-fns": "^4.4.0",
     "electron-updater": "^6.8.9",
     "i18next": "^26.3.6",
