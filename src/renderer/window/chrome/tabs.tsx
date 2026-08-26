@@ -99,7 +99,10 @@ function Tabs() {
               // tabs into outlined boxes.
               "tab relative flex items-center gap-sm border-0 bg-transparent",
               "px-2xl py-md leading-none",
-              "after:absolute after:inset-x-[0px] after:bottom-[-1px]",
+              // Inset by the tab's own px-2xl, so the rule is as wide as the label
+              // rather than as wide as the hit target. Tied to the padding on
+              // purpose: change one and the other has to follow.
+              "after:absolute after:inset-x-2xl after:bottom-[-1px]",
               "after:h-2xs after:bg-text after:opacity-0 after:transition-opacity",
               getTab() === tab
                 ? "font-medium text-text after:opacity-100"
