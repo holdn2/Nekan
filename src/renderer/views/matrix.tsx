@@ -109,19 +109,27 @@ function Row({ task, index }: { task: Task; index: number }) {
           notify();
         }}
       />
-      {task.memo ? <MemoMark memo={task.memo} /> : null}
-      <DueChip
-        value={task.dueDate}
-        onChange={(value) => setDue(task.id, value)}
-      />
-      <DeleteButton
-        title={t("item.delete")}
-        label={t("item.deleteLabel", { text: task.text })}
-        disabled={removing}
-        onClick={() => leaveAfterFade(() => deleteTask(task.id))}
-      >
-        <CloseIcon />
-      </DeleteButton>
+      {/* The three trailing controls are grouped so flex centres them against
+          each other: the marker is an 11px glyph and the other two are 20px
+          boxes, and items-center makes that line up without anyone carrying a
+          correction value. The row itself stays items-start on purpose -- the
+          text wraps, and on a two-line row these belong beside the first line
+          rather than floating to the middle of the block. */}
+      <div className="flex flex-none items-center gap-md">
+        {task.memo ? <MemoMark memo={task.memo} /> : null}
+        <DueChip
+          value={task.dueDate}
+          onChange={(value) => setDue(task.id, value)}
+        />
+        <DeleteButton
+          title={t("item.delete")}
+          label={t("item.deleteLabel", { text: task.text })}
+          disabled={removing}
+          onClick={() => leaveAfterFade(() => deleteTask(task.id))}
+        >
+          <CloseIcon />
+        </DeleteButton>
+      </div>
     </li>
   );
 }
