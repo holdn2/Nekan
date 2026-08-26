@@ -50,8 +50,14 @@
  *    arbitrary `[28px]`/`[36px]` values, which the task calls out as the
  *    expected escape hatch for those two sizes.
  *
- * 5. RADIUS. Upstream's base radius is `rounded-lg`, which is 8px in its
- *    scale; this app's `rounded-lg` is 12px (`shared/theme.ts` -- Radius steps
+ * 5. RADIUS. Upstream's base radius is `rounded-lg`. That was first read as
+ *    8px, which was wrong: watermelon's `src/index.css` sets
+ *    `--radius: 0.625rem`, so their scale is sm 6 / md 8 / lg 10 / xl 14, and
+ *    the base is 10px. Ours has a 10px step called `rounded-panel`, so that is
+ *    what the base maps to. The `xs`/`sm` sizes below are unaffected: their
+ *    `min(var(--radius-md), 10px)` resolves to 8px on either reading, and
+ *    `rounded-md` is 8px here too.
+ *    This app's `rounded-lg` is 12px (`shared/theme.ts` -- Radius steps
  *    are `xs 4 * sm 6 * md 8 * panel 10 * lg 12 * pill`). Matched on the pixel,
  *    not the name, so the base class became `rounded-md`. The `xs`/`sm` sizes'
  *    `rounded-[min(var(--radius-md),10px)]` / `...,12px)]` formulas exist
@@ -88,7 +94,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../react/cn.js";
 
 const buttonVariants = cva(
-  "bg-transparent focus-visible:border-line-strong focus-visible:ring-ring aria-invalid:ring-danger/20 aria-invalid:border-danger rounded-md border border-transparent bg-clip-padding text-sm font-medium focus-visible:ring-3 aria-invalid:ring-3 [&_svg:not([class*='size-'])]:size-3xl inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none shrink-0 [&_svg]:shrink-0 outline-none group/button select-none",
+  "bg-transparent focus-visible:border-line-strong focus-visible:ring-ring aria-invalid:ring-danger/20 aria-invalid:border-danger rounded-panel border border-transparent bg-clip-padding text-sm font-medium focus-visible:ring-3 aria-invalid:ring-3 [&_svg:not([class*='size-'])]:size-3xl inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none shrink-0 [&_svg]:shrink-0 outline-none group/button select-none",
   {
     variants: {
       variant: {

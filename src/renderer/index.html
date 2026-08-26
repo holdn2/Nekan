@@ -24,7 +24,7 @@
          `chrome` stays a class because collapsed.css has to undo this by name:
          in bar mode the window is 48px tall and the strip is gone, so the
          padding and the radius have to go with it. -->
-    <div class="chrome flex flex-none flex-col bg-panel pb-md shadow-default">
+    <div class="chrome flex flex-none flex-col bg-panel shadow-default">
       <header
         class="titlebar flex h-[48px] flex-none items-center gap-lg pr-sm pl-xl [-webkit-app-region:drag]"
       >
@@ -35,7 +35,9 @@
 
       <!-- `tabs` stays a class: collapsed.css hides this whole strip by name in
          bar mode. The rest is utilities. -->
-      <nav class="tabs flex flex-none items-center gap-xs px-xl pt-xs">
+      <nav
+        class="tabs flex flex-none items-center gap-xs border-b border-b-line px-xl pt-xs"
+      >
         <!-- Filled by window/chrome.tsx -->
       </nav>
     </div>

@@ -85,16 +85,25 @@ function Tabs() {
             className={cn(
               // `tab` is kept only because the active one is found by it in
               // tests and by anything looking in from outside; nothing styles it.
-              // Rounded all round, not just at the top: the strip shares its
-              // surface with the title bar above, so a tab is a pill sitting on
-              // that surface rather than a folder tab breaking a line. The
-              // active one is tinted for the same reason -- it used to be white
-              // against a grey strip, and white on white says nothing.
-              "tab flex items-center gap-sm rounded-md border px-2xl py-md",
-              "leading-none",
+              // Underlined, following the `line` variant of the ported
+              // components/ui/tabs.tsx: a 2px rule drawn by ::after and turned
+              // on with opacity, sitting on the baseline the strip carries.
+              // Taken over a filled pill because ink is weak as a fill and
+              // strong as a rule -- the same property that made swapping the
+              // accent colour almost invisible works in our favour here. It
+              // also keeps the strip to one surface, which matters in dark
+              // where panel and panel-2 are closer together than in light.
+              // border-0 and bg-transparent are not decoration: there is no
+              // Tailwind preflight here, so a bare <button> keeps the operating
+              // system's own border and fill. Dropping them turned all four
+              // tabs into outlined boxes.
+              "tab relative flex items-center gap-sm border-0 bg-transparent",
+              "px-2xl py-md leading-none",
+              "after:absolute after:inset-x-[0px] after:bottom-[-1px]",
+              "after:h-2xs after:bg-text after:opacity-0 after:transition-opacity",
               getTab() === tab
-                ? "border-line bg-accent-soft font-medium text-text"
-                : "border-transparent bg-transparent text-muted hover:text-text",
+                ? "font-medium text-text after:opacity-100"
+                : "text-muted hover:text-text",
             )}
             type="button"
             data-tab={tab}
