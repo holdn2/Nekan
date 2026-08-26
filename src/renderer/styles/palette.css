@@ -35,11 +35,11 @@
   --q2: #36558a;
   --q3: #bd862b;
   --q4: #807b71;
-  --sh-card: 0 1px 2px rgb(0 0 0 / .05);
-  --sh-knob: 0 1px 2px rgb(0 0 0 / .12);
-  --sh-even: 0 0 3px rgb(0 0 0 / .18);
-  --sh-pop: 0 10px 30px rgb(0 0 0 / .12), 0 2px 6px rgb(0 0 0 / .07);
-  --sh-toast: 0 8px 24px rgb(0 0 0 / .16);
+  --sh-card: 0 1px 2px rgb(0 0 0 / 0.05);
+  --sh-knob: 0 1px 2px rgb(0 0 0 / 0.12);
+  --sh-even: 0 0 3px rgb(0 0 0 / 0.18);
+  --sh-pop: 0 10px 30px rgb(0 0 0 / 0.12), 0 2px 6px rgb(0 0 0 / 0.07);
+  --sh-toast: 0 8px 24px rgb(0 0 0 / 0.16);
 }
 
 :root[data-theme="dark"] {
@@ -69,9 +69,9 @@
   --q2: #6284c1;
   --q3: #dfb570;
   --q4: #aca8a1;
-  --sh-card: 0 1px 2px rgb(0 0 0 / .35);
-  --sh-knob: 0 1px 2px rgb(0 0 0 / .45);
-  --sh-even: 0 0 3px rgb(0 0 0 / .50);
-  --sh-pop: 0 12px 34px rgb(0 0 0 / .55), 0 2px 6px rgb(0 0 0 / .40);
-  --sh-toast: 0 8px 24px rgb(0 0 0 / .50);
+  --sh-card: 0 1px 2px rgb(0 0 0 / 0.35);
+  --sh-knob: 0 1px 2px rgb(0 0 0 / 0.45);
+  --sh-even: 0 0 3px rgb(0 0 0 / 0.5);
+  --sh-pop: 0 12px 34px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.4);
+  --sh-toast: 0 8px 24px rgb(0 0 0 / 0.5);
 }

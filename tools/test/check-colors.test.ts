@@ -9,7 +9,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { audit, scan, ALLOWED, PALETTE_FILES, HEX } from "#tools/check-colors.js";
+import {
+  audit,
+  scan,
+  ALLOWED,
+  PALETTE_FILES,
+  HEX,
+} from "#tools/check-colors.js";
 
 test("an unlisted file with a literal is an error", () => {
   const found = new Map([["src/renderer/views/matrix.tsx", 1]]);
@@ -20,8 +26,14 @@ test("an unlisted file with a literal is an error", () => {
 
 test("a listed file over its allowance is an error", () => {
   const allowed = new Map([["src/main/oauth.ts", 4]]);
-  assert.equal(audit(new Map([["src/main/oauth.ts", 4]]), allowed).errors.length, 0);
-  assert.equal(audit(new Map([["src/main/oauth.ts", 5]]), allowed).errors.length, 1);
+  assert.equal(
+    audit(new Map([["src/main/oauth.ts", 4]]), allowed).errors.length,
+    0,
+  );
+  assert.equal(
+    audit(new Map([["src/main/oauth.ts", 5]]), allowed).errors.length,
+    1,
+  );
 });
 
 test("a listed file under its allowance is slack, not an error", () => {

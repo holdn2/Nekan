@@ -601,7 +601,7 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   v1.0.1의 맥 절반이 이 둘로 첫 시도에 15초 만에 죽었다(`there is no release for v1.0.1`,
   그 draft는 자산 셋을 달고 멀쩡히 있었다). **목록으로 물으면 한 번에 셋을 가른다:**
   `[.[] | select(.tag_name == "<태그>")] | first | if . == null then "missing" elif .draft
-  then "draft" else "published" end` (실측: `v1.0.1 -> draft`, `v1.0.0 -> published`,
+then "draft" else "published" end` (실측: `v1.0.1 -> draft`, `v1.0.0 -> published`,
   `v9.9.9 -> missing`). **페이지네이션이 없어서 기본 30개까지만 본다** — 이슈 #88.
 - **electron-builder가 만드는 것은 draft다.** 업로드가 끝나도 공개되지 않는다 —
   `gh release edit v<버전> --notes-file <파일> --draft=false --latest`로 노트를 넣고 공개한다.

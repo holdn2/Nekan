@@ -831,6 +831,7 @@ animate both ways." `display:none`이 붙으면 양방향 애니메이션이 죽
 **남은 것** 이슈 #75의 3단계(앱 밖 — `shared/export.ts` · `site/` · `main/oauth.ts`)는
 **#55로 넘긴다.** 그 셋은 앱의 스타일시트가 아니라 각자 자기 CSS를 복제하고 있고, 이슈 본문도
 "#55와 함께 정한다"고 적고 있었다. PR #86은 앱 안쪽만 닫는다.
+
 ## 2026-08-25 — 맥은 GitHub Releases로 낸다. 앱스토어는 하지 않는다
 
 **결정** 맥 배포 채널을 **GitHub Releases + Developer ID 서명·공증** 하나로 정했다.

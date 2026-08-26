@@ -224,7 +224,7 @@ test("dark shadows are heavier than light ones", () => {
   // Not decoration: a shadow is a dark smudge and a dark ground gives it less
   // to darken, so the same alpha that reads on white disappears on #2b2b2b.
   const alphaOf = (css: string) =>
-    Number.parseFloat(css.match(/\/\s*(\.\d+)/)?.[1] ?? "0");
+    Number.parseFloat(css.match(/\/\s*(0?\.\d+)/)?.[1] ?? "0");
   for (const role of ["card", "knob", "even", "pop", "toast"] as const) {
     assert.ok(
       alphaOf(SHADOW.dark[role]) > alphaOf(SHADOW.light[role]),

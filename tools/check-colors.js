@@ -26,7 +26,8 @@ const ROOTS = ["src", "site"];
 const EXT = new Set([".ts", ".tsx", ".css", ".html"]);
 
 /** `#abc`, `#aabbcc`, `#aabbccdd`. Not `#` on its own and not a five-digit id. */
-const HEX = /#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{1}|[0-9a-fA-F]{3}|[0-9a-fA-F]{5})?\b/g;
+const HEX =
+  /#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{1}|[0-9a-fA-F]{3}|[0-9a-fA-F]{5})?\b/g;
 
 /** Where the palette itself lives. Colours are the point of these two. */
 const PALETTE_FILES = new Set([

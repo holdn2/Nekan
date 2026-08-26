@@ -129,10 +129,10 @@ export function toHtml(
   .head { display: flex; align-items: baseline; gap: 10px;
     border-bottom: 2px solid ${P.text}; padding-bottom: 8px; margin-bottom: 14px; }
   .head h1 { font-size: 17px; margin: 0; letter-spacing: .2px; }
-  .head .board { font-size: 12px; color: ${P.muted}; border: 1px solid ${P['line-strong']};
+  .head .board { font-size: 12px; color: ${P.muted}; border: 1px solid ${P["line-strong"]};
     border-radius: 99px; padding: 1px 8px; }
   .head .meta { margin-left: auto; color: ${P.muted}; font-size: 11px; }
-  section { border: 1px solid ${P['line-strong']}; border-radius: 8px; padding: 9px 12px 11px;
+  section { border: 1px solid ${P["line-strong"]}; border-radius: 8px; padding: 9px 12px 11px;
     break-inside: avoid; }
   section header { display: flex; align-items: center; gap: 7px;
     border-bottom: 1px solid ${P.line}; padding-bottom: 6px; margin-bottom: 7px; }
@@ -145,7 +145,7 @@ export function toHtml(
   .row { display: flex; align-items: baseline; gap: 7px; }
   .t { flex: 1 1 auto; }
   .due { flex: 0 0 auto; font-size: 10px; padding: 0 5px; border-radius: 99px;
-    border: 1px solid ${P['line-strong']}; color: ${P.muted}; white-space: nowrap; }
+    border: 1px solid ${P["line-strong"]}; color: ${P.muted}; white-space: nowrap; }
   .due.overdue { color: ${P.danger}; border-color: ${P.danger}; }
   .due.today { color: ${P.accent}; border-color: ${P.accent}; }
   .due.soon { color: ${P.q3}; border-color: ${P.q3}; }
@@ -153,7 +153,7 @@ export function toHtml(
     color: ${P.muted}; font-size: 10.5px; white-space: pre-wrap; }
   .empty { margin: 2px 0; color: ${P.faint}; }
   .more { margin: 4px 0 0; color: ${P.faint}; font-size: 10px; }
-  .inbox { margin-bottom: 12px; background: ${P['panel-2']}; }
+  .inbox { margin-bottom: 12px; background: ${P["panel-2"]}; }
   /* The rows get a floor so a short board still prints as a 2x2 matrix instead
      of four boxes stacked at the top of an empty page; they grow past it when
      there is more to show. */

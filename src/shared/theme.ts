@@ -199,6 +199,10 @@ export type ShadowRole = "card" | "knob" | "even" | "pop" | "toast";
  * only user, and its track is nine levels of luminance away, so that edge is
  * most of what separates them.
  *
+ * The alphas carry a leading zero because the repository's formatter wants one --
+ * and no trailing zero either -- in the CSS this becomes, and the generated file has to be already-formatted
+ * or every build undoes `prettier --write`.
+ *
  * The dark values are far heavier and still do less work, which is not a
  * contradiction: a shadow is a dark smudge, and on a dark ground there is
  * little left to darken. Dark separates by lifting the surface a ramp step and
@@ -207,18 +211,18 @@ export type ShadowRole = "card" | "knob" | "even" | "pop" | "toast";
  */
 export const SHADOW: Record<ThemeName, Record<ShadowRole, string>> = {
   light: {
-    card: "0 1px 2px rgb(0 0 0 / .05)",
-    knob: "0 1px 2px rgb(0 0 0 / .12)",
-    even: "0 0 3px rgb(0 0 0 / .18)",
-    pop: "0 10px 30px rgb(0 0 0 / .12), 0 2px 6px rgb(0 0 0 / .07)",
-    toast: "0 8px 24px rgb(0 0 0 / .16)",
+    card: "0 1px 2px rgb(0 0 0 / 0.05)",
+    knob: "0 1px 2px rgb(0 0 0 / 0.12)",
+    even: "0 0 3px rgb(0 0 0 / 0.18)",
+    pop: "0 10px 30px rgb(0 0 0 / 0.12), 0 2px 6px rgb(0 0 0 / 0.07)",
+    toast: "0 8px 24px rgb(0 0 0 / 0.16)",
   },
   dark: {
-    card: "0 1px 2px rgb(0 0 0 / .35)",
-    knob: "0 1px 2px rgb(0 0 0 / .45)",
-    even: "0 0 3px rgb(0 0 0 / .50)",
-    pop: "0 12px 34px rgb(0 0 0 / .55), 0 2px 6px rgb(0 0 0 / .40)",
-    toast: "0 8px 24px rgb(0 0 0 / .50)",
+    card: "0 1px 2px rgb(0 0 0 / 0.35)",
+    knob: "0 1px 2px rgb(0 0 0 / 0.45)",
+    even: "0 0 3px rgb(0 0 0 / 0.5)",
+    pop: "0 12px 34px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.4)",
+    toast: "0 8px 24px rgb(0 0 0 / 0.5)",
   },
 };
 
