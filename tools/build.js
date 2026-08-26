@@ -20,6 +20,7 @@
 const fs = require("fs");
 const path = require("path");
 const { spawn, spawnSync } = require("child_process");
+const { writeTheme } = require("./build-theme.js");
 
 const ROOT = path.join(__dirname, "..");
 const SRC = path.join(ROOT, "src");
@@ -217,6 +218,12 @@ function compile(watch) {
 const watch = process.argv.includes("--watch");
 const removed = prune();
 compile(watch);
+// Between the compilers and the bundler, because it reads out/shared/theme.js
+// and writes a stylesheet Vite is about to bundle. markSharedAsEsm has to have
+// run for that require() to work; it is idempotent, and copyAssets calls it
+// again below.
+markSharedAsEsm();
+writeTheme({ quiet: watch });
 bundleRenderer(watch);
 
 if (watch) {

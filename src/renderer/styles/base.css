@@ -26,33 +26,11 @@
 
 :root,
 :root[data-theme="light"] {
-  --bg: #f0eee6;
-  --panel: #faf9f5;
-  --panel-2: #f2f0e8;
-  --panel-3: #eae7dc;
-  --line: #e2ded1;
-  --line-strong: #d3cebe;
-  --text: #1f1e1c;
-  --muted: #6f6b61;
-  --faint: #a29d90;
-  --input-bg: #ffffff;
-  --accent: #d97757;
-  --accent-soft: #d9775722;
-  --danger: #b4453c;
-  --danger-soft: #b4453c1a;
-  --shadow: 0 1px 2px #0000000a;
-  /* The other four shadows are not themed, so they are design tokens rather
-     than palette, and they live in styles/index.css under @theme. --shadow
-     stays here because the dark block below changes it. */
-  /* Text that sits on --accent or --danger, where the palette's --text would
-     be unreadable. Named so that changing the accent brings these two along. */
-  --on-accent: #fff;
-  --scroll: #cdc7b7;
-  --scroll-hover: #b8b1a0;
-  --q1: #c85a4d;
-  --q2: #4a72b8;
-  --q3: #c1892c;
-  --q4: #8d887d;
+  /* The palette is not here any more. It is generated into palette.css from
+     src/shared/theme.ts, because the export document, the website and anything
+     mobile need the same values and none of them can read a stylesheet. What
+     stays in this file is everything that is not a colour: type, spacing,
+     radii, and the two layout constants JS reads back out. */
 
   /* Type. One family, and a seven-step size scale. The sizes used to be
      eleven values picked per element, four of them on half-pixels, which is
@@ -145,30 +123,6 @@
      The vh term keeps the matrix the larger half on a short window, where the
      px cap alone would leave the quadrants unusable. */
   --inbox-max-h: 170px;
-}
-
-:root[data-theme="dark"] {
-  --bg: #1f1e1d;
-  --panel: #262624;
-  --panel-2: #302f2c;
-  --panel-3: #3a3936;
-  --line: #383734;
-  --line-strong: #4a4844;
-  --text: #f2f0ea;
-  --muted: #a7a299;
-  --faint: #78736b;
-  --input-bg: #1a1917;
-  --accent: #e08765;
-  --accent-soft: #e0876526;
-  --danger: #e0796f;
-  --danger-soft: #e0796f22;
-  --shadow: 0 1px 2px #00000038;
-  --scroll: #4a4844;
-  --scroll-hover: #5c5a55;
-  --q1: #e0736a;
-  --q2: #6f96d8;
-  --q3: #d7a24a;
-  --q4: #9d978c;
 }
 
 * {
