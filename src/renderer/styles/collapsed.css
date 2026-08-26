@@ -24,6 +24,16 @@ body.collapsed .titlebar {
   border-bottom: 0 !important;
 }
 
+/* The chrome wrapper holds the title bar and the tab strip together in window
+   mode. In a 48px bar the strip is gone, so the shadow would be a shape around
+   nothing, and the panel has to be exactly the height main/window/state.ts asked
+   for rather than the strip's. !important for the same reason as everything else
+   here: these lose to utilities otherwise. */
+body.collapsed .chrome {
+  height: 100% !important;
+  box-shadow: none !important;
+}
+
 body.expanded .bar-summary .chip {
   cursor: default !important;
 }

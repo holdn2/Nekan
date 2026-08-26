@@ -121,10 +121,7 @@ function Calendar({
       }}
       classNames={{
         root: cn("w-fit", defaultClassNames.root),
-        months: cn(
-          "flex gap-3xl flex-col md:flex-row relative",
-          defaultClassNames.months,
-        ),
+        months: cn("flex gap-3xl flex-col relative", defaultClassNames.months),
         month: cn("flex flex-col w-full gap-3xl", defaultClassNames.month),
         nav: cn(
           "flex items-center gap-xs w-full absolute top-0 inset-x-0 justify-between",
