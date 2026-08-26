@@ -13,6 +13,13 @@
  */
 
 import { useEffect } from "react";
+import {
+  CircleHelp,
+  Clock,
+  Grid2x2,
+  type LucideIcon,
+  Trash2,
+} from "lucide-react";
 
 import { Badge } from "../../components/badge.js";
 import { cn } from "../../react/cn.js";
@@ -36,6 +43,20 @@ const VIEWS: Record<string, string> = {
   guide: "#guideView",
 };
 
+/**
+ * One icon per tab, added 2026-08-26. No hand-drawn icon existed here to
+ * match, so the stroke is picked to sit in the same optical-weight family as
+ * the rest of the chrome rather than derived from a prior value: target
+ * effective stroke ~1.0px (react/icons.tsx's family runs 0.9-1.1px at its
+ * sizes), so strokeWidth = 1.0 * 24/14 = 1.71, rounded to 1.75.
+ */
+const TAB_ICONS: Record<string, LucideIcon> = {
+  matrix: Grid2x2,
+  history: Clock,
+  trash: Trash2,
+  guide: CircleHelp,
+};
+
 function Tabs() {
   useRenderSignal();
 
@@ -56,32 +77,36 @@ function Tabs() {
 
   return (
     <>
-      {["matrix", "history", "trash", "guide"].map((tab) => (
-        <button
-          key={tab}
-          className={cn(
-            // `tab` is kept only because the active one is found by it in
-            // tests and by anything looking in from outside; nothing styles it.
-            "tab flex items-center gap-sm rounded-t-md border px-2xl py-md",
-            "leading-none",
-            getTab() === tab
-              ? "border-line border-b-panel bg-panel font-medium text-text"
-              : "border-transparent bg-transparent text-muted hover:text-text",
-          )}
-          type="button"
-          data-tab={tab}
-          onClick={() => setTab(tab)}
-        >
-          {/* The label is wrapped so the badge beside it survives as its own
-              element rather than sharing a text node with it. */}
-          <span>{t(`tabs.${tab}`)}</span>
-          {tab in badges ? (
-            <Badge id={tab === "history" ? "doneCount" : "trashCount"}>
-              {badges[tab]}
-            </Badge>
-          ) : null}
-        </button>
-      ))}
+      {["matrix", "history", "trash", "guide"].map((tab) => {
+        const Icon = TAB_ICONS[tab];
+        return (
+          <button
+            key={tab}
+            className={cn(
+              // `tab` is kept only because the active one is found by it in
+              // tests and by anything looking in from outside; nothing styles it.
+              "tab flex items-center gap-sm rounded-t-md border px-2xl py-md",
+              "leading-none",
+              getTab() === tab
+                ? "border-line border-b-panel bg-panel font-medium text-text"
+                : "border-transparent bg-transparent text-muted hover:text-text",
+            )}
+            type="button"
+            data-tab={tab}
+            onClick={() => setTab(tab)}
+          >
+            <Icon size={14} strokeWidth={1.75} aria-hidden="true" />
+            {/* The label is wrapped so the badge beside it survives as its own
+                element rather than sharing a text node with it. */}
+            <span>{t(`tabs.${tab}`)}</span>
+            {tab in badges ? (
+              <Badge id={tab === "history" ? "doneCount" : "trashCount"}>
+                {badges[tab]}
+              </Badge>
+            ) : null}
+          </button>
+        );
+      })}
     </>
   );
 }
