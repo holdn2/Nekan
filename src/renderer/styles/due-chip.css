@@ -9,41 +9,15 @@
  * here. Those two names are gone from this file; the classes stay on the
  * elements because matrix.css and selection.ts still look for them.
  *
- * What could not come along is below, and it is two things with nothing in
- * common but that.
+ * The native `<input type="date">` this sheet used to reach into with
+ * `::-webkit-*` pseudo-elements is gone (2026-08-26, docs/DECISIONS.md) --
+ * replaced by a react-day-picker calendar in a Radix popover, which is spelled
+ * entirely in components/due-calendar.tsx because there is no engine-drawn
+ * part left for a stylesheet to be the only way to reach.
+ *
+ * What is left below is the one thing that was never this sheet's subject to
+ * begin with.
  */
-
-/* ------------------------------------------------ the native date picker */
-
-/* Pseudo-elements, so there is no element for a utility to sit on. `.due` is
-   still the hook because the input has no class of its own and none would help
-   -- these select parts of the control that only the engine draws.
- *
- * Only the picker indicator remains, stretched to fill the chip, so a click
- * anywhere on it opens the native calendar instead of focusing a text field.
- *
- * Note what this costs: with the datetime edit gone there are no date segments
- * to focus, so Delete and Backspace do nothing -- the keys reach the input and
- * the value does not move -- and the clear button is hidden here as well. The
- * calendar's own 삭제 is therefore the *only* way to clear a date, which is
- * what makes it worth having measured rather than assumed. It was, on
- * 2026-08-16: clicking it emptied the value, fired change, returned the chip to
- * its icon, and wrote dueDate: null to disk. */
-.due input::-webkit-datetime-edit,
-.due input::-webkit-inner-spin-button,
-.due input::-webkit-clear-button {
-  display: none;
-}
-
-.due input::-webkit-calendar-picker-indicator {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  cursor: pointer;
-}
 
 /* ------------------------------------------- the history and trash search */
 
