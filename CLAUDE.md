@@ -507,6 +507,21 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   ⑤ **간격은 이름 있는 단계뿐이다.** `--spacing`을 정의하지 않아서 `p-4`는 없고 `p-md`가 있다 —
   스물세 개를 열세 단계로 줄여 만든 스케일이라 숫자 탈출구를 열면 도로 자란다. Tailwind 기본
   테마도 안 들였다(`bg-red-500`이 컴파일 안 되는 것이 기능이다). **둘 다 한 줄로 되돌린다.**
+- **Tailwind의 preflight가 없다. shadcn 계열 컴포넌트를 가져올 때 이것부터 물린다.**
+  `index.css`가 들이는 것은 `tailwindcss/utilities.css` **하나**이고 전체 `tailwindcss`가
+  아니라서, 리셋(preflight)이 통째로 없다. 그 결과 **`<button>`이 OS 기본 크롬을 그대로 쓴다** —
+  회색 배경·테두리·글꼴이 붙어 있다. 위쪽 유틸리티가 배경을 정하지 않는 컴포넌트
+  (shadcn의 `ghost` 변형처럼 "평소엔 투명")를 가져오면 **평소 상태가 회색 상자로 보인다.**
+  2026-08-26에 캘린더의 모든 날짜 칸이 회색으로 칠해진 것이 이것이었다. 고치는 법은
+  가져온 컴포넌트의 기본 클래스에 **`bg-transparent`를 명시**하는 것이다(`components/ui/button.tsx`).
+  **preflight를 들이는 것으로 고치지 말 것** — 손으로 쓴 시트 열넷이 전부 리셋 없는 것을
+  전제로 쓰여 있다.
+- **가져온 컴포넌트는 `src/renderer/components/ui/`에 둔다** (2026-08-26, watermelon 레지스트리에서
+  이식한 `button.tsx`·`calendar.tsx`). **파일 맨 위에 출처와 라이선스를 적는다**(MIT).
+  이식할 때 반드시 손대야 하는 것 셋: ① 토큰 이름(`bg-primary` → `bg-accent` 등)
+  ② **숫자 간격 유틸리티는 컴파일되지 않는다** — `p-2`·`gap-1`·`size-4`를 `p-md`·`gap-xs`·
+  `size-3xl`로. 반지름은 **이름이 아니라 픽셀을 맞춘다**(저쪽 `rounded-lg`는 8px, 우리는 12px)
+  ③ `dark:` 변형은 지운다 — 우리 토큰이 이미 테마를 탄다.
 - **색 리터럴은 `src/shared/theme.ts` 밖에 있으면 안 된다** (2026-08-26, PR #92). `palette.css`도
   `site/style.css`의 `/* palette:start */`~`/* palette:end */` 사이도 **생성물이고 커밋된다** —
   손으로 고치면 다음 빌드가 되돌린다. 고칠 곳은 `theme.ts` 한 곳이고 `npm run build`가
