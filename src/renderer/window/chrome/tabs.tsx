@@ -55,6 +55,27 @@ const TAB_ICONS: Record<string, LucideIcon> = {
   guide: CircleHelp,
 };
 
+/**
+ * Where an icon's strokes actually begin, in viewport coordinates.
+ *
+ * getBBox reports the geometry in viewBox units and leaves the stroke out of
+ * it, so half a stroke has to come back off the front -- Lucide centres its
+ * strokes on the path. Falls back to the element box if the icon is not
+ * rendered, which is what getBBox complains about.
+ */
+function inkLeft(icon: SVGElement): number {
+  const box = icon.getBoundingClientRect();
+  try {
+    const view = (icon as SVGSVGElement).viewBox?.baseVal;
+    const bbox = (icon as SVGGraphicsElement).getBBox();
+    const scale = box.width / (view?.width || 24);
+    const stroke = Number.parseFloat(icon.getAttribute("stroke-width") ?? "0");
+    return box.left + (bbox.x - stroke / 2) * scale;
+  } catch {
+    return box.left;
+  }
+}
+
 /** How far the rule runs past the tab's content, per side. */
 const RULE_OVERHANG = 8;
 
@@ -91,10 +112,16 @@ function Tabs() {
     const origin =
       stripBox.left +
       (Number.parseFloat(getComputedStyle(strip).paddingLeft) || 0);
-    // From the icon's edge to the label's, so the rule sits under the whole of
-    // what the tab shows rather than under the button's padding as well.
-    const from = (icon ?? label).getBoundingClientRect().left;
+    // From where the icon's strokes start to where the label's glyphs end.
+    //
+    // The icon's element box is not where its ink is: Lucide draws inside a 24
+    // unit viewBox with room to spare, so at 14px the strokes begin 1.2 to
+    // 1.8px inside the box, and it differs per icon. Measuring the box instead
+    // left the rule that much longer on its left than its right -- under 2px,
+    // and visible. Text has no such inset: its box and its glyphs measured
+    // identical on every tab, so the right edge can stay the label's box.
     const to = label.getBoundingClientRect().right;
+    const from = icon ? inkLeft(icon) : label.getBoundingClientRect().left;
     // The first placement must not travel: the saved tab arrives after an IPC
     // round trip, so a transition here would slide the rule in from the left
     // every time the app opens -- the same reason body.booting exists for the
