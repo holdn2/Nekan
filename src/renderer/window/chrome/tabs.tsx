@@ -55,11 +55,8 @@ const TAB_ICONS: Record<string, LucideIcon> = {
   guide: CircleHelp,
 };
 
-/** How far the rule runs past the label, per side. */
-const RULE_OVERHANG = 4;
-
-/** The tab's own horizontal padding (px-xl), where its content starts. */
-const TAB_PAD = 12;
+/** How far the rule runs past the tab's content, per side. */
+const RULE_OVERHANG = 8;
 
 function Tabs() {
   useRenderSignal();
@@ -76,25 +73,36 @@ function Tabs() {
       `[data-tab="${getTab()}"]`,
     );
     if (!bar || !active) return;
+    const strip = bar.parentElement;
     const label = active.querySelector<HTMLElement>("[data-label]");
-    if (!label) return;
+    const icon = active.querySelector<SVGElement>("svg");
+    if (!strip || !label) return;
     // Bar mode hides the strip, so everything measures zero. Writing that in
     // would collapse the rule and then animate it back out on the way home.
     if (!active.offsetWidth) return;
-    // Measured to the end of the label, not the end of the button: history and
-    // trash carry a count beside theirs, and spanning that made their rule far
-    // longer than the matrix tab's -- and it would jump whenever a count went
-    // from one digit to two. The label's offsetLeft is against the button,
-    // which is `relative`.
-    const span = label.offsetLeft + label.offsetWidth - TAB_PAD;
+
+    // Every number below is a viewport coordinate, and that is the point.
+    // Mixing offsetLeft with a transform counts the strip's own padding twice:
+    // offsetLeft is measured from its border box, while `left: 0` on an
+    // absolutely positioned child resolves against its padding box. The strip
+    // carries px-xl, so the rule sat exactly 12px right of where it belonged --
+    // on every tab, which is what made it look deliberate rather than broken.
+    const stripBox = strip.getBoundingClientRect();
+    const origin =
+      stripBox.left +
+      (Number.parseFloat(getComputedStyle(strip).paddingLeft) || 0);
+    // From the icon's edge to the label's, so the rule sits under the whole of
+    // what the tab shows rather than under the button's padding as well.
+    const from = (icon ?? label).getBoundingClientRect().left;
+    const to = label.getBoundingClientRect().right;
     // The first placement must not travel: the saved tab arrives after an IPC
     // round trip, so a transition here would slide the rule in from the left
     // every time the app opens -- the same reason body.booting exists for the
     // switch pill. Reading offsetWidth between the two writes is what keeps
     // them from being collapsed into one style recalculation.
     if (!settled.current) bar.style.transition = "none";
-    bar.style.width = `${span + RULE_OVERHANG * 2}px`;
-    bar.style.transform = `translateX(${active.offsetLeft + TAB_PAD - RULE_OVERHANG}px)`;
+    bar.style.width = `${to - from + RULE_OVERHANG * 2}px`;
+    bar.style.transform = `translateX(${from - origin - RULE_OVERHANG}px)`;
     if (!settled.current) {
       void bar.offsetWidth;
       bar.style.transition = "";
