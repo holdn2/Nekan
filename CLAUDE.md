@@ -28,6 +28,9 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
   preload.ts       contextBridge → window.api. 그 객체의 `typeof`가 렌더러의 타입이다
   shared/          메인·렌더러·테스트가 공유. 여기만 테스트가 덮는다
     types.ts       Task · Place · Space · Layout · Session · DueInfo · Rect 등 어휘
+    theme.ts       색의 유일한 집. RAMP 14 · PALETTE 역할 26 × 2테마 · SHADOW 5 × 2테마
+                   여기가 shared인 이유: 앱·내보내기·사이트·로그인 콜백이 같은 값을 읽어야
+                   하고, 모바일이 붙으면 다섯째가 된다. CSS는 tools/build-theme.js가 만든다
     core.ts        + core/  places · text · dates · order · tasks · layout · placement
                    순수 로직. 배럴은 `export *`이고, 26곳이 여전히 core.js를 부른다
     export.ts      + export/  types · snapshot · markdown · html
@@ -77,7 +80,7 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
                    layout.ts + layout/(grid·quad-edges·memo-edge) ·
                    dnd.ts · export-ui.ts — 뒤의 둘은 React가 아니고 그게 맞다:
                    그릴 마크업이 없고 이벤트와 한 번의 호출이다
-    styles/        13장 + 진입점 index.css. #75로 열둘이 유틸리티가 됐고
+    styles/        14장 + 진입점 index.css. #75로 열둘이 유틸리티가 됐고
                    archive·account·titlebar 셋은 아예 없어졌다
                    index.css의 `@import` 순서가 캐스케이드다 (옛날엔 index.html의
                    <link> 순서였다) — 셋 다 layer(nekan)로 들어간다
@@ -466,11 +469,28 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   사라진다**(발견한 날 실측은 넷과 넷이었다).
   그래서 **모서리 여섯과 그림자 넷은 `base.css`가 아니라 `index.css`의 `@theme static`이
   갖는다** —
-  값이 하나뿐이라 테마를 안 타는 것들이다. **테마를 타는 것만 `base.css`에 남는다**
-  (`--shadow`가 그렇다). `--radius`는 네임스페이스 뒤에 이름이 없어서 `--radius-panel`이 됐다.
+  값이 하나뿐이라 테마를 안 타는 것들이다. `--radius`는 네임스페이스 뒤에 이름이 없어서
+  `--radius-panel`이 됐다.
+  **테마를 타는 것은 이제 `base.css`가 아니라 `palette.css`에 있다** (2026-08-26, PR #92) —
+  `base.css`에는 색도 그림자도 한 줄도 없다. 그림자 다섯이 `--shadow-*`가 아니라 **`--sh-*`인
+  것은 이 ④ 때문이다**: Tailwind가 `--shadow-*` 네임스페이스를 소유해서 그 이름으로 두면
+  레이어 밖 `:root`가 레이어 안을 이긴다. `index.css`가 `--shadow-default: var(--sh-card)`
+  식으로 잇는다.
   ⑤ **간격은 이름 있는 단계뿐이다.** `--spacing`을 정의하지 않아서 `p-4`는 없고 `p-md`가 있다 —
   스물세 개를 열세 단계로 줄여 만든 스케일이라 숫자 탈출구를 열면 도로 자란다. Tailwind 기본
   테마도 안 들였다(`bg-red-500`이 컴파일 안 되는 것이 기능이다). **둘 다 한 줄로 되돌린다.**
+- **색 리터럴은 `src/shared/theme.ts` 밖에 있으면 안 된다** (2026-08-26, PR #92). `palette.css`도
+  `site/style.css`의 `/* palette:start */`~`/* palette:end */` 사이도 **생성물이고 커밋된다** —
+  손으로 고치면 다음 빌드가 되돌린다. 고칠 곳은 `theme.ts` 한 곳이고 `npm run build`가
+  `tools/build-theme.js`로 둘 다 다시 쓴다(강조색 교체 실측 19초).
+  **`node tools/check-colors.js`가 래칫이다**(`npm test`가 부른다): 팔레트 밖 hex는
+  `ALLOWED`에 적힌 넷뿐이고(브랜드 마크 둘·측정된 예외 하나·팔레트 자기 테스트) 늘면 실패한다.
+  **`prettier --check .`는 `npm test`에 없고 CI에만 있다** — 생성물이 걸리면 `--write`가 아니라
+  `theme.ts`의 값을 프리티어가 원하는 모양으로 적어야 한다.
+  **watch 중에는 생성기를 자식 프로세스로 돌린다** — `out/shared/`가 ESM이라
+  `delete require.cache`가 안 먹고, 한 프로세스 안에서 다시 읽으면 **옛 팔레트를 쓰면서
+  성공이라 보고한다.**
+
   **위 넷(②는 빼고)은 `node tools/check-styles.js`가 지킨다**(`npm test`가 부른다). 중복
   클래스 수가 래칫이라 늘면 실패하고, 줄면 숫자를 내리라고 말한다. 유틸리티 충돌은
   **빌드 산출물을 읽어서** 판정하므로 목록을 손으로 관리할 필요가 없다.
@@ -759,10 +779,12 @@ then "draft" else "published" end` (실측: `v1.0.1 -> draft`, `v1.0.0 -> publis
 
 ## 검증
 
-**`npm test`가 러너 둘을 돌린다.** `node --test`가 `out/test/`의 159개로 `src/shared/`의 순수
+**`npm test`는 검사 둘 + 러너 둘이다** — 빌드 → `check-styles.js` → `check-colors.js` →
+`node --test` → `vitest run`. **`prettier --check .`는 여기 없다**(CI 관문이라 커밋 전에 따로
+돌릴 것). `node --test`가 `out/test/`의 231개로 `src/shared/`의 순수
 함수를 덮고 — 데이터가 날아가는 규칙(정규화 기본값, quadrant 유효성, temp+rename 저장, 손상
 파일 폴백)이 거기 있으니 그 파일들을 건드렸으면 반드시 돌린다 — 이어서 `vitest run`이
-**React로 옮긴 렌더러 조각**을 덮는다.
+**React로 옮긴 렌더러 조각** 52개를 덮는다.
 
 **러너가 둘인 이유**: 번들러가 생기면서 렌더러가 **Node가 require할 수 있는 파일로 존재하지
 않게 됐다.** Vite가 한 덩어리로 묶으니 모듈 단위로 import할 것이 없다. vitest는 그 Vite 파이프라인을
