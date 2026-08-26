@@ -16,8 +16,12 @@
  * cannot pick them up, and there is no glob to keep in step.
  */
 
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig, mergeConfig } from "vitest/config";
 import base from "./vite.config.mjs";
+
+const root = dirname(fileURLToPath(import.meta.url));
 
 export default mergeConfig(
   base,
@@ -32,6 +36,14 @@ export default mergeConfig(
       // Relative to the Vite root, like `include` above.
       setupFiles: ["react/testing-setup.ts"],
       restoreMocks: true,
+      // Runs once, in Node, before any test file -- and, unlike a
+      // setupFile, outside the Vite root and outside tsconfig.renderer.json's
+      // node-less project. That is deliberate: it is the one place allowed
+      // to touch `node:fs`, to hand the ui/ ports' component tests the CSS
+      // Tailwind actually compiled (see components/test/compiled-css.ts).
+      // Resolved against this file's own directory rather than the Vite
+      // root, which mergeConfig points at src/renderer.
+      globalSetup: [resolve(root, "vitest.global-setup.mts")],
     },
   }),
 );
