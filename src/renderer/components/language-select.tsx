@@ -24,8 +24,26 @@
  * card could paint over the picker. Nothing overpaints anything now -- the card
  * adds where the picker sits and this decides what it looks like -- so that
  * one line of cascade is gone rather than moved.
+ *
+ * As of 2026-08-26 (docs/DECISIONS.md) this is Radix Select rather than a real
+ * <select>. A native dropdown was the one piece of chrome this app could never
+ * paint -- Windows draws it in the OS's own colours, dark text and all, no
+ * matter what the trigger underneath looks like. Radix draws every pixel, so
+ * the popup is a component like any other in the palette, and it keeps the
+ * accessibility a plain <select> gave away for free: arrow keys move the
+ * highlight, typing a letter jumps to it, Enter commits, Escape closes without
+ * changing anything. That behaviour is the library's claim, not a fact --
+ * verified over CDP rather than trusted (see the commit this file landed in).
+ *
+ * ChevronDown and Check come from lucide-react, not react/icons.tsx. The
+ * chevron that already lives there is the inbox fold arrow: it points sideways
+ * at rest and carries a rotation and a hover colour that belong to that one
+ * button, not to a dropdown indicator. Drawing a second, unrelated icon here
+ * was simpler than bending that one to a shape it was not built for.
  */
 
+import * as Select from "@radix-ui/react-select";
+import { Check, ChevronDown } from "lucide-react";
 import { t, currentLanguage, setLanguage } from "../i18n.js";
 import { cn } from "../react/cn.js";
 import { useRenderSignal } from "../react/use-store.js";
@@ -41,35 +59,75 @@ interface Props {
 export function LanguageSelect({ id, className, ariaLabel }: Props) {
   useRenderSignal();
 
+  const languages: string[] = window.api.languages || [];
+
   return (
-    <select
-      id={id}
-      // Shaped like the export button beside it so the row reads as one kind of
-      // control, but a real <select>: the list grows with every language and
-      // the OS knows how to present a long one better than anything drawn here
-      // would. font-[inherit] is the family only -- a <select> comes out of the
-      // UA stylesheet in the system UI face, and the size is asked for by name.
-      className={cn(
-        "cursor-pointer rounded-md border border-line bg-transparent",
-        "px-lg py-xs font-[inherit] text-sm text-text hover:border-muted",
-        className,
-      )}
-      aria-label={ariaLabel}
+    <Select.Root
       value={currentLanguage()}
-      onChange={(e) => {
-        setLanguage(e.target.value);
+      onValueChange={(next) => {
+        setLanguage(next);
         // Main keeps its own i18next and writes the choice to settings, so the
         // next launch paints in this language before the window exists.
-        window.api.setLanguage(e.target.value);
+        window.api.setLanguage(next);
       }}
     >
-      {(window.api.languages || []).map((code) => (
-        // The popup is drawn by the OS, which does not inherit the transparent
-        // background above -- on the dark theme that left dark text on dark.
-        <option key={code} className="bg-panel text-text" value={code}>
-          {t(`language.${code}`)}
-        </option>
-      ))}
-    </select>
+      <Select.Trigger
+        id={id}
+        aria-label={ariaLabel}
+        // Shaped like the export button beside it so the row reads as one kind
+        // of control. Everything below the border is Radix's own DOM now, so
+        // nothing here reaches into a UA stylesheet the way the old <select>
+        // and its <option>s did.
+        className={cn(
+          "inline-flex cursor-pointer items-center gap-sm rounded-md border",
+          "border-line bg-transparent px-lg py-xs font-[inherit] text-sm",
+          "text-text outline-none hover:border-muted",
+          "data-[state=open]:border-muted",
+          className,
+        )}
+      >
+        <Select.Value />
+        <Select.Icon aria-hidden="true">
+          <ChevronDown size={12} strokeWidth={1.75} />
+        </Select.Icon>
+      </Select.Trigger>
+      <Select.Portal>
+        <Select.Content
+          position="popper"
+          align="start"
+          sideOffset={4}
+          className={cn(
+            "z-70 overflow-hidden rounded-md border border-line bg-panel",
+            "shadow-pop",
+            // The trigger sits inside the title bar's drag region on the
+            // first-run card (welcome.tsx), and this popup opens right under
+            // it. The drag region is a rectangle computed from every element
+            // marked -webkit-app-region:drag, painted over or not, so a popup
+            // that lands on top of it still needs its own no-drag or a click
+            // inside it moves the window instead of picking a language.
+            "[-webkit-app-region:no-drag]",
+          )}
+        >
+          <Select.Viewport className="p-2xs">
+            {languages.map((code) => (
+              <Select.Item
+                key={code}
+                value={code}
+                className={cn(
+                  "flex cursor-pointer items-center justify-between gap-lg",
+                  "rounded-sm px-md py-xs text-sm text-text outline-none",
+                  "data-[highlighted]:bg-hover",
+                )}
+              >
+                <Select.ItemText>{t(`language.${code}`)}</Select.ItemText>
+                <Select.ItemIndicator className="text-accent">
+                  <Check size={12} strokeWidth={2} />
+                </Select.ItemIndicator>
+              </Select.Item>
+            ))}
+          </Select.Viewport>
+        </Select.Content>
+      </Select.Portal>
+    </Select.Root>
   );
 }
