@@ -45,3 +45,24 @@ test("a null value leaves nothing marked selected", async () => {
   await open(null);
   expect(document.querySelector('[data-selected="true"]')).toBeNull();
 });
+
+test("clicking the day that is already picked keeps it, and never clears", async () => {
+  // react-day-picker treats that click as a deselect and calls back with
+  // undefined. Turning that into null would empty the chip from a click that
+  // looks like a confirmation, so the only way to clear stays the button.
+  const onChange = vi.fn();
+  const onClose = vi.fn();
+  await mount(
+    <Popover.Root open>
+      <Popover.Trigger>open</Popover.Trigger>
+      <DueCalendar value="2026-08-30" onChange={onChange} onClose={onClose} />
+    </Popover.Root>,
+  );
+
+  const selected = document.querySelector('[data-selected="true"] button');
+  expect(selected).not.toBeNull();
+  (selected as HTMLElement).click();
+
+  expect(onChange).not.toHaveBeenCalledWith(null);
+  expect(onClose).toHaveBeenCalled();
+});

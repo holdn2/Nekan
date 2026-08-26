@@ -81,7 +81,14 @@ export function DueCalendar({ value, onChange, onClose }: Props) {
           locale={locale}
           showOutsideDays
           onSelect={(date) => {
-            onChange(date ? format(date, "yyyy-MM-dd") : null);
+            // react-day-picker reads a click on the already selected day as a
+            // deselect and hands back undefined. Clearing on that would be
+            // wrong here: the Delete button below is meant to be the only way
+            // to clear, and someone who clicks the date they already set means
+            // "yes, that one" -- they would watch the chip empty itself.
+            // Guarded here rather than with the library's `required`, because
+            // this holds whatever a later version decides that click means.
+            if (date) onChange(format(date, "yyyy-MM-dd"));
             onClose();
           }}
         />
