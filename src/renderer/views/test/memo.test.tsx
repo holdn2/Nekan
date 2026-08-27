@@ -10,6 +10,7 @@ import { setTasks } from "../../store.js";
 import { clearSelectionSilently, setSelected } from "../../selection.js";
 import { setLanguage } from "../../i18n.js";
 import { find, hidden, mount } from "../../react/testing.js";
+import { classCompiled } from "../../components/ui/test/compiled-css.js";
 import { MemoPanel } from "../memo.js";
 
 const task = (over: Partial<Task> = {}): Task => ({
@@ -46,6 +47,16 @@ const type = (el: HTMLTextAreaElement, value: string) => {
   setter.call(el, value);
   el.dispatchEvent(new Event("input", { bubbles: true }));
 };
+
+/** Open the panel on a task and get it into the editor. */
+async function edit(flush: (fn?: () => void) => Promise<void>) {
+  await flush(() => setSelected("t1"));
+  await flush(() =>
+    find("#memoText").dispatchEvent(
+      new MouseEvent("dblclick", { bubbles: true }),
+    ),
+  );
+}
 
 beforeEach(() => {
   // Saving goes through main. Nothing here is testing that it arrives.
@@ -165,4 +176,74 @@ test("a redraw mid-sentence keeps what is being typed", async () => {
   await flush(() => setLanguage("ko"));
   expect(find<HTMLTextAreaElement>("#memoInput").value).toBe("쓰던 중");
   expect(find("#memoSave").textContent).toBe("저장");
+});
+
+test("the editor is the ported textarea, sized by the panel and not by itself", async () => {
+  const section = host();
+  setTasks([task()]);
+  const { flush } = await mount(<MemoPanel />, section);
+  await edit(flush);
+
+  const input = find<HTMLTextAreaElement>("#memoInput");
+  expect(input.getAttribute("data-slot")).toBe("textarea");
+  // The port floors at 64px and grows with its content. Both are overridden,
+  // because the panel's height is dragged from its top edge and this field has
+  // to follow it down -- see the comment on the element. cn() has to actually
+  // have dropped the port's versions rather than appended ours after them.
+  expect(input.className).not.toContain("min-h-[64px]");
+  expect(input.className).not.toContain("field-sizing-content");
+  // And what replaced them has to be classes Tailwind emitted rules for -- a
+  // className is only a string until the build agrees (see compiled-css.tsx).
+  for (const cls of [
+    "min-h-[0px]",
+    "field-sizing-fixed",
+    "text-md",
+    "border-line-strong",
+    "focus-visible:border-accent",
+  ]) {
+    expect(input.className).toContain(cls);
+    expect(classCompiled(cls)).toBe(true);
+  }
+  // The port's own ring would draw a second outline behind the accent glow this
+  // field has always had, so it is switched off rather than left to stack.
+  expect(input.className).toContain("focus-visible:ring-0");
+  expect(input.className).not.toContain("focus-visible:ring-3");
+});
+
+test("deleting a note asks inside the app, and only deletes on yes", async () => {
+  const section = host();
+  setTasks([task()]);
+  // If the old path survived anywhere, this stub answers no and the note would
+  // stay -- so the assertions below tell the two apart rather than trusting the
+  // spy alone.
+  const confirm = vi.fn(() => false);
+  (window as unknown as { confirm: unknown }).confirm = confirm;
+
+  const { flush } = await mount(<MemoPanel />, section);
+  await flush(() => setSelected("t1"));
+
+  // Nothing is asking yet.
+  expect(document.querySelector("#memoDeleteConfirm")).toBeNull();
+
+  await flush(() => find("#memoDelete").click());
+  expect(confirm).not.toHaveBeenCalled();
+  const dialog = find("#memoDeleteConfirm");
+  expect(dialog.getAttribute("role")).toBe("alertdialog");
+  expect(find('[data-slot="alert-dialog-title"]').textContent).toBe(
+    "Delete this note? This cannot be undone.",
+  );
+
+  // Backing out leaves the note alone.
+  await flush(() => find("#memoDeleteNo").click());
+  expect(document.querySelector("#memoDeleteConfirm")).toBeNull();
+  expect(find("#memoText").textContent).toBe("원래 메모");
+
+  // Saying yes is the only thing that removes it.
+  await flush(() => find("#memoDelete").click());
+  await flush(() => find("#memoDeleteYes").click());
+  expect(document.querySelector("#memoDeleteConfirm")).toBeNull();
+  // No note left means the panel opens straight into an empty editor.
+  expect(hidden("#memoInput")).toBe(false);
+  expect(find<HTMLTextAreaElement>("#memoInput").value).toBe("");
+  expect(confirm).not.toHaveBeenCalled();
 });
