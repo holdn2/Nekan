@@ -145,7 +145,7 @@ test("says the list is empty differently from a search that found nothing", asyn
   const { flush } = await mount(<div />);
   draw();
   await flush();
-  const empty = find("#historyView .empty");
+  const empty = find("#historyEmpty");
   expect(empty.classList.contains("hidden")).toBe(false);
   const wording = empty.textContent;
 
@@ -159,5 +159,90 @@ test("says the list is empty differently from a search that found nothing", asyn
     setter.call(search, "없는 말");
     search.dispatchEvent(new Event("input", { bubbles: true }));
   });
-  expect(find("#historyView .empty").textContent).not.toBe(wording);
+  expect(find("#historyEmpty").textContent).not.toBe(wording);
+});
+
+/**
+ * The bulk question used to be window.confirm(), which blocked the thread and
+ * could not be looked at. These three pin what replaced it: that the OS dialog
+ * is gone, that answering no really does nothing, and -- the one that would
+ * lose data if it broke -- that yes acts on the rows the tab was showing.
+ */
+const bar = () => find("#historyView button:not(.act)");
+
+test("asks in the app rather than in an OS dialog, and no means no", async () => {
+  const confirmed = vi.fn(() => true);
+  vi.stubGlobal("confirm", confirmed);
+  setTasks([done(1), done(2), done(3)]);
+  const { flush } = await mount(<div />);
+  draw();
+  await flush();
+
+  await flush(() => bar().click());
+  expect(confirmed).not.toHaveBeenCalled();
+  const dialog = find("[role=alertdialog]");
+  // The count is interpolated into the question, so it is what proves the
+  // wording came out of the catalogue rather than out of a placeholder.
+  expect(dialog.textContent).toContain("3");
+
+  await flush(() =>
+    find<HTMLButtonElement>("[data-slot=alert-dialog-cancel]").click(),
+  );
+  expect(document.querySelector("[role=alertdialog]")).toBeNull();
+  expect(rows().length).toBe(3);
+  vi.unstubAllGlobals();
+});
+
+test("empties only what the tab was showing, and only after yes", async () => {
+  setTasks([done(1), done(2), done(3)]);
+  const { flush } = await mount(<div />);
+  draw();
+  await flush();
+
+  await flush(() => bar().click());
+  await flush(() =>
+    find<HTMLButtonElement>("[data-slot=alert-dialog-action]").click(),
+  );
+  expect(document.querySelector("[role=alertdialog]")).toBeNull();
+  expect(rows().length).toBe(0);
+});
+
+test("hands focus back to the button that asked", async () => {
+  // Radix returns focus to its own Trigger, and this dialog has none -- it is
+  // opened from state so the bulk button stays an ordinary button. Measured in
+  // the app before the handler went in: Escape left focus on <body>.
+  setTasks([done(1), done(2)]);
+  const { flush } = await mount(<div />);
+  draw();
+  await flush();
+
+  const button = bar() as HTMLButtonElement;
+  await flush(() => {
+    button.focus();
+    button.click();
+  });
+  expect(find("[role=alertdialog]").contains(document.activeElement)).toBe(
+    true,
+  );
+
+  await flush(() =>
+    find<HTMLButtonElement>("[data-slot=alert-dialog-cancel]").click(),
+  );
+  expect(document.activeElement).toBe(button);
+});
+
+test("the search box is the shared input primitive, not a bare one", async () => {
+  setTasks([done(1)]);
+  const { flush } = await mount(<div />);
+  draw();
+  await flush();
+  const search = find<HTMLInputElement>("#historySearch");
+  expect(search.dataset.slot).toBe("input");
+  // The three the primitive cannot be left to decide on its own here: the body
+  // is 13px and sets user-select: none, and w-full would start the box at the
+  // full width of the bar and squeeze the buttons beside it.
+  for (const cls of ["text-md", "select-text", "w-auto"]) {
+    expect(search.classList.contains(cls)).toBe(true);
+  }
+  expect(search.classList.contains("text-xl")).toBe(false);
 });

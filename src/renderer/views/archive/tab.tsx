@@ -6,8 +6,19 @@
  * differ only in which timestamp they read and which buttons they offer.
  */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { GhostButton } from "../../components/ghost-button.js";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog.js";
+import { Input } from "../../components/ui/input.js";
 import { cn } from "../../react/cn.js";
 import type { Task } from "../../../shared/types.js";
 import { t } from "../../i18n.js";
@@ -45,6 +56,22 @@ interface TabProps<T extends Task> {
   bulk: BulkAction<T>[];
 }
 
+/**
+ * A bulk action that has been pressed and is waiting on its question.
+ *
+ * The rows are held here rather than looked up again when the dialog is
+ * answered. window.confirm() blocked the thread, so "the list the button saw"
+ * and "the list run() is handed" could not differ; a dialog is asynchronous and
+ * a pull can land underneath it. Keeping the array means the count in the
+ * question and the rows that go are the same rows -- and anything that arrived
+ * while the question was on screen, which nobody has been shown a count for,
+ * stays.
+ */
+interface Pending<T extends Task> {
+  action: BulkAction<T>;
+  items: T[];
+}
+
 function ArchiveTab<T extends Task>({
   which,
   all,
@@ -59,6 +86,8 @@ function ArchiveTab<T extends Task>({
   // Paging lives outside the component (chrome resets it), so a press of
   // 더 보기 has to say that something changed.
   const [, redraw] = useState(0);
+  const [pending, setPending] = useState<Pending<T> | null>(null);
+  const opener = useRef<HTMLElement | null>(null);
   // Only the visible tab draws. Both are mounted, and a hundred rows of the
   // other one is a hundred rows nobody asked for on every redraw.
   if (getTab() !== which) return null;
@@ -80,8 +109,14 @@ function ArchiveTab<T extends Task>({
       lastDay = day;
       index = 0;
       rows.push(
+        // Pinned to the top of the scroller: two thousand rows is several
+        // months, and a date that scrolls away leaves every row below it
+        // undated. It costs no height -- it is the same header, parked. The
+        // negative margin and the wider padding are the same 8px inset as
+        // before, bled out over the list's own 6px so rows cannot show
+        // through the gutters beside a pinned header.
         <li
-          className="day px-md pt-lg pb-xs text-xs font-semibold tracking-wide text-muted"
+          className="day sticky top-[0px] z-10 -mx-sm bg-panel px-[14px] pt-lg pb-xs text-xs font-semibold tracking-wide text-muted"
           key={`day-${task.id}`}
         >
           {day}
@@ -102,8 +137,13 @@ function ArchiveTab<T extends Task>({
 
   return (
     <>
-      <div className="history-bar flex gap-md">
-        <input
+      <div className="flex gap-md">
+        {/* w-auto undoes the primitive's own w-full: in a row beside the bulk
+            buttons the box has to grow from its content, not start at the full
+            width and squeeze them. text-md and select-text are not taste --
+            the body is 13px and sets user-select: none, and the primitive's
+            16px would not fit its own 32px box. */}
+        <Input
           type="search"
           id={`${which}Search`}
           value={query}
@@ -116,6 +156,7 @@ function ArchiveTab<T extends Task>({
           }}
           placeholder={t(searchKey)}
           autoComplete="off"
+          className="w-auto flex-auto text-md select-text"
         />
         {bulk.map((action) => (
           <GhostButton
@@ -127,10 +168,14 @@ function ArchiveTab<T extends Task>({
               // rows must not go out with it.
               const everything = all();
               if (!everything.length) return;
-              if (
-                action.confirm &&
-                !window.confirm(action.confirm(everything.length))
-              ) {
+              if (action.confirm) {
+                // Where focus goes back to. Radix returns it to its own
+                // Trigger, and there is no Trigger here -- the dialog is
+                // driven by state so the button keeps being an ordinary
+                // button. Without this, answering with Escape drops focus on
+                // <body> and a keyboard loses its place in the tab.
+                opener.current = document.activeElement as HTMLElement | null;
+                setPending({ action, items: everything });
                 return;
               }
               action.run(everything);
@@ -168,10 +213,59 @@ function ArchiveTab<T extends Task>({
             </li>
           ) : null}
         </ul>
-        <p className={`empty${items.length > 0 ? " hidden" : ""}`}>
+        {/* Named, because the class it used to carry was its only handle and
+            that class was declared over in guide.css. An id is the same handle
+            without a sheet on the other end of it. */}
+        <p
+          id={`${which}Empty`}
+          className={cn(
+            "m-[0px] px-xl py-5xl text-center text-faint",
+            items.length > 0 && "hidden",
+          )}
+        >
           {query.trim() ? t("archive.noResults") : t(emptyKey)}
         </p>
       </div>
+      {/* The question the bulk buttons used to ask through window.confirm().
+          That was an OS window opening in front of a frameless widget, and it
+          took the words out of the app's own type and palette. Radix keeps the
+          parts worth keeping -- the focus trap and Escape -- and unlike a
+          Dialog it deliberately ignores a click outside, which is right for a
+          question that destroys something. */}
+      <AlertDialog
+        open={pending !== null}
+        onOpenChange={(open) => {
+          if (!open) setPending(null);
+        }}
+      >
+        {pending ? (
+          <AlertDialogContent
+            onCloseAutoFocus={(e) => {
+              e.preventDefault();
+              opener.current?.focus();
+            }}
+          >
+            <AlertDialogHeader className="place-items-start text-left">
+              <AlertDialogTitle>{t(pending.action.labelKey)}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {pending.action.confirm?.(pending.items.length)}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            {/* The primitive stacks its footer and only unstacks it at a
+                breakpoint, and this app compiles no @media rules at all, so
+                the row has to be asked for here. */}
+            <AlertDialogFooter className="flex-row justify-end">
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                variant={pending.action.danger ? "destructive" : "default"}
+                onClick={() => pending.action.run(pending.items)}
+              >
+                {t(pending.action.labelKey)}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        ) : null}
+      </AlertDialog>
     </>
   );
 }
