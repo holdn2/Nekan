@@ -17,7 +17,14 @@
  * settings.css is down to the dot on the gear. What is gone from it and NOT
  * spelled here is the `.settings .account` override: the account block is only
  * ever drawn inside this panel, so a rule painting it as a card and a second
- * rule unpainting it collapsed into the one margin below.
+ * rule unpainting it are both gone -- the block is a ui/card now, and a card
+ * is one place rather than two rules arguing.
+ *
+ * The four things in here that used to draw their own chrome no longer do:
+ * the rows are divided by ui/separator, the close and export buttons are
+ * ui/button, and the account block is ui/card. What is deliberately NOT a
+ * ui/button is the theme control -- `.switch` is a two-option segmented pill
+ * with a sliding knob, and ui/button has no such variant.
  */
 
 import { useEffect } from "react";
@@ -28,21 +35,29 @@ import { getTheme, toggleTheme } from "../window/chrome.js";
 import { closeSettings, isSettingsOpen } from "../panels.js";
 import { exportBoard } from "../window/export-ui.js";
 import { useRenderSignal } from "../react/use-store.js";
-import { cn } from "../react/cn.js";
 import { CloseIcon } from "../react/icons.js";
 import { Account } from "./account.js";
 import { LanguageSelect } from "../components/language-select.js";
+import { Button } from "../components/ui/button.js";
+import { Separator } from "../components/ui/separator.js";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card.js";
 
 /**
  * A row: a label on the left, one control on the right.
  *
  * Three rows share it, so it is a constant rather than three copies of the
- * same eight utilities. The top border is what separates the rows -- there is
- * no divider element, and the account block below carries the same border for
- * the same reason.
+ * same eight utilities. What separates the rows is a <Separator> between them
+ * rather than a `border-t` on each -- same hairline in the same token, but the
+ * divider is now a thing in the markup with `role="none"` on it, so a screen
+ * reader is not told about three borders it cannot act on. The paint is
+ * identical: Separator is `h-px w-full bg-line`.
  */
-const ROW =
-  "settings-row flex items-center justify-between gap-xl border-t border-line py-md";
+const ROW = "settings-row flex items-center justify-between gap-xl py-md";
 
 /** The words on the left of a row. */
 const LABEL = "settings-label text-sm text-muted";
@@ -66,19 +81,27 @@ function SettingsBody() {
     <>
       <header className="settings-head mb-lg flex items-center justify-between">
         <h2 className="m-[0px] text-lg font-semibold">{t("settings.title")}</h2>
-        <button
-          className={cn(
-            "settings-close rounded-sm border-0 bg-transparent px-sm py-2xs",
-            "text-2xl leading-none text-muted hover:bg-panel-2 hover:text-text",
-          )}
+        {/* The ghost variant is the one that has no fill at rest, which is
+            what this was already doing by hand. `icon-xs` is a 24px square:
+            the hand-written version was about 22x14, so the hit target grew
+            and nothing else moved. The cross inside comes out at 12px rather
+            than 10 -- ui/button sizes any svg that does not carry a size of
+            its own, and that is the primitive deciding, which is the point of
+            using it. */}
+        <Button
+          className="settings-close text-muted"
+          variant="ghost"
+          size="icon-xs"
           id="settingsClose"
           type="button"
           aria-label={t("settings.close")}
           onClick={closeSettings}
         >
           <CloseIcon />
-        </button>
+        </Button>
       </header>
+
+      <Separator />
 
       {/* A select, not the .switch the theme row uses. That pill is
           `width: calc(50% - 2px)` and `translateX(100%)`, so it is only ever
@@ -94,6 +117,8 @@ function SettingsBody() {
         {/* The picker carries its own look -- see components/language-select. */}
         <LanguageSelect id="languageSelect" />
       </div>
+
+      <Separator />
 
       <div className={ROW}>
         <span className={LABEL}>{t("settings.theme")}</span>
@@ -132,14 +157,22 @@ function SettingsBody() {
         </div>
       </div>
 
+      <Separator />
+
       <div className={ROW}>
         <span className={LABEL}>{t("settings.export")}</span>
-        <button
-          className={cn(
-            "settings-action inline-flex items-center gap-md rounded-md",
-            "border border-line bg-transparent px-lg py-xs text-sm text-text",
-            "hover:border-muted",
-          )}
+        {/* `outline` is the neutral bordered variant, which is what this row
+            already was: a hairline in `line`, no fill of its own worth
+            noticing on a panel of the same colour. `sm` keeps the 28px height
+            the hand-written padding produced; the text size is asked for back,
+            because ui/button's `sm` carries `text-xs` and this row is
+            `text-sm`, the same 12px as the label facing it. (This app's scale
+            is xs 11 / sm 12 / md 13 / lg 14 / xl 16 -- not Tailwind's, which
+            is why a size has to be read as a rung rather than as a number.) */}
+        <Button
+          className="settings-action text-sm"
+          variant="outline"
+          size="sm"
           id="settingsExport"
           type="button"
           onClick={() => {
@@ -162,21 +195,34 @@ function SettingsBody() {
           <kbd className="font-[inherit] text-xs text-muted">
             {t("settings.exportShortcut")}
           </kbd>
-        </button>
+        </Button>
       </div>
 
       {/* Its own block rather than a row: it is the one thing in here with
           more than a control in it -- a state, an address, and two buttons
-          that end an account. */}
-      <div className="settings-block border-t border-line pt-md">
-        <span className={LABEL}>{t("settings.sync")}</span>
-        {/* No card of its own. The block came from the guide, where it had one;
-            in here the panel is the card, and what used to be two rules
-            painting a box and then unpainting it is this one margin. */}
-        <section className="account mt-md" id="account">
-          <Account />
-        </section>
-      </div>
+          that end an account.
+
+          A card rather than another `border-t`, and the difference is only a
+          hairline: ui/card paints `bg-panel` on a panel that is already
+          `bg-panel`, so all that shows is its `ring-1 ring-line` -- the same
+          token the border was, closed into a box. That is what the block
+          wanted. The old note here said the panel was the card and this
+          should not have one; that was true while the alternative was a
+          second painted surface, and it is not what a ring costs.
+
+          `size="sm"` because the panel is 320px wide: the default's 16px
+          padding on top of the panel's own 16px would leave the account block
+          256px to lay out an address, a state and two buttons in. */}
+      <Card className="settings-block mt-lg" size="sm">
+        <CardHeader>
+          <CardTitle className={LABEL}>{t("settings.sync")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <section className="account" id="account">
+            <Account />
+          </section>
+        </CardContent>
+      </Card>
     </>
   );
 }

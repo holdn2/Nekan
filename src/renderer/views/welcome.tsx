@@ -12,6 +12,11 @@
  * welcome.css is down to one rule, and the overlay's own box is in index.html.
  * The card is 380px wide and was measured against a 760x520 window, which is
  * why nothing in here grows with the window except the space around it.
+ *
+ * It is a ui/card now -- header, content, footer -- and the two answers inside
+ * it are ui/buttons. Nothing about the question changed; what changed is that
+ * the card is a surface rather than a column of text on the page background,
+ * which is what the rest of the app already looked like everywhere else.
  */
 
 import { useEffect, useState } from "react";
@@ -22,6 +27,14 @@ import { activeCount } from "../store.js";
 import { useRenderSignal } from "../react/use-store.js";
 import { cn } from "../react/cn.js";
 import { LanguageSelect } from "../components/language-select.js";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card.js";
 import { WelcomeChoices } from "./welcome/choices.js";
 import {
   isWelcomeVisible,
@@ -191,87 +204,122 @@ export function Welcome() {
         id="welcomeLanguage"
         ariaLabel={t("settings.language")}
       />
-      <div className="welcome-card w-full max-w-[380px] text-center">
-        <img
-          className="welcome-logo h-[36px] w-[36px]"
-          src="../assets/icon.png"
-          alt=""
-        />
-        <div className="welcome-text flex flex-col items-center justify-center gap-[10px]">
-          <h1 className="mx-[0px] mt-md mb-2xs text-3xl tracking-tight">
-            Nekan
-          </h1>
-          <p className="welcome-lede m-[0px] mb-6xl text-md text-muted">
-            {t("welcome.lede")}
-          </p>
-        </div>
-        <WelcomeChoices
-          busy={busy}
-          count={count}
-          adopt={adopt}
-          onAdopt={setAdopt}
-          onSync={chooseSync}
-          onLocal={chooseLocal}
-        />
+      {/* A real card now rather than a bare 380px column on the overlay's
+          `bg-bg`: ui/card is `bg-panel` inside a `ring-1 ring-line`, which is
+          the difference between "the window is empty and here is some text"
+          and "here is the one thing to answer".
 
-        {/* A reserved line, so a message appearing does not shove the footer
-            down. 1.2em is one line of it. */}
-        <p
-          className={cn(
-            "welcome-msg m-[0px] mt-lg min-h-[1.2em] text-sm",
-            message?.error ? "text-danger" : "text-muted",
-          )}
-          role="status"
-        >
-          {message?.text ?? ""}
-        </p>
-        {/* Only while the browser has it. Outside the live region above, so a
+          `size="sm"` keeps the padding at 12px. The default's 16px, on top of
+          the overlay's own, cost 16px of height that a 760x520 window does not
+          have to spare -- this card was measured against that window and
+          nothing in it grows except the space around it. */}
+      <Card className="welcome-card w-full max-w-[380px] text-center" size="sm">
+        <CardHeader className="justify-items-center">
+          <img
+            className="welcome-logo h-[36px] w-[36px]"
+            src="../assets/icon.png"
+            alt=""
+          />
+          {/* The size is asked for back TWICE, and the second one is the one
+              that does the work. CardTitle carries `text-xl` and, on a small
+              card, `group-data-[size=sm]/card:text-sm`. A plain `text-3xl`
+              replaces only the first: tailwind-merge files a variant under its
+              own key and keeps it, and the variant is emitted later in the
+              utilities layer, so it wins. Measured, not reasoned about -- the
+              app's name came out at the size of the sentence under it.
+
+              role/aria-level rather than the <h1> this used to be: CardTitle
+              renders a <div>, and dropping the heading outright would take the
+              only landmark on a screen that covers the whole window. */}
+          <CardTitle
+            className="mt-md text-3xl tracking-tight group-data-[size=sm]/card:text-3xl"
+            role="heading"
+            aria-level={1}
+          >
+            Nekan
+          </CardTitle>
+          <CardDescription className="welcome-lede mb-4xl text-md">
+            {t("welcome.lede")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <WelcomeChoices
+            busy={busy}
+            count={count}
+            adopt={adopt}
+            onAdopt={setAdopt}
+            onSync={chooseSync}
+            onLocal={chooseLocal}
+          />
+
+          {/* A reserved line, so a message appearing does not shove the footer
+              down. 1.2em is one line of it. */}
+          <p
+            className={cn(
+              "welcome-msg m-[0px] mt-lg min-h-[1.2em] text-sm",
+              message?.error ? "text-danger" : "text-muted",
+            )}
+            role="status"
+          >
+            {message?.text ?? ""}
+          </p>
+          {/* Only while the browser has it. Outside the live region above, so a
             screen reader hears the sentence rather than the sentence and a
             button every time the message changes. */}
-        {busy ? (
-          <button
-            className="text-link welcome-cancel mt-xs text-sm"
-            type="button"
-            onClick={cancelSync}
-          >
-            {t("common.cancel")}
-          </button>
-        ) : null}
+          {busy ? (
+            <button
+              className="text-link welcome-cancel mt-xs text-sm"
+              type="button"
+              onClick={cancelSync}
+            >
+              {t("common.cancel")}
+            </button>
+          ) : null}
+        </CardContent>
         {/* The notice sits in the footer rather than under the sync button
             because this card has to fit a 760x520 window, and the sync button
-            is the tallest thing in it. Both choices are still on screen. */}
-        {/* Two rows, because there are two things being said: the choice is
-            reversible, and signing in stores something. Run together they
-            wrapped mid-sentence and left "다." stranded on a line of its own.
+            is the tallest thing in it. Both choices are still on screen.
 
-            break-keep is `word-break: keep-all`, and that is what stops it.
-            Korean has no need of spaces to be readable, so the default breaks
-            between syllables -- fine for a paragraph, wrong for two short lines
-            where the break lands inside a word. */}
-        <p
-          className={cn(
-            "welcome-foot mx-[0px] mt-4xl mb-[0px] grid justify-items-center",
-            "gap-xs text-xs leading-snug text-faint break-keep text-pretty",
-          )}
-        >
-          <span>{t("welcome.foot")}</span>
-          {/* The link is the end of the sentence it belongs to, not a third
-              line of its own. */}
-          <span className="welcome-foot-legal inline">
-            <span>{t("legal.notice")}</span>
-            <button
-              className="text-link"
-              type="button"
-              // Opens in the real browser, like the guide tab's release-notes
-              // link. The overlay covers the title bar, so there is nowhere
-              // else on this screen a reader could reach it from.
-              onClick={() => window.api.openPrivacyPolicy()}
-            >
-              {t("legal.privacy")}
-            </button>
-          </span>
-        </p>
-      </div>
+            A real CardFooter now -- the tinted strip flush with the bottom
+            edge, which is what it was already pretending to be with a top
+            margin. `border-line` is passed in because ui/card's footer asks
+            for `border-t` and no colour, and with no Tailwind preflight in
+            this app an uncoloured border falls back to `currentColor`: the
+            hairline would be drawn in the text colour. */}
+        <CardFooter className="border-line">
+          {/* Two rows, because there are two things being said: the choice is
+              reversible, and signing in stores something. Run together they
+              wrapped mid-sentence and left "다." stranded on a line of its own.
+
+              break-keep is `word-break: keep-all`, and that is what stops it.
+              Korean has no need of spaces to be readable, so the default breaks
+              between syllables -- fine for a paragraph, wrong for two short
+              lines where the break lands inside a word. */}
+          <p
+            className={cn(
+              "welcome-foot m-[0px] grid w-full justify-items-center",
+              "gap-xs text-xs leading-snug text-faint break-keep text-pretty",
+            )}
+          >
+            <span>{t("welcome.foot")}</span>
+            {/* The link is the end of the sentence it belongs to, not a third
+                line of its own. */}
+            <span className="welcome-foot-legal inline">
+              <span>{t("legal.notice")}</span>
+              <button
+                className="text-link"
+                type="button"
+                // Opens in the real browser, like the guide tab's release-notes
+                // link. The overlay covers the title bar, so there is nowhere
+                // else on this screen a reader could reach it from.
+                onClick={() => window.api.openPrivacyPolicy()}
+              >
+                {t("legal.privacy")}
+              </button>
+            </span>
+          </p>
+        </CardFooter>
+      </Card>
     </>
   );
 }
