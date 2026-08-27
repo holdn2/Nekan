@@ -39,6 +39,39 @@ let inboxOpen = false;
  * Stays imperative because the panel it toggles is index.html's -- the header,
  * the toggle button and the CSS variable that sizes the list all live outside
  * what React draws here.
+ *
+ * ## Why this is not components/ui/collapsible.tsx
+ *
+ * It was tried and turned down, and the reason is worth writing down so the
+ * next person does not spend the afternoon on it again. Three things, and any
+ * one of them would be enough:
+ *
+ * 1. THE OPEN STATE IS NOT REACT'S TO HOLD. `window/layout/grid.ts` decides
+ *    whether there is an edge to grab by asking `#inboxPanel` whether it
+ *    carries `open`, and `#inboxPanel` is the <section> in index.html -- React
+ *    mounts *into* it, so a Collapsible.Root would have to be a div underneath
+ *    it and could not put the class there. The line below would stay exactly as
+ *    it is, and Collapsible would be a second answer to the same question,
+ *    sitting next to the first one and free to disagree with it.
+ *
+ * 2. CollapsibleContent UNMOUNTS WHEN CLOSED. `inboxRoom()` and the drag in
+ *    quad-edges.ts both measure `#inboxList`'s bounding rect, and .inbox-list
+ *    takes its height from --inbox-h, which those files write. A list that is
+ *    not in the document measures zero. `forceMount` is the way out, but then
+ *    Radix governs display with the `hidden` *attribute* -- and this app
+ *    imports no preflight, so `[hidden]` is only the UA sheet's rule, which the
+ *    `flex` utility on the body already beats. The panel would be open-looking
+ *    and closed-thinking, which is the failure mode body{overflow:hidden} hides
+ *    best.
+ *
+ * 3. THERE IS NOTHING LEFT TO GAIN. What Collapsible adds over a button is
+ *    `aria-expanded`, `aria-controls` and keyboard operation. The trigger here
+ *    is already a real <button> carrying both attributes, and a button is
+ *    already operable from the keyboard.
+ *
+ * The persisted `settings.inboxOpen` is the one part Collapsible could have
+ * handled -- `open`/`onOpenChange` make it controllable. That alone does not
+ * pay for the other three.
  */
 export function applyInboxOpen(open: boolean, persist = true) {
   inboxOpen = Boolean(open);
