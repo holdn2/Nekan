@@ -4,13 +4,33 @@
  * Two because the first press is not the decision -- it opens a sentence
  * saying what will happen and what will not. The tasks on this computer stay:
  * they were the user's before there was an account to put them in, and the
- * panel says so before the second button is pressed.
+ * dialog says so before the second button is pressed.
+ *
+ * The second step is a ui/alert-dialog now, not a red box grown inside the
+ * settings panel. Three things come with that and none of them could be had
+ * from a panel that was 320px wide and scrolled:
+ *
+ *   - Focus goes into the dialog and cannot leave it while it is up. The
+ *     inline box left the tab order running on through the rest of the panel,
+ *     so the key after "계정 삭제" was whatever happened to be next in the
+ *     settings sheet.
+ *   - `role="alertdialog"` with the title and the sentences named as its
+ *     label and description, which is what a screen reader needs to read the
+ *     warning before the buttons rather than after them.
+ *   - A click outside cannot dismiss it. Radix's AlertDialogContent prevents
+ *     that on purpose, which is the difference between an alert dialog and a
+ *     popover, and it is the right difference for the one irreversible button
+ *     in the app.
+ *
+ * Escape still closes it -- that is Radix's, untouched, and it is the same
+ * key the settings panel binds on the document. Both fire; the panel closing
+ * under a dismissed confirmation is not a state anybody can act on wrongly.
  *
  * The message line belongs to the panel, so `say` comes in as a prop. The
  * open/closed state does not: nobody outside needs it, and closing it when the
  * account changes is this component's own business.
  *
- * The block is deliberately the quietest thing in the panel. It has to be
+ * The trigger stays deliberately the quietest thing in the panel. It has to be
  * findable -- an account you cannot leave is the complaint it exists to answer
  * -- without sitting next to 로그아웃 as an equal choice.
  */
@@ -19,6 +39,17 @@ import { useEffect, useState } from "react";
 import { messageOf } from "../../../shared/errors.js";
 import { t } from "../../i18n.js";
 import { RichText } from "../../react/rich-text.js";
+import { Button } from "../../components/ui/button.js";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog.js";
 import type { SignInResult } from "./status.js";
 import {
   applySession,
@@ -26,13 +57,6 @@ import {
   currentSession,
   reasonFor,
 } from "./status.js";
-
-/** The two sentences above the buttons. */
-const SENTENCE = "m-[0px] mb-sm text-sm leading-normal break-keep";
-
-/** The two buttons, minus the colours that tell them apart. */
-const ACT =
-  "rounded-sm border px-xl py-sm text-sm disabled:cursor-default disabled:opacity-[0.55]";
 
 interface Props {
   /** Signed in. The block is in the markup either way, hidden when not. */
@@ -97,50 +121,14 @@ export function DeleteAccount({ visible, say }: Props) {
     <div
       className={`account-danger mt-xl border-t border-line pt-lg${visible ? "" : " hidden"}`}
     >
-      {confirming ? (
-        <div className="account-confirm mt-lg rounded-md border border-danger bg-danger-soft p-xl">
-          {/* Both sentences carry their own <b> through the catalogue.
-              Splitting them into bold and not-bold keys would be asking a
-              translator for sentence fragments, and where the emphasis falls
-              moves with the language.
-
-              break-keep is `word-break: keep-all`. The panel is narrow enough
-              to split 되돌릴 수 없습니다 across two lines in the middle of the
-              word -- fine for a task somebody typed, not for the one sentence
-              in the app that has to be read before an irreversible button. */}
-          <p className={`account-confirm-lede ${SENTENCE}`}>
-            <RichText k="account.confirmLede" />
-          </p>
-          <p className={`account-confirm-keep ${SENTENCE} text-muted`}>
-            <RichText k="account.confirmKeep" />
-          </p>
-          <div className="account-confirm-row mt-lg flex justify-end gap-md">
-            <button
-              className={`account-confirm-cancel ${ACT} border-line bg-panel text-text`}
-              type="button"
-              disabled={deleting}
-              onClick={() => setConfirming(false)}
-            >
-              {t("common.cancel")}
-            </button>
-            {/* Not on-accent and not #fff. --danger is a deep red on the light
-                theme but a light salmon on the dark one, and white on salmon is
-                barely there -- measured on screen. The page background is the
-                opposite of the theme's fill in both, so it is the one token
-                that stays legible on this button either way. */}
-            <button
-              className={`account-confirm-go ${ACT} border-danger bg-danger text-bg`}
-              type="button"
-              disabled={deleting}
-              onClick={deleteAccount}
-            >
-              {t("account.confirmGo")}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <button
-          className="account-leave-btn border-0 bg-transparent p-[0px] text-sm text-muted underline underline-offset-[3px] hover:text-danger"
+      {/* Controlled rather than driven by AlertDialogTrigger: the effect above
+          has to be able to close it when the session changes underneath, and a
+          trigger owns nothing this component can reach. */}
+      <AlertDialog open={confirming} onOpenChange={setConfirming}>
+        <Button
+          className="account-leave-btn p-[0px] text-sm text-muted underline underline-offset-[3px] hover:bg-transparent hover:text-danger"
+          variant="ghost"
+          size="sm"
           type="button"
           onClick={() => {
             setConfirming(true);
@@ -148,8 +136,63 @@ export function DeleteAccount({ visible, say }: Props) {
           }}
         >
           {t("account.leave")}
-        </button>
-      )}
+        </Button>
+
+        {/* `sm` is the two-column footer: cancel on the left, the irreversible
+            one on the right, both the same width. The default size lays the
+            footer out with `sm:flex-row`, and screen variants do not compile
+            in this app at all -- it would come out as a reversed column. */}
+        <AlertDialogContent className="account-confirm" size="sm">
+          <AlertDialogHeader className="place-items-start text-left">
+            <AlertDialogTitle>{t("account.leave")}</AlertDialogTitle>
+            {/* Both sentences carry their own <b> through the catalogue.
+                Splitting them into bold and not-bold keys would be asking a
+                translator for sentence fragments, and where the emphasis falls
+                moves with the language.
+
+                One Description holding two blocks rather than two elements:
+                Radix names exactly one node as the dialog's description, and a
+                second paragraph outside it is a sentence a screen reader never
+                reads. <span class="block"> rather than <p>, because a <p>
+                cannot contain a <p>.
+
+                break-keep is `word-break: keep-all`. The dialog is narrow
+                enough to split 되돌릴 수 없습니다 across two lines in the
+                middle of the word -- fine for a task somebody typed, not for
+                the one sentence in the app that has to be read before an
+                irreversible button. */}
+            <AlertDialogDescription className="text-left break-keep">
+              <span className="account-confirm-lede block text-text">
+                <RichText k="account.confirmLede" />
+              </span>
+              <span className="account-confirm-keep mt-sm block">
+                <RichText k="account.confirmKeep" />
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              className="account-confirm-cancel"
+              disabled={deleting}
+            >
+              {t("common.cancel")}
+            </AlertDialogCancel>
+            {/* ui/button's `destructive` variant, which is danger-on-a-tint
+                rather than the solid `bg-danger text-bg` this used to paint by
+                hand. That pairing existed because white on the dark theme's
+                salmon --danger was barely there; a tint has no such problem,
+                the text being --danger itself. */}
+            <AlertDialogAction
+              className="account-confirm-go"
+              variant="destructive"
+              disabled={deleting}
+              onClick={deleteAccount}
+            >
+              {t("account.confirmGo")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

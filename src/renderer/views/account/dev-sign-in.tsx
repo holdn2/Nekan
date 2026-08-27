@@ -13,10 +13,33 @@
 
 import { useState } from "react";
 import { t } from "../../i18n.js";
+import { Button } from "../../components/ui/button.js";
+import { Input } from "../../components/ui/input.js";
 
-/** Both fields, which share a line and give up width before anything else. */
-const FIELD =
-  "flex-[1_1_120px] min-w-[0px] rounded-xs border border-line bg-bg px-md py-xs text-sm text-text";
+/**
+ * Both fields, which share a line and give up width before anything else.
+ *
+ * ui/input brings the fill, the hairline, the focus ring and the placeholder
+ * colour; what is left here is the three things that are about this row rather
+ * than about a text field:
+ *
+ *   flex-[1_1_120px]  the two share a line and shrink together. ui/input is
+ *                     `w-full`, and a flex item's basis wins over its width,
+ *                     so the two do not fight.
+ *   min-w-[0px]       ui/input asks for `min-w-0`, and with no numeric spacing
+ *                     scale here that class does not compile at all -- the
+ *                     fields would stop shrinking at their content and push
+ *                     the form wider than the 320px panel. The arbitrary form
+ *                     is the one that exists.
+ *   text-sm           ui/input is `text-xl` because upstream only drops off
+ *                     `text-base` through `md:text-sm`, and screen variants do
+ *                     not compile here either -- so the port's 16px is the
+ *                     phone size, permanently. `text-sm` is what these two
+ *                     have always been: 12px, the same rung as the panel's own
+ *                     labels. (The scale here is xs 11 / sm 12 / md 13 /
+ *                     lg 14 / xl 16, not Tailwind's.)
+ */
+const FIELD = "flex-[1_1_120px] min-w-[0px] text-sm";
 
 interface Props {
   /**
@@ -44,12 +67,7 @@ export function DevSignIn({ onSubmit }: Props) {
         onSubmit(dev.email, dev.password);
       }}
     >
-      {/* No font-family: an <input> does not inherit one and never did here,
-          so asking for it now would change the face these two are drawn in.
-          min-w-[0px] rather than min-w-0 -- there is no numeric spacing scale,
-          so the numeric form compiles to nothing and the fields stop shrinking
-          below their content. */}
-      <input
+      <Input
         className={FIELD}
         id="devEmail"
         type="email"
@@ -58,7 +76,7 @@ export function DevSignIn({ onSubmit }: Props) {
         placeholder={t("account.devEmail")}
         autoComplete="off"
       />
-      <input
+      <Input
         className={FIELD}
         id="devPassword"
         type="password"
@@ -67,12 +85,14 @@ export function DevSignIn({ onSubmit }: Props) {
         placeholder={t("account.devPassword")}
         autoComplete="off"
       />
-      <button
-        className="basis-full rounded-xs border border-line bg-transparent px-md py-xs text-sm text-muted"
+      <Button
+        className="basis-full text-muted"
+        variant="outline"
+        size="sm"
         type="submit"
       >
         {t("account.devSignIn")}
-      </button>
+      </Button>
     </form>
   );
 }
