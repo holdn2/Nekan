@@ -21,15 +21,3 @@
 .guide-doc b {
   color: var(--text);
 }
-
-/* Not the guide's, despite the address. views/archive/tab.tsx draws the
-   "nothing here" line with this class, and archive.css is gone, so the rule
-   outlived the sheet it belonged to. It stays until whoever owns that view
-   moves it onto the element -- deleting it here would take the styling of the
-   empty history and trash lists with it. */
-.empty {
-  margin: 0;
-  padding: var(--sp-5xl) var(--sp-xl);
-  text-align: center;
-  color: var(--faint);
-}
