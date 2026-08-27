@@ -204,10 +204,14 @@ test("the editor is the ported textarea, sized by the panel and not by itself", 
     expect(input.className).toContain(cls);
     expect(classCompiled(cls)).toBe(true);
   }
-  // The port's own ring would draw a second outline behind the accent glow this
-  // field has always had, so it is switched off rather than left to stack.
-  expect(input.className).toContain("focus-visible:ring-0");
-  expect(input.className).not.toContain("focus-visible:ring-3");
+  // The accent focus is the port's own now rather than a hand-rolled shadow
+  // here, so there is one outline instead of two. This pins that the glow is
+  // still the accent and not the neutral --ring the port shipped with.
+  expect(input.className).toContain("focus-visible:ring-accent-soft");
+  expect(input.className).not.toContain("focus-visible:ring-ring");
+  expect(input.className).not.toContain(
+    "shadow-[0_0_0_2px_var(--accent-soft)]",
+  );
 });
 
 test("deleting a note asks inside the app, and only deletes on yes", async () => {

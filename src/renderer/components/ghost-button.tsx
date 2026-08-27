@@ -30,20 +30,28 @@ export function GhostButton({
   onClick,
   className,
   children,
+  ref,
   ...rest
 }: {
   danger?: boolean;
   onClick?: () => void;
   className?: string;
   children: ReactNode;
+  // React 19 takes a ref as an ordinary prop, so this is a pass-through rather
+  // than a forwardRef. It is here because a caller that opens a dialog has to
+  // put focus back on the button afterwards, and reading document.activeElement
+  // at click time is not the same question -- it answers with whatever the last
+  // press left behind.
+  ref?: React.Ref<HTMLButtonElement>;
 } & Omit<
   React.ButtonHTMLAttributes<HTMLButtonElement>,
-  "className" | "onClick"
+  "className" | "onClick" | "ref"
 >) {
   return (
     <Button
       type="button"
       variant="outline"
+      ref={ref}
       onClick={onClick}
       className={cn(
         // `outline` leaves the resting text at the inherited colour; these

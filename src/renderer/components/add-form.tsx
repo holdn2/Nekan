@@ -96,25 +96,13 @@ export function AddForm({ place, placeholderKey, withDue, onPaste }: Props) {
         className={cn(
           // ui/input is `w-full`, which is right for a field on its own line
           // and wrong for one sharing a row: it wants to be whatever is left
-          // after the chip and the button. `min-w-0` the primitive already
+          // after the chip and the button. `min-w-[0px]` the primitive already
           // carries, and it is what lets that shrink actually happen.
           "w-auto flex-auto",
-          // text-md (13px), not the primitive's text-xl (16px). The rows above
-          // this box are 13px; a task reads at one size whether it is being
-          // written or has been.
-          "text-md",
-          // rounded-md (8px), not rounded-panel (10px) -- the due chip and the
-          // submit beside it are both 8px.
+          // rounded-md (8px), not the port's rounded-panel (10px) -- the due
+          // chip and the submit beside it are both 8px. The size, the border
+          // and the accent focus this used to put back are the port's own now.
           "rounded-md",
-          // COLOUR, put back. Every text box in this app rests on
-          // border-line-strong and dims its placeholder to faint; the
-          // primitive's border-line/text-muted are upstream's tones.
-          "border-line-strong placeholder:text-faint",
-          // COLOUR, put back. The primitive focuses to a neutral ring
-          // (`--ring` is an ink tint, not the accent). This app's inputs have
-          // always focused to the accent, so the ring keeps the primitive's
-          // mechanism and the app's colour.
-          "focus-visible:border-accent focus-visible:ring-accent-soft",
         )}
         type="text"
         id={place === "inbox" ? "inboxInput" : undefined}

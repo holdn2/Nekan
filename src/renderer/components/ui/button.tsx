@@ -86,6 +86,20 @@
  *    string, before any variant's own background utility, so `bg-transparent`
  *    only wins where a variant does not set one of its own -- verified in the
  *    built CSS rather than assumed (see the port's verification notes).
+ *
+ * LATER, AND ON PURPOSE (2026-08-27, wiring these into the app):
+ *
+ * 8. `outline` DRAWS ITS EDGE IN `line-strong`, NOT `line`. `--line` is the
+ *    hairline between rows; on a panel background it is close enough to the
+ *    panel to vanish, and an outline button's fill *is* the panel, so the edge
+ *    is the only thing saying it is a button. See ui/input.tsx's note.
+ *
+ * 9. THE `icon-*` SIZES RESET PADDING. Upstream can leave it unset because it
+ *    sits on a preflight; this app has none (see 7 above) and base.css's own
+ *    button reset touches only font, colour and cursor -- so a bare <button>
+ *    keeps the UA's `padding: 1px 6px`. Measured on the built page. Harmless
+ *    inside a fixed square with a centred icon, and not harmless the moment a
+ *    variant's width is not fixed.
  */
 
 import * as React from "react";
@@ -100,7 +114,7 @@ const buttonVariants = cva(
       variant: {
         default: "bg-accent text-on-accent hover:bg-accent/80",
         outline:
-          "border-line bg-panel hover:bg-panel-2 hover:text-text aria-expanded:bg-panel-2 aria-expanded:text-text",
+          "border-line-strong bg-panel hover:bg-panel-2 hover:text-text aria-expanded:bg-panel-2 aria-expanded:text-text",
         secondary:
           "bg-panel-3 text-text hover:bg-panel-3/80 aria-expanded:bg-panel-3 aria-expanded:text-text",
         ghost:
@@ -115,10 +129,11 @@ const buttonVariants = cva(
         xs: "h-5xl gap-xs rounded-md px-md text-xs has-data-[icon=inline-end]:pr-sm has-data-[icon=inline-start]:pl-sm [&_svg:not([class*='size-'])]:size-xl",
         sm: "h-[28px] gap-xs rounded-md px-lg text-xs has-data-[icon=inline-end]:pr-sm has-data-[icon=inline-start]:pl-sm [&_svg:not([class*='size-'])]:size-2xl",
         lg: "h-[36px] gap-sm px-lg has-data-[icon=inline-end]:pr-xl has-data-[icon=inline-start]:pl-xl",
-        icon: "size-6xl",
-        "icon-xs": "size-5xl rounded-md [&_svg:not([class*='size-'])]:size-xl",
-        "icon-sm": "size-[28px] rounded-md",
-        "icon-lg": "size-[36px]",
+        icon: "size-6xl p-[0px]",
+        "icon-xs":
+          "size-5xl p-[0px] rounded-md [&_svg:not([class*='size-'])]:size-xl",
+        "icon-sm": "size-[28px] p-[0px] rounded-md",
+        "icon-lg": "size-[36px] p-[0px]",
       },
     },
     defaultVariants: {

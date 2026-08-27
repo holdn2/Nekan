@@ -67,6 +67,30 @@
  *    anywhere in this renderer. Dropped outright rather than kept as dead
  *    weight, the same treatment ui/badge.tsx gives a selector that can
  *    never match.
+ *
+ * LATER, AND ON PURPOSE (2026-08-27, wiring these into the app):
+ *
+ *   border-line -> border-line-strong, placeholder:text-muted ->
+ *   placeholder:text-faint, focus-visible:border-line-strong /
+ *   focus-visible:ring-ring -> focus-visible:border-accent /
+ *   focus-visible:ring-accent-soft, text-xl -> text-md, min-w-0 ->
+ *   min-w-[0px].
+ *
+ *   These are not taste. `--line` is the hairline drawn between rows; measured
+ *   on a panel background it is close enough to the panel to disappear, and an
+ *   input's edge is the only thing marking where it starts. `--line-strong` is
+ *   the same border a ramp step darker and is what every text box in this app
+ *   was already drawn with. The focus colour is the same story: this app has
+ *   always focused a field to the accent, and `--ring` is an ink tint.
+ *   `text-xl` is 16px because upstream steps down through `md:text-sm`, and no
+ *   breakpoint compiles here -- so the port's default was the phone size,
+ *   permanently; 13px is the body. And `min-w-0` does not compile at all
+ *   without a numeric spacing scale, which meant the field never shrank below
+ *   its content.
+ *
+ *   Three call sites had each put some of this back on their own before it was
+ *   done here. That is the signal: a default every caller overrides is the
+ *   wrong default.
  */
 
 import * as React from "react";
@@ -79,7 +103,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       type={type}
       data-slot="input"
       className={cn(
-        "bg-input-bg border-line focus-visible:border-line-strong focus-visible:ring-ring aria-invalid:ring-danger/20 aria-invalid:border-danger h-6xl rounded-panel border px-lg py-xs text-xl transition-colors file:h-5xl file:text-lg file:font-medium focus-visible:ring-3 aria-invalid:ring-3 file:text-text placeholder:text-muted w-full min-w-0 outline-none file:inline-flex file:border-0 file:bg-transparent disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+        "bg-input-bg border-line-strong focus-visible:border-accent focus-visible:ring-accent-soft aria-invalid:ring-danger/20 aria-invalid:border-danger h-6xl rounded-panel border px-lg py-xs text-md transition-colors file:h-5xl file:text-lg file:font-medium focus-visible:ring-3 aria-invalid:ring-3 file:text-text placeholder:text-faint w-full min-w-[0px] outline-none file:inline-flex file:border-0 file:bg-transparent disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       {...props}

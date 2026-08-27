@@ -6,7 +6,7 @@
  * differ only in which timestamp they read and which buttons they offer.
  */
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GhostButton } from "../../components/ghost-button.js";
 import {
   AlertDialog,
@@ -87,7 +87,19 @@ function ArchiveTab<T extends Task>({
   // 더 보기 has to say that something changed.
   const [, redraw] = useState(0);
   const [pending, setPending] = useState<Pending<T> | null>(null);
-  const opener = useRef<HTMLElement | null>(null);
+  const opener = useRef<HTMLButtonElement | null>(null);
+  const buttons = useRef(new Map<string, HTMLButtonElement | null>());
+  // Focus goes back once the dialog has actually gone, not while it is going.
+  // onCloseAutoFocus fires inside Radix's own teardown, and whether the layer
+  // blurs afterwards depends on the order the microtasks happen to run in --
+  // the same press restored focus or left it on <body> from one run to the
+  // next. An effect keyed on `pending` runs after React has committed the
+  // unmount, which is the same moment every time.
+  useEffect(() => {
+    if (pending || !opener.current) return;
+    opener.current.focus();
+    opener.current = null;
+  }, [pending]);
   // Only the visible tab draws. Both are mounted, and a hundred rows of the
   // other one is a hundred rows nobody asked for on every redraw.
   if (getTab() !== which) return null;
@@ -156,12 +168,23 @@ function ArchiveTab<T extends Task>({
           }}
           placeholder={t(searchKey)}
           autoComplete="off"
-          className="w-auto flex-auto text-md select-text"
+          className="w-auto flex-auto select-text"
         />
         {bulk.map((action) => (
           <GhostButton
             key={action.labelKey}
             danger={action.danger}
+            // Where focus goes back to after the dialog. Radix returns it to
+            // its own Trigger and there is none here -- the dialog is driven
+            // by state, so the button stays an ordinary button. Without this,
+            // answering with Escape drops focus on <body> and a keyboard
+            // loses its place in the tab. Held per action rather than read
+            // from document.activeElement at click time, which answers with
+            // whatever the last press left behind rather than with this
+            // button.
+            ref={(node) => {
+              buttons.current.set(action.labelKey, node);
+            }}
             onClick={() => {
               // The list the tab holds, not a condition to filter by: it is
               // already scoped to the board on screen, and the other board's
@@ -169,12 +192,7 @@ function ArchiveTab<T extends Task>({
               const everything = all();
               if (!everything.length) return;
               if (action.confirm) {
-                // Where focus goes back to. Radix returns it to its own
-                // Trigger, and there is no Trigger here -- the dialog is
-                // driven by state so the button keeps being an ordinary
-                // button. Without this, answering with Escape drops focus on
-                // <body> and a keyboard loses its place in the tab.
-                opener.current = document.activeElement as HTMLElement | null;
+                opener.current = buttons.current.get(action.labelKey) ?? null;
                 setPending({ action, items: everything });
                 return;
               }
@@ -240,10 +258,10 @@ function ArchiveTab<T extends Task>({
       >
         {pending ? (
           <AlertDialogContent
-            onCloseAutoFocus={(e) => {
-              e.preventDefault();
-              opener.current?.focus();
-            }}
+            // Radix would send focus to its own Trigger, and there is none --
+            // this dialog is opened from state so the bulk button stays an
+            // ordinary button. Stop it here; the effect above does the rest.
+            onCloseAutoFocus={(e) => e.preventDefault()}
           >
             <AlertDialogHeader className="place-items-start text-left">
               <AlertDialogTitle>{t(pending.action.labelKey)}</AlertDialogTitle>

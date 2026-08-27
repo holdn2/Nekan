@@ -26,20 +26,17 @@ import { Input } from "../../components/ui/input.js";
  *   flex-[1_1_120px]  the two share a line and shrink together. ui/input is
  *                     `w-full`, and a flex item's basis wins over its width,
  *                     so the two do not fight.
- *   min-w-[0px]       ui/input asks for `min-w-0`, and with no numeric spacing
- *                     scale here that class does not compile at all -- the
- *                     fields would stop shrinking at their content and push
- *                     the form wider than the 320px panel. The arbitrary form
- *                     is the one that exists.
- *   text-sm           ui/input is `text-xl` because upstream only drops off
- *                     `text-base` through `md:text-sm`, and screen variants do
- *                     not compile here either -- so the port's 16px is the
- *                     phone size, permanently. `text-sm` is what these two
- *                     have always been: 12px, the same rung as the panel's own
- *                     labels. (The scale here is xs 11 / sm 12 / md 13 /
- *                     lg 14 / xl 16, not Tailwind's.)
+ *   text-sm           the port reads text-md (13px), which is the body size.
+ *                     These two have always been 12px, the same rung as the
+ *                     panel's own labels. (The scale here is xs 11 / sm 12 /
+ *                     md 13 / lg 14 / xl 16, not Tailwind's.)
+ *
+ * The `min-w-[0px]` that used to be here is the port's own now -- it wrote
+ * `min-w-0`, which does not compile without a numeric spacing scale, so the
+ * fields stopped shrinking at their content and pushed the form past the
+ * 320px panel.
  */
-const FIELD = "flex-[1_1_120px] min-w-[0px] text-sm";
+const FIELD = "flex-[1_1_120px] text-sm";
 
 interface Props {
   /**

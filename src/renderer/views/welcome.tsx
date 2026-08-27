@@ -286,7 +286,7 @@ export function Welcome() {
             for `border-t` and no colour, and with no Tailwind preflight in
             this app an uncoloured border falls back to `currentColor`: the
             hairline would be drawn in the text colour. */}
-        <CardFooter className="border-line">
+        <CardFooter>
           {/* Two rows, because there are two things being said: the choice is
               reversible, and signing in stores something. Run together they
               wrapped mid-sentence and left "다." stranded on a line of its own.

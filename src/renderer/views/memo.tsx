@@ -194,7 +194,7 @@ export function MemoPanel() {
             // how tall it is. min-h-[0px] and field-sizing-fixed are what say
             // so; without them the editor pushes the panel past --memo-h and
             // body's overflow:hidden makes that look fixed.
-            "min-h-[0px] flex-auto resize-none field-sizing-fixed border-line-strong",
+            "min-h-[0px] flex-auto resize-none field-sizing-fixed",
             // font-[inherit] is the family only. The rule this replaced said
             // `font: inherit`, which is where the size came from too, and the
             // shorthand cannot come back: Tailwind emits arbitrary properties
@@ -202,18 +202,10 @@ export function MemoPanel() {
             // carry an inherited line-height over the one asked for below.
             // (Spelling it in this comment would also emit it -- @source reads
             // prose, so a class name written anywhere becomes a real rule.)
-            "rounded-md px-md py-sm font-[inherit] text-md leading-normal",
-            // The port reads text-xl (16px). A note is body text and has always
-            // been text-md here -- CLAUDE.md records the editor's own font size
-            // as one of the four regressions the style snapshot could not see.
-            "text-text select-text placeholder:text-faint",
-            // The port focuses to border-line-strong plus a ring in --ring.
-            // That is where this field is going, but the accent is being
-            // decided elsewhere right now, so the accent border and glow it has
-            // always drawn stay -- and the port's ring is turned off rather
-            // than left to stack a second outline behind this one.
-            "focus-visible:border-accent focus-visible:ring-0",
-            "focus-visible:shadow-[0_0_0_2px_var(--accent-soft)]",
+            "rounded-md px-md py-sm font-[inherit] leading-normal",
+            // The size, the placeholder tone and the accent focus this used to
+            // put back are the port's own now.
+            "text-text select-text",
             !editing && "hidden",
           )}
           value={value}
