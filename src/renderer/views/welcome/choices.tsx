@@ -23,7 +23,7 @@ const TEXT = "welcome-choice-text flex flex-col gap-hair";
 const SUB = "text-xs text-muted";
 
 /**
- * Both answers, minus the border that tells them apart.
+ * Both answers, drawn exactly alike.
  *
  * ui/button's `outline` variant is the base -- neutral chrome, a `line`
  * hairline, `panel-2` on hover -- and everything here is undoing the fact that
@@ -48,7 +48,11 @@ const SUB = "text-xs text-muted";
  * so the wordmark is the only colour on it.
  */
 const CHOICE = cn(
-  "welcome-choice mb-md h-auto w-full justify-start gap-xl rounded-panel",
+  // rounded-lg, which is the card's own 12px rather than the 10px these had.
+  // One radius on the screen was asked for, and two nested roundings a couple
+  // of pixels apart is the kind of difference that reads as a mistake rather
+  // than as a decision.
+  "welcome-choice mb-md h-auto w-full justify-start gap-xl rounded-lg",
   "px-2xl py-xl text-left whitespace-normal text-text",
 );
 
@@ -73,13 +77,19 @@ export function WelcomeChoices({
 }: Props) {
   return (
     <>
-      {/* Emphasis without a fill. `variant="default"` is the obvious choice
-          and the wrong one for the same reason `.primary` was: it paints in
-          the app's accent, and Google asks that a button offering its sign-in
-          keep neutral chrome so the wordmark colours stay the only colour on
-          it. A stronger hairline and a shadow say "this one" instead. */}
+      {/* Emphasis without a fill, and now without a border of its own either.
+          `variant="default"` is the obvious choice and the wrong one for the
+          same reason `.primary` was: it paints in the app's accent, and Google
+          asks that a button offering its sign-in keep neutral chrome so the
+          wordmark colours stay the only colour on it.
+
+          This used to carry a stronger hairline and a shadow to say "this
+          one". Both are gone: the two answers are the same shape now, and the
+          badge is what marks the recommendation. A single button drawn with a
+          heavier edge than the one under it reads as the two being different
+          kinds of thing rather than as one being suggested. */}
       <Button
-        className={cn(CHOICE, "recommended border-line-strong shadow-knob")}
+        className={cn(CHOICE, "recommended")}
         variant="outline"
         type="button"
         disabled={busy}
@@ -106,7 +116,7 @@ export function WelcomeChoices({
       </Button>
 
       <Button
-        className={cn(CHOICE, "border-line")}
+        className={CHOICE}
         variant="outline"
         type="button"
         disabled={busy}

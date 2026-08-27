@@ -106,11 +106,24 @@ test("the card is a ui/card, and the two answers are ui/buttons", async () => {
   // sm: the default's 16px padding, on top of the overlay's own, costs height
   // this card does not have -- it was measured against a 760x520 window.
   expect(card.dataset.size).toBe("sm");
-  // Header, content and footer, in that order and all present. The footer is
-  // what used to be a paragraph with a top margin pretending to be one.
+  // The card holds the question and nothing else: the mark and the name, and
+  // the two answers with the checkbox that hangs off the first of them. There
+  // is no footer any more.
   expect(
     [...card.children].map((c) => (c as HTMLElement).dataset.slot),
-  ).toEqual(["card-header", "card-content", "card-footer"]);
+  ).toEqual(["card-header", "card-content"]);
+  // And the two things that used to be inside are outside, on the overlay's
+  // own ground. Asserted as "not a descendant" rather than by position: what
+  // matters is that neither is part of the question, and a test that only
+  // checked the order would pass on a footer under a different name.
+  for (const sel of [".welcome-foot", ".welcome-msg"]) {
+    const el = find(sel);
+    expect(card.contains(el)).toBe(false);
+  }
+  // 24px above and below, the average of the 12 and 36 they used to be. As the
+  // size variant, because ui/card writes its own padding that way and
+  // tailwind-merge keeps a plain utility beside a variant rather than over it.
+  expect(card.className).toContain("data-[size=sm]:py-5xl");
 
   const choices = [
     ...document.querySelectorAll<HTMLElement>(".welcome-choice"),
@@ -122,6 +135,22 @@ test("the card is a ui/card, and the two answers are ui/buttons", async () => {
   // `default` is the app accent, which is the thing the guidelines forbid.
   expect(choices.map((b) => b.dataset.variant)).toEqual(["outline", "outline"]);
   expect(choices[0].className).not.toContain("bg-accent");
+  // Drawn exactly alike, which is the assertion rather than any one class:
+  // the recommended one used to carry a heavier border and a shadow, and that
+  // read as the two being different kinds of thing rather than as one being
+  // suggested. The badge is what says that now. `recommended` itself is the
+  // hook the tests above click by and carries no styling.
+  const drawn = choices.map((c) =>
+    c.className
+      .split(/\s+/)
+      .filter((x) => x && x !== "recommended")
+      .sort()
+      .join(" "),
+  );
+  expect(drawn[0]).toBe(drawn[1]);
+  expect(choices[0].className).not.toContain("shadow-knob");
+  // One radius on the screen: the choices take the card's 12px, not their own.
+  expect(choices.every((c) => c.className.includes("rounded-lg"))).toBe(true);
 
   // ui/button is built for one line of text; these are two lines tall and fill
   // the card. All four overrides have to actually compile.
