@@ -147,7 +147,7 @@
     "log": {
       "history": "The <b>History</b> stacks completed tasks by date, newest first. <code>Restore</code> puts one back in the quadrant it came from and <code>Delete</code> sends it to the trash. <code>Move all to the trash</code> clears what you are looking at in one go.",
       "trash": "The <b>Trash</b> keeps deleted tasks by date. <code>Restore</code> puts one back where it was — into the History if it had been completed — and <code>Delete forever</code> removes it for good. <code>Restore all</code> and <code>Empty the trash</code> do the whole list at once, and <b>emptying cannot be undone.</b>",
-      "search": "Both tabs have a search box, and <b>it searches the whole record rather than what happens to be drawn</b> — something you finished long ago comes straight up. A hundred are drawn at a time and the rest follow from <code>Show more</code> at the end of the list. Nothing is being removed."
+      "search": "Both tabs have a search box, and <b>it searches the whole record rather than what happens to be drawn</b> — something you finished long ago comes straight up. The list is shown twenty at a time, and the numbers underneath move between pages. Nothing is being removed."
     },
     "exportTitle": "Export",
     "export": {
@@ -340,7 +340,6 @@
     "quadQ2": "Important",
     "quadQ3": "Urgent",
     "quadOther": "Neither",
-    "more": "Show more ({{count}} left)",
     "noResults": "Nothing matches that search.",
     "historyEmpty": "Nothing completed yet.",
     "trashEmpty": "The trash is empty.",
