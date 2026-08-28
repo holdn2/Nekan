@@ -9,7 +9,12 @@
 
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { Task } from "../../../shared/types.js";
-import { doneTasks, setTasks, trashedTasks } from "../../store.js";
+import {
+  acceptSynced,
+  doneTasks,
+  setTasks,
+  trashedTasks,
+} from "../../store.js";
 import { setLanguage } from "../../i18n.js";
 import { act } from "react";
 import { find, mount } from "../../react/testing.js";
@@ -140,8 +145,9 @@ const pageNumbers = () =>
     .filter((b) => /^\d+$/.test(b.textContent ?? ""))
     .map((b) => b.textContent);
 const activePage = () =>
-  document.querySelector("#historyView [data-slot=pagination-link][data-active]")
-    ?.textContent;
+  document.querySelector(
+    "#historyView [data-slot=pagination-link][data-active]",
+  )?.textContent;
 const step = (label: string) =>
   pageButtons().find((b) => b.getAttribute("aria-label") === label)!;
 
@@ -218,12 +224,16 @@ test("a shrinking list pulls you back to the last page that exists", async () =>
   await flush(() => step("Last page").click());
   expect(activePage()).toBe("3");
 
-  await flush(() => setTasks(many.slice(0, PAGE * 2)));
+  // acceptSynced rather than setTasks: setTasks only assigns, so nothing
+  // redraws and the assertion below would read the page before the shrink.
+  // This is also the case the clamp is written for -- a pull landing under a
+  // page somebody is looking at.
+  await flush(() => acceptSynced(many.slice(0, PAGE * 2)));
   expect(activePage()).toBe("2");
   expect(rows().length).toBe(PAGE);
 
   // Emptied altogether: one page again, and the pager goes with it.
-  await flush(() => setTasks([]));
+  await flush(() => acceptSynced([]));
   expect(rows().length).toBe(0);
   expect(pager()).toBeNull();
   expect(find("#historyEmpty").classList.contains("hidden")).toBe(false);
@@ -402,7 +412,9 @@ test("a bulk action on a later page still takes the whole list", async () => {
   expect(rows().length).toBe(3);
 
   await flush(() => bar().click());
-  expect(find("[role=alertdialog]").textContent).toContain(String(PAGE * 2 + 3));
+  expect(find("[role=alertdialog]").textContent).toContain(
+    String(PAGE * 2 + 3),
+  );
   await flush(() =>
     find<HTMLButtonElement>("[data-slot=alert-dialog-action]").click(),
   );

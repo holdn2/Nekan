@@ -92,9 +92,7 @@ test("is buttons rather than links, so nothing here navigates", async () => {
     expect(link.getAttribute("type")).toBe("button");
   }
   // The page you are on is announced, not merely coloured.
-  expect(
-    container.querySelector("[aria-current=page]")?.textContent,
-  ).toBe("2");
+  expect(container.querySelector("[aria-current=page]")?.textContent).toBe("2");
 });
 
 test("asks for a page rather than for a direction", async () => {
