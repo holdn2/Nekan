@@ -251,3 +251,26 @@ test("deleting a note asks inside the app, and only deletes on yes", async () =>
   expect(find<HTMLTextAreaElement>("#memoInput").value).toBe("");
   expect(confirm).not.toHaveBeenCalled();
 });
+
+test("cancelling the delete question puts focus back on the button that asked", async () => {
+  // The dialog is opened from state, so it has no AlertDialogTrigger for Radix
+  // to hand focus back to. Without something saying where it goes, Cancel and
+  // Escape both drop it on <body> and a keyboard loses its place in the panel.
+  const section = host();
+  setTasks([task()]);
+  const { flush } = await mount(<MemoPanel />, section);
+  await flush(() => setSelected("t1"));
+
+  const remove = find<HTMLButtonElement>("#memoDelete");
+  await flush(() => {
+    remove.focus();
+    remove.click();
+  });
+  expect(find("#memoDeleteConfirm").contains(document.activeElement)).toBe(
+    true,
+  );
+
+  await flush(() => find<HTMLButtonElement>("#memoDeleteNo").click());
+  expect(document.querySelector("#memoDeleteConfirm")).toBeNull();
+  expect(document.activeElement).toBe(remove);
+});

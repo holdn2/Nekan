@@ -93,6 +93,7 @@ function ArchiveTab<T extends Task>({
   const opener = useRef<HTMLButtonElement | null>(null);
   const buttons = useRef(new Map<string, HTMLButtonElement | null>());
   const scroller = useRef<HTMLDivElement | null>(null);
+  const search = useRef<HTMLInputElement | null>(null);
   // Focus goes back once the dialog has actually gone, not while it is going.
   // onCloseAutoFocus fires inside Radix's own teardown, and whether the layer
   // blurs afterwards depends on the order the microtasks happen to run in --
@@ -215,6 +216,7 @@ function ArchiveTab<T extends Task>({
           )}
         >
           <Input
+            ref={search}
             type="search"
             id={`${which}Search`}
             value={query}
@@ -253,6 +255,11 @@ function ArchiveTab<T extends Task>({
               onClick={() => {
                 setQuery("");
                 page[which] = 1;
+                // This button unmounts the moment the query is empty, which is
+                // the moment it is pressed -- so focus has to be handed
+                // somewhere or it lands on <body>. The box it just emptied is
+                // where typing carries on.
+                search.current?.focus();
               }}
             >
               <CloseIcon />

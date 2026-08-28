@@ -281,9 +281,9 @@ npm run release   # 빌드 + GitHub Release에 업로드 (아래 GH_TOKEN 참고
 `build\icon.ico` (16~256px 멀티 사이즈)가 exe·작업표시줄·타이틀바 로고에 모두 쓰입니다.
 디자인을 바꾸고 싶으면 색상만 고쳐서 다시 생성하면 됩니다.
 
-아이콘의 네 색은 **한때 분면 네 색과 같은 값**이었습니다. 2026-08-28에 분면 쪽이 더
-선명한 값으로 바뀌면서 둘이 갈라졌으니, 아이콘을 다시 그린다면 `src/shared/theme.ts` 의
-`QUAD` 를 보고 맞추면 됩니다.
+분면 네 색은 한때 **이 아이콘의 색상과 채도를 그대로 쓰고 밝기만 옮긴** 값이었습니다
+(같은 hex는 아니었습니다). 2026-08-28에 분면 쪽이 더 선명한 값으로 바뀌면서 둘이
+갈라졌으니, 아이콘을 다시 그린다면 `src/shared/theme.ts` 의 `QUAD` 를 보고 맞추면 됩니다.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\make-icon.ps1

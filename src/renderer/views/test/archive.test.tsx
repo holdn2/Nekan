@@ -273,6 +273,27 @@ test("the search box clears from a drawn button, not the browser's", async () =>
   expect(activePage()).toBe("1");
 });
 
+test("clearing the search hands focus to the box it emptied", async () => {
+  // The clear button unmounts the moment the query is empty, which is the
+  // moment it is pressed. Focus has to be handed somewhere before that or it
+  // lands on <body> -- and a keyboard user who just cleared a search is about
+  // to type another one.
+  setTasks([done(1), done(2)]);
+  const { flush } = await mount(<div />);
+  draw();
+  await flush();
+
+  await flush(() => type("일"));
+  const clear = document.querySelector<HTMLButtonElement>(
+    "#historyView button[data-variant=ghost]",
+  )!;
+  await flush(() => {
+    clear.focus();
+    clear.click();
+  });
+  expect(document.activeElement).toBe(find("#historySearch"));
+});
+
 test("searching starts over at the first page", async () => {
   // Landing on page 4 of a one-page result is a blank screen that looks like a
   // bug.

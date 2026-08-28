@@ -85,6 +85,32 @@ export function MemoPanel() {
   }
 
   const input = useRef<HTMLTextAreaElement>(null);
+  /**
+   * Where focus goes when the delete question closes.
+   *
+   * Radix hands it back to its own Trigger, and this dialog has none -- it is
+   * opened from state so the footer button stays an ordinary button. Without
+   * this, Cancel and Escape both leave focus on <body> and a keyboard loses
+   * its place in the panel.
+   *
+   * An effect keyed on the flag rather than onCloseAutoFocus: that fires
+   * inside Radix's own teardown, and whether the layer blurs afterwards
+   * depends on the order the microtasks happen to run in -- the same press
+   * restored focus or did not from one run to the next. This runs after React
+   * has committed the unmount, which is the same moment every time. The
+   * archive's bulk question does it the same way, for the same reason.
+   */
+  const removeBtn = useRef<HTMLButtonElement>(null);
+  const wasConfirming = useRef(false);
+  useEffect(() => {
+    if (confirmingDelete) {
+      wasConfirming.current = true;
+      return;
+    }
+    if (!wasConfirming.current) return;
+    wasConfirming.current = false;
+    removeBtn.current?.focus();
+  }, [confirmingDelete]);
   useEffect(() => {
     if (!editing) return;
     const el = input.current;
@@ -260,6 +286,7 @@ export function MemoPanel() {
           danger
           className={cn(FOOT_BTN, (editing || !original) && "hidden")}
           id="memoDelete"
+          ref={removeBtn}
           onClick={remove}
         >
           {t("common.delete")}
