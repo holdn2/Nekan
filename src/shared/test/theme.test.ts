@@ -154,6 +154,9 @@ type Rule = [string, ColorRole, ColorRole, number];
  * visible as a change", which is what a hover fill or a hairline is.
  */
 const RULES: Rule[] = [
+  // The window ground has to be a ground: at 1.04 a card did not sit on it so
+  // much as dissolve into it, and nothing under a panel could cast a shadow.
+  ["a panel against the window ground", "panel", "bg", 1.05],
   ["body text on a panel", "text", "panel", 4.5],
   ["body text on the window ground", "text", "bg", 4.5],
   ["secondary text on a panel", "muted", "panel", 4.5],

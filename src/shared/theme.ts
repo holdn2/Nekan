@@ -211,7 +211,12 @@ const quadSurfaces = (t: ThemeName) => ({
  */
 export const PALETTE: Record<ThemeName, Record<ColorRole, string>> = {
   light: {
-    bg: N(1),
+    // A step further from the panel than it used to be. At N(1) the ground and
+    // a card were 1.04:1 apart, which is not a difference so much as a rounding
+    // error -- panels read as part of the window and the shadow under them had
+    // nothing to fall onto. N(2) is the smallest move the ramp offers and takes
+    // that to 1.11:1.
+    bg: N(2),
     panel: N(0),
     "panel-2": N(2),
     "panel-3": N(3),
