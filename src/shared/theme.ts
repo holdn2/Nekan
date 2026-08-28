@@ -35,6 +35,13 @@
  * because that is the floor and there is nothing below it to layer against. An
  * L*-even ramp put N02 at `#dbdbdb`, far too dark for a window ground.
  *
+ * N03 was added later and is the reason the light end is now five deep. The
+ * window ground wanted to sit below N02 and the next step down was N04, nine
+ * L* away and unmistakably grey -- the ground stops being a ground and starts
+ * being a colour. Everything from the old N03 on shifted by one when it went
+ * in; the four anchors are still exactly where they were, which is what the
+ * test asserts.
+ *
  * Capping at `#2b2b2b` has one visible consequence: the dark theme is a
  * charcoal one rather than a near-black one. Softer, and of a piece with the
  * light theme rather than a separate product.
@@ -43,17 +50,18 @@ export const RAMP = [
   "#ffffff", // N00  L*100    anchor
   "#f8f8f8", // N01  L* 97.5
   "#efefef", // N02  L* 94.5
-  "#d4d4d4", // N03  L* 84.9  anchor
-  "#c4c4c4", // N04  L* 79
-  "#b3b3b3", // N05  L* 72.9  anchor
-  "#9e9e9e", // N06  L* 65
-  "#898989", // N07  L* 57
-  "#747474", // N08  L* 49
-  "#616161", // N09  L* 41
-  "#4e4e4e", // N10  L* 33
-  "#3e3e3e", // N11  L* 26
-  "#323232", // N12  L* 21
-  "#2b2b2b", // N13  L* 17.5  anchor
+  "#e9e9e9", // N03  L* 92.3
+  "#d4d4d4", // N04  L* 84.9  anchor
+  "#c4c4c4", // N05  L* 79
+  "#b3b3b3", // N06  L* 72.9  anchor
+  "#9e9e9e", // N07  L* 65
+  "#898989", // N08  L* 57
+  "#747474", // N09  L* 49
+  "#616161", // N10  L* 41
+  "#4e4e4e", // N11  L* 33
+  "#3e3e3e", // N12  L* 26
+  "#323232", // N13  L* 21
+  "#2b2b2b", // N14  L* 17.5  anchor
 ] as const;
 
 const N = (step: number): string => RAMP[step];
@@ -216,56 +224,56 @@ export const PALETTE: Record<ThemeName, Record<ColorRole, string>> = {
     // error -- panels read as part of the window and the shadow under them had
     // nothing to fall onto. N(2) is the smallest move the ramp offers and takes
     // that to 1.11:1.
-    bg: N(2),
+    bg: N(3),
     panel: N(0),
     "panel-2": N(2),
-    "panel-3": N(3),
+    "panel-3": N(4),
     "input-bg": N(0),
     line: N(2),
-    "line-strong": N(4),
-    text: N(13),
-    muted: N(9),
-    faint: N(7),
+    "line-strong": N(5),
+    text: N(14),
+    muted: N(10),
+    faint: N(8),
     hover: N(1),
     active: N(2),
-    disabled: N(5),
-    accent: N(13),
+    disabled: N(6),
+    accent: N(14),
     "accent-soft": N(2),
     "on-accent": N(0),
-    ring: `${N(13)}40`,
+    ring: `${N(14)}40`,
     danger: "#a8302a",
     "danger-soft": "#a8302a1a",
     ok: "#3f7d5a",
-    scroll: N(4),
-    "scroll-hover": N(6),
+    scroll: N(5),
+    "scroll-hover": N(7),
     ...QUAD.light,
     ...quadSurfaces("light"),
   },
   dark: {
-    bg: N(13),
-    panel: N(12),
-    "panel-2": N(11),
-    "panel-3": N(10),
-    "input-bg": N(13),
-    line: N(11),
-    "line-strong": N(10),
+    bg: N(14),
+    panel: N(13),
+    "panel-2": N(12),
+    "panel-3": N(11),
+    "input-bg": N(14),
+    line: N(12),
+    "line-strong": N(11),
     text: N(1),
-    muted: N(5),
-    faint: N(7),
-    hover: N(11),
-    active: N(10),
-    disabled: N(8),
+    muted: N(6),
+    faint: N(8),
+    hover: N(12),
+    active: N(11),
+    disabled: N(9),
     accent: N(1),
-    "accent-soft": N(11),
-    "on-accent": N(13),
+    "accent-soft": N(12),
+    "on-accent": N(14),
     ring: `${N(1)}40`,
     // Not the light danger lifted a little: red has to stay red on a charcoal
     // panel and still clear 4.5:1 against it.
     danger: "#e9968c",
     "danger-soft": "#e9968c1f",
     ok: "#68c195",
-    scroll: N(10),
-    "scroll-hover": N(9),
+    scroll: N(11),
+    "scroll-hover": N(10),
     ...QUAD.dark,
     ...quadSurfaces("dark"),
   },

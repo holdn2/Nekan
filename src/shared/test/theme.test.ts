@@ -116,9 +116,9 @@ test("the four Salt and pepper colours are in the ramp, exactly", () => {
   // Anchors, not approximations. #d4d4d4 came out as #d1d1d1 while the ramp
   // was still evenly spaced, which is a different colour wearing the name.
   assert.equal(RAMP[0], "#ffffff");
-  assert.equal(RAMP[3], "#d4d4d4");
-  assert.equal(RAMP[5], "#b3b3b3");
-  assert.equal(RAMP[13], "#2b2b2b");
+  assert.equal(RAMP[4], "#d4d4d4");
+  assert.equal(RAMP[6], "#b3b3b3");
+  assert.equal(RAMP[14], "#2b2b2b");
 });
 
 test("the ramp only gets darker, and never repeats a step", () => {
