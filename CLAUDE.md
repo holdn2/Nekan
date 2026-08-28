@@ -29,6 +29,15 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
   shared/          메인·렌더러·테스트가 공유. 여기만 테스트가 덮는다
     types.ts       Task · Place · Space · Layout · Session · DueInfo · Rect 등 어휘
     theme.ts       색의 유일한 집. RAMP 14 · PALETTE 역할 26 × 2테마 · SHADOW 5 × 2테마
+                   **분면 네 색은 2026-08-28부터 아이콘의 색이 아니다.** 원래
+                   `build/icon.png`의 네 색 그대로였는데(#49로 아이콘은 안 바꾼다),
+                   넷이 한 계열의 명도 차이로 읽혀서 더 선명한 값으로 갈랐다 —
+                   q4는 따뜻한 회색에서 보라가 됐다(회색은 "비활성"으로 읽혔다).
+                   **바꿀 때 지켜야 하는 것은 색상이 아니라 밝기다**: 점은 8px이고
+                   바 칩에서는 그것만이 분면을 말하므로, 밝기가 같은 선명한 넷은
+                   흑백과 적록색약에 똑같은 회색 넷이다. 그래서 L*을 분면마다
+                   먼저 정하고(밝은 36/44/52/60, 어두운 55/62/69/76) 색상과 채도를
+                   거기 맞춘다. 그 파일 주석에 측정값이 있다
                    여기가 shared인 이유: 앱·내보내기·사이트·로그인 콜백이 같은 값을 읽어야
                    하고, 모바일이 붙으면 다섯째가 된다. CSS는 tools/build-theme.js가 만든다
     core.ts        + core/  places · text · dates · order · tasks · layout · placement
@@ -72,6 +81,20 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
                    (due-calendar.tsx). 날짜를 **타이핑하는 길은 일부러 없앴고**
                    지우기는 팝오버 안의 `common.delete` 버튼이다 — 네이티브 선택기가
                    주던 지우기가 사라졌기 때문이라, 그 버튼을 없애면 날짜를 못 지운다
+                   **세 번째가 2026-08-28에 없어졌다**: `<input type="search">`가 그리던
+                   지우기 버튼이다. `appearance-none`으로 끄고 그린 것으로 바꿨다 —
+                   `hidden`으로는 안 된다(엔진이 그리는 의사요소라 상자가 아니다)
+      ui/          watermelon 레지스트리에서 이식한 것들. 2026-08-28에 **화면에 붙었다** —
+                   그전까지는 파일만 있고 아무도 import하지 않았다. 지금 쓰는 곳:
+                   input(추가 폼·검색·개발용 로그인) · button(거의 전부) ·
+                   textarea(메모) · alert-dialog(메모 삭제·일괄 비우기·계정 삭제) ·
+                   separator/card(설정·계정·첫 실행) · pagination(히스토리·휴지통) ·
+                   tooltip(탭 줄의 i 버튼) · calendar(마감일). **아직 안 붙은 것은
+                   badge·collapsible·popover·tabs 넷이고, 넷 다 이유가 있다** —
+                   badge는 components/badge.tsx가 이미 그 일을 하고, collapsible은
+                   다 꺼내기의 열림 상태를 `window/layout/grid.ts`가 클래스로 읽어서
+                   맞지 않으며(아래 참조), tabs는 탭 줄이 밑줄을 직접 재고,
+                   popover는 due-chip이 Radix를 직접 쓴다
     react/         React 쪽 배관 — icons.tsx(아이콘)·window-icons.tsx(창 버튼)·
                    brand-icons.tsx(구글 마크) · use-store.ts(훅) ·
                    **앞의 둘은 2026-08-26부터 `lucide-react`를 감싼다.** 크기와 굵기는
@@ -92,8 +115,11 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
                    layout.ts + layout/(grid·quad-edges·memo-edge) ·
                    dnd.ts · export-ui.ts — 뒤의 둘은 React가 아니고 그게 맞다:
                    그릴 마크업이 없고 이벤트와 한 번의 호출이다
-    styles/        14장 + 진입점 index.css. #75로 열둘이 유틸리티가 됐고
-                   archive·account·titlebar 셋은 아예 없어졌다
+    styles/        13장 + 진입점 index.css. #75로 열둘이 유틸리티가 됐고
+                   archive·account·titlebar 셋은 아예 없어졌다.
+                   **due-chip.css도 2026-08-28에 없어졌다** — 마지막까지 남아 있던
+                   것이 히스토리 검색창 규칙이었는데 그건 애초에 그 시트의 주제가
+                   아니었고, 이제 그 상자는 ui/input이 그린다
                    index.css의 `@import` 순서가 캐스케이드다 (옛날엔 index.html의
                    <link> 순서였다) — 셋 다 layer(nekan)로 들어간다
                    switch.css만 영역이 아니라 부품이다 — 두 곳이 쓰므로 base 바로 뒤
@@ -473,10 +499,10 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   막으면 add 폼 넷이 언마운트돼서 **쓰다 만 할 일이 가이드 한 번 보고 오면 사라진다.**
 - **스타일시트는 `styles/index.css` 하나로 들어간다. Tailwind가 붙어 있지만 유틸리티는
   아직 하나도 만들어지지 않는다** (#75 0·1단계). 알아야 할 것은 넷이다.
-  ① **`@import` 순서가 캐스케이드다.** 옛날엔 `index.html`의 `<link>` 열여섯 줄이 그 일을
-  했고, 지금은 `index.css`의 `@import` 열여섯 줄이 한다. **줄을 옮기면 캐스케이드가 옮겨간다.**
-  **양쪽의 열여섯은 같은 열여섯이 아니다** — 옛 `<link>`는 시트 열여섯이었고, 지금 `@import`
-  는 열넷이며 그중 하나는 Tailwind의 유틸리티다(시트 열셋). `@source`는 그 아래에 있다:
+  ① **`@import` 순서가 캐스케이드다.** 옛날엔 `index.html`의 `<link>`가 그 일을 했고,
+  지금은 `index.css`의 `@import`가 한다. **줄을 옮기면 캐스케이드가 옮겨간다.**
+  **숫자를 기억으로 적지 말 것** — 세는 법은 `grep -c "^@import" src/renderer/styles/index.css`
+  이고, 2026-08-28 기준 **열넷이며 그중 하나는 Tailwind의 유틸리티다**(시트 열셋). `@source`는 그 아래에 있다:
   `@import`가 다른 at-rule보다 먼저여야 한다는 CSS 규칙 때문이고, **Tailwind는 어느 쪽이든
   같은 산출물을 낸다**(옮기기 전후가 바이트 단위로 같았다).
   ② **손으로 쓴 CSS는 전부 `layer(nekan)`에 있다.** 레이어 순서는 `theme, nekan, utilities`다.
@@ -514,14 +540,18 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   (shadcn의 `ghost` 변형처럼 "평소엔 투명")를 가져오면 **평소 상태가 회색 상자로 보인다.**
   2026-08-26에 캘린더의 모든 날짜 칸이 회색으로 칠해진 것이 이것이었다. 고치는 법은
   가져온 컴포넌트의 기본 클래스에 **`bg-transparent`를 명시**하는 것이다(`components/ui/button.tsx`).
-  **preflight를 들이는 것으로 고치지 말 것** — 손으로 쓴 시트 열넷이 전부 리셋 없는 것을
-  전제로 쓰여 있다.
+  **preflight를 들이는 것으로 고치지 말 것** — 손으로 쓴 시트 전부가 리셋 없는 것을
+  전제로 쓰여 있다(생성물인 palette.css를 빼면 열둘).
 - **가져온 컴포넌트는 `src/renderer/components/ui/`에 둔다** (2026-08-26, watermelon 레지스트리에서
   이식한 `button.tsx`·`calendar.tsx`). **파일 맨 위에 출처와 라이선스를 적는다**(MIT).
   이식할 때 반드시 손대야 하는 것 셋: ① 토큰 이름(`bg-primary` → `bg-accent` 등)
   ② **숫자 간격 유틸리티는 컴파일되지 않는다** — `p-2`·`gap-1`·`size-4`를 `p-md`·`gap-xs`·
   `size-3xl`로. 반지름은 **이름이 아니라 픽셀을 맞춘다**(저쪽 `rounded-lg`는 8px, 우리는 12px)
   ③ `dark:` 변형은 지운다 — 우리 토큰이 이미 테마를 탄다.
+- **분면 색을 클래스로 조립하지 말 것.** `border-t-${quadrant}` 같은 이름은 Tailwind가
+  소스를 **글자로 읽기** 때문에(`@source`) 규칙이 아예 만들어지지 않는다. 오류도 안 나고
+  테두리만 조용히 사라진다. 넷을 손으로 적은 Record를 쓸 것 —
+  `renderer/views/memo.tsx`의 `QUAD_RULE`이 그 본보기다.
 - **색 리터럴은 `src/shared/theme.ts` 밖에 있으면 안 된다** (2026-08-26, PR #92). `palette.css`도
   `site/style.css`의 `/* palette:start */`~`/* palette:end */` 사이도 **생성물이고 커밋된다** —
   손으로 고치면 다음 빌드가 되돌린다. 고칠 곳은 `theme.ts` 한 곳이고 `npm run build`가
@@ -827,7 +857,8 @@ then "draft" else "published" end` (실측: `v1.0.1 -> draft`, `v1.0.0 -> publis
 돌릴 것). `node --test`가 `out/test/`의 231개로 `src/shared/`의 순수
 함수를 덮고 — 데이터가 날아가는 규칙(정규화 기본값, quadrant 유효성, temp+rename 저장, 손상
 파일 폴백)이 거기 있으니 그 파일들을 건드렸으면 반드시 돌린다 — 이어서 `vitest run`이
-**React로 옮긴 렌더러 조각** 52개를 덮는다.
+**React로 옮긴 렌더러 조각** 149개를 덮는다. **이 숫자는 자주 바뀐다** — 믿지 말고
+`npm test`의 마지막 줄을 볼 것.
 
 **러너가 둘인 이유**: 번들러가 생기면서 렌더러가 **Node가 require할 수 있는 파일로 존재하지
 않게 됐다.** Vite가 한 덩어리로 묶으니 모듈 단위로 import할 것이 없다. vitest는 그 Vite 파이프라인을

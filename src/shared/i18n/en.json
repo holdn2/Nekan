@@ -133,8 +133,8 @@
     },
     "dueTitle": "Due dates",
     "due": {
-      "set": "The <b>calendar button</b> beside the input sets a date as you add the task; for a task that already exists, <b>click the date chip</b> on the right to open the calendar. <code>Delete</code> at the foot of the calendar clears the date and nothing else.",
-      "colors": "The chip changes colour with the time left, so urgency is something you can see: <b>overdue</b> is red, <b>today</b> orange, <b>within three days</b> yellow, anything further out grey. Leave the app running for days and the colour and the count roll over at midnight on their own."
+      "set": "The <b>calendar button inside the input</b> sets a date as you add the task; for a task that already exists, <b>click the date chip</b> on the right to open the calendar. <code>Delete</code> at the foot of the calendar clears the date and nothing else.",
+      "colors": "The chip changes colour with the time left, so urgency is something you can see: <b>overdue</b> is red, <b>today</b> is drawn in the app's ink accent, <b>within three days</b> amber, anything further out grey. Leave the app running for days and the colour and the count roll over at midnight on their own."
     },
     "noteTitle": "Notes",
     "note": {
@@ -145,7 +145,7 @@
     },
     "logTitle": "History and trash",
     "log": {
-      "history": "The <b>History</b> stacks completed tasks by date, newest first. <code>Restore</code> puts one back in the quadrant it came from and <code>Delete</code> sends it to the trash. <code>Move all to the trash</code> clears what you are looking at in one go.",
+      "history": "The <b>History</b> stacks completed tasks by date, newest first. <code>Restore</code> puts one back in the quadrant it came from and <code>Delete</code> sends it to the trash. <code>Move all to the trash</code> clears <b>everything the tab is holding</b>, not just the page in front of you.",
       "trash": "The <b>Trash</b> keeps deleted tasks by date. <code>Restore</code> puts one back where it was — into the History if it had been completed — and <code>Delete forever</code> removes it for good. <code>Restore all</code> and <code>Empty the trash</code> do the whole list at once, and <b>emptying cannot be undone.</b>",
       "search": "Both tabs have a search box, and <b>it searches the whole record rather than what happens to be drawn</b> — something you finished long ago comes straight up. The list is shown twenty at a time, and the numbers underneath move between pages. Nothing is being removed."
     },
