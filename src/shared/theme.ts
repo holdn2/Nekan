@@ -269,11 +269,19 @@ export const PALETTE: Record<ThemeName, Record<ColorRole, string>> = {
 export type ShadowRole = "card" | "raise" | "knob" | "even" | "pop" | "toast";
 
 /**
- * Five elevations, both themes.
+ * Six elevations, both themes.
  *
- * There were five before too, and only one of them followed the theme -- the
- * other four were light-theme values sitting on a dark window. The names are
- * kept: each of the five already had a job.
+ * Five of them predate the dark theme, and only one followed it -- the other
+ * four were light-theme values sitting on a dark window. The names are kept:
+ * each already had a job.
+ *
+ * `raise` is the sixth, and it is what the four boards and the dump sit on. It
+ * is directionless for the same reason `even` is, arrived at from the other
+ * end: with an offset shadow the four boards each cast down and to the right,
+ * which reads as one light source in the corner of a grid rather than as four
+ * of the same thing side by side. It is also deliberately between `card` and
+ * where it started -- the first pass at it was twice this and looked like four
+ * floating cards, which is the look this whole design is trying not to have.
  *
  * `even` is the odd one and stays because its job is real. It is directionless,
  * for something sitting in a gap too tight to fall into: an offset shadow fills
@@ -295,7 +303,7 @@ export type ShadowRole = "card" | "raise" | "knob" | "even" | "pop" | "toast";
 export const SHADOW: Record<ThemeName, Record<ShadowRole, string>> = {
   light: {
     card: "0 1px 2px rgb(0 0 0 / 0.05)",
-    raise: "0 0 3px rgb(0 0 0 / 0.05), 0 0 14px rgb(0 0 0 / 0.09)",
+    raise: "0 0 2px rgb(0 0 0 / 0.05), 0 0 10px rgb(0 0 0 / 0.05)",
     knob: "0 1px 2px rgb(0 0 0 / 0.12)",
     even: "0 0 3px rgb(0 0 0 / 0.18)",
     pop: "0 10px 30px rgb(0 0 0 / 0.12), 0 2px 6px rgb(0 0 0 / 0.07)",
@@ -303,7 +311,7 @@ export const SHADOW: Record<ThemeName, Record<ShadowRole, string>> = {
   },
   dark: {
     card: "0 1px 2px rgb(0 0 0 / 0.35)",
-    raise: "0 0 3px rgb(0 0 0 / 0.3), 0 0 16px rgb(0 0 0 / 0.45)",
+    raise: "0 0 2px rgb(0 0 0 / 0.32), 0 0 12px rgb(0 0 0 / 0.24)",
     knob: "0 1px 2px rgb(0 0 0 / 0.45)",
     even: "0 0 3px rgb(0 0 0 / 0.5)",
     pop: "0 12px 34px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.4)",
