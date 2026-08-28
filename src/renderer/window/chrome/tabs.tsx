@@ -246,13 +246,15 @@ function ScreenHelp() {
         <TooltipTrigger asChild>
           <Button
             className={cn(
-              // Beside the tabs rather than exiled to the far end. At the far
-              // right it read as belonging to the window rather than to the
-              // strip, and there was nothing between it and the tabs to say
-              // what it was about. `ml-md` is one step wider than the gap
-              // between two tabs, which is enough to say it is not a fifth
-              // one.
-              "ml-md text-faint hover:text-text",
+              // At the far end of the strip, and pulled back into the strip's
+              // own right padding so it sits over the same edge the window
+              // buttons above do.
+              //
+              // It was tried beside the tabs, where it read as a fifth one.
+              // What made the far end work is the size: at 24px with a 14px
+              // mark it was small enough to look like something left over,
+              // and 28/16 reads as a control that is meant to be there.
+              "ml-auto mr-[-6px] text-faint hover:text-text",
             )}
             variant="ghost"
             size="icon-sm"
