@@ -340,7 +340,13 @@
     "untrash": "복원",
     "purge": "영구 삭제",
     "confirmTrashAll_other": "완료한 항목 {{count}}개를 휴지통으로 옮길까요?",
-    "confirmPurgeAll_other": "휴지통의 {{count}}개 항목을 영구 삭제할까요? 되돌릴 수 없습니다."
+    "confirmPurgeAll_other": "휴지통의 {{count}}개 항목을 영구 삭제할까요? 되돌릴 수 없습니다.",
+    "pageNav": "페이지",
+    "pageFirst": "첫 페이지",
+    "pagePrev": "이전 페이지",
+    "pageNext": "다음 페이지",
+    "pageLast": "마지막 페이지",
+    "pageNumber": "{{page}}페이지"
   },
   "oauth": {
     "done": "확인했습니다. 이 창을 닫고 앱으로 돌아가 주세요.",

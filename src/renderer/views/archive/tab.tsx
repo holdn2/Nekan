@@ -1,6 +1,6 @@
 /**
  * The body both finished tabs share: a search box, a bulk bar, a page of rows
- * and a button that asks for the next one.
+ * and the control that moves between pages.
  *
  * Generic over which kind of row it is holding, because history and trash
  * differ only in which timestamp they read and which buttons they offer.
@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "../../components/ui/alert-dialog.js";
 import { Input } from "../../components/ui/input.js";
+import { PaginationBar } from "../../components/ui/pagination.js";
 import { cn } from "../../react/cn.js";
 import type { Task } from "../../../shared/types.js";
 import { t } from "../../i18n.js";
@@ -26,7 +27,7 @@ import { useRenderSignal } from "../../react/use-store.js";
 import { getTab } from "../../window/chrome.js";
 import type { Action, BulkAction } from "./row.js";
 import { Row } from "./row.js";
-import { PAGE, dayLabel, matches, shown } from "./paging.js";
+import { PAGE, dayKey, dayLabel, matches, page, pageCount } from "./paging.js";
 
 interface TabProps<T extends Task> {
   which: "history" | "trash";
@@ -83,12 +84,13 @@ function ArchiveTab<T extends Task>({
 }: TabProps<T>) {
   useRenderSignal();
   const [query, setQuery] = useState("");
-  // Paging lives outside the component (chrome resets it), so a press of
-  // 더 보기 has to say that something changed.
+  // Paging lives outside the component (chrome resets it), so moving between
+  // pages has to say that something changed.
   const [, redraw] = useState(0);
   const [pending, setPending] = useState<Pending<T> | null>(null);
   const opener = useRef<HTMLButtonElement | null>(null);
   const buttons = useRef(new Map<string, HTMLButtonElement | null>());
+  const scroller = useRef<HTMLDivElement | null>(null);
   // Focus goes back once the dialog has actually gone, not while it is going.
   // onCloseAutoFocus fires inside Radix's own teardown, and whether the layer
   // blurs afterwards depends on the order the microtasks happen to run in --
@@ -100,26 +102,71 @@ function ArchiveTab<T extends Task>({
     opener.current.focus();
     opener.current = null;
   }, [pending]);
-  // Only the visible tab draws. Both are mounted, and a hundred rows of the
-  // other one is a hundred rows nobody asked for on every redraw.
-  if (getTab() !== which) return null;
 
-  // The filter runs over everything and the limit is applied after it, never
-  // the other way round. Searching the drawn rows instead would mean a task
-  // stops being findable at the moment it scrolls past the limit — which is
-  // exactly when someone would go looking for it.
-  const items = all().filter((task) => matches(task, query));
-  const drawn = items.slice(0, shown[which]);
-  const remaining = items.length - drawn.length;
+  // Only the visible tab draws. Both are mounted, and a page of the other one
+  // is a page nobody asked for on every redraw -- which is also why all() is
+  // not called at all below unless this tab is the one on screen.
+  const visible = getTab() === which;
+
+  // The filter runs over everything and the page is taken out of it, never the
+  // other way round. Searching the drawn rows instead would mean a task stops
+  // being findable at the moment it falls off the page — which is exactly when
+  // someone would go looking for it.
+  const items = visible ? all().filter((task) => matches(task, query)) : [];
+  const total = pageCount(items.length);
+  // Clamped, not reset. Emptying the trash, restoring a row, or a pull landing
+  // underneath can all shrink the list out from under whichever page is open;
+  // page 7 of a two-page list would otherwise draw nothing, which reads as
+  // data that is gone rather than as a page that is. Clamping lands on the
+  // last page that does exist -- the rows nearest the ones being looked at --
+  // where resetting to 1 would throw away the place after deleting one row.
+  const current = visible ? Math.min(page[which], total) : page[which];
+  // Written back so the module's answer and the drawn page cannot drift: the
+  // next redraw, and any later reset, start from what is actually on screen.
+  useEffect(() => {
+    if (visible) page[which] = current;
+  }, [visible, which, current]);
+
+  // Every hook above this line, so the two tabs keep the same hook order
+  // whichever one is on screen.
+  if (!visible) return null;
+
+  const go = (next: number) => {
+    page[which] = next;
+    // A new page starts at its own top. Keeping the old scroll offset lands
+    // in the middle of rows nobody chose, under a sticky header for a day
+    // that is no longer the first one here.
+    scroller.current?.scrollTo({ top: 0 });
+    redraw((n) => n + 1);
+  };
+
+  // Numbering runs over the whole filtered list rather than over the page, so
+  // a row's number is its place in its day. Numbering the page instead would
+  // restart at 1 wherever a page boundary fell mid-day, and a day of forty
+  // rows would read 1..20 and then 1..20 again.
+  const start = (current - 1) * PAGE;
+  const numbered: { task: T; key: number; index: number }[] = [];
+  let runningKey = 0;
+  let withinDay = 0;
+  for (const task of items) {
+    const key = dayKey(stamp(task));
+    if (key !== runningKey) {
+      runningKey = key;
+      withinDay = 0;
+    }
+    numbered.push({ task, key, index: withinDay });
+    withinDay += 1;
+  }
+  const drawn = numbered.slice(start, start + PAGE);
 
   const rows: React.ReactNode[] = [];
-  let lastDay = "";
-  let index = 0;
-  for (const task of drawn) {
-    const day = dayLabel(stamp(task));
-    if (day !== lastDay) {
-      lastDay = day;
-      index = 0;
+  // Starts unset rather than at the previous page's last day, so every page
+  // opens with a header saying which day its first row belongs to.
+  let lastKey = 0;
+  for (const { task, key, index } of drawn) {
+    if (key !== lastKey) {
+      lastKey = key;
+      const day = dayLabel(stamp(task));
       rows.push(
         // Pinned to the top of the scroller: two thousand rows is several
         // months, and a date that scrolls away leaves every row below it
@@ -144,7 +191,6 @@ function ArchiveTab<T extends Task>({
         actions={actions(task)}
       />,
     );
-    index += 1;
   }
 
   return (
@@ -159,12 +205,12 @@ function ArchiveTab<T extends Task>({
           type="search"
           id={`${which}Search`}
           value={query}
-          // Typing changes which rows these are, so the count of them starts
-          // over too. Carrying it across would leave a two-character search
-          // rendering thousands.
+          // Typing changes which rows these are, so the paging starts over
+          // too. Carrying the page across would land a two-character search on
+          // page 7 of a two-page result -- a blank list that reads as a bug.
           onChange={(e) => {
             setQuery(e.target.value);
-            shown[which] = PAGE;
+            page[which] = 1;
           }}
           placeholder={t(searchKey)}
           autoComplete="off"
@@ -205,32 +251,11 @@ function ArchiveTab<T extends Task>({
       </div>
       {/* Takes what is left of the tab and scrolls inside it, so the bar above
           stays put. */}
-      <div className="history-scroll min-h-[0px] flex-auto overflow-y-auto rounded-panel border border-line bg-panel shadow-default">
-        <ul className="history-list m-[0px] list-none p-sm">
-          {rows}
-          {/* The rest are there, they are just not drawn. Saying how many is
-              the point: a list that stops without a word is indistinguishable
-              from data that is gone, and this list is the one people come to
-              when they think something is missing. */}
-          {remaining > 0 ? (
-            <li className="more flex justify-center pt-lg pb-xs">
-              <button
-                type="button"
-                className={cn(
-                  "rounded-pill border border-line bg-panel-2 px-3xl py-sm",
-                  "text-sm text-muted",
-                  "hover:border-line-strong hover:bg-panel-3 hover:text-text",
-                )}
-                onClick={() => {
-                  shown[which] += PAGE;
-                  redraw((n) => n + 1);
-                }}
-              >
-                {t("archive.more", { count: remaining })}
-              </button>
-            </li>
-          ) : null}
-        </ul>
+      <div
+        ref={scroller}
+        className="history-scroll min-h-[0px] flex-auto overflow-y-auto rounded-panel border border-line bg-panel shadow-default"
+      >
+        <ul className="history-list m-[0px] list-none p-sm">{rows}</ul>
         {/* Named, because the class it used to carry was its only handle and
             that class was declared over in guide.css. An id is the same handle
             without a sheet on the other end of it. */}
@@ -244,6 +269,27 @@ function ArchiveTab<T extends Task>({
           {query.trim() ? t("archive.noResults") : t(emptyKey)}
         </p>
       </div>
+      {/* Outside the scroller, not inside it: a pager that scrolls away with
+          the rows is one you have to reach the bottom of the page to use, and
+          reaching the bottom is the moment you want it. Answers nothing at all
+          when there is only one page -- see PaginationBar. */}
+      <PaginationBar
+        className="pt-md"
+        page={current}
+        pageCount={total}
+        onPage={go}
+        labels={{
+          nav: t("archive.pageNav"),
+          first: t("archive.pageFirst"),
+          previous: t("archive.pagePrev"),
+          next: t("archive.pageNext"),
+          last: t("archive.pageLast"),
+          // Built here rather than passed as a key, for the reason
+          // archive/row.tsx spells out: this component subscribes to the
+          // render signal, so its words cannot outlive a language change.
+          page: (n) => t("archive.pageNumber", { page: n }),
+        }}
+      />
       {/* The question the bulk buttons used to ask through window.confirm().
           That was an OS window opening in front of a frameless widget, and it
           took the words out of the app's own type and palette. Radix keeps the

@@ -350,7 +350,13 @@
     "confirmTrashAll_one": "Move {{count}} completed task to the trash?",
     "confirmTrashAll_other": "Move {{count}} completed tasks to the trash?",
     "confirmPurgeAll_one": "Delete {{count}} task in the trash forever? This cannot be undone.",
-    "confirmPurgeAll_other": "Delete {{count}} tasks in the trash forever? This cannot be undone."
+    "confirmPurgeAll_other": "Delete {{count}} tasks in the trash forever? This cannot be undone.",
+    "pageNav": "Pages",
+    "pageFirst": "First page",
+    "pagePrev": "Previous page",
+    "pageNext": "Next page",
+    "pageLast": "Last page",
+    "pageNumber": "Page {{page}}"
   },
   "oauth": {
     "done": "Got it. You can close this tab and go back to the app.",
