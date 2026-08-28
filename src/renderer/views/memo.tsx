@@ -49,6 +49,14 @@ import {
  * than adding a second padding and hoping the right one wins.
  */
 const FOOT_BTN = "px-xl py-xs text-sm";
+/** The quadrant colours, spelled out so Tailwind's source scan can see them. */
+const QUAD_RULE: Record<string, string> = {
+  q1: "border-t-q1",
+  q2: "border-t-q2",
+  q3: "border-t-q3",
+  q4: "border-t-q4",
+};
+
 export function MemoPanel() {
   useRenderSignal();
   const task = selectedTask();
@@ -140,8 +148,18 @@ export function MemoPanel() {
     <div
       className={cn(
         "memo-card flex min-h-[0px] flex-auto flex-col overflow-hidden",
-        "rounded-panel border border-line border-t-2 border-t-accent bg-panel",
+        "rounded-panel border border-line border-t-2 bg-panel",
         "shadow-default",
+        // The quadrant this note belongs to, not the accent. The panel is
+        // about one task and the dot beside its title already says which
+        // quadrant that is; the rule agreeing costs nothing and makes the
+        // panel legible from the corner of an eye.
+        //
+        // Written out rather than composed. Tailwind reads the source as text
+        // (@source in styles/index.css), so a class built at runtime from
+        // `border-t-${quadrant}` is a name nothing ever emitted a rule for --
+        // the border would simply be missing, with no error anywhere.
+        QUAD_RULE[task.quadrant] ?? "border-t-accent",
       )}
     >
       <header className="memo-head flex items-center gap-md border-b border-line py-sm pr-sm pl-xl">

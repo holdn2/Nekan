@@ -179,7 +179,14 @@ function PaginationLink({
       aria-current={isActive ? "page" : undefined}
       data-active={isActive ? "true" : undefined}
       className={cn(
-        buttonVariants({ variant: isActive ? "default" : "ghost", size }),
+        buttonVariants({ variant: isActive ? "outline" : "ghost", size }),
+        // The current page is a chip lifted off the tray rather than a solid
+        // ink fill. `default` was reading heavier than everything around it --
+        // this is a place marker in a quiet row of numbers, not the loudest
+        // control on the screen. `outline` over a `panel-2` tray gives a panel
+        // fill and an edge; the shadow is what keeps it from disappearing into
+        // the tray, since the two are one ramp step apart.
+        isActive && "bg-panel text-text shadow-knob",
         className,
       )}
       {...props}

@@ -246,19 +246,24 @@ function ScreenHelp() {
         <TooltipTrigger asChild>
           <Button
             className={cn(
-              // Pushed to the far end of the strip, and pulled back out of the
-              // strip's own right padding so it sits over the same edge the
-              // window buttons above do.
-              "ml-auto mr-[-6px] text-faint hover:text-text",
+              // Beside the tabs rather than exiled to the far end. At the far
+              // right it read as belonging to the window rather than to the
+              // strip, and there was nothing between it and the tabs to say
+              // what it was about. `ml-md` is one step wider than the gap
+              // between two tabs, which is enough to say it is not a fifth
+              // one.
+              "ml-md text-faint hover:text-text",
             )}
             variant="ghost"
-            size="icon-xs"
+            size="icon-sm"
             type="button"
             title={t("tabs.help")}
             aria-label={t("tabs.help")}
             onClick={() => setStuck((open) => !open)}
           >
-            <Info size={14} strokeWidth={1.75} aria-hidden="true" />
+            {/* 16px against the tabs' 14: this one has no label beside it,
+                so it carries the whole control on its own. */}
+            <Info size={16} strokeWidth={1.6} aria-hidden="true" />
           </Button>
         </TooltipTrigger>
         <TooltipContent
