@@ -24,6 +24,7 @@ import { useRenderSignal } from "../react/use-store.js";
 import { cn } from "../react/cn.js";
 import { RichText } from "../react/rich-text.js";
 import { GoogleMark } from "../react/brand-icons.js";
+import { Button } from "../components/ui/button.js";
 
 /** What a sign-in answers with: the session when it worked, a code when not. */
 import type { Message, SignInResult } from "./account/status.js";
@@ -174,7 +175,13 @@ export function Account() {
             if the family or the scale changes. It was one `font:` shorthand;
             that cannot come back as an arbitrary property, because those are
             emitted after the leading-* utilities and would carry an inherited
-            line-height -- so the four parts are asked for by name. */}
+            line-height -- so the four parts are asked for by name.
+
+            This is the one button in this file that is NOT a ui/button, and
+            that is the point: every variant ui/button has sets a background,
+            and this one's background is Google's to decide. Handing it
+            `outline` and then overriding four of its utilities back would be
+            the same markup with a component in the way of it. */}
         <button
           className={cn(
             "google-btn inline-flex items-center gap-md rounded-sm border",
@@ -243,17 +250,20 @@ export function Account() {
         {/* The notice above this lives in the signed-out block, which is
             hidden by then -- this is the only copy a signed-in person sees. */}
         {privacy}
-        <button
-          className={cn(
-            "account-out-btn ml-auto rounded-sm border border-line",
-            "bg-transparent px-xl py-sm text-sm text-muted",
-            "hover:border-muted hover:text-text",
-          )}
+        {/* `outline` is ui/button's neutral bordered variant, which is what
+            this was spelling out by hand: a hairline in `line`, no fill of its
+            own, and the text going from `muted` to `text` on hover. The one
+            thing that moved is where the hover shows -- outline fills with
+            `panel-2` instead of darkening the border. */}
+        <Button
+          className="account-out-btn ml-auto text-muted"
+          variant="outline"
+          size="sm"
           type="button"
           onClick={signOut}
         >
           {t("account.signOut")}
-        </button>
+        </Button>
       </div>
 
       {/* Only shown while signed in. Two steps on purpose: the first press

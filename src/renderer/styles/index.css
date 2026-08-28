@@ -80,7 +80,10 @@
 @import "./tabs.css" layer(nekan);
 @import "./inbox.css" layer(nekan);
 @import "./matrix.css" layer(nekan);
-@import "./due-chip.css" layer(nekan);
+/* due-chip.css was here. All that was left in it was the history and trash
+   search box, which was never the chip's subject -- the two shared a rule
+   because they look alike. views/archive/tab.tsx draws that box from the
+   ported Input now, so the sheet held nothing and is gone. */
 /* archive.css was here. Every rule in it moved to utilities; the history
    and trash tabs are drawn entirely from their components now. */
 @import "./guide.css" layer(nekan);

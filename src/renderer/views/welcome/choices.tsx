@@ -15,27 +15,45 @@ import { t } from "../../i18n.js";
 import { cn } from "../../react/cn.js";
 import { RichText } from "../../react/rich-text.js";
 import { GoogleMark, LaptopIcon } from "../../react/brand-icons.js";
+import { Button } from "../../components/ui/button.js";
 
-/**
- * Both answers, minus the border colour that tells them apart.
- *
- * No `hover:border-muted` in here, and that is the transcription rather than a
- * decision: welcome.css had `.welcome-choice:hover` and then
- * `.welcome-choice.recommended` below it, same specificity, later wins -- so
- * the recommended one has never lit up on hover. Measured before the move, by
- * forcing :hover through CDP and reading the border colour: it did not change.
- * Putting the hover on the shared constant would make it start, which is a
- * change to the screen and this is not the issue for it.
- */
 const TEXT = "welcome-choice-text flex flex-col gap-hair";
 
 /** The line under a choice's title. <small> comes out of the UA smaller. */
 const SUB = "text-xs text-muted";
 
+/**
+ * Both answers, drawn exactly alike.
+ *
+ * ui/button's `outline` variant is the base -- neutral chrome, a `line`
+ * hairline, `panel-2` on hover -- and everything here is undoing the fact that
+ * ui/button is built for a label on one line:
+ *
+ *   h-auto           the sizes are all fixed heights; these two are two lines
+ *                    of text tall.
+ *   w-full           a button shrinks to its label; these fill the card.
+ *   justify-start    ui/button centres, and these read as rows.
+ *   whitespace-normal  ui/button is `whitespace-nowrap`, and the line under
+ *                    each title has to be allowed to wrap.
+ *
+ * They now light up on hover, which they did not before, and that is worth
+ * saying because it is a change to the screen rather than a transcription:
+ * welcome.css had `.welcome-choice:hover` and then `.welcome-choice.recommended`
+ * below it at the same specificity, so the recommended one had never lit up.
+ * Measured before the move by forcing :hover through CDP -- the border did not
+ * change. Both do now, and they do it the same way.
+ *
+ * `panel-2` and never the accent: the recommended answer carries the Google
+ * mark, and Google asks that a button offering its sign-in keep neutral chrome
+ * so the wordmark is the only colour on it.
+ */
 const CHOICE = cn(
-  "welcome-choice mb-md flex w-full items-center gap-xl rounded-panel border",
-  "bg-panel px-2xl py-xl text-left text-text",
-  "disabled:cursor-default disabled:opacity-[0.55]",
+  // rounded-lg, which is the card's own 12px rather than the 10px these had.
+  // One radius on the screen was asked for, and two nested roundings a couple
+  // of pixels apart is the kind of difference that reads as a mistake rather
+  // than as a decision.
+  "welcome-choice mb-md h-auto w-full justify-start gap-xl rounded-lg",
+  "px-2xl py-xl text-left whitespace-normal text-text",
 );
 
 interface Props {
@@ -59,12 +77,20 @@ export function WelcomeChoices({
 }: Props) {
   return (
     <>
-      {/* Emphasis without a fill. `.primary` was the obvious class name and
-          the wrong one twice over: memo.css owns it and would have painted
-          this in the app's accent, and Google asks that its button keep neutral
-          chrome so the wordmark colours stay the only colour on it. */}
-      <button
-        className={cn(CHOICE, "recommended border-line-strong shadow-knob")}
+      {/* Emphasis without a fill, and now without a border of its own either.
+          `variant="default"` is the obvious choice and the wrong one for the
+          same reason `.primary` was: it paints in the app's accent, and Google
+          asks that a button offering its sign-in keep neutral chrome so the
+          wordmark colours stay the only colour on it.
+
+          This used to carry a stronger hairline and a shadow to say "this
+          one". Both are gone: the two answers are the same shape now, and the
+          badge is what marks the recommendation. A single button drawn with a
+          heavier edge than the one under it reads as the two being different
+          kinds of thing rather than as one being suggested. */}
+      <Button
+        className={cn(CHOICE, "recommended")}
+        variant="outline"
         type="button"
         disabled={busy}
         onClick={onSync}
@@ -87,10 +113,11 @@ export function WelcomeChoices({
           </b>
           <small className={SUB}>{t("welcome.syncSub")}</small>
         </span>
-      </button>
+      </Button>
 
-      <button
-        className={cn(CHOICE, "border-line hover:border-muted")}
+      <Button
+        className={CHOICE}
+        variant="outline"
         type="button"
         disabled={busy}
         onClick={onLocal}
@@ -100,7 +127,7 @@ export function WelcomeChoices({
           <b className="text-md font-semibold">{t("welcome.localTitle")}</b>
           <small className={SUB}>{t("welcome.localSub")}</small>
         </span>
-      </button>
+      </Button>
 
       {/* Only when there is something to carry. A fresh install has nothing
             to decide and should not be handed a decision. */}

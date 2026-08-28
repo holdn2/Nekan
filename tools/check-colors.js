@@ -54,10 +54,15 @@ const ALLOWED = new Map([
   ["src/renderer/react/brand-icons.tsx", 4],
   ["src/renderer/views/account.tsx", 4],
 
-  // Measured exceptions with the reasoning written at the call site. The
-  // delete button's label is not `on-accent`: `--danger` is a deep red in light
-  // and a light salmon in dark, and white on salmon is barely there.
-  ["src/renderer/views/account/delete-account.tsx", 1],
+  // There used to be a third entry here, for one literal in a comment:
+  // views/account/delete-account.tsx explained that the delete button's label
+  // was not `on-accent` and not #fff, because `--danger` is a deep red in
+  // light and a light salmon in dark and white on salmon is barely there.
+  // That button is ui/button's `destructive` variant now -- danger-coloured
+  // text on a tint of itself -- so there is no light-on-dark pairing left to
+  // justify and the sentence went with it. The allowance is gone rather than
+  // set to 0: an allowance of 0 is the same as no entry, and an entry with no
+  // reason left is the kind that gets copied.
 
   // The palette's own test asserts values, which means writing them down.
   ["src/shared/test/theme.test.ts", 7],

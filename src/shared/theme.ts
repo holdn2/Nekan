@@ -93,25 +93,36 @@ export type ColorRole =
   | "q4";
 
 /**
- * The quadrant dots, and why they are not simply the icon's four colours.
+ * The quadrant dots.
  *
- * `build/icon.png` *is* the quadrant palette -- `#c85a4d`, `#4a72b8`,
- * `#c1892c`, `#8d887d` on a cream ground -- so the hues and saturations here
- * are the icon's, unchanged. What moved is lightness.
+ * These used to be the app icon's own four (`build/icon.png` -- `#c85a4d`,
+ * `#4a72b8`, `#c1892c`, `#8d887d` on a cream ground), with only their
+ * lightness moved. They are louder than that now, on purpose: the four read as
+ * variations of one muted family rather than as four categories, and the
+ * fourth was a warm grey that said "disabled" rather than "least important".
+ * The icon is not changing (#49), so the window and the icon are two related
+ * palettes rather than one -- that is a cost, and it was taken knowingly.
  *
- * The dot is 8px, and in the title bar chips it is the only thing naming a
- * quadrant. Hue alone leaves the four merged for a red-green colour blind eye
- * and in any greyscale capture: the icon's own four sit within 3.8 L* of each
- * other. Pushed apart they clear 7 L*, which greyscale still separates, while
- * staying recognisably the same colours.
+ * WHAT DID NOT CHANGE IS THE REASON THE OLD SET LOOKED THE WAY IT DID. The dot
+ * is 8px, and in the title bar chips it is the only thing naming a quadrant.
+ * Hue alone leaves the four merged for a red-green colour blind eye and in any
+ * greyscale capture, so lightness is chosen per quadrant first -- 36 / 44 / 52
+ * / 60 L* in light, 55 / 62 / 69 / 76 in dark -- and the hue and chroma are
+ * fitted to it afterwards. Four vivid hues at one lightness are four identical
+ * greys to those readers; the first attempt at this change was exactly that
+ * and its L* gaps came out at 0.2.
  *
- * The light set is bounded above by the 3:1 a dot owes a white panel (about
- * L*62) and the dark set is bounded below by the same rule against a `#323232`
- * panel (about L*53).
+ * Measured, both themes: gaps of at least 6.8 L*, and every dot clears the 3:1
+ * it owes its panel -- 3.17:1 worst in light against white, 3.42:1 worst in
+ * dark against `#323232`. Those bounds are what caps the light set's lightness
+ * and floors the dark set's.
+ *
+ * The fourth hue is violet because it is the one left: `--ok` has green and
+ * `--danger` has red, and this app's promise is that colour means something.
  */
 const QUAD = {
-  light: { q1: "#b24437", q2: "#36558a", q3: "#bd862b", q4: "#807b71" },
-  dark: { q1: "#d47e74", q2: "#6284c1", q3: "#dfb570", q4: "#aca8a1" },
+  light: { q1: "#c33020", q2: "#1a50ae", q3: "#cb8010", q4: "#9c60d1" },
+  dark: { q1: "#e67468", q2: "#4982e4", q3: "#f1af4d", q4: "#c099e1" },
 } as const;
 
 /**

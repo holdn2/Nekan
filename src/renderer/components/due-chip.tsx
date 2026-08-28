@@ -93,13 +93,31 @@ export const DUE_TINT: Record<DueState, string> = {
   far: "border-line bg-panel-2 text-muted",
 };
 
-/** What hovering an add form's chip changes, per state. See the note above. */
+/**
+ * What hovering an add form's chip changes, per state.
+ *
+ * No border moves any more: the add form's chip sits inside the text box now,
+ * and a border there would be a second outline inside the first. The dated
+ * states keep their fill and their text colour, which is what was carrying the
+ * meaning -- an outlined red chip beside an input read as a field in error
+ * rather than as a date that has passed.
+ */
 const ADD_HOVER: Record<DueState, string> = {
   overdue: "",
   today: "",
   soon: "hover:bg-accent-soft",
-  far: "hover:border-accent hover:bg-accent-soft hover:text-accent",
+  far: "hover:bg-accent-soft hover:text-accent",
 };
+
+/**
+ * The add form's chip: smaller than a row's, and borderless.
+ *
+ * It is inside the box rather than beside it, so the box's own edge is the
+ * only one. Its width changing as a date is chosen now costs nothing -- the
+ * text box was always the thing that gives up width, and nothing to its right
+ * moves. That was the whole reason for the change.
+ */
+const ADD_FACE = "h-[22px] min-w-[22px] rounded-sm border-transparent px-sm";
 
 interface Props {
   /** 'YYYY-MM-DD', or null for a chip with no date on it yet. */
@@ -112,9 +130,19 @@ interface Props {
    * hides until the row is hovered, which is a thing only the row can say.
    */
   inAddForm?: boolean;
+  /**
+   * Extra classes for the trigger itself, merged last.
+   *
+   * It exists for one caller: the add form groups this chip with its submit
+   * into a single control, and the two facing corners have to be flattened.
+   * Which corners those are is the group's business, not the chip's -- a
+   * `grouped` prop here would make this file know about an arrangement it
+   * cannot see.
+   */
+  className?: string;
 }
 
-export function DueChip({ value, onChange, inAddForm }: Props) {
+export function DueChip({ value, onChange, inAddForm, className }: Props) {
   const info = dueInfo(value);
   // formatDue answers null only for a null info, which is the branch below.
   const words = info ? formatDue(info, t, currentLanguage())! : null;
@@ -135,11 +163,10 @@ export function DueChip({ value, onChange, inAddForm }: Props) {
             type="button"
             className={cn(
               DUE_FACE,
-              inAddForm && "h-[30px] min-w-[30px] rounded-md",
               info
                 ? DUE_TINT[info.state]
                 : inAddForm
-                  ? "border-line-strong bg-panel-2"
+                  ? "bg-panel-2 text-muted"
                   : // Out of the way until the row is hovered -- `group` is on
                     // the row, in components/row.tsx -- or until the trigger
                     // has focus, which is how a keyboard reaches it.
@@ -155,6 +182,10 @@ export function DueChip({ value, onChange, inAddForm }: Props) {
                   // the empty one does.
                   !info &&
                     "hover:border-line-strong hover:bg-panel-3 hover:text-text",
+              // Last, so it takes the border off whatever tint was chosen
+              // above rather than being overwritten by it.
+              inAddForm && ADD_FACE,
+              className,
             )}
             aria-label={t("due.field")}
             title={

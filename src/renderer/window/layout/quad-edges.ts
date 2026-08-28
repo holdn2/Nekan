@@ -74,7 +74,7 @@ function markEdge(mode: Edge) {
   if (mode === "inbox") {
     QUADS.forEach((q) => {
       const el = $(`[data-quad="${q}"]`);
-      el.classList.remove("edge-r", "edge-l", "edge-b");
+      el.classList.remove("edge-r", "edge-l", "edge-b", "edge-t");
     });
     return;
   }
@@ -84,7 +84,11 @@ function markEdge(mode: Edge) {
     const el = $(`[data-quad="${q}"]`);
     el.classList.toggle("edge-r", col && (q === "q1" || q === "q3"));
     el.classList.toggle("edge-l", col && (q === "q2" || q === "q4"));
+    // Both sides of the edge, not just the one above it. A row drag moves the
+    // line between the two rows, and marking only the top pair said the lower
+    // two were not involved -- they move by exactly as much.
     el.classList.toggle("edge-b", row && (q === "q1" || q === "q2"));
+    el.classList.toggle("edge-t", row && (q === "q3" || q === "q4"));
   });
 }
 

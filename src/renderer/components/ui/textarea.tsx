@@ -43,6 +43,13 @@
  *    screen variant can compile -- there is no `@media` width rule anywhere
  *    in this app's built CSS. See ui/input.tsx's file comment for the full
  *    reasoning (this file only reaches the same conclusion).
+ *
+ * LATER, AND ON PURPOSE (2026-08-27, wiring these into the app): the same four
+ * changes ui/input.tsx makes, for the same reasons -- border-line ->
+ * border-line-strong, placeholder:text-muted -> placeholder:text-faint, the
+ * neutral --ring focus -> the accent, and text-xl -> text-md. See that file's
+ * note. The two have to agree: they are the same control with different
+ * numbers of lines.
  */
 
 import * as React from "react";
@@ -54,7 +61,7 @@ function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
     <textarea
       data-slot="textarea"
       className={cn(
-        "border-line bg-input-bg focus-visible:border-line-strong focus-visible:ring-ring aria-invalid:ring-danger/20 aria-invalid:border-danger rounded-panel border px-lg py-md text-xl transition-colors focus-visible:ring-3 aria-invalid:ring-3 placeholder:text-muted flex field-sizing-content min-h-[64px] w-full outline-none disabled:cursor-not-allowed disabled:opacity-50",
+        "border-line-strong bg-input-bg focus-visible:border-accent focus-visible:ring-accent-soft aria-invalid:ring-danger/20 aria-invalid:border-danger rounded-panel border px-lg py-md text-md transition-colors focus-visible:ring-3 aria-invalid:ring-3 placeholder:text-faint flex field-sizing-content min-h-[64px] w-full outline-none disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       {...props}

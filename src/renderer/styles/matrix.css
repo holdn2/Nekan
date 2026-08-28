@@ -92,6 +92,9 @@ body.resizing-memo {
 .quad.edge-b {
   border-bottom-color: var(--accent) !important;
 }
+.quad.edge-t {
+  border-top-color: var(--accent) !important;
+}
 
 /* Drop target, set by window/dnd.ts on the section index.html owns. Important
    for the reason above: this is the only thing that says where a dragged task

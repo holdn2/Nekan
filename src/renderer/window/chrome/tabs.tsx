@@ -12,15 +12,23 @@
  * shows another" impossible instead of remembered.
  */
 
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   CircleHelp,
   Clock,
   Grid2x2,
+  Info,
   type LucideIcon,
   Trash2,
 } from "lucide-react";
 
+import { Button } from "../../components/ui/button.js";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../../components/ui/tooltip.js";
 import { cn } from "../../react/cn.js";
 import { t } from "../../i18n.js";
 import { $ } from "../../dom.js";
@@ -197,7 +205,97 @@ function Tabs() {
           </button>
         );
       })}
+      <ScreenHelp />
     </>
+  );
+}
+
+/**
+ * The two sentences this screen used to say out loud, behind a button.
+ *
+ * They were removed (PR #61) because they sat there permanently and the guide
+ * tab says the same thing -- but for somebody on their first day they were
+ * worth having at the place they describe. This is the form that costs no
+ * room: one control at the end of the strip, and nothing on screen until it is
+ * asked.
+ *
+ * ONE BUTTON, NOT TWO. The sentences belonged to two different places (the tab
+ * strip and the brain dump's header). Putting one back in each would spend the
+ * complexity that removing them bought. They are short enough to read together.
+ *
+ * HOVER AND CLICK, WHICH IS NOT WHAT A TOOLTIP DOES. Radix opens this on hover
+ * and on keyboard focus, and closes it on a press -- fine for a mouse, useless
+ * for anyone who wants it to stay while they read. `stuck` is the click half:
+ * it holds the tooltip open independently of the pointer, and Escape or a
+ * press outside lets it go. That is a popover's behaviour wearing a tooltip's
+ * clothes, and it is deliberate -- the alternative is two ways to open one
+ * sentence.
+ *
+ * The letter i is drawn, not typed: a glyph in a 20px control sits on the
+ * font's own baseline rather than in the middle of the box.
+ */
+function ScreenHelp() {
+  // The words come from the catalogue, so a language change has to redraw it.
+  useRenderSignal();
+  const [hovered, setHovered] = useState(false);
+  const [stuck, setStuck] = useState(false);
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip open={hovered || stuck} onOpenChange={setHovered}>
+        <TooltipTrigger asChild>
+          <Button
+            className={cn(
+              // At the far end of the strip, inset so that the mark it draws
+              // sits as far from the right edge as the first tab's mark sits
+              // from the left: both 24px, measured. The strip's own padding is
+              // 12 and this icon is centred in a 28px box, so 6 more here puts
+              // the ink where the eye expects it -- matching the boxes instead
+              // would leave it 12px closer in than the tabs, which is what it
+              // used to look like.
+              //
+              // It was tried beside the tabs, where it read as a fifth one.
+              // What makes the far end work is the size: at 24px with a 14px
+              // mark it looked like something left over, and 28/16 reads as a
+              // control that is meant to be there.
+              "mr-sm ml-auto text-faint hover:text-text",
+            )}
+            variant="ghost"
+            size="icon-sm"
+            type="button"
+            title={t("tabs.help")}
+            aria-label={t("tabs.help")}
+            onClick={() => setStuck((open) => !open)}
+          >
+            {/* 16px against the tabs' 14: this one has no label beside it,
+                so it carries the whole control on its own. */}
+            <Info size={16} strokeWidth={1.6} aria-hidden="true" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent
+          align="end"
+          // 320 is measured, not chosen: it is the width at which each of the
+          // two Korean sentences fits on one line, and the first width above
+          // which nothing changes -- the box settles at 301.6px and stops
+          // growing. At 280 they wrapped, and the default Korean break is
+          // between syllables, so the wrap stranded `요` on a line of its own
+          // and split `놓으세요` down the middle.
+          //
+          // break-keep is `word-break: keep-all`, and it is insurance rather
+          // than the fix here: at this width Korean does not wrap at all. It
+          // matters for the languages that do, and for any wording longer than
+          // these two. Latin is unaffected -- keep-all only changes CJK.
+          className="max-w-[320px] leading-relaxed break-keep"
+          side="bottom"
+          sideOffset={6}
+          onEscapeKeyDown={() => setStuck(false)}
+          onPointerDownOutside={() => setStuck(false)}
+        >
+          <p className="m-[0px]">{t("tabs.helpTasks")}</p>
+          <p className="m-[0px] mt-xs">{t("tabs.helpDump")}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 

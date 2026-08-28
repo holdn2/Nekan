@@ -12,6 +12,11 @@
  * welcome.css is down to one rule, and the overlay's own box is in index.html.
  * The card is 380px wide and was measured against a 760x520 window, which is
  * why nothing in here grows with the window except the space around it.
+ *
+ * It is a ui/card now -- header, content, footer -- and the two answers inside
+ * it are ui/buttons. Nothing about the question changed; what changed is that
+ * the card is a surface rather than a column of text on the page background,
+ * which is what the rest of the app already looked like everywhere else.
  */
 
 import { useEffect, useState } from "react";
@@ -22,6 +27,13 @@ import { activeCount } from "../store.js";
 import { useRenderSignal } from "../react/use-store.js";
 import { cn } from "../react/cn.js";
 import { LanguageSelect } from "../components/language-select.js";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card.js";
 import { WelcomeChoices } from "./welcome/choices.js";
 import {
   isWelcomeVisible,
@@ -191,34 +203,78 @@ export function Welcome() {
         id="welcomeLanguage"
         ariaLabel={t("settings.language")}
       />
-      <div className="welcome-card w-full max-w-[380px] text-center">
-        <img
-          className="welcome-logo h-[36px] w-[36px]"
-          src="../assets/icon.png"
-          alt=""
-        />
-        <div className="welcome-text flex flex-col items-center justify-center gap-[10px]">
-          <h1 className="mx-[0px] mt-md mb-2xs text-3xl tracking-tight">
-            Nekan
-          </h1>
-          <p className="welcome-lede m-[0px] mb-6xl text-md text-muted">
-            {t("welcome.lede")}
-          </p>
-        </div>
-        <WelcomeChoices
-          busy={busy}
-          count={count}
-          adopt={adopt}
-          onAdopt={setAdopt}
-          onSync={chooseSync}
-          onLocal={chooseLocal}
-        />
+      {/* The column exists because #welcome is `grid place-items-center`. Two
+          in-flow children there become two stretched rows and the card stops
+          being centred; one child keeps that arrangement true. */}
+      <div className="flex w-full max-w-[380px] flex-col items-center">
+        {/* A real card rather than a bare 380px column on the overlay's
+            `bg-bg`: ui/card is `bg-panel` inside a `ring-1 ring-line`, which
+            is the difference between "the window is empty and here is some
+            text" and "here is the one thing to answer".
 
-        {/* A reserved line, so a message appearing does not shove the footer
-            down. 1.2em is one line of it. */}
+            The card is the question and nothing else -- the mark, the name,
+            the two answers, and the one checkbox that hangs off the first of
+            them. The status line and the notice that used to sit inside it are
+            below it now: neither is part of the question, and both made the
+            card taller than the thing it was asking.
+
+            `size="sm"` keeps the horizontal padding at 12px; the default's
+            16px cost height a 760x520 window does not have to spare.
+            Vertically it is 24px, which is what the two ends used to average
+            out to -- 12px over the mark, 36px under the last control. Written
+            as the size variant rather than a plain `py-*`: ui/card states its
+            own as `data-[size=sm]:py-xl`, and tailwind-merge files a variant
+            under its own key, so a plain utility would be kept beside it and
+            lose. */}
+        <Card
+          className="welcome-card w-full text-center data-[size=sm]:py-5xl"
+          size="sm"
+        >
+          <CardHeader className="justify-items-center">
+            <img
+              className="welcome-logo h-[36px] w-[36px]"
+              src="../assets/icon.png"
+              alt=""
+            />
+            {/* The size is asked for back TWICE, and the second one is the one
+              that does the work. CardTitle carries `text-xl` and, on a small
+              card, `group-data-[size=sm]/card:text-sm`. A plain `text-3xl`
+              replaces only the first: tailwind-merge files a variant under its
+              own key and keeps it, and the variant is emitted later in the
+              utilities layer, so it wins. Measured, not reasoned about -- the
+              app's name came out at the size of the sentence under it.
+
+              role/aria-level rather than the <h1> this used to be: CardTitle
+              renders a <div>, and dropping the heading outright would take the
+              only landmark on a screen that covers the whole window. */}
+            <CardTitle
+              className="mt-md text-3xl tracking-tight group-data-[size=sm]/card:text-3xl"
+              role="heading"
+              aria-level={1}
+            >
+              Nekan
+            </CardTitle>
+            <CardDescription className="welcome-lede mb-4xl text-md">
+              {t("welcome.lede")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <WelcomeChoices
+              busy={busy}
+              count={count}
+              adopt={adopt}
+              onAdopt={setAdopt}
+              onSync={chooseSync}
+              onLocal={chooseLocal}
+            />
+          </CardContent>
+        </Card>
+
+        {/* A reserved line, so a message appearing does not shove the notice
+            below it down. 1.2em is one line of it. */}
         <p
           className={cn(
-            "welcome-msg m-[0px] mt-lg min-h-[1.2em] text-sm",
+            "welcome-msg m-[0px] mt-xl min-h-[1.2em] text-sm",
             message?.error ? "text-danger" : "text-muted",
           )}
           role="status"
@@ -237,20 +293,18 @@ export function Welcome() {
             {t("common.cancel")}
           </button>
         ) : null}
-        {/* The notice sits in the footer rather than under the sync button
-            because this card has to fit a 760x520 window, and the sync button
-            is the tallest thing in it. Both choices are still on screen. */}
+
         {/* Two rows, because there are two things being said: the choice is
             reversible, and signing in stores something. Run together they
             wrapped mid-sentence and left "다." stranded on a line of its own.
 
             break-keep is `word-break: keep-all`, and that is what stops it.
             Korean has no need of spaces to be readable, so the default breaks
-            between syllables -- fine for a paragraph, wrong for two short lines
-            where the break lands inside a word. */}
+            between syllables -- fine for a paragraph, wrong for two short
+            lines where the break lands inside a word. */}
         <p
           className={cn(
-            "welcome-foot mx-[0px] mt-4xl mb-[0px] grid justify-items-center",
+            "welcome-foot m-[0px] mt-lg grid w-full justify-items-center",
             "gap-xs text-xs leading-snug text-faint break-keep text-pretty",
           )}
         >

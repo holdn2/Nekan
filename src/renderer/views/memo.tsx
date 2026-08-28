@@ -32,6 +32,16 @@ import {
 import { useRenderSignal } from "../react/use-store.js";
 import { CloseIcon } from "../react/icons.js";
 import { cn } from "../react/cn.js";
+import { Textarea } from "../components/ui/textarea.js";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog.js";
 
 /**
  * The footer's buttons are smaller than a ghost button elsewhere. These land
@@ -39,6 +49,14 @@ import { cn } from "../react/cn.js";
  * than adding a second padding and hoping the right one wins.
  */
 const FOOT_BTN = "px-xl py-xs text-sm";
+/** The quadrant colours, spelled out so Tailwind's source scan can see them. */
+const QUAD_RULE: Record<string, string> = {
+  q1: "border-t-q1",
+  q2: "border-t-q2",
+  q3: "border-t-q3",
+  q4: "border-t-q4",
+};
+
 export function MemoPanel() {
   useRenderSignal();
   const task = selectedTask();
@@ -56,12 +74,43 @@ export function MemoPanel() {
   const seed = `${task?.id ?? ""}:${editing}`;
   const [seenSeed, setSeenSeed] = useState(seed);
   const [value, setValue] = useState(memo);
+  // Whether the "are you sure" sheet is up. Held here rather than by an
+  // AlertDialogTrigger: the button that opens it is the footer's ghost button,
+  // and Trigger would need `asChild` to lend its behaviour to one -- which the
+  // port dropped, because the umbrella package's Slot is not a dependency.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   if (seenSeed !== seed) {
     setSeenSeed(seed);
     setValue(memo);
   }
 
   const input = useRef<HTMLTextAreaElement>(null);
+  /**
+   * Where focus goes when the delete question closes.
+   *
+   * Radix hands it back to its own Trigger, and this dialog has none -- it is
+   * opened from state so the footer button stays an ordinary button. Without
+   * this, Cancel and Escape both leave focus on <body> and a keyboard loses
+   * its place in the panel.
+   *
+   * An effect keyed on the flag rather than onCloseAutoFocus: that fires
+   * inside Radix's own teardown, and whether the layer blurs afterwards
+   * depends on the order the microtasks happen to run in -- the same press
+   * restored focus or did not from one run to the next. This runs after React
+   * has committed the unmount, which is the same moment every time. The
+   * archive's bulk question does it the same way, for the same reason.
+   */
+  const removeBtn = useRef<HTMLButtonElement>(null);
+  const wasConfirming = useRef(false);
+  useEffect(() => {
+    if (confirmingDelete) {
+      wasConfirming.current = true;
+      return;
+    }
+    if (!wasConfirming.current) return;
+    wasConfirming.current = false;
+    removeBtn.current?.focus();
+  }, [confirmingDelete]);
   useEffect(() => {
     if (!editing) return;
     const el = input.current;
@@ -101,10 +150,22 @@ export function MemoPanel() {
     setMemoEditing(false);
   };
 
-  /** Drop the memo but keep the task. Confirmed, because there is no undo. */
+  /**
+   * Ask first: there is no undo for this.
+   *
+   * The question used to be window.confirm(), which on a frameless widget is an
+   * OS window opening on top of it -- the same seam the native date picker and
+   * the native <select> were taken out for. It is a Radix alert dialog now, so
+   * it is drawn inside the app and keeps Escape and the focus trap.
+   */
   const remove = () => {
     if (!original) return;
-    if (!window.confirm(t("memo.confirmDelete"))) return;
+    setConfirmingDelete(true);
+  };
+
+  /** Said yes. */
+  const confirmRemove = () => {
+    setConfirmingDelete(false);
     setMemoEditing(false);
     setMemo(task.id, null);
   };
@@ -113,8 +174,18 @@ export function MemoPanel() {
     <div
       className={cn(
         "memo-card flex min-h-[0px] flex-auto flex-col overflow-hidden",
-        "rounded-panel border border-line border-t-2 border-t-accent bg-panel",
+        "rounded-panel border border-line border-t-2 bg-panel",
         "shadow-default",
+        // The quadrant this note belongs to, not the accent. The panel is
+        // about one task and the dot beside its title already says which
+        // quadrant that is; the rule agreeing costs nothing and makes the
+        // panel legible from the corner of an eye.
+        //
+        // Written out rather than composed. Tailwind reads the source as text
+        // (@source in styles/index.css), so a class built at runtime from
+        // `border-t-${quadrant}` is a name nothing ever emitted a rule for --
+        // the border would simply be missing, with no error anywhere.
+        QUAD_RULE[task.quadrant] ?? "border-t-accent",
       )}
     >
       <header className="memo-head flex items-center gap-md border-b border-line py-sm pr-sm pl-xl">
@@ -156,11 +227,18 @@ export function MemoPanel() {
         >
           {memo}
         </p>
-        <textarea
+        <Textarea
           ref={input}
           id="memoInput"
           className={cn(
-            "min-h-[0px] w-full flex-auto resize-none rounded-md border",
+            // The port sizes itself to its content and floors at 64px. Both
+            // have to go here: this field is a flex child of a panel whose
+            // height is dragged from its top edge, so it must be free to
+            // shrink to nothing and must not have an opinion of its own about
+            // how tall it is. min-h-[0px] and field-sizing-fixed are what say
+            // so; without them the editor pushes the panel past --memo-h and
+            // body's overflow:hidden makes that look fixed.
+            "min-h-[0px] flex-auto resize-none field-sizing-fixed",
             // font-[inherit] is the family only. The rule this replaced said
             // `font: inherit`, which is where the size came from too, and the
             // shorthand cannot come back: Tailwind emits arbitrary properties
@@ -168,10 +246,10 @@ export function MemoPanel() {
             // carry an inherited line-height over the one asked for below.
             // (Spelling it in this comment would also emit it -- @source reads
             // prose, so a class name written anywhere becomes a real rule.)
-            "border-line-strong bg-input-bg px-md py-sm font-[inherit] text-md",
-            "leading-normal text-text outline-none select-text",
-            "placeholder:text-faint",
-            "focus:border-accent focus:shadow-[0_0_0_2px_var(--accent-soft)]",
+            "rounded-md px-md py-sm font-[inherit] leading-normal",
+            // The size, the placeholder tone and the accent focus this used to
+            // put back are the port's own now.
+            "text-text select-text",
             !editing && "hidden",
           )}
           value={value}
@@ -208,6 +286,7 @@ export function MemoPanel() {
           danger
           className={cn(FOOT_BTN, (editing || !original) && "hidden")}
           id="memoDelete"
+          ref={removeBtn}
           onClick={remove}
         >
           {t("common.delete")}
@@ -236,6 +315,36 @@ export function MemoPanel() {
           {t("common.save")}
         </button>
       </footer>
+
+      {/* Portals to the body, so it is not a child of the panel it is asking
+          about -- and so the panel's own overflow:hidden cannot clip it.
+          `memo.confirmDelete` is one sentence and is the whole question, so it
+          is the title and there is no description: aria-describedby is passed
+          as undefined to say that on purpose rather than leave Radix warning
+          about a missing one. */}
+      <AlertDialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
+        <AlertDialogContent
+          size="sm"
+          id="memoDeleteConfirm"
+          aria-describedby={undefined}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("memo.confirmDelete")}</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel id="memoDeleteNo">
+              {t("common.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              id="memoDeleteYes"
+              variant="destructive"
+              onClick={confirmRemove}
+            >
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

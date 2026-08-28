@@ -54,6 +54,11 @@
  *    so upstream's `xl` is 12px. This app's `rounded-lg` is exactly 12px
  *    (`--radius-lg` in `styles/index.css`), so `rounded-xl`/`rounded-t-xl`/
  *    `rounded-b-xl` all become `rounded-lg`/`rounded-t-lg`/`rounded-b-lg`.
+ *
+ * LATER, AND ON PURPOSE (2026-08-27, wiring these into the app): CardFooter's
+ * `border-t` is given a colour. With no preflight there is no
+ * `border-color: currentColor` to fall back from -- the hairline came out the
+ * colour of the text. Every caller was going to have to remember `border-line`.
  */
 
 import * as React from "react";
@@ -142,7 +147,7 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-footer"
       className={cn(
-        "bg-panel-2/50 rounded-b-lg border-t p-3xl group-data-[size=sm]/card:p-xl flex items-center",
+        "bg-panel-2/50 rounded-b-lg border-t border-line p-3xl group-data-[size=sm]/card:p-xl flex items-center",
         className,
       )}
       {...props}

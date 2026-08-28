@@ -102,6 +102,27 @@
  *    names unchanged, matching how ui/button.tsx and ui/calendar.tsx already
  *    treat this scale: by rung, not by this app's own pixel values (which
  *    differ from Tailwind's defaults at every step).
+ *
+ * LATER, AND ON PURPOSE (2026-08-27, wiring these into the app):
+ *
+ * THE BREAKPOINT VARIANTS ARE GONE, NOT TRANSLATED. This file shipped six
+ * `sm:`/`md:` classes and not one of them compiled -- this app imports only
+ * `tailwindcss/utilities.css` and never the default theme, so there is no
+ * `--breakpoint-*` for a screen variant to mean anything against (the only
+ * @media rules in the bundle are prefers-reduced-motion, forced-colors and
+ * hover). The consequence was not cosmetic: the footer's `sm:flex-row` was the
+ * only rule making it horizontal, so a `size="default"` dialog stacked its
+ * buttons in a reversed column and both callers reached for `size="sm"` to get
+ * around it. Everything upstream gated behind a breakpoint is what it wanted
+ * on a desktop, and this app is only ever a desktop -- so each one is now
+ * unconditional, and `data-[size=default]` takes the 384px width the `sm:`
+ * rule was there to give it.
+ *
+ * AND IT CASTS A SHADOW. The overlay is `bg-transparent` by upstream's choice,
+ * which leaves a panel-coloured card on a panel-coloured board separated only
+ * by `ring-line`. `shadow-pop` is the elevation this palette already has for
+ * something floating above the page; a scrim would need a palette role that
+ * does not exist.
  */
 
 import * as React from "react";
@@ -160,7 +181,7 @@ function AlertDialogContent({
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(
-          "bg-panel ring-line gap-3xl rounded-lg p-3xl ring-1 data-[size=default]:max-w-[320px] data-[size=sm]:max-w-[320px] data-[size=default]:sm:max-w-[384px] group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 outline-none",
+          "bg-panel ring-line gap-3xl rounded-lg p-3xl ring-1 shadow-pop data-[size=default]:max-w-[384px] data-[size=sm]:max-w-[320px] group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 outline-none",
           className,
         )}
         {...props}
@@ -177,7 +198,7 @@ function AlertDialogHeader({
     <div
       data-slot="alert-dialog-header"
       className={cn(
-        "grid grid-rows-[auto_1fr] place-items-center gap-sm text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-3xl sm:group-data-[size=default]/alert-dialog-content:place-items-start sm:group-data-[size=default]/alert-dialog-content:text-left sm:group-data-[size=default]/alert-dialog-content:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]",
+        "grid grid-rows-[auto_1fr] place-items-center gap-sm text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-3xl group-data-[size=default]/alert-dialog-content:place-items-start group-data-[size=default]/alert-dialog-content:text-left group-data-[size=default]/alert-dialog-content:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]",
         className,
       )}
       {...props}
@@ -193,7 +214,7 @@ function AlertDialogFooter({
     <div
       data-slot="alert-dialog-footer"
       className={cn(
-        "bg-panel-2/50 -mx-3xl -mb-3xl rounded-b-lg border-t border-line p-3xl flex flex-col-reverse gap-md group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end",
+        "bg-panel-2/50 -mx-3xl -mb-3xl rounded-b-lg border-t border-line p-3xl flex flex-row justify-end gap-md group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2",
         className,
       )}
       {...props}
@@ -209,7 +230,7 @@ function AlertDialogMedia({
     <div
       data-slot="alert-dialog-media"
       className={cn(
-        "bg-panel-2 mb-md inline-flex size-7xl items-center justify-center rounded-md sm:group-data-[size=default]/alert-dialog-content:row-span-2 *:[svg:not([class*='size-'])]:size-5xl",
+        "bg-panel-2 mb-md inline-flex size-7xl items-center justify-center rounded-md group-data-[size=default]/alert-dialog-content:row-span-2 *:[svg:not([class*='size-'])]:size-5xl",
         className,
       )}
       {...props}
@@ -225,7 +246,7 @@ function AlertDialogTitle({
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
       className={cn(
-        "text-md font-medium sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2",
+        "text-md font-medium group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2",
         className,
       )}
       {...props}
@@ -241,7 +262,7 @@ function AlertDialogDescription({
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
       className={cn(
-        "text-muted *:[a]:hover:text-text text-sm text-balance md:text-pretty *:[a]:underline *:[a]:underline-offset-3",
+        "text-muted *:[a]:hover:text-text text-sm text-pretty *:[a]:underline *:[a]:underline-offset-3",
         className,
       )}
       {...props}

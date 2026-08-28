@@ -67,17 +67,23 @@ test("a custom className merges rather than replaces the port's own", async () =
 
 test("the classes this port asks for are ones Tailwind actually compiled", async () => {
   await mount(<Input id="i" />);
-  const classes = find("#i").className;
+  // Membership, not substring: "border-line" is a prefix of
+  // "border-line-strong", so a toContain on the whole attribute would pass on
+  // a class the port no longer asks for.
+  const classes = find("#i").className.split(/\s+/);
   for (const cls of [
     "bg-input-bg",
-    "border-line",
+    "border-line-strong",
     "h-6xl",
     "rounded-panel",
     "px-lg",
     "py-xs",
-    "text-xl",
+    "text-md",
     "file:h-5xl",
-    "focus-visible:border-line-strong",
+    "focus-visible:border-accent",
+    "focus-visible:ring-accent-soft",
+    "placeholder:text-faint",
+    "min-w-[0px]",
     "aria-invalid:ring-danger/20",
   ]) {
     expect(classes).toContain(cls);
