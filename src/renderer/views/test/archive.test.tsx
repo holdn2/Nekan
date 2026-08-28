@@ -239,6 +239,40 @@ test("a shrinking list pulls you back to the last page that exists", async () =>
   expect(find("#historyEmpty").classList.contains("hidden")).toBe(false);
 });
 
+test("the search box clears from a drawn button, not the browser's", async () => {
+  // type=search draws its own clear button, and it is the browser's: a blue
+  // glyph on a widget whose other controls are all drawn. The type stays for
+  // the screen reader; the button is replaced.
+  setTasks(Array.from({ length: PAGE * 3 }, (_, i) => done(i)));
+  const { flush } = await mount(<div />);
+  draw();
+  await flush();
+
+  const search = find<HTMLInputElement>("#historySearch");
+  expect(search.type).toBe("search");
+  expect(search.className).toContain(
+    "[&::-webkit-search-cancel-button]:appearance-none",
+  );
+  // Nothing to clear yet, so there is nothing to press.
+  const clear = () =>
+    document.querySelector<HTMLButtonElement>(
+      "#historyView button[data-variant=ghost]",
+    );
+  expect(clear()).toBeNull();
+
+  await flush(() => step("Last page").click());
+  expect(activePage()).toBe("3");
+  await flush(() => type("일 1"));
+  expect(clear()).not.toBeNull();
+
+  await flush(() => clear()!.click());
+  expect(search.value).toBe("");
+  expect(rows().length).toBe(PAGE);
+  // Clearing is a change of what the rows are, so the paging starts over with
+  // it -- the same rule typing follows.
+  expect(activePage()).toBe("1");
+});
+
 test("searching starts over at the first page", async () => {
   // Landing on page 4 of a one-page result is a blank screen that looks like a
   // bug.
@@ -322,7 +356,17 @@ test("says the list is empty differently from a search that found nothing", asyn
  * is gone, that answering no really does nothing, and -- the one that would
  * lose data if it broke -- that yes acts on the rows the tab was showing.
  */
-const bar = () => find("#historyView button:not(.act)");
+/**
+ * A bulk button.
+ *
+ * By variant rather than by position: the search box draws its own clear
+ * button once there is something to clear, and that one comes first in the
+ * document. "The first button that is not a row action" quietly became "the
+ * clear button" the moment a case typed into the search -- which is how this
+ * helper started answering with a control that empties a text field where a
+ * case meant to empty the trash.
+ */
+const bar = () => find("#historyView button[data-variant=outline]");
 
 test("asks in the app rather than in an OS dialog, and no means no", async () => {
   const confirmed = vi.fn(() => true);

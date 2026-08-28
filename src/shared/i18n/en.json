@@ -3,7 +3,8 @@
     "add": "Add",
     "cancel": "Cancel",
     "save": "Save",
-    "delete": "Delete"
+    "delete": "Delete",
+    "clear": "Clear"
   },
   "legal": {
     "privacy": "Privacy policy",

@@ -3,7 +3,8 @@
     "add": "추가",
     "cancel": "취소",
     "save": "저장",
-    "delete": "삭제"
+    "delete": "삭제",
+    "clear": "지우기"
   },
   "legal": {
     "privacy": "개인정보처리방침",

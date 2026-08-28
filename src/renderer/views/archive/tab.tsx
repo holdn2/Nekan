@@ -18,6 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../../components/ui/alert-dialog.js";
+import { Button } from "../../components/ui/button.js";
+import { CloseIcon } from "../../react/icons.js";
 import { Input } from "../../components/ui/input.js";
 import { PaginationBar } from "../../components/ui/pagination.js";
 import { cn } from "../../react/cn.js";
@@ -196,26 +198,67 @@ function ArchiveTab<T extends Task>({
   return (
     <>
       <div className="flex gap-md">
-        {/* w-auto undoes the primitive's own w-full: in a row beside the bulk
-            buttons the box has to grow from its content, not start at the full
-            width and squeeze them. text-md and select-text are not taste --
-            the body is 13px and sets user-select: none, and the primitive's
-            16px would not fit its own 32px box. */}
-        <Input
-          type="search"
-          id={`${which}Search`}
-          value={query}
-          // Typing changes which rows these are, so the paging starts over
-          // too. Carrying the page across would land a two-character search on
-          // page 7 of a two-page result -- a blank list that reads as a bug.
-          onChange={(e) => {
-            setQuery(e.target.value);
-            page[which] = 1;
-          }}
-          placeholder={t(searchKey)}
-          autoComplete="off"
-          className="w-auto flex-auto select-text"
-        />
+        {/* The box, and the button that empties it.
+
+            `type="search"` draws its own clear button, and that button is the
+            browser's rather than the app's: a blue glyph on a frameless widget
+            whose other controls are all drawn. It is turned off and replaced
+            here, the same move the native select and the native date input
+            got. The type stays -- it is what makes this a searchbox to a
+            screen reader, and that is the half worth keeping. */}
+        <span
+          className={cn(
+            "flex h-6xl min-w-[0px] flex-auto items-center gap-2xs",
+            "rounded-panel border border-line-strong bg-input-bg pr-2xs",
+            "transition-colors focus-within:border-accent focus-within:ring-3",
+            "focus-within:ring-accent-soft",
+          )}
+        >
+          <Input
+            type="search"
+            id={`${which}Search`}
+            value={query}
+            // Typing changes which rows these are, so the paging starts over
+            // too. Carrying the page across would land a two-character search
+            // on page 7 of a two-page result -- a blank list that reads as a
+            // bug.
+            onChange={(e) => {
+              setQuery(e.target.value);
+              page[which] = 1;
+            }}
+            placeholder={t(searchKey)}
+            autoComplete="off"
+            className={cn(
+              "w-auto flex-auto select-text",
+              // The wrapper draws the box now; this must not draw a second
+              // border, background or focus ring inside it.
+              "h-full rounded-[0px] border-0 bg-transparent",
+              "focus-visible:border-transparent focus-visible:ring-0",
+              // And the browser's own clear button goes. appearance-none is
+              // what removes it; `hidden` would not, because the pseudo-element
+              // is drawn by the engine rather than laid out as a box.
+              "[&::-webkit-search-cancel-button]:appearance-none",
+            )}
+          />
+          {/* Only when there is something to clear. A permanently visible
+              button on an empty box is a control that does nothing. */}
+          {query ? (
+            <Button
+              className="text-faint hover:text-text"
+              variant="ghost"
+              size="icon-xs"
+              type="button"
+              title={t("common.clear")}
+              aria-label={t("common.clear")}
+              onClick={() => {
+                setQuery("");
+                page[which] = 1;
+              }}
+            >
+              <CloseIcon />
+            </Button>
+          ) : null}
+        </span>
         {bulk.map((action) => (
           <GhostButton
             key={action.labelKey}

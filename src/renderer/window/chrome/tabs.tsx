@@ -274,7 +274,18 @@ function ScreenHelp() {
         </TooltipTrigger>
         <TooltipContent
           align="end"
-          className="max-w-[280px] leading-relaxed"
+          // 320 is measured, not chosen: it is the width at which each of the
+          // two Korean sentences fits on one line, and the first width above
+          // which nothing changes -- the box settles at 301.6px and stops
+          // growing. At 280 they wrapped, and the default Korean break is
+          // between syllables, so the wrap stranded `요` on a line of its own
+          // and split `놓으세요` down the middle.
+          //
+          // break-keep is `word-break: keep-all`, and it is insurance rather
+          // than the fix here: at this width Korean does not wrap at all. It
+          // matters for the languages that do, and for any wording longer than
+          // these two. Latin is unaffected -- keep-all only changes CJK.
+          className="max-w-[320px] leading-relaxed break-keep"
           side="bottom"
           sideOffset={6}
           onEscapeKeyDown={() => setStuck(false)}
