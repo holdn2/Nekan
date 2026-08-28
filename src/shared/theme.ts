@@ -90,7 +90,17 @@ export type ColorRole =
   | "q1"
   | "q2"
   | "q3"
-  | "q4";
+  | "q4"
+  | "q1-soft"
+  | "q2-soft"
+  | "q3-soft"
+  | "q4-soft"
+  | "q1-fill"
+  | "q2-fill"
+  | "q3-fill"
+  | "q4-fill"
+  | "on-quad"
+  | "danger-fill";
 
 /**
  * The quadrant dots.
@@ -124,6 +134,66 @@ const QUAD = {
   light: { q1: "#c33020", q2: "#1a50ae", q3: "#cb8010", q4: "#9c60d1" },
   dark: { q1: "#e67468", q2: "#4982e4", q3: "#f1af4d", q4: "#c099e1" },
 } as const;
+
+/**
+ * The same four as a wash, for the quadrant headers.
+ *
+ * Alpha over the panel rather than a pre-mixed hex, the way `danger-soft`
+ * already works: one value per quadrant instead of one per quadrant per
+ * surface, and it stays right if the panel beneath it ever moves. Dark carries
+ * more of it because a light hue laid on charcoal disappears faster than a
+ * dark hue laid on white -- 10% reads on `#ffffff` and does not on `#323232`.
+ *
+ * This is a wash and not a fill on purpose: the header still has to carry
+ * `--text` at full contrast and, in quadrant 1, the red overflow count. A
+ * header dark enough to take white lettering would bury that warning, which
+ * is the one thing on that row the app actually needs read.
+ */
+const QUAD_SOFT = {
+  light: { q1: "#c330201a", q2: "#1a50ae1a", q3: "#cb80101a", q4: "#9c60d11a" },
+  dark: { q1: "#e6746824", q2: "#4982e424", q3: "#f1af4d24", q4: "#c099e124" },
+} as const;
+
+/**
+ * The same four again, solid, for the one place a quadrant colour is filled
+ * and lettered on: the count.
+ *
+ * The lettering is near-white in BOTH themes (`on-quad`), which is what forces
+ * these values. `on-accent` would have been the reusable one, but it flips to
+ * ink in dark, and a count that is dark in one theme and light in the other
+ * reads as two different chips. Holding the lettering still means the fill has
+ * to move instead: every one of these clears 4.5:1 against it -- measured 5.58
+ * / 7.49 / 4.52 / 4.67 light, 4.68 / 4.63 / 4.64 / 4.64 dark.
+ *
+ * In light that costs almost nothing: the dots are already dark, and only `q3`
+ * and `q4` are nudged. In dark it costs the pop -- the dot's own colour is a
+ * light one, so a fill that takes white lettering has to be darkened until it
+ * sits close to the panel behind it (2.6:1 rather than 4.8:1). The number stays
+ * perfectly readable; the pill around it is quieter. That was the trade asked
+ * for and it is worth writing down, because the obvious "fix" later would be to
+ * brighten these back and silently break the lettering.
+ *
+ * The hue does not move, only the lightness, so the chip still reads as the
+ * quadrant it belongs to. The dot keeps `QUAD` -- its job is the L* spacing
+ * described above, and it carries no text.
+ */
+const QUAD_FILL = {
+  light: { q1: "#c33020", q2: "#1a50ae", q3: "#a6690d", q4: "#935ac4" },
+  dark: { q1: "#ac574e", q2: "#3e6fc3", q3: "#91692e", q4: "#806696" },
+} as const;
+
+const quadSurfaces = (t: ThemeName) => ({
+  "q1-soft": QUAD_SOFT[t].q1,
+  "q2-soft": QUAD_SOFT[t].q2,
+  "q3-soft": QUAD_SOFT[t].q3,
+  "q4-soft": QUAD_SOFT[t].q4,
+  "q1-fill": QUAD_FILL[t].q1,
+  "q2-fill": QUAD_FILL[t].q2,
+  "q3-fill": QUAD_FILL[t].q3,
+  "q4-fill": QUAD_FILL[t].q4,
+  "on-quad": t === "light" ? N(0) : N(1),
+  "danger-fill": t === "light" ? "#a8302a" : "#99625c",
+});
 
 /**
  * The accent is ink: the ramp's own darkest in light, its lightest in dark.
@@ -164,6 +234,7 @@ export const PALETTE: Record<ThemeName, Record<ColorRole, string>> = {
     scroll: N(4),
     "scroll-hover": N(6),
     ...QUAD.light,
+    ...quadSurfaces("light"),
   },
   dark: {
     bg: N(13),
@@ -191,10 +262,11 @@ export const PALETTE: Record<ThemeName, Record<ColorRole, string>> = {
     scroll: N(10),
     "scroll-hover": N(9),
     ...QUAD.dark,
+    ...quadSurfaces("dark"),
   },
 };
 
-export type ShadowRole = "card" | "knob" | "even" | "pop" | "toast";
+export type ShadowRole = "card" | "raise" | "knob" | "even" | "pop" | "toast";
 
 /**
  * Five elevations, both themes.
@@ -223,6 +295,7 @@ export type ShadowRole = "card" | "knob" | "even" | "pop" | "toast";
 export const SHADOW: Record<ThemeName, Record<ShadowRole, string>> = {
   light: {
     card: "0 1px 2px rgb(0 0 0 / 0.05)",
+    raise: "0 0 3px rgb(0 0 0 / 0.05), 0 0 14px rgb(0 0 0 / 0.09)",
     knob: "0 1px 2px rgb(0 0 0 / 0.12)",
     even: "0 0 3px rgb(0 0 0 / 0.18)",
     pop: "0 10px 30px rgb(0 0 0 / 0.12), 0 2px 6px rgb(0 0 0 / 0.07)",
@@ -230,6 +303,7 @@ export const SHADOW: Record<ThemeName, Record<ShadowRole, string>> = {
   },
   dark: {
     card: "0 1px 2px rgb(0 0 0 / 0.35)",
+    raise: "0 0 3px rgb(0 0 0 / 0.3), 0 0 16px rgb(0 0 0 / 0.45)",
     knob: "0 1px 2px rgb(0 0 0 / 0.45)",
     even: "0 0 3px rgb(0 0 0 / 0.5)",
     pop: "0 12px 34px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.4)",
