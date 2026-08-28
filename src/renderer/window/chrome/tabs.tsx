@@ -246,15 +246,19 @@ function ScreenHelp() {
         <TooltipTrigger asChild>
           <Button
             className={cn(
-              // At the far end of the strip, and pulled back into the strip's
-              // own right padding so it sits over the same edge the window
-              // buttons above do.
+              // At the far end of the strip, inset so that the mark it draws
+              // sits as far from the right edge as the first tab's mark sits
+              // from the left: both 24px, measured. The strip's own padding is
+              // 12 and this icon is centred in a 28px box, so 6 more here puts
+              // the ink where the eye expects it -- matching the boxes instead
+              // would leave it 12px closer in than the tabs, which is what it
+              // used to look like.
               //
               // It was tried beside the tabs, where it read as a fifth one.
-              // What made the far end work is the size: at 24px with a 14px
-              // mark it was small enough to look like something left over,
-              // and 28/16 reads as a control that is meant to be there.
-              "ml-auto mr-[-6px] text-faint hover:text-text",
+              // What makes the far end work is the size: at 24px with a 14px
+              // mark it looked like something left over, and 28/16 reads as a
+              // control that is meant to be there.
+              "mr-sm ml-auto text-faint hover:text-text",
             )}
             variant="ghost"
             size="icon-sm"
