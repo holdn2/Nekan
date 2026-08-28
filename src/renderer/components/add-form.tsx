@@ -40,7 +40,6 @@ import type { Place } from "../../shared/types.js";
 import { t } from "../i18n.js";
 import { addTask } from "../store.js";
 import { cn } from "../react/cn.js";
-import { ButtonGroup } from "./ui/button-group.js";
 import { DueChip } from "./due-chip.js";
 import { Button } from "./ui/button.js";
 import { Input } from "./ui/input.js";
@@ -92,30 +91,55 @@ export function AddForm({ place, placeholderKey, withDue, onPaste }: Props) {
         input.current?.focus();
       }}
     >
-      <Input
-        ref={input}
+      {/* The box, and the chip that lives in it.
+
+          The chip used to sit outside, grouped with the submit -- and it grows
+          when a date is chosen, from a square to something wide enough for
+          8/29(토). Everything to its right moved when that happened, and an
+          outlined red chip beside a text box read as a field in error rather
+          than as a date that has passed.
+
+          Inside, its width comes out of the text box, which is the one thing
+          in this row that was always going to give up width, so nothing moves.
+          The border and the focus ring are the wrapper's now, which leaves one
+          outline here rather than two. */}
+      <span
         className={cn(
-          // ui/input is `w-full`, which is right for a field on its own line
-          // and wrong for one sharing a row: it wants to be whatever is left
-          // after the chip and the button. `min-w-[0px]` the primitive already
-          // carries, and it is what lets that shrink actually happen.
-          "w-auto flex-auto",
-          // rounded-md (8px), not the port's rounded-panel (10px) -- the due
-          // chip and the submit beside it are both 8px. The size, the border
-          // and the accent focus this used to put back are the port's own now.
-          "rounded-md",
+          "flex h-6xl min-w-[0px] flex-auto items-center gap-sm",
+          "rounded-md border border-line-strong bg-input-bg",
+          "transition-colors focus-within:border-accent focus-within:ring-3",
+          "focus-within:ring-accent-soft",
+          // Only when there is something in there to need the room.
+          withDue && "pr-xs",
         )}
-        type="text"
-        id={place === "inbox" ? "inboxInput" : undefined}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onPaste={(e) => {
-          if (onPaste?.(e, text)) setText("");
-        }}
-        placeholder={t(placeholderKey)}
-        maxLength={200}
-        autoComplete="off"
-      />
+      >
+        <Input
+          ref={input}
+          className={cn(
+            // ui/input is `w-full`, which is right for a field on its own line
+            // and wrong for one sharing a row: it wants to be whatever is left
+            // after the chip. `min-w-[0px]` the primitive already carries, and
+            // it is what lets that shrink actually happen.
+            "w-auto flex-auto",
+            // The wrapper above draws the box now -- its border, its background
+            // and its focus ring. This is the bare field inside it, and it must
+            // not draw a second one of any of them.
+            "h-full rounded-[0px] border-0 bg-transparent",
+            "focus-visible:border-transparent focus-visible:ring-0",
+          )}
+          type="text"
+          id={place === "inbox" ? "inboxInput" : undefined}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onPaste={(e) => {
+            if (onPaste?.(e, text)) setText("");
+          }}
+          placeholder={t(placeholderKey)}
+          maxLength={200}
+          autoComplete="off"
+        />
+        {withDue ? <DueChip value={due} onChange={setDue} inAddForm /> : null}
+      </span>
       {/* The due chip and the submit are one control, not two. Separately they
           were two bordered boxes beside a third (the text box), which is three
           outlines for one job -- and four quadrants make twelve. Grouped, the
@@ -124,52 +148,36 @@ export function AddForm({ place, placeholderKey, withDue, onPaste }: Props) {
           The text box stays out of the group on purpose: it is where the
           typing happens, and joining it would make one long bar whose parts
           are not obviously different kinds of thing. */}
-      <ButtonGroup>
-        {withDue ? (
-          <DueChip
-            value={due}
-            onChange={setDue}
-            inAddForm
-            // Facing corner flattened, and lifted while focused so the
-            // neighbour's border is not drawn over the focus ring.
-            className="rounded-r-none focus-visible:z-10"
-          />
-        ) : null}
-        {/* outline/icon-sm: a bordered box the size of the chip it stands next
+      {/* outline/icon-sm: a bordered box the size of the chip it stands next
             to, quiet enough for a dense list. The three overrides are the three
             reasons in this file's header comment, in order. */}
-        <Button
-          variant="outline"
-          size="icon-sm"
-          className={cn(
-            // PAIRING: icon-sm is 28px, the chip is 30px.
-            "size-[30px]",
-            // ui/button's `icon-*` sizes state no padding, because upstream sits
-            // on a preflight that has already zeroed the browser's own. This app
-            // imports no preflight, so a bare <button> keeps the UA's
-            // `padding: 1px 6px` -- harmless inside a border-box square with a
-            // centred icon, measured at 1px 6px on the built page, but stated
-            // here rather than left to chance.
-            "p-[0px]",
-            // ICON SIZE: icon-sm would draw the plus at 14px; icons.tsx says 12.
-            "[&_svg:not([class*='size-'])]:size-[12px]",
-            // COLOUR, put back. `outline` rests on border-line/bg-panel and
-            // hovers to bg-panel-2; this button has always rested on the
-            // stronger line over the raised panel and hovered to the accent.
-            "border-line-strong bg-panel-2 text-muted",
-            "hover:border-accent hover:bg-accent-soft hover:text-accent",
-            // GROUPED: only when there is a chip to its left. The brain dump's
-            // form has no due chip, so its submit is on its own and keeps all
-            // four corners.
-            withDue && "rounded-l-none focus-visible:z-10",
-          )}
-          type="submit"
-          title={t("common.add")}
-          aria-label={t("common.add")}
-        >
-          <PlusIcon />
-        </Button>
-      </ButtonGroup>
+      <Button
+        variant="outline"
+        size="icon-sm"
+        className={cn(
+          // PAIRING: icon-sm is 28px, the chip is 30px.
+          "size-[30px]",
+          // ui/button's `icon-*` sizes state no padding, because upstream sits
+          // on a preflight that has already zeroed the browser's own. This app
+          // imports no preflight, so a bare <button> keeps the UA's
+          // `padding: 1px 6px` -- harmless inside a border-box square with a
+          // centred icon, measured at 1px 6px on the built page, but stated
+          // here rather than left to chance.
+          "p-[0px]",
+          // ICON SIZE: icon-sm would draw the plus at 14px; icons.tsx says 12.
+          "[&_svg:not([class*='size-'])]:size-[12px]",
+          // COLOUR, put back. `outline` rests on border-line/bg-panel and
+          // hovers to bg-panel-2; this button has always rested on the
+          // stronger line over the raised panel and hovered to the accent.
+          "border-line-strong bg-panel-2 text-muted",
+          "hover:border-accent hover:bg-accent-soft hover:text-accent",
+        )}
+        type="submit"
+        title={t("common.add")}
+        aria-label={t("common.add")}
+      >
+        <PlusIcon />
+      </Button>
     </form>
   );
 }

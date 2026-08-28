@@ -39,23 +39,43 @@ test("the text box is ui/input, wearing this app's size and palette", async () =
 
   // It really is the primitive and not a hand-rolled <input>.
   expect(input.dataset.slot).toBe("input");
-  // The primitive's own box is kept: 32px tall, and it dims when disabled.
-  expect(classes(input)).toContain("h-6xl");
   expect(classes(input)).toContain("disabled:opacity-50");
-
-  // ...and the three things this app does not let it bring.
   // Size: rows are 13px, so the box a row is written in is too.
   expect(classes(input)).toContain("text-md");
   expect(classes(input)).not.toContain("text-xl");
-  // Radius: 8px, matching the due chip and the submit beside it.
-  expect(classes(input)).toContain("rounded-md");
-  expect(classes(input)).not.toContain("rounded-panel");
-  // Colour: this app's inputs rest on the stronger line and focus to the
-  // accent, not to `--ring`.
-  expect(classes(input)).toContain("border-line-strong");
-  expect(classes(input)).not.toContain("border-line");
-  expect(classes(input)).toContain("focus-visible:ring-accent-soft");
-  expect(classes(input)).not.toContain("focus-visible:ring-ring");
+
+  // The box itself is the wrapper's, because the due chip sits inside it. The
+  // field must not draw a second border, background or focus ring on top --
+  // an outline inside an outline is exactly what moving the chip in removed.
+  expect(classes(input)).toContain("border-0");
+  expect(classes(input)).toContain("bg-transparent");
+  expect(classes(input)).toContain("focus-visible:ring-0");
+});
+
+test("the box is the wrapper, and the chip is inside it", async () => {
+  await draw();
+  const input = find<HTMLInputElement>(
+    'form[data-add="q1"] input[type="text"]',
+  );
+  const box = input.parentElement!;
+  const chip = find('form[data-add="q1"] .duebox');
+
+  // One box holding both: this is the arrangement, and the assertion is that
+  // the chip is a descendant rather than a sibling. Sitting beside the field
+  // is what made everything to its right move when a date was chosen.
+  expect(box.contains(chip)).toBe(true);
+  // 32px tall, 8px corners, the stronger line, and it focuses to the accent
+  // when anything inside it does.
+  expect(classes(box)).toContain("h-6xl");
+  expect(classes(box)).toContain("rounded-md");
+  expect(classes(box)).toContain("border-line-strong");
+  expect(classes(box)).toContain("focus-within:border-accent");
+  expect(classes(box)).toContain("focus-within:ring-accent-soft");
+
+  // And the submit is outside it, on its own, with all four corners.
+  const submit = find('form[data-add="q1"] button[type="submit"]');
+  expect(box.contains(submit)).toBe(false);
+  expect(classes(submit)).not.toContain("rounded-l-none");
 });
 
 test("the submit is ui/button, sized to the chip it stands next to", async () => {
@@ -68,8 +88,8 @@ test("the submit is ui/button, sized to the chip it stands next to", async () =>
   expect(button.dataset.variant).toBe("outline");
   expect(button.dataset.size).toBe("icon-sm");
 
-  // icon-sm is 28px. The due chip beside it is 30, and the two are read as a
-  // pair -- see components/due-chip.tsx's `inAddForm` box.
+  // icon-sm is 28px. 30 matches the box beside it, which states 32 and draws
+  // a 1px border on each side -- the submit sits level with its inner edge.
   expect(classes(button)).toContain("size-[30px]");
   expect(classes(button)).not.toContain("size-[28px]");
 
