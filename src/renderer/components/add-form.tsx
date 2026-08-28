@@ -40,6 +40,7 @@ import type { Place } from "../../shared/types.js";
 import { t } from "../i18n.js";
 import { addTask } from "../store.js";
 import { cn } from "../react/cn.js";
+import { ButtonGroup } from "./ui/button-group.js";
 import { DueChip } from "./due-chip.js";
 import { Button } from "./ui/button.js";
 import { Input } from "./ui/input.js";
@@ -115,37 +116,60 @@ export function AddForm({ place, placeholderKey, withDue, onPaste }: Props) {
         maxLength={200}
         autoComplete="off"
       />
-      {withDue ? <DueChip value={due} onChange={setDue} inAddForm /> : null}
-      {/* outline/icon-sm: a bordered box the size of the chip it stands next
-          to, quiet enough for a dense list. The three overrides are the three
-          reasons in this file's header comment, in order. */}
-      <Button
-        variant="outline"
-        size="icon-sm"
-        className={cn(
-          // PAIRING: icon-sm is 28px, the chip is 30px.
-          "size-[30px]",
-          // ui/button's `icon-*` sizes state no padding, because upstream sits
-          // on a preflight that has already zeroed the browser's own. This app
-          // imports no preflight, so a bare <button> keeps the UA's
-          // `padding: 1px 6px` -- harmless inside a border-box square with a
-          // centred icon, measured at 1px 6px on the built page, but stated
-          // here rather than left to chance.
-          "p-[0px]",
-          // ICON SIZE: icon-sm would draw the plus at 14px; icons.tsx says 12.
-          "[&_svg:not([class*='size-'])]:size-[12px]",
-          // COLOUR, put back. `outline` rests on border-line/bg-panel and
-          // hovers to bg-panel-2; this button has always rested on the
-          // stronger line over the raised panel and hovered to the accent.
-          "border-line-strong bg-panel-2 text-muted",
-          "hover:border-accent hover:bg-accent-soft hover:text-accent",
-        )}
-        type="submit"
-        title={t("common.add")}
-        aria-label={t("common.add")}
-      >
-        <PlusIcon />
-      </Button>
+      {/* The due chip and the submit are one control, not two. Separately they
+          were two bordered boxes beside a third (the text box), which is three
+          outlines for one job -- and four quadrants make twelve. Grouped, the
+          pair shares an edge and reads as one thing you press.
+
+          The text box stays out of the group on purpose: it is where the
+          typing happens, and joining it would make one long bar whose parts
+          are not obviously different kinds of thing. */}
+      <ButtonGroup>
+        {withDue ? (
+          <DueChip
+            value={due}
+            onChange={setDue}
+            inAddForm
+            // Facing corner flattened, and lifted while focused so the
+            // neighbour's border is not drawn over the focus ring.
+            className="rounded-r-none focus-visible:z-10"
+          />
+        ) : null}
+        {/* outline/icon-sm: a bordered box the size of the chip it stands next
+            to, quiet enough for a dense list. The three overrides are the three
+            reasons in this file's header comment, in order. */}
+        <Button
+          variant="outline"
+          size="icon-sm"
+          className={cn(
+            // PAIRING: icon-sm is 28px, the chip is 30px.
+            "size-[30px]",
+            // ui/button's `icon-*` sizes state no padding, because upstream sits
+            // on a preflight that has already zeroed the browser's own. This app
+            // imports no preflight, so a bare <button> keeps the UA's
+            // `padding: 1px 6px` -- harmless inside a border-box square with a
+            // centred icon, measured at 1px 6px on the built page, but stated
+            // here rather than left to chance.
+            "p-[0px]",
+            // ICON SIZE: icon-sm would draw the plus at 14px; icons.tsx says 12.
+            "[&_svg:not([class*='size-'])]:size-[12px]",
+            // COLOUR, put back. `outline` rests on border-line/bg-panel and
+            // hovers to bg-panel-2; this button has always rested on the
+            // stronger line over the raised panel and hovered to the accent.
+            "border-line-strong bg-panel-2 text-muted",
+            "hover:border-accent hover:bg-accent-soft hover:text-accent",
+            // GROUPED: only when there is a chip to its left. The brain dump's
+            // form has no due chip, so its submit is on its own and keeps all
+            // four corners.
+            withDue && "rounded-l-none focus-visible:z-10",
+          )}
+          type="submit"
+          title={t("common.add")}
+          aria-label={t("common.add")}
+        >
+          <PlusIcon />
+        </Button>
+      </ButtonGroup>
     </form>
   );
 }

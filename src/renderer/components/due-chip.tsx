@@ -112,9 +112,19 @@ interface Props {
    * hides until the row is hovered, which is a thing only the row can say.
    */
   inAddForm?: boolean;
+  /**
+   * Extra classes for the trigger itself, merged last.
+   *
+   * It exists for one caller: the add form groups this chip with its submit
+   * into a single control, and the two facing corners have to be flattened.
+   * Which corners those are is the group's business, not the chip's -- a
+   * `grouped` prop here would make this file know about an arrangement it
+   * cannot see.
+   */
+  className?: string;
 }
 
-export function DueChip({ value, onChange, inAddForm }: Props) {
+export function DueChip({ value, onChange, inAddForm, className }: Props) {
   const info = dueInfo(value);
   // formatDue answers null only for a null info, which is the branch below.
   const words = info ? formatDue(info, t, currentLanguage())! : null;
@@ -155,6 +165,7 @@ export function DueChip({ value, onChange, inAddForm }: Props) {
                   // the empty one does.
                   !info &&
                     "hover:border-line-strong hover:bg-panel-3 hover:text-text",
+              className,
             )}
             aria-label={t("due.field")}
             title={

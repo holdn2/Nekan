@@ -12,15 +12,23 @@
  * shows another" impossible instead of remembered.
  */
 
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   CircleHelp,
   Clock,
   Grid2x2,
+  Info,
   type LucideIcon,
   Trash2,
 } from "lucide-react";
 
+import { Button } from "../../components/ui/button.js";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../../components/ui/tooltip.js";
 import { cn } from "../../react/cn.js";
 import { t } from "../../i18n.js";
 import { $ } from "../../dom.js";
@@ -197,7 +205,75 @@ function Tabs() {
           </button>
         );
       })}
+      <ScreenHelp />
     </>
+  );
+}
+
+/**
+ * The two sentences this screen used to say out loud, behind a button.
+ *
+ * They were removed (PR #61) because they sat there permanently and the guide
+ * tab says the same thing -- but for somebody on their first day they were
+ * worth having at the place they describe. This is the form that costs no
+ * room: one control at the end of the strip, and nothing on screen until it is
+ * asked.
+ *
+ * ONE BUTTON, NOT TWO. The sentences belonged to two different places (the tab
+ * strip and the brain dump's header). Putting one back in each would spend the
+ * complexity that removing them bought. They are short enough to read together.
+ *
+ * HOVER AND CLICK, WHICH IS NOT WHAT A TOOLTIP DOES. Radix opens this on hover
+ * and on keyboard focus, and closes it on a press -- fine for a mouse, useless
+ * for anyone who wants it to stay while they read. `stuck` is the click half:
+ * it holds the tooltip open independently of the pointer, and Escape or a
+ * press outside lets it go. That is a popover's behaviour wearing a tooltip's
+ * clothes, and it is deliberate -- the alternative is two ways to open one
+ * sentence.
+ *
+ * The letter i is drawn, not typed: a glyph in a 20px control sits on the
+ * font's own baseline rather than in the middle of the box.
+ */
+function ScreenHelp() {
+  // The words come from the catalogue, so a language change has to redraw it.
+  useRenderSignal();
+  const [hovered, setHovered] = useState(false);
+  const [stuck, setStuck] = useState(false);
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip open={hovered || stuck} onOpenChange={setHovered}>
+        <TooltipTrigger asChild>
+          <Button
+            className={cn(
+              // Pushed to the far end of the strip, and pulled back out of the
+              // strip's own right padding so it sits over the same edge the
+              // window buttons above do.
+              "ml-auto mr-[-6px] text-faint hover:text-text",
+            )}
+            variant="ghost"
+            size="icon-xs"
+            type="button"
+            title={t("tabs.help")}
+            aria-label={t("tabs.help")}
+            onClick={() => setStuck((open) => !open)}
+          >
+            <Info size={14} strokeWidth={1.75} aria-hidden="true" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent
+          align="end"
+          className="max-w-[280px] leading-relaxed"
+          side="bottom"
+          sideOffset={6}
+          onEscapeKeyDown={() => setStuck(false)}
+          onPointerDownOutside={() => setStuck(false)}
+        >
+          <p className="m-[0px]">{t("tabs.helpTasks")}</p>
+          <p className="m-[0px] mt-xs">{t("tabs.helpDump")}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 

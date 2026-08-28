@@ -33,7 +33,10 @@
     "matrix": "Matrix",
     "history": "History",
     "trash": "Trash",
-    "guide": "Guide"
+    "guide": "Guide",
+    "help": "How this screen works",
+    "helpTasks": "Click a task to open its note, double-click to edit the text",
+    "helpDump": "Write everything down first, Work or Life alike, then drag each one where it belongs"
   },
   "quad": {
     "q1": {
