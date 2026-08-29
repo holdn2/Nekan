@@ -117,13 +117,18 @@ export function toHtml(
 <title>Nekan ${escapeHtml(snapshot.spaceLabel)} ${escapeHtml(snapshot.stamp)}</title>
 <style>
   ${face}
+  /* Whole pixels only. The sizes here are the document's own -- print is a
+     denser medium than a window and does not borrow the app's scale -- but
+     half-pixel steps were a category #53 took out of the app, and three of
+     them (11.5 / 12.5 / 10.5) had stayed behind here. They round to the app's
+     neighbouring step rather than to anything new. */
   @page { size: A4 landscape; margin: 12mm; }
   * { box-sizing: border-box; }
   body {
     margin: 0; padding: 18px 20px 24px;
     font-family: "Pretendard Variable", "Pretendard", "Apple SD Gothic Neo",
       "Malgun Gothic", -apple-system, "Segoe UI", system-ui, sans-serif;
-    font-size: 11.5px; line-height: 1.5; color: ${P.text}; background: ${P.panel};
+    font-size: 12px; line-height: 1.5; color: ${P.text}; background: ${P.panel};
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
   .head { display: flex; align-items: baseline; gap: 10px;
@@ -136,9 +141,9 @@ export function toHtml(
     break-inside: avoid; }
   section header { display: flex; align-items: center; gap: 7px;
     border-bottom: 1px solid ${P.line}; padding-bottom: 6px; margin-bottom: 7px; }
-  section h2 { font-size: 12.5px; margin: 0; }
+  section h2 { font-size: 13px; margin: 0; }
   .dot { width: 9px; height: 9px; border-radius: 99px; flex: 0 0 auto; }
-  .act { color: ${P.muted}; font-size: 10.5px; }
+  .act { color: ${P.muted}; font-size: 11px; }
   .n { margin-left: auto; color: ${P.muted}; font-variant-numeric: tabular-nums; }
   ol { margin: 0; padding-left: 20px; }
   li { margin: 0 0 3px; break-inside: avoid; }
@@ -150,7 +155,7 @@ export function toHtml(
   .due.today { color: ${P.accent}; border-color: ${P.accent}; }
   .due.soon { color: ${P.q3}; border-color: ${P.q3}; }
   .memo { margin: 2px 0 5px; padding-left: 8px; border-left: 2px solid ${P.line};
-    color: ${P.muted}; font-size: 10.5px; white-space: pre-wrap; }
+    color: ${P.muted}; font-size: 11px; white-space: pre-wrap; }
   .empty { margin: 2px 0; color: ${P.faint}; }
   .more { margin: 4px 0 0; color: ${P.faint}; font-size: 10px; }
   .inbox { margin-bottom: 12px; background: ${P["panel-2"]}; }

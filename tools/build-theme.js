@@ -28,21 +28,30 @@ const TARGET = path.join(ROOT, "src", "renderer", "styles", "palette.css");
 const SITE = path.join(ROOT, "site", "style.css");
 
 /**
- * The site's names, which predate the app's vocabulary, mapped to the roles.
+ * Which roles the page needs, under the names the app already uses.
  *
- * `--accent-link` used to be the accent darkened to 74%, because a terracotta
- * link on cream measured 2.69:1. It does not need darkening now and does not
- * get a hue either: with an ink accent a link is body-coloured and underlined,
- * which is what WCAG asks for anyway -- colour is never the only signal.
+ * The page used to have a vocabulary of its own -- `--fg` for text, `--card`
+ * for a panel, `--code-bg` for the surface behind a `<code>` -- from before the
+ * app had one. The values were the same after #91 and only the words differed,
+ * which is the kind of difference that costs nothing until somebody reads both
+ * files in one sitting. They are the app's words now, so this map is a list of
+ * what the page uses rather than a translation of it.
+ *
+ * `--accent-link` is the one entry that is still a name of its own, and it
+ * earns it: it used to be the accent darkened to 74%, because a terracotta link
+ * on cream measured 2.69:1. It does not need darkening against an ink accent
+ * and does not get a hue either -- a link is body-coloured and underlined,
+ * which is what WCAG asks for anyway. Keep the name so that a hue accent can
+ * bring the darkening back without touching every link on the page.
  */
 const SITE_MAP = {
   "--bg": "bg",
-  "--fg": "text",
+  "--text": "text",
   "--muted": "muted",
   "--line": "line",
-  "--card": "panel",
+  "--panel": "panel",
+  "--panel-2": "panel-2",
   "--accent": "accent",
-  "--code-bg": "panel-2",
   "--accent-link": "accent",
 };
 const SITE_START = "/* palette:start";

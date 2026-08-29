@@ -62,9 +62,12 @@ The **gear** in the title bar collects them in one place.
 
 Pressing it in bar mode expands the window first.
 
-On macOS read every `Ctrl` in this document, and in the guide tab, as `Cmd` --
-the app uses whichever modifier that OS means. The guide tab says the right word
-for the OS it is running on.
+On macOS read every `Ctrl` in this document as `Cmd` -- the app uses whichever
+modifier that OS means. The guide tab is different: **wherever a shortcut
+appears it names both, as `Ctrl / Cmd`**, because the guide is read as often to
+check what something is on your other machine as to be used on this one. The
+hints elsewhere in the app -- the export line in the settings panel -- name only
+the modifier you have.
 
 **The language follows your computer on the first launch** — Korean in a Korean environment, English everywhere
 else. Once you pick one it is remembered, and a later change to the computer's language does not override it.
@@ -275,21 +278,27 @@ Writes the current **brain dump plus four quadrants** as PDF, HTML or Markdown.
 Completed tasks stack up in the history, deleted ones in the trash, both grouped by date. Both show **only the matrix you are on**.
 
 - Search covers **the whole record**, not the rows that happen to be drawn.
-- **A hundred rows are drawn at a time** (a row costs about 180µs, and the cap keeps typing in the search box from stuttering). The rest follow from `Show more`, and **nothing is being removed**.
-- A task deleted straight from the brain dump has no side, so it shows in **both** trashes. `Empty the trash` only clears what is on screen.
+- **Twenty rows to a page** (a row costs about 180µs, and that is the cap that keeps typing in the search box from stuttering). The rest are a page number away below the list, and **nothing is being removed**.
+- A task deleted straight from the brain dump has no side, so it shows in **both** trashes. `Empty the trash` clears **everything the tab is holding** — not the page in front of you, but the whole record for the matrix you are on.
 - A task deleted forever never reappears anywhere, but **a tombstone stays in the file for 90 days.** It stops a device that has not synced yet from putting the task back; the text and the note go immediately.
 
 ### Guide tab
 
-**The manual for somebody who has the app open.** It holds what the Eisenhower matrix is — the two axes, the four quadrants, the order to work in, the principles worth remembering — and **everything about using this app**, keyboard shortcuts included. The line between that tab and this file is that **the tab has to be enough on its own**.
+**The manual for somebody who has the app open.** It holds what the Eisenhower matrix is and **everything about using this app**, keyboard shortcuts included. The line between that tab and this file is that **the tab has to be enough on its own**.
 
-- **The running version and the update state** are at the bottom of it, with a link to the release notes (which opens in your usual browser).
+**It comes in two layers.** Opening it shows the four boxes in miniature, the three steps of the loop and four lines of basics; everything else is behind five disclosures below them (What is the Eisenhower matrix? · Tasks and the brain dump · Due dates and notes · Records and export · Window, shortcuts, sync). **It is folded, not shortened** — not one paragraph of the operating instructions was cut.
+
+- **The update state and the running version** are at the bottom of it, with a link to the release notes (which opens in your usual browser).
 - The prose lives in `guide.*` in `src/shared/i18n/{ko,en}.json`; `#guideView` in `src/renderer/index.html` is the set of slots it goes into.
 
 ## The icon
 
 `build\icon.ico` (multi-size, 16–256px) is used for the exe, the taskbar and the title-bar logo alike.
 To change the design, edit the colours and regenerate it.
+
+The four quadrant colours were once **this icon's hues and saturations with only their lightness moved**
+(never the same hex). On 2026-08-28 the quadrants went to louder values and the two parted company, so if you
+redraw the icon, `QUAD` in `src/shared/theme.ts` is what to match it to.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\make-icon.ps1
