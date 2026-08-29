@@ -36,15 +36,17 @@ i18next.init({
   resources: { ko: { translation: ko }, en: { translation: en } },
   interpolation: {
     escapeValue: false,
-    // The guide names the accelerator key in seven places and it is a different
-    // key on macOS. Naming it here rather than at each call site means
+    // Seven strings name the accelerator key and it is a different key on
+    // macOS. Naming it here rather than at each call site means
     // applyStaticStrings, which only ever knows a key, still gets it right --
     // and that the two catalogues cannot drift apart on it.
     //
-    // `mods` names both, and the shortcut list is the only string that uses it.
-    // Everywhere else a sentence is telling somebody what to press right now,
-    // and the key they do not have is noise; the list is a reference, read once
-    // and often on the other machine's behalf.
+    // Which of the two they take is decided by the document rather than by the
+    // sentence: the guide's six take `mods` and name both, everything else
+    // takes `mod` and names the key you have (one string today,
+    // settings.exportShortcut). The guide is read as often on another
+    // machine's behalf as on this one's; a button hint is telling somebody what
+    // to press right now, and the key they do not have is noise.
     defaultVariables: { mod: accelName(), mods: BOTH_ACCELS },
   },
 });
