@@ -23,7 +23,6 @@ import { parseDue } from "../../shared/core.js";
 import type { Language } from "../../shared/i18n/locales.js";
 import { currentLanguage, t } from "../i18n.js";
 import { cn } from "../react/cn.js";
-import { CloseIcon } from "../react/icons.js";
 import { Button } from "./ui/button.js";
 import { Calendar } from "./ui/calendar.js";
 
@@ -61,6 +60,14 @@ export function DueCalendar({ value, onChange, onClose }: Props) {
        * this branch shipped with.
        */}
       <Popover.Content
+        // The attribute the ported calendar's own variant looks for:
+        // `in-data-[slot=popover-content]:bg-transparent` on its root. That is
+        // a shadcn wrapper convention, and this file uses Radix directly, so
+        // without it the variant never fires and the calendar stays an opaque
+        // white square -- painting over the 8px corners at the top, where it
+        // sits flush. The bottom looked right the whole time because the row
+        // under it has no background of its own.
+        data-slot="popover-content"
         // "due-calendar" carries no styling of its own -- it is a hook, the
         // way ".due" and ".face" stay classes elsewhere in this pair of
         // components even after their look moved to utilities.
@@ -74,6 +81,11 @@ export function DueCalendar({ value, onChange, onClose }: Props) {
         align="start"
       >
         <Calendar
+          // Trimmed at the top only, and by the same two pixels the sides
+          // grew: the calendar's `p-lg` sets all four, and the popover reads
+          // taller than it needs to when the caption gets the full amount.
+          // tailwind-merge takes `pt-md` over the top of `p-lg`.
+          className="pt-md"
           mode="single"
           autoFocus
           selected={selected}
@@ -97,11 +109,18 @@ export function DueCalendar({ value, onChange, onClose }: Props) {
          * picker's own clear affordance, and that picker is gone. Disabled
          * rather than hidden when there is nothing to clear, so the row of
          * controls does not jump as a date is picked and then cleared again.
-         * Left-aligned and sized to its label -- not stretched across the
-         * popover the way a first pass at this control was, which read as a
-         * thin hairline bar rather than a button.
+         * Sized to its label and put at the trailing edge -- not stretched
+         * across the popover the way a first pass at this control was, which
+         * read as a thin hairline bar rather than a button. No icon on it
+         * either: an "x" beside a button that already says 삭제 is the word
+         * twice.
+         *
+         * `pt-md` on top of the calendar's own `p-md` makes eight plus eight,
+         * which is the `gap-3xl` the calendar puts between its caption and its
+         * grid. Spelled as the sum rather than as `gap-3xl` because the two
+         * boxes are siblings with a padding between them, not a flex gap.
          */}
-        <div className="flex justify-start px-md pb-md">
+        <div className="flex justify-end px-lg pt-sm pb-md">
           <Button
             type="button"
             variant="outline"
@@ -116,7 +135,6 @@ export function DueCalendar({ value, onChange, onClose }: Props) {
               onClose();
             }}
           >
-            <CloseIcon />
             {t("common.delete")}
           </Button>
         </div>
