@@ -30,4 +30,13 @@ const accel = (e: KeyboardEvent) =>
 /** The word for it, for anything the user reads. */
 const accelName = () => (isMac ? "Cmd" : "Ctrl");
 
-export { isMac, accel, accelName };
+/**
+ * Both names, for the one place that lists every shortcut.
+ *
+ * Fixed order rather than the running platform first: the list is as often
+ * read to answer "what is it on my other machine" as to be used here, and an
+ * order that moves with the platform makes the two readings disagree.
+ */
+const BOTH_ACCELS = "Ctrl / Cmd";
+
+export { isMac, accel, accelName, BOTH_ACCELS };

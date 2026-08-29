@@ -12,7 +12,6 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { Dot } from "../components/dot.js";
 import { createRoot } from "react-dom/client";
 import { QUADS, isCrowded } from "../../shared/core.js";
 import type { Quadrant, Task } from "../../shared/types.js";
@@ -134,6 +133,32 @@ function Row({ task, index }: { task: Task; index: number }) {
   );
 }
 
+/**
+ * The header's wash and the count's fill, spelled out four times each.
+ *
+ * Not `bg-q${quad}-soft`: Tailwind reads this file as text, so a name that is
+ * assembled at runtime is a rule that never gets generated -- no error, just a
+ * header with no colour. Same reason `views/memo.tsx` keeps `QUAD_RULE`.
+ */
+const QUAD_WASH: Record<Quadrant, string> = {
+  q1: "bg-q1-soft",
+  q2: "bg-q2-soft",
+  q3: "bg-q3-soft",
+  q4: "bg-q4-soft",
+};
+
+/**
+ * The count is the one place a quadrant colour is filled and lettered on, so
+ * it takes `*-fill` rather than the dot's colour -- three of the eight are a
+ * shade off for the sake of `on-accent`. See `shared/theme.ts`.
+ */
+const QUAD_COUNT: Record<Quadrant, string> = {
+  q1: "bg-q1-fill",
+  q2: "bg-q2-fill",
+  q3: "bg-q3-fill",
+  q4: "bg-q4-fill",
+};
+
 function Quad({ quad }: { quad: Quadrant }) {
   useRenderSignal();
   const items = activeOf(quad);
@@ -142,8 +167,12 @@ function Quad({ quad }: { quad: Quadrant }) {
 
   return (
     <>
-      <header className="flex items-center gap-md border-b border-line px-xl py-lg">
-        <Dot place={quad} />
+      <header
+        className={cn(
+          "flex items-center gap-md border-b border-line px-xl py-lg",
+          QUAD_WASH[quad],
+        )}
+      >
         <h2 className="m-[0px] text-md font-semibold">
           {t(`quad.${quad}.title`)}
         </h2>
@@ -151,15 +180,25 @@ function Quad({ quad }: { quad: Quadrant }) {
           {t(`quad.${quad}.action`)}
         </span>
         {/* Past the point where the quadrant stops meaning anything -- see
-            isCrowded. Deliberately a tint and not a warning: this is the app
-            noticing, not the app objecting, and the add form below still works. */}
+            isCrowded. Still the app noticing rather than the app objecting: it
+            is the same chip at the same weight, in a different hue, and the add
+            form below still works.
+
+            It used to be a tint (`bg-danger-soft` + `text-danger`), which read
+            that way when the header behind it was bare. Now that the header
+            carries a wash, a tint on a tint stopped being legible -- measured
+            4.53 to 3.46 in dark, under the 4.5 it owes its own lettering. A
+            solid fill is both the readable answer (6.73 light / 6.21 dark) and
+            the consistent one, since the other three counts are filled too. */}
         <Badge
           className={cn(
             "count ml-auto",
+            QUAD_COUNT[quad],
+            "text-on-quad",
             // `crowded` stays a class because the test asserts by it. It used
             // to be here for the title bar's chip as well, but nothing has ever
             // put `crowded` on a chip, so that rule was dead and is gone.
-            crowded && "crowded cursor-help bg-danger-soft text-danger",
+            crowded && "crowded cursor-help bg-danger-fill",
           )}
           data-count={quad}
           title={crowded ? t("matrix.crowded") : undefined}

@@ -9,7 +9,7 @@
 
 :root,
 :root[data-theme="light"] {
-  --bg: #f8f8f8;
+  --bg: #e9e9e9;
   --panel: #ffffff;
   --panel-2: #efefef;
   --panel-3: #d4d4d4;
@@ -35,7 +35,18 @@
   --q2: #1a50ae;
   --q3: #cb8010;
   --q4: #9c60d1;
+  --q1-soft: #c330201a;
+  --q2-soft: #1a50ae1a;
+  --q3-soft: #cb80101a;
+  --q4-soft: #9c60d11a;
+  --q1-fill: #c33020;
+  --q2-fill: #1a50ae;
+  --q3-fill: #a6690d;
+  --q4-fill: #935ac4;
+  --on-quad: #ffffff;
+  --danger-fill: #a8302a;
   --sh-card: 0 1px 2px rgb(0 0 0 / 0.05);
+  --sh-raise: 0 0 2px rgb(0 0 0 / 0.05), 0 0 10px rgb(0 0 0 / 0.05);
   --sh-knob: 0 1px 2px rgb(0 0 0 / 0.12);
   --sh-even: 0 0 3px rgb(0 0 0 / 0.18);
   --sh-pop: 0 10px 30px rgb(0 0 0 / 0.12), 0 2px 6px rgb(0 0 0 / 0.07);
@@ -69,7 +80,18 @@
   --q2: #4982e4;
   --q3: #f1af4d;
   --q4: #c099e1;
+  --q1-soft: #e6746824;
+  --q2-soft: #4982e424;
+  --q3-soft: #f1af4d24;
+  --q4-soft: #c099e124;
+  --q1-fill: #ac574e;
+  --q2-fill: #3e6fc3;
+  --q3-fill: #91692e;
+  --q4-fill: #806696;
+  --on-quad: #f8f8f8;
+  --danger-fill: #99625c;
   --sh-card: 0 1px 2px rgb(0 0 0 / 0.35);
+  --sh-raise: 0 0 2px rgb(0 0 0 / 0.32), 0 0 12px rgb(0 0 0 / 0.24);
   --sh-knob: 0 1px 2px rgb(0 0 0 / 0.45);
   --sh-even: 0 0 3px rgb(0 0 0 / 0.5);
   --sh-pop: 0 12px 34px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.4);

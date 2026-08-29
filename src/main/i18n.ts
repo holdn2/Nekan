@@ -28,10 +28,15 @@ function initI18n(lng?: string | null) {
     resources: { ko: { translation: ko }, en: { translation: en } },
     interpolation: {
       escapeValue: false,
-      // The same default the renderer sets, for the same seven strings. Main
+      // The same defaults the renderer sets, for the same seven strings. Main
       // does not draw the guide, but it reads from the same catalogues, and an
       // unresolved {{mod}} would reach a dialog title as those four braces.
-      defaultVariables: { mod: process.platform === "darwin" ? "Cmd" : "Ctrl" },
+      // `mods` is the renderer's constant, repeated rather than imported --
+      // renderer/keys.ts reads `navigator`, which main does not have.
+      defaultVariables: {
+        mod: process.platform === "darwin" ? "Cmd" : "Ctrl",
+        mods: "Ctrl / Cmd",
+      },
     },
   });
   ready = true;

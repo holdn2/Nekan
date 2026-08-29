@@ -58,42 +58,47 @@
     }
   },
   "guide": {
-    "title": "What is the Eisenhower matrix?",
-    "lead": "A way of deciding what to work on: split every task along two axes, <b>importance</b> and <b>urgency</b>, into four boxes, and handle each box differently. The longer the list gets, the clearer the point of it becomes — it settles <em>“what not to do”</em> before <em>“what to do first”</em>.",
-    "quote": "“I have two kinds of problems, the urgent and the important. The urgent are not important, and the important are never urgent.”",
-    "quoteCite": "— a line Dwight D. Eisenhower liked to quote",
-    "origin": "It takes its name from an anecdote about Eisenhower, the 34th President of the United States and Supreme Commander of the Allied forces in the Second World War, and became widely known when Stephen Covey wrote about it in <em>The 7 Habits of Highly Effective People</em>.",
-    "axesTitle": "The two axes",
-    "importanceTitle": "Importance",
-    "importance": "Does it move <b>your goals and results</b> forward? Would skipping it cost you something in the long run? The measure is <b>yours</b>.",
-    "urgencyTitle": "Urgency",
-    "urgency": "Does it need <b>a response right now</b>? Is a deadline close? The measure usually sits <b>outside</b> you — a deadline, somebody else's request.",
-    "axesNote": "The two get confused constantly, and they are completely different axes. A notification going off is urgent and rarely important, while the things that matter most — health, learning, the people around you — hardly ever become urgent on their own.",
-    "quadsTitle": "The four quadrants",
+    "title": "Urgent and important are not the same thing",
+    "lead": "This app puts the two on their own axes and splits your list into four boxes. <b>Each box is handled differently.</b>",
     "q1": {
       "tag": "Do · right now",
-      "body": "Deadlines about to land, incidents and outages, requests that need an answer today.",
-      "example": "e.g. tomorrow's presentation, a server outage, paperwork due today",
-      "tip": "A box that is always full means you are doing nothing but firefighting. The cause is usually the box below it, left too long."
+      "body": "Deadlines about to land, incidents and outages, requests that need an answer today."
     },
     "q2": {
       "tag": "Plan · book the time",
-      "body": "Nobody will say a word if you skip these today, and they are the ones that produce results.",
-      "example": "e.g. study and exercise, design and refactoring, retrospectives, keeping in touch",
-      "tip": "<b>This is the box the whole matrix exists for.</b> Without time set aside in advance it slips forever, and you end up doing it in quadrant 1 once it has turned urgent."
+      "body": "Nobody will say a word if you skip these today, and they are the ones that produce results."
     },
     "q3": {
       "tag": "Delegate · hand off or cut down",
-      "body": "It looks urgent, but mostly this is <b>somebody else's priority</b> arriving on your desk.",
-      "example": "e.g. notifications demanding an instant reply, errands somebody else could run, meetings you do not need to attend",
-      "tip": "With nobody to hand it to, cutting it down is the answer. Batch it into one fixed slot, or turn the notifications off so it never arrives in the first place."
+      "body": "It looks urgent, but mostly this is <b>somebody else's priority</b> arriving on your desk."
     },
     "q4": {
       "tag": "Delete · get rid of it",
-      "body": "Things you do out of habit that leave nothing behind. All they do is weigh the list down.",
-      "example": "e.g. scrolling a feed with no purpose, checking something again for no reason",
-      "tip": "Deleting is a decision too. If it feels wasteful, move it to a “someday” list and get it off the matrix."
+      "body": "Things you do out of habit that leave nothing behind. All they do is weigh the list down."
     },
+    "flowTitle": "How it works",
+    "flow": {
+      "dump": "<b>Get it all out.</b> Write everything in your head into the <b>brain dump</b> at the top first. Sorting comes later.",
+      "place": "<b>Drag it into place.</b> Take them down into the four boxes one at a time. When in doubt, put it in the less important one — you can move it later.",
+      "clear": "<b>Clear it out.</b> Finished things get completed, things you will not do get deleted. <b>Dropping things is the point of the matrix.</b>"
+    },
+    "basicsTitle": "The basics",
+    "basics": {
+      "add": "Type in the field under a box and press <code>Enter</code> to add it there.",
+      "move": "<b>Drag</b> a task to move it between boxes, or to reorder it within one.",
+      "done": "The <b>circle</b> on the left completes a task; the <b>×</b> that appears on hover sends it to the trash.",
+      "note": "<b>Click</b> a task to open its note, <b>double-click</b> to edit the text."
+    },
+    "moreTitle": "More detail",
+    "foldTheory": "What is the Eisenhower matrix?",
+    "quote": "“I have two kinds of problems, the urgent and the important. The urgent are not important, and the important are never urgent.”",
+    "quoteCite": "— a line Dwight D. Eisenhower liked to quote",
+    "axes": "<b>Importance</b> is whether something moves <b>your own</b> goals and results forward. <b>Urgency</b> is whether it needs a response right now, and that measure usually sits <b>outside</b> you — a deadline, somebody else's request.",
+    "axesNote": "The two get confused constantly, and they are completely different axes. A notification going off is urgent and rarely important, while the things that matter most — health, learning, the people around you — hardly ever become urgent on their own.",
+    "traps": "Each box has its own trap. A <b>quadrant 1</b> that is always full means you are doing nothing but firefighting, and the cause is usually a <b>quadrant 2</b> left too long. <b>Quadrant 3</b>, with nobody to hand it to, wants cutting down rather than doing. And in <b>quadrant 4</b>, deleting is a decision too.",
+    "crowded": "<b>Do not pile one box high.</b> More than five in quadrant 1 is the same as having no priorities at all. When it overflows <b>the count turns red</b>, and the answer is not a bigger box but <b>a shorter list</b> — move things down to 3 and 4, push them out to 2, or delete them outright.",
+    "origin": "It takes its name from an anecdote about Eisenhower, the 34th President of the United States and Supreme Commander of the Allied forces in the Second World War, and became widely known when Stephen Covey wrote about it in <em>The 7 Habits of Highly Effective People</em>.",
+    "originIdea": "And this app is those four boxes, put on one screen and left there. A matrix drawn on paper starts over every time you draw it; on a screen, where you put something yesterday is where it still is. <b>Nekan</b> comes from them too — <em>ne-kan</em>, four boxes in Korean.",
     "stepsTitle": "How to use it",
     "steps": {
       "dump": "<b>Brain dump</b> — write down everything in your head first. The <b>Brain dump</b> list above the matrix is the place for this step. Sorting comes later; here, just write things as they occur to you. <b>Both the Work and Life matrices share this list</b>, so you do not have to decide which side a task belongs to yet.",
@@ -104,13 +109,7 @@
       "reserve": "<b>Book time for quadrant 2</b> — claim a slot in your calendar in advance. Leave this step out and the matrix is just a list.",
       "review": "<b>Come back to it regularly</b> — rearrange the quadrants at the end of a day or a week."
     },
-    "pointsTitle": "Worth remembering",
-    "points": {
-      "notTheSame": "<b>Urgent is not important.</b> The loudest thing is not the valuable one.",
-      "quadOne": "<b>A crowded quadrant 1 means a neglected quadrant 2.</b> Work done early is work that never becomes urgent.",
-      "tooMany": "<b>Do not pile one box high.</b> More than five in quadrant 1 is the same as having no priorities at all. When it overflows <b>the count turns red</b>, and the answer is not a bigger box but <b>a shorter list</b> — move things down to 3 and 4, push them out to 2, or delete them outright.",
-      "dropping": "<b>Dropping things is the point.</b> The reason for splitting the list four ways is to clear out 3 and 4."
-    },
+    "foldTasks": "Tasks and the brain dump",
     "appTitle": "In this app",
     "app": {
       "dumpFirst": "Pour everything into the <b>Brain dump</b> first and sort it afterwards. Your head empties far faster when you are not asking “which quadrant is this?” after every line. Once it is all written down, dragging them into quadrants one by one is steps 2 and 3.",
@@ -119,7 +118,7 @@
     },
     "tasksTitle": "Working with tasks",
     "tasks": {
-      "add": "Type in the <b>box at the bottom of a quadrant</b> and press <code>Enter</code> to add a task there. The box clears itself so you can keep going, and <code>{{mod}}</code> + <code>1</code>–<code>4</code> jumps straight to the box of the quadrant you want.",
+      "add": "Type in the <b>box at the bottom of a quadrant</b> and press <code>Enter</code> to add a task there. The box clears itself so you can keep going, and <code>{{mods}}</code> + <code>1</code>–<code>4</code> jumps straight to the box of the quadrant you want.",
       "order": "The number in front of a task is <b>its place within that quadrant</b>. Drag to reorder and the numbers follow; drag it into another quadrant and it moves there. Circumstances change and so should the quadrant — drag a task up to the <b>Brain dump</b> and back down from the other matrix to move it between <b>Work and Life</b>.",
       "edit": "<b>Double-click</b> a task to edit its text. <code>Enter</code> saves, <code>Esc</code> cancels.",
       "done": "The <b>circle</b> on the left completes a task: it leaves the list and stacks up by date in the <b>History</b>. Its note goes with it, so you can read back what you were thinking at the time.",
@@ -127,10 +126,11 @@
     },
     "dumpTitle": "The brain dump",
     "dump": {
-      "toggle": "Click <b>Brain dump</b> in the header to open the list, click it again to fold it away. <code>{{mod}}</code> + <code>0</code> opens it and puts the cursor in the box. Open or folded is remembered after you quit.",
+      "toggle": "Click <b>Brain dump</b> in the header to open the list, click it again to fold it away. <code>{{mods}}</code> + <code>0</code> opens it and puts the cursor in the box. Open or folded is remembered after you quit.",
       "paste": "Paste <b>several lines at once</b> from a notepad or a chat and each line becomes its own task. Leading list markers like <code>-</code>, <code>*</code> or <code>1.</code> and blank lines are stripped for you (up to 100 lines at a time).",
       "later": "Text is all you need here. <b>Due dates, notes and completing a task only come once it is down in a quadrant.</b> While anything is still unsorted a hollow count chip shows, even in bar mode, so you know something is waiting."
     },
+    "foldDueNote": "Due dates and notes",
     "dueTitle": "Due dates",
     "due": {
       "set": "The <b>calendar button inside the input</b> sets a date as you add the task; for a task that already exists, <b>click the date chip</b> on the right to open the calendar. <code>Delete</code> at the foot of the calendar clears the date and nothing else.",
@@ -139,10 +139,11 @@
     "noteTitle": "Notes",
     "note": {
       "open": "<b>Click a task</b> and its note opens below the matrix — one note per task. Writing down why it is in this quadrant and what comes next makes the next look much quicker. A task with a note is marked, and hovering the mark previews what it says.",
-      "keys": "A task without a note opens straight into editing. <code>{{mod}}</code> + <code>Enter</code> saves, <code>Esc</code> cancels. <b>Double-click</b> a saved note to edit it again, and <code>Delete</code> removes the note only — the task stays.",
+      "keys": "A task without a note opens straight into editing. <code>{{mods}}</code> + <code>Enter</code> saves, <code>Esc</code> cancels. <b>Double-click</b> a saved note to edit it again, and <code>Delete</code> removes the note only — the task stays.",
       "panel": "Opening a note <b>takes the room out of the matrix</b> — the window stays the size you left it. <b>Drag the top edge</b> of the card to change its height, and <b>double-click</b> to put it back. Click the same task again, or the <code>✕</code>, to close it.",
       "readonly": "In the History and the Trash a note shows under its task, <b>read-only</b>. A long one is cut to three lines and clicking it opens the rest. Restore a task from the trash and its note comes back with it."
     },
+    "foldLog": "Records and export",
     "logTitle": "History and trash",
     "log": {
       "history": "The <b>History</b> stacks completed tasks by date, newest first. <code>Restore</code> puts one back in the quadrant it came from and <code>Delete</code> sends it to the trash. <code>Move all to the trash</code> clears <b>everything the tab is holding</b>, not just the page in front of you.",
@@ -151,16 +152,17 @@
     },
     "exportTitle": "Export",
     "export": {
-      "run": "<b>Export in the settings (⚙)</b>, or <code>{{mod}}</code> + <code>E</code>, saves the current <b>brain dump and four quadrants</b> to a file. Pick <b>PDF, HTML or Markdown</b> at the bottom of the save dialog, and once it is written <code>Open folder</code> takes you straight to it. It is a good way to keep the board as it stood for a weekly review or to share it.",
+      "run": "<b>Export in the settings (⚙)</b>, or <code>{{mods}}</code> + <code>E</code>, saves the current <b>brain dump and four quadrants</b> to a file. Pick <b>PDF, HTML or Markdown</b> at the bottom of the save dialog, and once it is written <code>Open folder</code> takes you straight to it. It is a good way to keep the board as it stood for a weekly review or to share it.",
       "what": "Only the <b>side you are on, Work or Life</b>, goes out. The document title and the file name say which, and the brain dump is shared so it appears in both. Flip the toggle and export again if you need the other one. <b>Completed tasks and the trash are not included</b> — only what is live right now."
     },
+    "foldWindow": "Window, shortcuts, sync",
     "windowTitle": "The window and the keyboard",
     "window": {
-      "bar": "The <b>Shrink to the bar</b> button in the title bar, a <b>double-click</b> on the title bar, or <code>{{mod}}</code> + <code>M</code> — any of the three folds the window down to a thin bar. The Work/Life toggle and the per-quadrant counts stay on it, and <b>clicking a count chip opens the window again.</b> It expands from wherever you parked the bar and folds back to the same place.",
+      "bar": "The <b>Shrink to the bar</b> button in the title bar, a <b>double-click</b> on the title bar, or <code>{{mods}}</code> + <code>M</code> — any of the three folds the window down to a thin bar. The Work/Life toggle and the per-quadrant counts stay on it, and <b>clicking a count chip opens the window again.</b> It expands from wherever you parked the bar and folds back to the same place.",
       "pin": "Turn on <b>Always on top</b> and the window stays above everything else. Position, size, mode, theme and the pin are all remembered when you quit, and <b>if you leave it as a bar it opens as a bar next time.</b>",
       "quads": "<b>Drag the edge between quadrants</b> to resize them. The horizontal and vertical edges are shared by all four, so growing one shrinks its neighbour, and grabbing the <b>crossing point</b> in the middle moves both at once. The same works on the <b>bottom edge of the brain dump</b> and the <b>top edge of a note</b> — the window stays the size you left it and the matrix gives up the difference. <b>Double-click</b> any edge to put it back.",
       "settings": "The <b>settings (⚙)</b> in the title bar hold <b>language, theme, export and syncing</b> in one place. Pressing it in bar mode expands the window first. The language follows your computer the first time the app runs; once you pick one it is remembered and takes effect on the spot, with no restart.",
-      "keys": "That is the whole keyboard: <code>{{mod}}</code> + <code>M</code> for bar mode, <code>{{mod}}</code> + <code>D</code> for the dark theme, <code>{{mod}}</code> + <code>E</code> to export, <code>{{mod}}</code> + <code>0</code> for the brain dump, <code>{{mod}}</code> + <code>1</code>–<code>4</code> for a quadrant, <code>Enter</code> to add or save an edit, <code>{{mod}}</code> + <code>Enter</code> to save a note, <code>Esc</code> to cancel."
+      "keys": "That is the whole keyboard: <code>{{mods}}</code> + <code>M</code> for bar mode, <code>{{mods}}</code> + <code>D</code> for the dark theme, <code>{{mods}}</code> + <code>E</code> to export, <code>{{mods}}</code> + <code>0</code> for the brain dump, <code>{{mods}}</code> + <code>1</code>–<code>4</code> for a quadrant, <code>Enter</code> to add or save an edit, <code>{{mods}}</code> + <code>Enter</code> to save a note, <code>Esc</code> to cancel."
     },
     "syncTitle": "Sync across devices",
     "sync": "Sign in and the tasks on this computer match your other devices. The app works as usual with no internet, and everything you changed in the meantime goes up on its own once you are connected again.",

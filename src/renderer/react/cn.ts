@@ -68,6 +68,21 @@ export const COLORS = [
   "q2",
   "q3",
   "q4",
+  // The washes and the fills have to be listed too, not just the dots. An
+  // unlisted name is not a colour to tailwind-merge, so `bg-q1-soft` would
+  // stop counting as a background and the crowded `bg-danger-soft` that is
+  // meant to replace it would land beside it instead -- with the loser decided
+  // by stylesheet order rather than by the call.
+  "q1-soft",
+  "q2-soft",
+  "q3-soft",
+  "q4-soft",
+  "q1-fill",
+  "q2-fill",
+  "q3-fill",
+  "q4-fill",
+  "on-quad",
+  "danger-fill",
 ];
 
 /** Named spacing steps. There is no numeric scale on purpose. */
@@ -91,7 +106,7 @@ export const SPACING = [
 export const TEXT = ["xs", "sm", "md", "lg", "xl", "2xl", "3xl"];
 
 export const RADIUS = ["xs", "sm", "md", "panel", "lg", "pill"];
-export const SHADOW = ["default", "knob", "even", "pop", "toast"];
+export const SHADOW = ["default", "raise", "knob", "even", "pop", "toast"];
 export const FONT_WEIGHT = ["light", "normal", "medium", "semibold"];
 export const LEADING = ["none", "snug", "normal", "relaxed"];
 export const TRACKING = ["tight", "wide"];

@@ -193,6 +193,16 @@
   --color-q2: var(--q2);
   --color-q3: var(--q3);
   --color-q4: var(--q4);
+  --color-q1-soft: var(--q1-soft);
+  --color-q2-soft: var(--q2-soft);
+  --color-q3-soft: var(--q3-soft);
+  --color-q4-soft: var(--q4-soft);
+  --color-on-quad: var(--on-quad);
+  --color-danger-fill: var(--danger-fill);
+  --color-q1-fill: var(--q1-fill);
+  --color-q2-fill: var(--q2-fill);
+  --color-q3-fill: var(--q3-fill);
+  --color-q4-fill: var(--q4-fill);
   --font-sans: var(--font);
   --text-xs: var(--fs-xs);
   --text-sm: var(--fs-sm);
@@ -278,6 +288,7 @@
      it is centred to the pixel. The switch's pill is its only user, and its
      track is nine levels of luminance away, so that edge is most of what
      separates them. */
+  --shadow-raise: var(--sh-raise);
   --shadow-knob: var(--sh-knob);
   --shadow-even: var(--sh-even);
   --shadow-pop: var(--sh-pop);

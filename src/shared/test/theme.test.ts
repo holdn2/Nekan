@@ -116,9 +116,9 @@ test("the four Salt and pepper colours are in the ramp, exactly", () => {
   // Anchors, not approximations. #d4d4d4 came out as #d1d1d1 while the ramp
   // was still evenly spaced, which is a different colour wearing the name.
   assert.equal(RAMP[0], "#ffffff");
-  assert.equal(RAMP[3], "#d4d4d4");
-  assert.equal(RAMP[5], "#b3b3b3");
-  assert.equal(RAMP[13], "#2b2b2b");
+  assert.equal(RAMP[4], "#d4d4d4");
+  assert.equal(RAMP[6], "#b3b3b3");
+  assert.equal(RAMP[14], "#2b2b2b");
 });
 
 test("the ramp only gets darker, and never repeats a step", () => {
@@ -154,6 +154,9 @@ type Rule = [string, ColorRole, ColorRole, number];
  * visible as a change", which is what a hover fill or a hairline is.
  */
 const RULES: Rule[] = [
+  // The window ground has to be a ground: at 1.04 a card did not sit on it so
+  // much as dissolve into it, and nothing under a panel could cast a shadow.
+  ["a panel against the window ground", "panel", "bg", 1.05],
   ["body text on a panel", "text", "panel", 4.5],
   ["body text on the window ground", "text", "bg", 4.5],
   ["secondary text on a panel", "muted", "panel", 4.5],
@@ -188,6 +191,83 @@ for (const theme of THEMES) {
     }
   });
 }
+
+/** An `#rrggbbaa` laid over an opaque colour, the way the browser composites. */
+function over(top: string, bottom: string): string {
+  const alpha =
+    top.length === 9 ? Number.parseInt(top.slice(7, 9), 16) / 255 : 1;
+  const channelOf = (hex: string, i: number) =>
+    Number.parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  const mixed = [0, 1, 2].map((i) =>
+    Math.round(channelOf(top, i) * alpha + channelOf(bottom, i) * (1 - alpha)),
+  );
+  return `#${mixed.map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+const WASHES: ColorRole[] = ["q1-soft", "q2-soft", "q3-soft", "q4-soft"];
+const FILLS: ColorRole[] = ["q1-fill", "q2-fill", "q3-fill", "q4-fill"];
+
+for (const theme of THEMES) {
+  test(`${theme}: the count reads on the quadrant it is filled with`, () => {
+    // This is why three of the eight fills are not the dot's colour. `q3` and
+    // `q4` in light and `q2` in dark all sat under 4.5 against `on-accent`
+    // before they were pushed away from it.
+    for (const role of FILLS) {
+      const got = contrast(PALETTE[theme]["on-quad"], PALETTE[theme][role]);
+      assert.ok(
+        got >= 4.5,
+        `${role}: ${PALETTE[theme]["on-quad"]} on ${PALETTE[theme][role]} is ${got.toFixed(2)}, needs 4.5`,
+      );
+    }
+  });
+
+  test(`${theme}: a washed quadrant header still carries everything on it`, () => {
+    for (const role of WASHES) {
+      const head = over(PALETTE[theme][role], PALETTE[theme].panel);
+      // Visible as a change at all -- otherwise the wash is not doing its job.
+      const seen = contrast(head, PALETTE[theme].panel);
+      assert.ok(
+        seen >= 1.05,
+        `${role} is ${seen.toFixed(3)} against its panel, needs 1.05 to be seen`,
+      );
+      // The title, and the action label beside it.
+      for (const fg of ["text", "muted"] as ColorRole[]) {
+        const got = contrast(PALETTE[theme][fg], head);
+        assert.ok(
+          got >= 4.5,
+          `${fg} on a ${role} header is ${got.toFixed(2)}, needs 4.5`,
+        );
+      }
+    }
+  });
+}
+
+test("the count is lettered the same way in both themes", () => {
+  // `on-accent` flips to ink in dark and this does not: a count that is dark in
+  // one theme and light in the other reads as two different chips. Holding it
+  // still is what forces the dark fills to be darkened -- see theme.ts.
+  for (const theme of THEMES) {
+    const l = lightness(PALETTE[theme]["on-quad"]);
+    assert.ok(l >= 95, `${theme}: on-quad is ${l.toFixed(1)} L*, needs 95`);
+  }
+});
+
+test("the overflow count is filled, not tinted", () => {
+  // A tint stops reading once there is a wash behind it: `danger` on
+  // `danger-soft` over a washed header measured 3.46 in dark, against the 4.5
+  // it owes its own lettering. The chip is solid `danger` now, and this is the
+  // pair that has to hold.
+  for (const theme of THEMES) {
+    const got = contrast(
+      PALETTE[theme]["on-quad"],
+      PALETTE[theme]["danger-fill"],
+    );
+    assert.ok(
+      got >= 4.5,
+      `${theme}: the overflow count is ${got.toFixed(2)}, needs 4.5`,
+    );
+  }
+});
 
 const QUADS: ColorRole[] = ["q1", "q2", "q3", "q4"];
 
