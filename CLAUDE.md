@@ -28,7 +28,10 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
   preload.ts       contextBridge → window.api. 그 객체의 `typeof`가 렌더러의 타입이다
   shared/          메인·렌더러·테스트가 공유. 여기만 테스트가 덮는다
     types.ts       Task · Place · Space · Layout · Session · DueInfo · Rect 등 어휘
-    theme.ts       색의 유일한 집. RAMP 14 · PALETTE 역할 26 × 2테마 · SHADOW 5 × 2테마
+    theme.ts       색의 유일한 집. RAMP 15 · PALETTE 역할 36 × 2테마 · SHADOW 6 × 2테마
+                   **그림자 역할의 이름과 유틸리티 이름이 다르다**: 여기서 `card`인 것이
+                   화면에서는 `shadow-default`다(`--sh-card` → `--shadow-default`).
+                   아래 ④ 때문에 생긴 갈림이니 한쪽 이름으로 다른 쪽을 grep하지 말 것
                    **분면 네 색은 2026-08-28부터 아이콘에서 나온 값이 아니다.** 원래는
                    `build/icon.png`의 **색상과 채도를 그대로 쓰고 밝기만 옮긴** 값이었는데
                    (같은 hex는 아니었다. #49로 아이콘은 안 바꾼다),
@@ -893,10 +896,10 @@ then "draft" else "published" end` (실측: `v1.0.1 -> draft`, `v1.0.0 -> publis
 
 **`npm test`는 검사 둘 + 러너 둘이다** — 빌드 → `check-styles.js` → `check-colors.js` →
 `node --test` → `vitest run`. **`prettier --check .`는 여기 없다**(CI 관문이라 커밋 전에 따로
-돌릴 것). `node --test`가 `out/test/`의 231개로 `src/shared/`의 순수
+돌릴 것). `node --test`가 `out/test/`의 237개로 `src/shared/`의 순수
 함수를 덮고 — 데이터가 날아가는 규칙(정규화 기본값, quadrant 유효성, temp+rename 저장, 손상
 파일 폴백)이 거기 있으니 그 파일들을 건드렸으면 반드시 돌린다 — 이어서 `vitest run`이
-**React로 옮긴 렌더러 조각** 149개를 덮는다. **이 숫자는 자주 바뀐다** — 믿지 말고
+**React로 옮긴 렌더러 조각** 151개(파일 27)를 덮는다. **이 숫자는 자주 바뀐다** — 믿지 말고
 `npm test`의 마지막 줄을 볼 것.
 
 **러너가 둘인 이유**: 번들러가 생기면서 렌더러가 **Node가 require할 수 있는 파일로 존재하지
