@@ -115,10 +115,12 @@ export function DueCalendar({ value, onChange, onClose }: Props) {
          * either: an "x" beside a button that already says 삭제 is the word
          * twice.
          *
-         * `pt-md` on top of the calendar's own `p-md` makes eight plus eight,
+         * `pt-sm` on top of the calendar's own `p-lg` makes six plus ten,
          * which is the `gap-3xl` the calendar puts between its caption and its
          * grid. Spelled as the sum rather than as `gap-3xl` because the two
-         * boxes are siblings with a padding between them, not a flex gap.
+         * boxes are siblings with a padding between them, not a flex gap --
+         * and split unevenly because the calendar's padding sets all four of
+         * its sides at once, so the row is what gives when that one moves.
          */}
         <div className="flex justify-end px-lg pt-sm pb-md">
           <Button
