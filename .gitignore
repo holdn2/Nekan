@@ -20,3 +20,8 @@ out/
 # 손으로 만져 보는 QA 프로필 (세션용, 저장소에 올리지 않는다)
 .qa/
 dist*/
+
+# Expo writes these into the app it is serving: a dev-server handle and the
+# route types it regenerates from the app/ directory. Both follow the machine,
+# not the repository.
+apps/*/.expo/

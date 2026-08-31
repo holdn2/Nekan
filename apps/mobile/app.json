@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Nekan",
+    "slug": "nekan",
+    "scheme": "nekan",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.makersfarm.nekan",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.makersfarm.nekan"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
