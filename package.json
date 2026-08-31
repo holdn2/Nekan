@@ -9,8 +9,12 @@
     "#tools/*": "./tools/*"
   },
   "workspaces": [
-    "src/shared"
+    "src/shared",
+    "apps/mobile"
   ],
+  "overrides": {
+    "react-native": "0.86.3"
+  },
   "author": "makersfarm",
   "license": "MIT",
   "scripts": {
