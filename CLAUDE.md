@@ -150,6 +150,16 @@ electron-builder가 싣는 것도 거기다. `npm start`·`npm test`·`npm run d
 있어 평소에는 의식할 일이 없지만, **`src/`를 고치고 앱만 다시 띄우면 옛 코드가 돈다.**
 `npm run build:watch`가 두 컴파일러를 watch로 띄우고 자산도 따라 복사한다.
 
+**예외가 하나 있고, 그건 데스크톱이 아니다.** `@nekan/shared`의 `exports`는 `out/`이 아니라
+**`src/shared/*.ts`를 가리킨다** — 모바일의 번들러(Metro)는 TypeScript를 스스로 컴파일하므로
+`out/`을 읽을 이유가 없다. 위 규칙은 **Electron이 무엇을 실행하는가**에 대한 것이고 거기서는
+여전히 참이다: `main`도 electron-builder가 싣는 것도 `out/`이고, 데스크톱은 `@nekan/shared`라는
+이름을 **한 번도 쓰지 않는다**(상대 경로와 `#shared/*`로 `out/shared/`를 읽는다).
+**`out/`을 가리키게 바꾸면 안 된다**: `out/`은 gitignore라 갓 클론한 저장소에는 없어서,
+데스크톱 빌드를 먼저 돌리기 전에는 모바일이 아무것도 해석하지 못한다. 그리고 shared를 고치고
+빌드를 잊으면 **폰이 옛 코드를 번들한다** — 위 문단이 경고하는 바로 그 실패를, 규칙을 지키다가
+불러들이는 셈이다.
+
 **tsconfig가 다섯이고 각자 이유가 있다. 그중 하나는 빌드가 아니라 에디터의 것이다.**
 
 - `tsconfig.shared.json` — `src/shared/`를 **ES 모듈로** 내보낸다. 그리고 **규칙이다**:
