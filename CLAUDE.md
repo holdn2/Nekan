@@ -27,6 +27,13 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
     test/          store-io 단위 테스트 (node --test)
   preload.ts       contextBridge → window.api. 그 객체의 `typeof`가 렌더러의 타입이다
   shared/          메인·렌더러·테스트가 공유. 여기만 테스트가 덮는다
+                   **2026-08-31부터 워크스페이스 패키지다** (`@nekan/shared`).
+                   자리는 그대로이고 매니페스트만 놓았다 — 모바일이 이 이름으로만 닿게
+                   해서 `src/main`을 실수로 부르지 못하게 하는 것이 목적이다.
+                   `exports`는 **소스(.ts)를 가리킨다**: Metro가 TypeScript를 직접 읽으므로
+                   폰에는 컴파일 단계가 없고, 데스크톱은 지금처럼 `out/shared/`를 읽는다.
+                   **매니페스트를 놓는 순간 그 아래 테스트의 `#shared/*`가 깨진다** —
+                   아래 `tsconfig.test.json` 항목을 볼 것
     types.ts       Task · Place · Space · Layout · Session · DueInfo · Rect 등 어휘
     theme.ts       색의 유일한 집. RAMP 15 · PALETTE 역할 36 × 2테마 · SHADOW 6 × 2테마
                    **그림자 역할의 이름과 유틸리티 이름이 다르다**: 여기서 `card`인 것이
@@ -161,7 +168,14 @@ electron-builder가 싣는 것도 거기다. `npm start`·`npm test`·`npm run d
   브라우저가 아니라 번들러다 — `.js`라고 적힌 것을 옆의 `.ts`·`.tsx`에 이어주는 일은
   `vite.config.mts`의 플러그인이 한다. **`noEmit`을 빼면 `tsc -b`가 번들 옆에 렌더러를 한 벌 더
   뱉는다** — `out/renderer/app.js`, 번들러가 생기기 전에 `index.html`이 읽던 바로 그 이름이다.
-- `tsconfig.test.json` — `out/test/`로 나간다. **`strict`가 꺼진 유일한 곳이고 의도한 것이다**:
+- `tsconfig.test.json` — `out/test/`로 나간다. **`paths`로 `#shared/*`·`#main/*`를 한 번 더
+  적는다.** `#`으로 시작하는 지정자는 **가장 가까운 `package.json`**에서 풀리는데,
+  `src/shared/`가 워크스페이스가 되면서 그 아래 테스트들이 저장소 루트의 `imports`를 못 보게
+  됐다(2026-08-31 실측: `Cannot find module '#shared/…'` 다발). **런타임은 멀쩡하다** —
+  컴파일된 테스트는 `out/test/` 아래에 있고 거기서 가장 가까운 매니페스트는 여전히 루트다.
+  그래서 컴파일러에게만 다시 말해 주는 것이고, 둘은 같은 곳을 가리킨다.
+  **`imports` 타깃으로 `../../out/shared/*`를 주는 길은 막혀 있다** — 타깃은 패키지 밖으로
+  나갈 수 없어서 오류가 그대로 남는다(실측). **`strict`가 꺼진 유일한 곳이고 의도한 것이다**:
   79개 중 대부분이 "테스트가 방금 만들어 곧바로 단언할 값이 null일 수 있다"는 지적인데,
   거기서 null이면 테스트가 요란하게 실패한다 — 그게 그 파일이 하는 일이다.
   **테스트 소스는 `src/` 안에, 각 폴더의 `test/`에 있고 산출물만 `out/test/`로 빠진다**
