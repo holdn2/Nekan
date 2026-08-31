@@ -8,6 +8,9 @@
     "#main/*": "./out/main/*",
     "#tools/*": "./tools/*"
   },
+  "workspaces": [
+    "src/shared"
+  ],
   "author": "makersfarm",
   "license": "MIT",
   "scripts": {
