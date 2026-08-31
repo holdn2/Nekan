@@ -8,33 +8,33 @@
  */
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ko from "@nekan/shared/i18n/ko.json";
+import { t } from "../../i18n";
 import { SP, useColors } from "../../theme";
 
 const ROWS = [
-  ko.settings.theme,
-  ko.settings.language,
-  ko.settings.export,
-  ko.settings.sync,
-  ko.tabs.guide,
+  "settings.theme",
+  "settings.language",
+  "settings.export",
+  "settings.sync",
+  "tabs.guide",
 ] as const;
 
 export default function SettingsScreen() {
   const c = useColors();
   return (
     <SafeAreaView style={[s.root, { backgroundColor: c.bg }]} edges={["top"]}>
-      <Text style={[s.title, { color: c.text }]}>{ko.settings.title}</Text>
+      <Text style={[s.title, { color: c.text }]}>{t("settings.title")}</Text>
       <View style={[s.card, { backgroundColor: c.panel, borderColor: c.line }]}>
-        {ROWS.map((label, i) => (
+        {ROWS.map((key, i) => (
           <Text
-            key={label}
+            key={key}
             style={[
               s.row,
               { color: c.text, borderTopColor: c.line },
               i === 0 && s.first,
             ]}
           >
-            {label}
+            {t(key)}
           </Text>
         ))}
       </View>

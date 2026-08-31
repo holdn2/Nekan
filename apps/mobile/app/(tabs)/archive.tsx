@@ -7,7 +7,7 @@
  */
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ko from "@nekan/shared/i18n/ko.json";
+import { t } from "../../i18n";
 import { SP, useColors } from "../../theme";
 
 export default function ArchiveScreen() {
@@ -18,12 +18,12 @@ export default function ArchiveScreen() {
         <Text
           style={[s.tab, s.on, { color: c.text, borderBottomColor: c.accent }]}
         >
-          {ko.tabs.history}
+          {t("tabs.history")}
         </Text>
-        <Text style={[s.tab, { color: c.muted }]}>{ko.tabs.trash}</Text>
+        <Text style={[s.tab, { color: c.muted }]}>{t("tabs.trash")}</Text>
       </View>
       <Text style={[s.empty, { color: c.faint }]}>
-        {ko.archive.historyEmpty}
+        {t("archive.historyEmpty")}
       </Text>
     </SafeAreaView>
   );

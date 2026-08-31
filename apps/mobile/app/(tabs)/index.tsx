@@ -15,7 +15,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { QUADS } from "@nekan/shared/core";
-import ko from "@nekan/shared/i18n/ko.json";
+import { t } from "../../i18n";
 import { SP, useColors } from "../../theme";
 
 export default function MatrixScreen() {
@@ -36,15 +36,19 @@ export default function MatrixScreen() {
               { backgroundColor: c.accent, color: c["on-accent"] },
             ]}
           >
-            {ko.space.work}
+            {t("space.work")}
           </Text>
-          <Text style={[s.switchOff, { color: c.muted }]}>{ko.space.life}</Text>
+          <Text style={[s.switchOff, { color: c.muted }]}>
+            {t("space.life")}
+          </Text>
         </View>
       </View>
 
       <View style={[s.dump, { backgroundColor: c.panel, borderColor: c.line }]}>
-        <Text style={[s.dumpTitle, { color: c.text }]}>{ko.inbox.title}</Text>
-        <Text style={[s.dumpEmpty, { color: c.faint }]}>{ko.inbox.empty}</Text>
+        <Text style={[s.dumpTitle, { color: c.text }]}>{t("inbox.title")}</Text>
+        <Text style={[s.dumpEmpty, { color: c.faint }]}>
+          {t("inbox.empty")}
+        </Text>
       </View>
 
       <View style={s.grid}>
@@ -55,7 +59,7 @@ export default function MatrixScreen() {
           >
             <View style={[s.wash, { backgroundColor: c[q] }]} />
             <Text style={[s.cardTitle, { color: c.text }]} numberOfLines={2}>
-              {ko.quad[q].action}
+              {t(`quad.${q}.action`)}
             </Text>
             <Text style={[s.count, { color: c.muted }]}>0</Text>
           </View>

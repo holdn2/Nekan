@@ -11,8 +11,10 @@
   "dependencies": {
     "@nekan/shared": "*",
     "expo": "^57.0.18",
+    "expo-localization": "~57.0.1",
     "expo-router": "~57.0.17",
     "expo-status-bar": "~57.0.1",
+    "i18next": "^26.3.6",
     "react": "^19.2.8",
     "react-native": "0.86.3",
     "react-native-safe-area-context": "~5.7.0",
