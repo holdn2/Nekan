@@ -22,6 +22,17 @@
   // src/.
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
+    // The same two names the repository's package.json already maps, spelled
+    // again for the compiler. `#shared/*` is resolved from the *nearest*
+    // package.json, and src/shared/ has one of its own since it became a
+    // workspace -- so the tests under it stopped seeing the root mapping and
+    // every #shared/ and #main/ import failed to type-check. Node is not
+    // affected: it resolves these at runtime from out/test/, where the nearest
+    // package.json is still the repository's. Two mechanisms, one target; the
+    // compiler needs this line because the package boundary now sits between
+    // the test and the map. A target that climbs out of src/shared/ was tried
+    // first and rejected -- an imports target may not leave its package.
+    "paths": { "#shared/*": ["./out/shared/*"], "#main/*": ["./out/main/*"] },
     // The one place that is not strict, and on purpose. Its 79 complaints are
     // almost all "possibly null" about a value the test itself just built and
     // is about to assert on -- a null there fails the test, loudly, which is

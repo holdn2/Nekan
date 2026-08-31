@@ -1,0 +1,18 @@
+{
+  "name": "@nekan/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./types": "./types.ts",
+    "./core": "./core.ts",
+    "./theme": "./theme.ts",
+    "./sync": "./sync.ts",
+    "./auth": "./auth.ts",
+    "./export": "./export.ts",
+    "./errors": "./errors.ts",
+    "./i18n/locales": "./i18n/locales.ts",
+    "./i18n/ko.json": "./i18n/ko.json",
+    "./i18n/en.json": "./i18n/en.json"
+  }
+}
