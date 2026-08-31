@@ -2,6 +2,7 @@
   "common": {
     "add": "추가",
     "cancel": "취소",
+    "close": "닫기",
     "save": "저장",
     "delete": "삭제",
     "clear": "지우기"

@@ -1,25 +1,54 @@
 /**
- * The matrix screen, as far as a shell goes: the bar and the four cards.
+ * The matrix screen.
  *
- * Nothing here is a placeholder colour or a placeholder name. The quadrants
- * come from QUADS, their labels from the catalogue and their colours from the
- * palette -- so this screen is also the proof that the shared package crossed
- * the bridge. If a quadrant is renamed or recoloured on the desktop, this
- * follows without being edited.
+ * Two states in one screen, which is what makes a phone-sized Eisenhower
+ * matrix work at all: normally the brain dump is open and the four quadrants
+ * are counts, and tapping a quadrant swaps its list into the dump's place.
+ * Only one list is ever on screen, so its rows can be full width.
  *
- * The list and the drag come next; the brain dump is drawn as its empty state
- * so the layout it has to live in is settled first. Its box scrolls and the
- * grid below does not -- that is what keeps every drop target on screen and is
- * why this app needs no autoscroll while dragging.
+ * The grid does not scroll and does not move. That is why there will be no
+ * autoscroll while dragging: every drop target is always where it was.
+ *
+ * Rows are read-only here. The circle, the swipe and the drag arrive with the
+ * writes -- a control that is drawn but does nothing is worse than one that is
+ * not drawn yet.
  */
-import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import {
+  LayoutAnimation,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { QUADS } from "@nekan/shared/core";
+import { SPACES, isCrowded } from "@nekan/shared/core";
+import type { Quadrant, Space, Task } from "@nekan/shared/types";
+import { CloseIcon } from "../../icons";
 import { t } from "../../i18n";
 import { SP, useColors } from "../../theme";
+import { activeOf, counts, inboxTasks, quadrants } from "../../store/selectors";
+import { currentSpace, isReady, setSpace } from "../../store/state";
+import { useStore } from "../../store/use-store";
+
+/** Opening and closing is a layout change, so the layout animates itself. */
+const ease = () =>
+  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 
 export default function MatrixScreen() {
   const c = useColors();
+  useStore();
+  const [open, setOpen] = useState<Quadrant | null>(null);
+  const space = currentSpace();
+  const n = counts();
+  const rows = open ? activeOf(open) : inboxTasks();
+
+  const toggle = (q: Quadrant) => {
+    ease();
+    setOpen((prev) => (prev === q ? null : q));
+  };
+
   return (
     <SafeAreaView style={[s.root, { backgroundColor: c.bg }]} edges={["top"]}>
       <View style={[s.bar, { borderBottomColor: c.line }]}>
@@ -30,40 +59,106 @@ export default function MatrixScreen() {
             { backgroundColor: c["panel-2"], borderColor: c.line },
           ]}
         >
-          <Text
-            style={[
-              s.switchOn,
-              { backgroundColor: c.accent, color: c["on-accent"] },
-            ]}
-          >
-            {t("space.work")}
-          </Text>
-          <Text style={[s.switchOff, { color: c.muted }]}>
-            {t("space.life")}
-          </Text>
+          {SPACES.map((sp: Space) => (
+            <Pressable key={sp} onPress={() => setSpace(sp)} hitSlop={4}>
+              <Text
+                style={[
+                  s.switchItem,
+                  sp === space
+                    ? { backgroundColor: c.accent, color: c["on-accent"] }
+                    : { color: c.muted },
+                ]}
+              >
+                {t(`space.${sp}`)}
+              </Text>
+            </Pressable>
+          ))}
         </View>
       </View>
 
-      <View style={[s.dump, { backgroundColor: c.panel, borderColor: c.line }]}>
-        <Text style={[s.dumpTitle, { color: c.text }]}>{t("inbox.title")}</Text>
-        <Text style={[s.dumpEmpty, { color: c.faint }]}>
-          {t("inbox.empty")}
-        </Text>
+      <View
+        style={[s.panel, { backgroundColor: c.panel, borderColor: c.line }]}
+      >
+        <View style={s.panelHead}>
+          <Text style={[s.panelTitle, { color: c.text }]} numberOfLines={1}>
+            {open ? t(`quad.${open}.action`) : t("inbox.title")}
+          </Text>
+          {open ? (
+            <Pressable
+              onPress={() => toggle(open)}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.close")}
+            >
+              <CloseIcon color={c.muted} />
+            </Pressable>
+          ) : (
+            <Text style={[s.shared, { color: c.faint }]}>
+              {t("inbox.shared")}
+            </Text>
+          )}
+        </View>
+
+        {rows.length === 0 ? (
+          // Nothing at all until the file has been read: an empty-state
+          // sentence shown over a board that has simply not loaded yet would
+          // be a lie for the frame it is on screen.
+          <Text style={[s.empty, { color: c.faint }]}>
+            {!isReady() ? "" : open ? t("matrix.empty") : t("inbox.empty")}
+          </Text>
+        ) : (
+          <ScrollView style={s.list} contentContainerStyle={s.listInner}>
+            {rows.map((task: Task, i: number) => (
+              <Text
+                key={task.id}
+                style={[
+                  s.row,
+                  { color: c.text, borderTopColor: c.line },
+                  i === 0 && s.firstRow,
+                ]}
+                numberOfLines={2}
+              >
+                {task.text}
+              </Text>
+            ))}
+          </ScrollView>
+        )}
       </View>
 
       <View style={s.grid}>
-        {QUADS.map((q) => (
-          <View
-            key={q}
-            style={[s.card, { backgroundColor: c.panel, borderColor: c.line }]}
-          >
-            <View style={[s.wash, { backgroundColor: c[q] }]} />
-            <Text style={[s.cardTitle, { color: c.text }]} numberOfLines={2}>
-              {t(`quad.${q}.action`)}
-            </Text>
-            <Text style={[s.count, { color: c.muted }]}>0</Text>
-          </View>
-        ))}
+        {quadrants().map((q) => {
+          const selected = q === open;
+          return (
+            <Pressable
+              key={q}
+              onPress={() => toggle(q)}
+              style={[
+                s.card,
+                { backgroundColor: c.panel, borderColor: c.line },
+                // The open quadrant is drawn as somewhere you cannot drop,
+                // because its rows are already the list above.
+                selected && {
+                  borderColor: c.danger,
+                  borderStyle: "dashed",
+                  opacity: 0.45,
+                },
+              ]}
+            >
+              <View style={[s.wash, { backgroundColor: c[q] }]} />
+              <Text style={[s.cardTitle, { color: c.text }]} numberOfLines={2}>
+                {t(`quad.${q}.action`)}
+              </Text>
+              <Text
+                style={[
+                  s.count,
+                  { color: isCrowded(q, n[q]) ? c.danger : c.muted },
+                ]}
+              >
+                {n[q]}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
     </SafeAreaView>
   );
@@ -86,31 +181,49 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
-  switchOn: {
+  switchItem: {
     paddingHorizontal: SP["3xl"],
     paddingVertical: SP.sm,
     fontSize: 13,
     fontWeight: "600",
     borderRadius: 999,
+    overflow: "hidden",
   },
-  switchOff: {
-    paddingHorizontal: SP["3xl"],
-    paddingVertical: SP.sm,
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  // Shrinks so the grid keeps its size; the grid is the thing you drop onto.
-  dump: {
+  // Shrinks so the grid keeps its size; the grid is what you drop onto.
+  panel: {
     flex: 1,
     minHeight: 0,
     margin: SP["4xl"],
     marginBottom: SP.md,
-    padding: SP["4xl"],
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
   },
-  dumpTitle: { fontSize: 15, fontWeight: "700" },
-  dumpEmpty: { marginTop: SP.md, fontSize: 13 },
+  panelHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: SP.xl,
+    paddingHorizontal: SP["4xl"],
+    paddingTop: SP["4xl"],
+    paddingBottom: SP.xl,
+  },
+  panelTitle: { fontSize: 15, fontWeight: "700", flexShrink: 1 },
+  shared: { fontSize: 11 },
+  empty: {
+    paddingHorizontal: SP["4xl"],
+    paddingBottom: SP["4xl"],
+    fontSize: 13,
+  },
+  list: { flex: 1 },
+  listInner: { paddingBottom: SP.xl },
+  row: {
+    paddingHorizontal: SP["4xl"],
+    paddingVertical: SP.xl,
+    fontSize: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  firstRow: { borderTopWidth: 0 },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -128,8 +241,8 @@ const s = StyleSheet.create({
     overflow: "hidden",
     justifyContent: "space-between",
   },
-  // The quadrant's colour reads as a band rather than a fill: at this size a
-  // full card of it would out-shout the four counts, which are the content.
+  // A band rather than a fill: at this size a whole card of quadrant colour
+  // would out-shout the counts, and the counts are the content.
   wash: { position: "absolute", left: 0, right: 0, top: 0, height: 4 },
   cardTitle: { fontSize: 13, fontWeight: "600", marginTop: SP.xs },
   count: { fontSize: 20, fontWeight: "700" },
