@@ -28,6 +28,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "start": "npm run build && electron .",
+    "mobile": "npm run --workspace @nekan/mobile start --",
+    "mobile:typecheck": "tsc -p apps/mobile --noEmit",
     "dist": "npm run build && node tools/dist.js",
     "dist:mac": "npm run build && node tools/dist.js --mac",
     "release": "npm run build && node tools/dist.js --publish"
