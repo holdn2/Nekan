@@ -12,3 +12,6 @@ package-lock.json
 
 # Compiler output.
 out/
+
+# Written by the Expo CLI on every start; git ignores it too.
+apps/mobile/expo-env.d.ts

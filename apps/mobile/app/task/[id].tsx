@@ -70,6 +70,15 @@ export default function TaskScreen() {
     return null;
   }
 
+  // Both fields save on blur, and tapping the close button is not guaranteed
+  // to blur one first -- so closing writes them itself. Both are no-ops when
+  // nothing changed, so this cannot manufacture an edit.
+  const close = () => {
+    editTask(task.id, text);
+    setMemo(task.id, memo);
+    router.back();
+  };
+
   const inDump = task.quadrant === INBOX;
   const due = formatDue(dueInfo(task.dueDate, new Date()), t, locale());
 
@@ -80,7 +89,7 @@ export default function TaskScreen() {
           {inDump ? t("inbox.title") : t(`quad.${task.quadrant}.action`)}
         </Text>
         <Pressable
-          onPress={() => router.back()}
+          onPress={close}
           hitSlop={10}
           accessibilityRole="button"
           accessibilityLabel={t("common.close")}

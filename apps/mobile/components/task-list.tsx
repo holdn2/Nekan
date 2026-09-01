@@ -78,7 +78,7 @@ export function TaskList({ tasks, cards, onOpen }: Props) {
 
   /** Called on every move: decide what this finger is currently over. */
   const aim = useCallback(
-    (id: string, absX: number, absY: number, listY: number) => {
+    (id: string, absX: number, absY: number, rowY: number) => {
       for (const place of Object.keys(cards) as Place[]) {
         if (hit(cards[place], absX, absY)) {
           setTarget({ card: place, before: null });
@@ -88,11 +88,17 @@ export function TaskList({ tasks, cards, onOpen }: Props) {
       // Not over a card: the row whose top half the finger is above. Falling
       // through the loop means the finger is past every row, and `null` says
       // exactly that -- there is no row after it, so it lands last.
+      // The gesture reports the finger inside the row it grabbed; the boxes
+      // were laid out against the list. Adding the row's own top is what puts
+      // the two in the same origin -- comparing them directly aimed at the
+      // wrong row by however far down the list the grabbed one sat.
+      const self = rows.current[id];
+      const pointerY = (self ? self.y : 0) + rowY;
       let before: string | null = null;
       for (const task of tasks) {
         if (task.id === id) continue;
         const box = rows.current[task.id];
-        if (box && listY < box.y + box.height / 2) {
+        if (box && pointerY < box.y + box.height / 2) {
           before = task.id;
           break;
         }
@@ -163,7 +169,8 @@ interface RowProps {
   markBelow: boolean;
   onLayout: (e: LayoutChangeEvent) => void;
   onBegin: () => void;
-  onAim: (absX: number, absY: number, listY: number) => void;
+  /** Third argument is the finger inside this row, not inside the list. */
+  onAim: (absX: number, absY: number, rowY: number) => void;
   onDrop: () => void;
   onPress: () => void;
 }

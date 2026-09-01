@@ -52,9 +52,15 @@ function handles() {
  */
 export async function load(): Promise<Stored> {
   try {
-    const { file } = handles();
-    if (!file.exists) return EMPTY;
-    const parsed = JSON.parse(await file.text()) as Partial<Stored>;
+    const { file, temp } = handles();
+    // The neighbour is the board too, for one instant. `move` has no
+    // overwrite, so the old file has to be deleted first, and a crash in that
+    // gap would leave data.json missing and data.json.tmp complete. Reading
+    // the neighbour when the file is gone is what makes the write atomic in
+    // effect: a fully written board always exists under one of the two names.
+    const source = file.exists ? file : temp.exists ? temp : null;
+    if (!source) return EMPTY;
+    const parsed = JSON.parse(await source.text()) as Partial<Stored>;
     return {
       tasks: normalizeTasks(parsed?.tasks),
       settings: (parsed?.settings as Record<string, unknown>) ?? {},
@@ -64,7 +70,13 @@ export async function load(): Promise<Stored> {
   }
 }
 
-/** Write the board. Neighbour first, then move -- never in place. */
+/**
+ * Write the board. Neighbour first, then move -- never in place.
+ *
+ * The delete is unavoidable: `move` refuses an existing destination. What
+ * makes the gap survivable is `load` reading the neighbour when the file is
+ * missing, not the ordering here.
+ */
 export async function save(state: Stored): Promise<void> {
   const { dir, file, temp } = handles();
   dir.create({ intermediates: true, idempotent: true });

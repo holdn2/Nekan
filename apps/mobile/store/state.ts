@@ -44,13 +44,22 @@ function notify() {
  * with an empty board for a frame. That is the honest state -- inventing rows
  * to fill the gap would show a board that is not the user's.
  */
+let started = false;
 export async function init(): Promise<void> {
+  if (started) return;
+  started = true;
   const stored = await load();
-  tasks = stored.tasks;
+  // Anything written while the read was in flight keeps its place. The screens
+  // wait on `isReady`, so this should be empty -- but assigning over it would
+  // drop a task without saying so, and that is the one failure this store is
+  // not allowed to have.
+  const early = tasks;
+  tasks = early.length ? [...stored.tasks, ...early] : stored.tasks;
   settings = stored.settings;
   activeSpace = sanitizeSpace(settings.space);
   ready = true;
   notify();
+  if (early.length) void persist();
 }
 
 export const isReady = () => ready;
@@ -84,11 +93,25 @@ export function setTasks(next: unknown): void {
   void persist();
 }
 
-/** One write at a time, and the last one wins -- writes are not queued. */
-let writing: Promise<void> | null = null;
+/**
+ * One write at a time, and the last one wins -- writes are not queued.
+ *
+ * Two rules hold it together. Nothing is written before `init` has read the
+ * file, or a mutation racing start-up saves an empty board over the real one.
+ * And a failed write must not poison the chain: a rejected promise left in
+ * `writing` is what every later write chains off, so one failure used to stop
+ * saving for the rest of the session -- silently, since the callers void it.
+ * The failure is reported and the chain carries on.
+ */
+let writing: Promise<void> = Promise.resolve();
 export function persist(): Promise<void> {
+  if (!ready) return writing;
   const snapshot: Stored = { tasks, settings };
-  writing = (writing ?? Promise.resolve()).then(() => save(snapshot));
+  writing = writing.then(() =>
+    save(snapshot).catch((err: unknown) => {
+      console.warn("[nekan] could not save the board", err);
+    }),
+  );
   return writing;
 }
 

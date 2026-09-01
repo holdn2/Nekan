@@ -30,7 +30,11 @@ const TREES = [path.join(ROOT, "node_modules"), path.join(APP, "node_modules")];
 
 /** Nothing to check before the phone app has been installed. */
 function expoManifest() {
-  for (const tree of TREES) {
+  // The app's own tree first. Nothing is nested there today -- expo hoists to
+  // the root and Metro resolves that same file -- but if npm ever nests a
+  // second copy, that is the one the phone loads, and checking the hoisted one
+  // would compare against an SDK that never runs.
+  for (const tree of [...TREES].reverse()) {
     const file = path.join(tree, "expo", "bundledNativeModules.json");
     if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, "utf8"));
   }

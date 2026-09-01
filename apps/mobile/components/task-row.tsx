@@ -113,7 +113,7 @@ export function TaskRow({ task, first, onPress, onLongPress }: Props) {
         </Text>
 
         {task.memo && !inDump ? <MemoIcon color={c.faint} /> : null}
-        {due ? (
+        {due && !inDump ? (
           <Text
             style={[
               s.due,
