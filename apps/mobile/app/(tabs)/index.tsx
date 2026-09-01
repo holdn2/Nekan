@@ -22,7 +22,7 @@ import {
   View,
   type LayoutChangeEvent,
 } from "react-native";
-import Animated, { FadeIn, LinearTransition } from "react-native-reanimated";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { INBOX, SPACES, isCrowded } from "@nekan/shared/core";
 import type { Quadrant, Space, Task } from "@nekan/shared/types";
@@ -36,12 +36,17 @@ import { activeOf, counts, inboxTasks, quadrants } from "../../store/selectors";
 import { currentSpace, isReady, setSpace } from "../../store/state";
 import { useStore } from "../../store/use-store";
 
-// LayoutAnimation does nothing under the New Architecture -- it is not an
-// option here, it is a no-op, which is why opening a quadrant snapped. These
-// are Reanimated's, which work on Fabric and respect the reduce-motion setting
-// on their own.
-const SWAP = FadeIn.duration(150);
-const SETTLE = LinearTransition.duration(170);
+// LayoutAnimation does nothing under the New Architecture -- not degraded,
+// absent -- which is why opening a quadrant snapped. Reanimated's do work on
+// Fabric and respect reduce-motion on their own.
+//
+// A plain fade was tried first and could not be seen: the panel is flex:1, so
+// nothing about it moves, and 150ms of opacity on a full panel reads as a
+// flicker. The direction is what makes it legible, and it is also true -- a
+// quadrant's list comes up from the grid it was tapped on, and the dump comes
+// back down from where it was.
+const OPENING = FadeInDown.duration(220);
+const CLOSING = FadeInUp.duration(220);
 
 export default function MatrixScreen() {
   const c = useColors();
@@ -108,8 +113,7 @@ export default function MatrixScreen() {
           </View>
         </View>
 
-        <Animated.View
-          layout={SETTLE}
+        <View
           style={[s.panel, { backgroundColor: c.panel, borderColor: c.line }]}
         >
           <View style={s.panelHead}>
@@ -137,7 +141,7 @@ export default function MatrixScreen() {
               contents -- which is what makes the change readable. */}
           <Animated.View
             key={open ?? "dump"}
-            entering={SWAP}
+            entering={open ? OPENING : CLOSING}
             style={s.panelBody}
           >
             {rows.length === 0 ? (
@@ -169,7 +173,7 @@ export default function MatrixScreen() {
               field for the same reason. What is typed into the dump still
               belongs to neither board until it is filed. */}
           <AddForm place={open ?? INBOX} />
-        </Animated.View>
+        </View>
 
         <View style={s.grid}>
           {quadrants().map((q) => {
@@ -184,10 +188,15 @@ export default function MatrixScreen() {
                   { backgroundColor: c.panel, borderColor: c.line },
                   // The open quadrant is drawn as somewhere you cannot drop,
                   // because its rows are already the list above.
+                  // Dash length follows border width in RN, so a hairline
+                  // gives a dash too short to read as one. Two pixels is what
+                  // makes it dashes; the lower opacity is what says "not
+                  // this one".
                   selected && {
                     borderColor: c.danger,
                     borderStyle: "dashed",
-                    opacity: 0.45,
+                    borderWidth: 2,
+                    opacity: 0.28,
                   },
                 ]}
               >
