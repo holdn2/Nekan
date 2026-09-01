@@ -53,6 +53,51 @@ function tokens(file, prefix) {
   return found;
 }
 
+/**
+ * The phone, which has no cascade and so writes numbers into style objects.
+ *
+ * The desktop cannot spell a size off the scale -- `text-15px` and `p-4` do
+ * not compile, deliberately. React Native has no such gate: `fontSize: 15` is
+ * valid and silently outside the system, which is exactly how the two screens
+ * drifted the first time. So the gate is here instead.
+ *
+ * Only the two properties that carry a scale step. Widths and heights are
+ * measurements of specific things, not steps, and naming them would be
+ * pretending.
+ */
+const PHONE_PROPS = ["fontSize", "borderRadius"];
+
+function phoneLiterals() {
+  const found = [];
+  const walk = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (e.name === "node_modules" || e.name.startsWith(".")) continue;
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) {
+        walk(full);
+        continue;
+      }
+      if (!/\.tsx?$/.test(e.name)) continue;
+      const lines = fs.readFileSync(full, "utf8").split("\n");
+      lines.forEach((line, i) => {
+        for (const prop of PHONE_PROPS) {
+          const at = line.indexOf(`${prop}: `);
+          if (at === -1) continue;
+          const rest = line.slice(at + prop.length + 2);
+          if (!/^\d/.test(rest)) continue;
+          found.push(
+            `${path.relative(ROOT, full).split(path.sep).join("/")}:${i + 1}` +
+              ` writes ${prop} as a number, not a step`,
+          );
+        }
+      });
+    }
+  };
+  const app = path.join(ROOT, "apps", "mobile");
+  if (fs.existsSync(app)) walk(app);
+  return found;
+}
+
 function main() {
   let scale;
   try {
@@ -93,6 +138,16 @@ function main() {
     }
   }
 
+  const phone = phoneLiterals();
+  if (phone.length) {
+    console.error("check-scale: the phone writes sizes off the scale\n");
+    for (const p of phone) console.error(`  ${p}`);
+    console.error(
+      "\nUse a named step from apps/mobile/theme.ts (SP, R, FS, FW, LH).",
+    );
+    return 1;
+  }
+
   if (problems.length) {
     console.error("check-scale: the desktop and the shared scale disagree\n");
     for (const p of problems) console.error(`  ${p}`);
@@ -101,7 +156,10 @@ function main() {
     );
     return 1;
   }
-  console.log(`check-scale: ${checked} size tokens match the shared scale`);
+  console.log(
+    `check-scale: ${checked} size tokens match the shared scale,` +
+      " and the phone names every step",
+  );
   return 0;
 }
 

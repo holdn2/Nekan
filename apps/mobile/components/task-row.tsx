@@ -28,7 +28,7 @@ import { INBOX, dueInfo, formatDue } from "@nekan/shared/core";
 import type { Task } from "@nekan/shared/types";
 import { CheckCircleIcon, MemoIcon } from "../icons";
 import { locale, t } from "../i18n";
-import { FS, FW, R, SP, useColors, type Colors } from "../theme";
+import { FS, FW, LH, R, SP, useColors, type Colors } from "../theme";
 import { completeTask, deleteTask } from "../store/mutations";
 
 interface Props {
@@ -141,7 +141,9 @@ const s = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   first: { borderTopWidth: 0 },
-  text: { flex: 1, fontSize: FS.lg },
+  // The desktop sets `leading-snug` on this text and nothing else does;
+  // RN has no ratio, so it is multiplied out here.
+  text: { flex: 1, fontSize: FS.lg, lineHeight: FS.lg * LH.snug },
   due: {
     fontSize: FS.xs,
     paddingHorizontal: SP.md,

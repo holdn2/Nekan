@@ -14,6 +14,7 @@ import { useColorScheme } from "react-native";
 import {
   FONT_SIZE,
   FONT_WEIGHT,
+  LINE_HEIGHT,
   PALETTE,
   RADIUS,
   SPACING,
@@ -44,3 +45,4 @@ export const SP = SPACING;
 export const R = RADIUS;
 export const FS = FONT_SIZE;
 export const FW = FONT_WEIGHT;
+export const LH = LINE_HEIGHT;
