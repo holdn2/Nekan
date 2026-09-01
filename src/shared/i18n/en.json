@@ -184,7 +184,8 @@
   "matrix": {
     "addPlaceholder": "Add a task…",
     "crowded": "A quadrant this full is the same as having no priorities at all. Block out time in quadrant 2 first.",
-    "empty": "Empty"
+    "empty": "Empty",
+    "move": "Move"
   },
   "item": {
     "complete": "Complete (moves to the history)",
@@ -209,7 +210,8 @@
     "overdue_one": "{{count}} day overdue",
     "overdue_other": "{{count}} days overdue",
     "remaining_one": "{{count}} day left",
-    "remaining_other": "{{count}} days left"
+    "remaining_other": "{{count}} days left",
+    "nextWeek": "Next week"
   },
   "memo": {
     "panel": "Note",

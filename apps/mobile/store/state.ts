@@ -86,8 +86,53 @@ export function setTasks(next: unknown): void {
 
 /** One write at a time, and the last one wins -- writes are not queued. */
 let writing: Promise<void> | null = null;
-function persist(): Promise<void> {
+export function persist(): Promise<void> {
   const snapshot: Stored = { tasks, settings };
   writing = (writing ?? Promise.resolve()).then(() => save(snapshot));
   return writing;
+}
+
+/**
+ * How far this device's clock is from the server's.
+ *
+ * Zero until sync measures it, and that is the only reason this file can be
+ * written before sync exists: every timestamp already goes through `now()`, so
+ * the day the offset becomes real, nothing else has to change.
+ *
+ * It matters more than it looks. `updatedAt` decides who wins when two devices
+ * edited the same row, so a phone whose clock is ten minutes slow loses every
+ * one of its edits -- silently, because losing looks exactly like never having
+ * typed it.
+ */
+let clockOffset = 0;
+
+export function setClockOffset(ms: number): void {
+  clockOffset = Number.isFinite(ms) ? ms : 0;
+}
+
+/** Never Date.now() directly. See above. */
+export const now = (): number => Date.now() + clockOffset;
+
+/** Ids are compared for equality, never for order -- Date.now() is fine here. */
+export const uid = (): string =>
+  Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+export const findTask = (id: string): Task | undefined =>
+  tasks.find((t) => t.id === id);
+
+/** Stamp a row as edited. The stamp is what sync compares. */
+export function touch(task: Task): void {
+  task.updatedAt = now();
+}
+
+/** Rows are pushed, never spliced -- a task leaves a board by timestamp. */
+export function insertTask(task: Task): void {
+  tasks.push(task);
+}
+
+/** Save and redraw. Every mutation ends here so neither can be forgotten. */
+export function commit(...touched: Task[]): void {
+  for (const task of touched) touch(task);
+  notify();
+  void persist();
 }

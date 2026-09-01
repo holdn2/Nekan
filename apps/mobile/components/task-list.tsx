@@ -1,0 +1,205 @@
+/**
+ * The list, and the drag that lives in it.
+ *
+ * Dragging is the one thing on this screen that is genuinely harder on a phone
+ * than on a desktop, and the layout was chosen to make it easier rather than
+ * the other way round: the four cards never scroll and never move, so a drop
+ * target is always exactly where the finger last saw it. Nothing here has to
+ * scroll the screen while a row is held, which is the part that usually goes
+ * wrong.
+ *
+ * A held row follows the finger but does not leave the list -- no floating
+ * clone, no measuring of a portal. What changes is where it *would* land, and
+ * that is shown by the thing being landed on: a gap opens between two rows, or
+ * a card takes a ring.
+ *
+ * The gesture waits for a long press before it activates, which is what keeps
+ * it from stealing the scroll and from starting on the swipe that reveals
+ * Delete. Those three share a finger going down and nothing else.
+ */
+import { useCallback, useRef, useState } from "react";
+import { ScrollView, StyleSheet, type LayoutChangeEvent } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
+import type { Place, Task } from "@nekan/shared/types";
+import { TaskRow } from "./task-row";
+import { moveTask } from "../store/mutations";
+
+/** Where a card is on screen, in window coordinates. */
+export interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export type CardRects = Partial<Record<Place, Rect>>;
+
+interface Props {
+  tasks: Task[];
+  /** Where the four quadrant cards are, measured by the screen that owns them. */
+  cards: CardRects;
+  onOpen: (task: Task) => void;
+}
+
+const hit = (r: Rect | undefined, x: number, y: number) =>
+  !!r && x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height;
+
+export function TaskList({ tasks, cards, onOpen }: Props) {
+  // Row geometry, kept in a ref rather than state: it is read during a gesture
+  // and writing it would re-render the list mid-drag.
+  const rows = useRef<Record<string, { y: number; height: number }>>({});
+  const [heldId, setHeldId] = useState<string | null>(null);
+  const [target, setTarget] = useState<{
+    card: Place | null;
+    before: string | null;
+  }>({ card: null, before: null });
+
+  const measure = useCallback((id: string, e: LayoutChangeEvent) => {
+    const { y, height } = e.nativeEvent.layout;
+    rows.current[id] = { y, height };
+  }, []);
+
+  const begin = useCallback((id: string) => {
+    setHeldId(id);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, []);
+
+  /** Called on every move: decide what this finger is currently over. */
+  const aim = useCallback(
+    (id: string, absX: number, absY: number, listY: number) => {
+      for (const place of Object.keys(cards) as Place[]) {
+        if (hit(cards[place], absX, absY)) {
+          setTarget({ card: place, before: null });
+          return;
+        }
+      }
+      // Not over a card: find the row whose top half the finger is above.
+      let before: string | null = null;
+      for (const task of tasks) {
+        if (task.id === id) continue;
+        const box = rows.current[task.id];
+        if (box && listY < box.y + box.height / 2) {
+          before = task.id;
+          break;
+        }
+      }
+      setTarget({ card: null, before });
+    },
+    [cards, tasks],
+  );
+
+  const drop = useCallback(
+    (id: string, quadrant: Place | null) => {
+      setHeldId(null);
+      const aimed = target;
+      setTarget({ card: null, before: null });
+      if (aimed.card) {
+        // The open quadrant is drawn as unavailable, so a drop on it is a
+        // no-op rather than a move that changes nothing but writes anyway.
+        if (aimed.card !== quadrant) moveTask(id, aimed.card);
+        return;
+      }
+      if (quadrant && aimed.before !== null)
+        moveTask(id, quadrant, aimed.before);
+    },
+    [target],
+  );
+
+  return (
+    <ScrollView
+      style={s.scroll}
+      contentContainerStyle={s.inner}
+      scrollEnabled={heldId === null}
+    >
+      {tasks.map((task, i) => (
+        <DraggableRow
+          key={task.id}
+          task={task}
+          first={i === 0}
+          gapAbove={target.card === null && target.before === task.id}
+          onLayout={(e) => measure(task.id, e)}
+          onBegin={() => begin(task.id)}
+          onAim={(x, y, ly) => aim(task.id, x, y, ly)}
+          onDrop={() => drop(task.id, task.quadrant)}
+          onPress={() => onOpen(task)}
+        />
+      ))}
+    </ScrollView>
+  );
+}
+
+interface RowProps {
+  task: Task;
+  first: boolean;
+  gapAbove: boolean;
+  onLayout: (e: LayoutChangeEvent) => void;
+  onBegin: () => void;
+  onAim: (absX: number, absY: number, listY: number) => void;
+  onDrop: () => void;
+  onPress: () => void;
+}
+
+function DraggableRow({
+  task,
+  first,
+  gapAbove,
+  onLayout,
+  onBegin,
+  onAim,
+  onDrop,
+  onPress,
+}: RowProps) {
+  const dy = useSharedValue(0);
+
+  const pan = Gesture.Pan()
+    // The long press is the whole reason the three gestures can coexist.
+    .activateAfterLongPress(220)
+    .onStart(() => {
+      runOnJS(onBegin)();
+    })
+    .onUpdate((e) => {
+      dy.value = e.translationY;
+      runOnJS(onAim)(e.absoluteX, e.absoluteY, e.y + e.translationY);
+    })
+    .onEnd(() => {
+      dy.value = 0;
+      runOnJS(onDrop)();
+    })
+    .onFinalize(() => {
+      dy.value = 0;
+    });
+
+  // Both transforms belong to the same style object. Splitting the lift into
+  // a static one would silently win -- a later entry in a style array replaces
+  // `transform` outright rather than merging into it, so the row would stop
+  // following the finger and only grow.
+  const style = useAnimatedStyle(() => {
+    const lifted = dy.value !== 0;
+    return {
+      transform: [{ translateY: dy.value }, { scale: lifted ? 1.02 : 1 }],
+      opacity: lifted ? 0.92 : 1,
+      zIndex: lifted ? 1 : 0,
+    };
+  });
+
+  return (
+    <GestureDetector gesture={pan}>
+      <Animated.View onLayout={onLayout} style={[style, gapAbove && s.gap]}>
+        <TaskRow task={task} first={first} onPress={onPress} />
+      </Animated.View>
+    </GestureDetector>
+  );
+}
+
+const s = StyleSheet.create({
+  scroll: { flex: 1 },
+  inner: { paddingBottom: 4 },
+  // The gap is the drop indicator: nothing is drawn, room is simply made.
+  gap: { marginTop: 26 },
+});

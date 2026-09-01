@@ -13,21 +13,24 @@
  * writes -- a control that is drawn but does nothing is worse than one that is
  * not drawn yet.
  */
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   LayoutAnimation,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
+  type LayoutChangeEvent,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SPACES, isCrowded } from "@nekan/shared/core";
 import type { Quadrant, Space, Task } from "@nekan/shared/types";
+import { AddForm } from "../../components/add-form";
+import { TaskList, type CardRects } from "../../components/task-list";
 import { CloseIcon } from "../../icons";
 import { t } from "../../i18n";
 import { SP, useColors } from "../../theme";
+import { router } from "expo-router";
 import { activeOf, counts, inboxTasks, quadrants } from "../../store/selectors";
 import { currentSpace, isReady, setSpace } from "../../store/state";
 import { useStore } from "../../store/use-store";
@@ -40,6 +43,10 @@ export default function MatrixScreen() {
   const c = useColors();
   useStore();
   const [open, setOpen] = useState<Quadrant | null>(null);
+  // Where the four cards are in window coordinates, so a dragged row can be
+  // asked which one it is over. Measured on layout and kept in a ref: it is
+  // read during a gesture, and setting state there would redraw mid-drag.
+  const cards = useRef<CardRects>({});
   const space = currentSpace();
   const n = counts();
   const rows = open ? activeOf(open) : inboxTasks();
@@ -48,6 +55,15 @@ export default function MatrixScreen() {
     ease();
     setOpen((prev) => (prev === q ? null : q));
   };
+
+  const measureCard = useCallback(
+    (q: Quadrant) => (e: LayoutChangeEvent) => {
+      e.target.measureInWindow((x, y, width, height) => {
+        cards.current[q] = { x, y, width, height };
+      });
+    },
+    [],
+  );
 
   return (
     <SafeAreaView style={[s.root, { backgroundColor: c.bg }]} edges={["top"]}>
@@ -107,22 +123,16 @@ export default function MatrixScreen() {
             {!isReady() ? "" : open ? t("matrix.empty") : t("inbox.empty")}
           </Text>
         ) : (
-          <ScrollView style={s.list} contentContainerStyle={s.listInner}>
-            {rows.map((task: Task, i: number) => (
-              <Text
-                key={task.id}
-                style={[
-                  s.row,
-                  { color: c.text, borderTopColor: c.line },
-                  i === 0 && s.firstRow,
-                ]}
-                numberOfLines={2}
-              >
-                {task.text}
-              </Text>
-            ))}
-          </ScrollView>
+          <TaskList
+            tasks={rows}
+            cards={cards.current}
+            onOpen={(task: Task) => router.push(`/task/${task.id}`)}
+          />
         )}
+
+        {/* Typing only ever happens in the dump: a quadrant is somewhere you
+            move things to, which is also why the dump is the shared one. */}
+        {open ? null : <AddForm />}
       </View>
 
       <View style={s.grid}>
@@ -131,6 +141,7 @@ export default function MatrixScreen() {
           return (
             <Pressable
               key={q}
+              onLayout={measureCard(q)}
               onPress={() => toggle(q)}
               style={[
                 s.card,
