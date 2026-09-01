@@ -161,12 +161,30 @@ function DraggableRow({
   onPress,
 }: RowProps) {
   const dy = useSharedValue(0);
+  // A press that turned into a drag must not also count as a tap. The row's
+  // Pressable is a child of this detector and finishes its own press on
+  // release, so it has to be told the gesture took over -- otherwise letting
+  // go of a dragged row opens it.
+  const dragged = useRef(false);
+
+  const began = () => {
+    dragged.current = true;
+    onBegin();
+  };
+
+  const press = () => {
+    if (dragged.current) {
+      dragged.current = false;
+      return;
+    }
+    onPress();
+  };
 
   const pan = Gesture.Pan()
     // The long press is the whole reason the three gestures can coexist.
     .activateAfterLongPress(220)
     .onStart(() => {
-      runOnJS(onBegin)();
+      runOnJS(began)();
     })
     .onUpdate((e) => {
       dy.value = e.translationY;
@@ -196,7 +214,7 @@ function DraggableRow({
   return (
     <GestureDetector gesture={pan}>
       <Animated.View onLayout={onLayout} style={[style, gapAbove && s.gap]}>
-        <TaskRow task={task} first={first} onPress={onPress} />
+        <TaskRow task={task} first={first} onPress={press} />
       </Animated.View>
     </GestureDetector>
   );

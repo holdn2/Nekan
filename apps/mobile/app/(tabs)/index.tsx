@@ -130,12 +130,15 @@ export default function MatrixScreen() {
           </View>
 
           {rows.length === 0 ? (
-            // Nothing at all until the file has been read: an empty-state
-            // sentence shown over a board that has simply not loaded yet would
-            // be a lie for the frame it is on screen.
-            <Text style={[s.empty, { color: c.faint }]}>
-              {!isReady() ? "" : open ? t("matrix.empty") : t("inbox.empty")}
-            </Text>
+            // Takes the whole panel, so the form below stays at the bottom rather
+            // than riding up under a one-line sentence. Nothing is drawn until the
+            // file has been read: an empty-state sentence over a board that has
+            // simply not loaded yet would be a lie for the frame it is up.
+            <View style={s.emptyBox}>
+              <Text style={[s.empty, { color: c.faint }]}>
+                {!isReady() ? "" : open ? t("matrix.empty") : t("inbox.empty")}
+              </Text>
+            </View>
           ) : (
             <TaskList
               tasks={rows}
@@ -240,11 +243,13 @@ const s = StyleSheet.create({
   },
   panelTitle: { fontSize: 15, fontWeight: "700", flexShrink: 1 },
   shared: { fontSize: 11 },
-  empty: {
+  emptyBox: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: SP["4xl"],
-    paddingBottom: SP["4xl"],
-    fontSize: 13,
   },
+  empty: { fontSize: 13, textAlign: "center" },
   list: { flex: 1 },
   listInner: { paddingBottom: SP.xl },
   row: {

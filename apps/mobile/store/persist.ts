@@ -22,11 +22,25 @@ export interface Stored {
   settings: Record<string, unknown>;
 }
 
-const DIR = new Directory(Paths.document, "nekan");
-const FILE = new File(DIR, "data.json");
-const TEMP = new File(DIR, "data.json.tmp");
-
 const EMPTY: Stored = { tasks: [], settings: {} };
+
+/**
+ * Fresh handles every time, never module-level ones.
+ *
+ * `move()` rewrites the URI of the object it is called on -- the docs say so
+ * in one clause and it is easy to miss. A File kept in a constant therefore
+ * stops meaning what its name says the moment it is moved once: the temporary
+ * file became data.json after the first save, and the second save tried to
+ * move data.json onto the file it had just deleted.
+ */
+function handles() {
+  const dir = new Directory(Paths.document, "nekan");
+  return {
+    dir,
+    file: new File(dir, "data.json"),
+    temp: new File(dir, "data.json.tmp"),
+  };
+}
 
 /**
  * Read the board, or start an empty one.
@@ -38,8 +52,9 @@ const EMPTY: Stored = { tasks: [], settings: {} };
  */
 export async function load(): Promise<Stored> {
   try {
-    if (!FILE.exists) return EMPTY;
-    const parsed = JSON.parse(await FILE.text()) as Partial<Stored>;
+    const { file } = handles();
+    if (!file.exists) return EMPTY;
+    const parsed = JSON.parse(await file.text()) as Partial<Stored>;
     return {
       tasks: normalizeTasks(parsed?.tasks),
       settings: (parsed?.settings as Record<string, unknown>) ?? {},
@@ -51,13 +66,13 @@ export async function load(): Promise<Stored> {
 
 /** Write the board. Neighbour first, then move -- never in place. */
 export async function save(state: Stored): Promise<void> {
-  if (!DIR.exists) DIR.create({ intermediates: true });
-  if (TEMP.exists) TEMP.delete();
-  TEMP.create();
-  TEMP.write(JSON.stringify(state));
-  if (FILE.exists) FILE.delete();
-  TEMP.move(FILE);
+  const { dir, file, temp } = handles();
+  dir.create({ intermediates: true, idempotent: true });
+  temp.create({ overwrite: true });
+  temp.write(JSON.stringify(state));
+  if (file.exists) file.delete();
+  temp.move(file);
 }
 
 /** Where the file is, for the settings screen to show and for diagnosis. */
-export const storePath = () => FILE.uri;
+export const storePath = () => handles().file.uri;
