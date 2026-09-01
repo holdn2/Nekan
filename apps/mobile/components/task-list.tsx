@@ -18,7 +18,12 @@
  * Delete. Those three share a finger going down and nothing else.
  */
 import { useCallback, useRef, useState } from "react";
-import { ScrollView, StyleSheet, type LayoutChangeEvent } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  View,
+  type LayoutChangeEvent,
+} from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
@@ -28,7 +33,8 @@ import Animated, {
 import * as Haptics from "expo-haptics";
 import type { Place, Task } from "@nekan/shared/types";
 import { TaskRow } from "./task-row";
-import { moveTask } from "../store/mutations";
+import { moveTask, moveToTop } from "../store/mutations";
+import { useColors } from "../theme";
 
 /** Where a card is on screen, in window coordinates. */
 export interface Rect {
@@ -79,7 +85,9 @@ export function TaskList({ tasks, cards, onOpen }: Props) {
           return;
         }
       }
-      // Not over a card: find the row whose top half the finger is above.
+      // Not over a card: the row whose top half the finger is above. Falling
+      // through the loop means the finger is past every row, and `null` says
+      // exactly that -- there is no row after it, so it lands last.
       let before: string | null = null;
       for (const task of tasks) {
         if (task.id === id) continue;
@@ -102,11 +110,12 @@ export function TaskList({ tasks, cards, onOpen }: Props) {
       if (aimed.card) {
         // The open quadrant is drawn as unavailable, so a drop on it is a
         // no-op rather than a move that changes nothing but writes anyway.
-        if (aimed.card !== quadrant) moveTask(id, aimed.card);
+        if (aimed.card !== quadrant) moveToTop(id, aimed.card);
         return;
       }
-      if (quadrant && aimed.before !== null)
-        moveTask(id, quadrant, aimed.before);
+      // No card under the finger: a reorder inside this list. `before` may be
+      // null, and here that means last rather than nowhere.
+      if (quadrant) moveTask(id, quadrant, aimed.before);
     },
     [target],
   );
@@ -127,7 +136,15 @@ export function TaskList({ tasks, cards, onOpen }: Props) {
           key={task.id}
           task={task}
           first={i === 0}
-          gapAbove={target.card === null && target.before === task.id}
+          markAbove={
+            heldId !== null && target.card === null && target.before === task.id
+          }
+          markBelow={
+            heldId !== null &&
+            target.card === null &&
+            target.before === null &&
+            i === tasks.length - 1
+          }
           onLayout={(e) => measure(task.id, e)}
           onBegin={() => begin(task.id)}
           onAim={(x, y, ly) => aim(task.id, x, y, ly)}
@@ -142,7 +159,8 @@ export function TaskList({ tasks, cards, onOpen }: Props) {
 interface RowProps {
   task: Task;
   first: boolean;
-  gapAbove: boolean;
+  markAbove: boolean;
+  markBelow: boolean;
   onLayout: (e: LayoutChangeEvent) => void;
   onBegin: () => void;
   onAim: (absX: number, absY: number, listY: number) => void;
@@ -153,13 +171,15 @@ interface RowProps {
 function DraggableRow({
   task,
   first,
-  gapAbove,
+  markAbove,
+  markBelow,
   onLayout,
   onBegin,
   onAim,
   onDrop,
   onPress,
 }: RowProps) {
+  const c = useColors();
   const dy = useSharedValue(0);
   // A press that turned into a drag must not also count as a tap. The row's
   // Pressable is a child of this detector and finishes its own press on
@@ -213,8 +233,14 @@ function DraggableRow({
 
   return (
     <GestureDetector gesture={pan}>
-      <Animated.View onLayout={onLayout} style={[style, gapAbove && s.gap]}>
+      <Animated.View onLayout={onLayout} style={style}>
+        {markAbove ? (
+          <View style={[s.mark, { backgroundColor: c.text }]} />
+        ) : null}
         <TaskRow task={task} first={first} onPress={press} />
+        {markBelow ? (
+          <View style={[s.mark, { backgroundColor: c.text }]} />
+        ) : null}
       </Animated.View>
     </GestureDetector>
   );
@@ -223,6 +249,8 @@ function DraggableRow({
 const s = StyleSheet.create({
   scroll: { flex: 1 },
   inner: { paddingBottom: 4 },
-  // The gap is the drop indicator: nothing is drawn, room is simply made.
-  gap: { marginTop: 26 },
+  // A rule where the row will land. A hole in the list was tried first and
+  // read as a glitch: it moves everything below it, so the list appears to
+  // jump rather than to be pointed at.
+  mark: { height: 2, marginHorizontal: 15, borderRadius: 999 },
 });

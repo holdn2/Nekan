@@ -36,7 +36,7 @@ import { useStore } from "../../store/use-store";
 import {
   deleteTask,
   editTask,
-  moveTask,
+  moveToTop,
   setDue,
   setMemo,
 } from "../../store/mutations";
@@ -169,7 +169,7 @@ export default function TaskScreen() {
                 (q: Quadrant) => (
                   <Pressable
                     key={q}
-                    onPress={() => moveTask(task.id, q)}
+                    onPress={() => moveToTop(task.id, q)}
                     style={[
                       s.chip,
                       { backgroundColor: c.panel, borderColor: c.line },

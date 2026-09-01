@@ -1,10 +1,14 @@
 /**
  * The one way text gets in.
  *
- * It stays at the bottom of the brain dump rather than floating, because the
- * dump is the only place a task can be typed into -- a quadrant is somewhere
- * you move things to, not somewhere you write. That is the desktop's rule and
- * the reason the dump is shared between the two boards.
+ * It follows whichever list is open, so a quadrant can be written into
+ * directly. The desktop gives every quadrant a field of its own for the same
+ * reason: deciding where something goes and writing it down are not always two
+ * separate moments.
+ *
+ * Where it lands still decides what it belongs to. Typed into the dump, a task
+ * has no board yet; typed into a quadrant, it takes the one on screen -- and
+ * that is `spaceFor`'s job, not this file's.
  *
  * Multi-line is deliberate: a block pasted from somewhere else becomes one
  * task per line. Submitting is the button, not the return key, because return
@@ -13,18 +17,21 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { INBOX } from "@nekan/shared/core";
+import type { Place } from "@nekan/shared/types";
 import { PlusIcon } from "../icons";
 import { t } from "../i18n";
 import { SP, useColors } from "../theme";
 import { addTasks } from "../store/mutations";
 
-export function AddForm() {
+export function AddForm({ place = INBOX }: { place?: Place }) {
   const c = useColors();
   const [text, setText] = useState("");
+  const hint =
+    place === INBOX ? t("inbox.placeholder") : t("matrix.addPlaceholder");
 
   const submit = () => {
     if (!text.trim()) return;
-    addTasks(INBOX, text);
+    addTasks(place, text);
     setText("");
   };
 
@@ -41,13 +48,13 @@ export function AddForm() {
         ]}
         value={text}
         onChangeText={setText}
-        placeholder={t("inbox.placeholder")}
+        placeholder={hint}
         placeholderTextColor={c.faint}
         multiline
         // Korean composition sends its own return; letting the field keep it
         // is why the button submits instead.
         blurOnSubmit={false}
-        accessibilityLabel={t("inbox.placeholder")}
+        accessibilityLabel={hint}
       />
       <Pressable
         onPress={submit}

@@ -16,15 +16,15 @@
 import { useCallback, useRef, useState } from "react";
 import {
   Keyboard,
-  LayoutAnimation,
   Pressable,
   StyleSheet,
   Text,
   View,
   type LayoutChangeEvent,
 } from "react-native";
+import Animated, { FadeIn, LinearTransition } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { SPACES, isCrowded } from "@nekan/shared/core";
+import { INBOX, SPACES, isCrowded } from "@nekan/shared/core";
 import type { Quadrant, Space, Task } from "@nekan/shared/types";
 import { AddForm } from "../../components/add-form";
 import { TaskList, type CardRects } from "../../components/task-list";
@@ -36,9 +36,12 @@ import { activeOf, counts, inboxTasks, quadrants } from "../../store/selectors";
 import { currentSpace, isReady, setSpace } from "../../store/state";
 import { useStore } from "../../store/use-store";
 
-/** Opening and closing is a layout change, so the layout animates itself. */
-const ease = () =>
-  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+// LayoutAnimation does nothing under the New Architecture -- it is not an
+// option here, it is a no-op, which is why opening a quadrant snapped. These
+// are Reanimated's, which work on Fabric and respect the reduce-motion setting
+// on their own.
+const SWAP = FadeIn.duration(150);
+const SETTLE = LinearTransition.duration(170);
 
 export default function MatrixScreen() {
   const c = useColors();
@@ -57,7 +60,6 @@ export default function MatrixScreen() {
     // The wrapper below cannot do it: a tap that lands on a child Pressable
     // never reaches the parent.
     Keyboard.dismiss();
-    ease();
     setOpen((prev) => (prev === q ? null : q));
   };
 
@@ -106,7 +108,8 @@ export default function MatrixScreen() {
           </View>
         </View>
 
-        <View
+        <Animated.View
+          layout={SETTLE}
           style={[s.panel, { backgroundColor: c.panel, borderColor: c.line }]}
         >
           <View style={s.panelHead}>
@@ -129,28 +132,44 @@ export default function MatrixScreen() {
             )}
           </View>
 
-          {rows.length === 0 ? (
-            // Takes the whole panel, so the form below stays at the bottom rather
-            // than riding up under a one-line sentence. Nothing is drawn until the
-            // file has been read: an empty-state sentence over a board that has
-            // simply not loaded yet would be a lie for the frame it is up.
-            <View style={s.emptyBox}>
-              <Text style={[s.empty, { color: c.faint }]}>
-                {!isReady() ? "" : open ? t("matrix.empty") : t("inbox.empty")}
-              </Text>
-            </View>
-          ) : (
-            <TaskList
-              tasks={rows}
-              cards={cards.current}
-              onOpen={(task: Task) => router.push(`/task/${task.id}`)}
-            />
-          )}
+          {/* Keyed by which list it is, so swapping one for the other is a
+              new element fading in rather than the same one changing its
+              contents -- which is what makes the change readable. */}
+          <Animated.View
+            key={open ?? "dump"}
+            entering={SWAP}
+            style={s.panelBody}
+          >
+            {rows.length === 0 ? (
+              // Takes the whole panel, so the form below stays at the bottom
+              // rather than riding up under a one-line sentence. Nothing is
+              // drawn until the file has been read: an empty-state sentence
+              // over a board that has simply not loaded yet would be a lie for
+              // the frame it is up.
+              <View style={s.emptyBox}>
+                <Text style={[s.empty, { color: c.faint }]}>
+                  {!isReady()
+                    ? ""
+                    : open
+                      ? t("matrix.empty")
+                      : t("inbox.empty")}
+                </Text>
+              </View>
+            ) : (
+              <TaskList
+                tasks={rows}
+                cards={cards.current}
+                onOpen={(task: Task) => router.push(`/task/${task.id}`)}
+              />
+            )}
+          </Animated.View>
 
-          {/* Typing only ever happens in the dump: a quadrant is somewhere you
-            move things to, which is also why the dump is the shared one. */}
-          {open ? null : <AddForm />}
-        </View>
+          {/* The form follows whichever list is open, so a quadrant can be
+              written into directly -- the desktop gives every quadrant its own
+              field for the same reason. What is typed into the dump still
+              belongs to neither board until it is filed. */}
+          <AddForm place={open ?? INBOX} />
+        </Animated.View>
 
         <View style={s.grid}>
           {quadrants().map((q) => {
@@ -223,6 +242,7 @@ const s = StyleSheet.create({
     overflow: "hidden",
   },
   // Shrinks so the grid keeps its size; the grid is what you drop onto.
+  panelBody: { flex: 1, minHeight: 0 },
   panel: {
     flex: 1,
     minHeight: 0,

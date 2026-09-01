@@ -126,17 +126,16 @@ export function untrashTask(id: string): void {
 }
 
 /**
- * Move a task, optionally to a named position.
+ * Move a task into a quadrant, above `beforeId`.
  *
- * `beforeId` is the row it should end up above. Without one it lands at the
- * top, which is where a card drop puts things: the four cards show counts
- * rather than rows, so a drop names a quadrant and nothing else, and the row
- * you just moved should be the first one you see when you open it.
+ * `null` means the end of the list, which is the honest reading: there is no
+ * row after it. That matters because a drop below the last row is the only way
+ * to make something last, and reading null as "nowhere" made that impossible.
  */
 export function moveTask(
   id: string,
   quadrant: Place,
-  beforeId: string | null = null,
+  beforeId: string | null,
 ): void {
   const task = findTask(id);
   if (!task || id === beforeId) return;
@@ -146,19 +145,29 @@ export function moveTask(
   task.quadrant = quadrant;
   task.space = spaceFor(quadrant, currentSpace());
 
-  if (!beforeId) {
-    task.orderKey = headKey(quadrant);
-    commit(task);
-    return;
-  }
-
   const siblings = activeOf(quadrant).filter((t) => t.id !== id);
-  const at = siblings.findIndex((t) => t.id === beforeId);
+  const at = beforeId ? siblings.findIndex((t) => t.id === beforeId) : -1;
   const after = at === -1 ? null : siblings[at];
   const before = at === -1 ? siblings[siblings.length - 1] : siblings[at - 1];
   task.orderKey = orderKeyBetween(before?.orderKey, after?.orderKey);
   commit(task);
 }
 
+/**
+ * Move a task and put it first.
+ *
+ * What a card drop does. The four cards show counts rather than rows, so a
+ * drop names a quadrant and nothing else -- and the row you just moved should
+ * be the first thing you see when you open it, not the last.
+ */
+export function moveToTop(id: string, quadrant: Place): void {
+  const task = findTask(id);
+  if (!task) return;
+  task.quadrant = quadrant;
+  task.space = spaceFor(quadrant, currentSpace());
+  task.orderKey = headKey(quadrant);
+  commit(task);
+}
+
 /** Back to the dump, which also takes its board away again. */
-export const unfileTask = (id: string) => moveTask(id, INBOX);
+export const unfileTask = (id: string) => moveToTop(id, INBOX);
