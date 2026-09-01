@@ -109,10 +109,14 @@ export function TaskList({ tasks, cards, onOpen }: Props) {
   );
 
   const drop = useCallback(
-    (id: string, quadrant: Place | null) => {
+    (id: string, quadrant: Place | null, moved: boolean) => {
       setHeldId(null);
       const aimed = target;
       setTarget({ card: null, before: null });
+      // A cancelled gesture runs onEnd too, and `moved` is how the handler
+      // says which one this was. Writing on a cancel would save a move the
+      // finger never finished -- the row snaps back and the file disagrees.
+      if (!moved) return;
       if (aimed.card) {
         // The open quadrant is drawn as unavailable, so a drop on it is a
         // no-op rather than a move that changes nothing but writes anyway.
@@ -154,7 +158,7 @@ export function TaskList({ tasks, cards, onOpen }: Props) {
           onLayout={(e) => measure(task.id, e)}
           onBegin={() => begin(task.id)}
           onAim={(x, y, ly) => aim(task.id, x, y, ly)}
-          onDrop={() => drop(task.id, task.quadrant)}
+          onDrop={(moved) => drop(task.id, task.quadrant, moved)}
           onPress={() => onOpen(task)}
         />
       ))}
@@ -171,7 +175,8 @@ interface RowProps {
   onBegin: () => void;
   /** Third argument is the finger inside this row, not inside the list. */
   onAim: (absX: number, absY: number, rowY: number) => void;
-  onDrop: () => void;
+  /** True when the drag ended; false when it was cancelled. */
+  onDrop: (moved: boolean) => void;
   onPress: () => void;
 }
 
@@ -217,9 +222,9 @@ function DraggableRow({
       dy.value = e.translationY;
       runOnJS(onAim)(e.absoluteX, e.absoluteY, e.y + e.translationY);
     })
-    .onEnd(() => {
+    .onEnd((_e, success) => {
       dy.value = 0;
-      runOnJS(onDrop)();
+      runOnJS(onDrop)(success);
     })
     .onFinalize(() => {
       dy.value = 0;
