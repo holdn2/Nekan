@@ -815,7 +815,85 @@ then "draft" else "published" end` (실측: `v1.0.1 -> draft`, `v1.0.0 -> publis
   코드와 git 로그가 이미 "무엇을 했는지"는 말하므로, 여기 그것만 적으면 쓸 이유가 없다.
 - **작업을 마칠 때마다 커밋한다.** 컨텍스트가 날아가도 커밋 로그가 남으면 복구된다.
 
-## 모바일 (착수 전) — 빌드는 정말 필요할 때만
+## 모바일 — `apps/mobile` (진행 중, #102)
+
+```
+apps/mobile/
+  app/            expo-router의 파일 라우팅
+    _layout.tsx     GestureHandlerRootView · SafeAreaProvider · 보드를 한 번 읽는다
+    (tabs)/         매트릭스 · 보관함 · 설정 (보관함·설정은 아직 껍데기)
+    task/[id].tsx   상세. 라우트인 이유는 위젯이 언젠가 할 일을 직접 열어야 해서다
+  store/          state · selectors · mutations · persist · use-store
+  components/     add-form · task-row · task-list(드래그가 여기 산다)
+  theme.ts        PALETTE를 읽어 RN 스타일로. 색을 한 줄도 새로 적지 않는다
+  i18n.ts         세 번째 i18next 초기화. 카탈로그는 shared 한 벌
+  icons.tsx       react-native-svg. 규칙 11대로 기호는 글자가 아니다
+  metro.config.js watchFolders + `.js`→`.ts` resolver (아래)
+```
+
+**스토어는 렌더러와 같은 모양이고 같은 두 규칙을 지킨다**: 모든 목록이 `inSpace()`를 지나고,
+순서는 배열이 아니라 `compareOrder()`에서 온다. 쓰기도 데스크톱과 같다 — task를 배열에서
+지우지 않고, `space`는 `spaceFor()` 한 곳에서만 정해지며, `now()`는 `Date.now() + clockOffset`이다
+(오프셋은 동기화가 붙기 전까지 0이지만 **지금 이렇게 써 두어야 그때 고칠 곳이 한 줄이다**).
+
+**저장은 `Paths.document/nekan/data.json`이고 temp+rename이다.** `AsyncStorage`가 아닌 이유는
+Android 상한(약 6MB)에서 **조용히** 깨지고, 동기화가 붙을 때 양끝이 같은 문서를 읽어야 해서다.
+**`File`·`Directory` 핸들을 모듈 상수로 두지 말 것** — `move()`가 **자기 객체의 URI를 바꾼다**
+(타입 문서에 종속절로 한 줄 있다). 그래서 첫 저장 뒤 임시 파일 핸들이 `data.json`을 가리키게 되고
+두 번째 저장부터 죽는다. 호출할 때마다 새로 만든다.
+
+**`metro.config.js`가 하는 일 둘.** `watchFolders`로 저장소 전체를 보고(shared에는 이쪽을 위한
+빌드 단계가 없다), **`.js` import를 옆의 `.ts`에 잇는다** — 렌더러에서 `vite.config.mts`의
+플러그인이 하는 일과 같은 것이다. **빼면 첫 shared 파일에서 번들이 죽는다**(실측).
+
+### 버전은 폰이 정한다. npm의 `latest`가 아니다
+
+**Expo Go 앱이 지원하는 SDK가 상한이다.** 2026-09-01 기준 그 기기는 **SDK 54**였고, npm의
+`latest`는 57이었다. 57 → 56 → 54로 두 번 내렸다. **`sdkVersion`은 `expo config --type public`으로
+확인한다** — 프로젝트가 실제로 무엇을 알리는지가 답이다.
+
+**개별 버전의 권위는 `expo/bundledNativeModules.json`이다.** `latest`를 쓰면 SDK보다 앞서고,
+그 어긋남은 **번들을 1,000개쯤 묶은 뒤에** `Cannot find module`로 나타나 버전 문제로 보이지 않는다.
+
+**Expo Go는 네이티브 모듈의 네이티브 절반을 컴파일해 들고 있다.** JS 절반이 다르면 경고가 아니라
+**버전을 말해주지 않는 호스트 함수 예외**로 죽는다(`Exception in HostFunction: <unknown>`).
+**`expo install --check`는 이걸 못 잡는다** — 그 명령은 앱의 `package.json`만 읽는데, 실제 범인이던
+`react-native-worklets`는 reanimated가 물고 오는 전이 의존성이라 아무도 선언하지 않았다.
+그래서 **`node tools/check-native-versions.js`가 디스크를 훑는다**(`npm test`가 부른다).
+
+**React는 저장소 전체에서 한 벌이어야 한다.** react-native는 자기 렌더러가 빌드된 **정확히 그
+React**를 요구한다 — 피어 범위 안이면 된다가 아니다(`Incompatible React versions`). 데스크톱이
+19.2.8에서 **19.1.0으로 내려온** 이유가 이것이고, 데스크톱 쪽은 전부 캐럿이라 움직일 수 있는 쪽이
+그쪽이었다. 두 벌로 두는 안이 더 나쁘다 — 렌더러가 고르는 것과 앱이 import하는 것을 중첩 규칙이
+우연히 정하게 된다.
+
+**`overrides`는 lock에 이미 박힌 항목에 안 먹는다.** 그 항목을 lock에서 지우고 다시 설치해야 한다.
+**lock의 워크스페이스 항목(`apps/mobile`)도 자기 범위를 캐시한다** — `package.json`을 고쳐도
+npm은 lock을 믿는다. 그리고 **lock을 통째로 재생성하면 데스크톱 의존성이 캐럿 범위 안에서
+움직인다**(한 번에 6개가 움직였고 `electron`이 그중 하나였다). **커밋된 lock 위에서 설치할 것.**
+
+### 이 저장소 고유의 함정 둘
+
+- **TypeScript 7에는 `main`이 없다.** `tsc`만 있고 import할 것이 없어서 `@expo/cli`의
+  `require("typescript")`가 `undefined`를 받고 `undefined.getCurrentDirectory`로 죽는다.
+  그래서 `apps/mobile`이 자기 TypeScript 5.9를 갖는다. 위 "에디터와 빌드는 아예 다른 컴파일러"와
+  같은 사실의 세 번째 얼굴이다.
+- **`babel-preset-expo`를 `apps/mobile`이 직접 선언한다.** 안 하면 `expo/node_modules/` 안에
+  중첩되는데, Babel은 **변환 중인 파일 기준**으로 프리셋을 찾고 그게 `expo-router/entry.js`라
+  거기서는 안 보인다.
+
+### 실행
+
+`npm run mobile` — 저장소 루트에서. **`npx expo`를 쓰지 말 것**: 이 기기에 전역 설치본이 있어
+그쪽이 잡히고, 루트를 프로젝트로 잡아 저장소의 `.env`까지 읽는다. 플래그는
+`npm run mobile -- --clear`처럼 넘긴다(스크립트 끝의 `--`가 그걸 통과시킨다).
+타입은 `npm run mobile:typecheck`가 따로 본다.
+
+**`LayoutAnimation`은 New Architecture에서 no-op이다.** 덜 되는 것이 아니라 아무 일도 안 한다 —
+애니메이션은 Reanimated로 쓴다. 그리고 **RN의 점선은 dash 길이를 border width에서 계산한다**:
+hairline이면 점이 선처럼 보인다.
+
+## 빌드는 정말 필요할 때만
 
 **EAS Build를 무료 플랜으로 쓴다. iOS·Android 각각 한 달에 15회다**(사용자가 정한 전제).
 이 숫자가 데스크톱과 모바일의 결정적인 차이다 — 여기서는 `npm run dist`를 몇 번 돌리든

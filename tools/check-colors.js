@@ -22,7 +22,9 @@ const fs = require("fs");
 const path = require("path");
 
 const ROOT = path.join(__dirname, "..");
-const ROOTS = ["src", "site"];
+// apps/ joined when the phone did: it draws its own icons and writes its own
+// styles, so it is exactly the kind of place a hex slips into and stays.
+const ROOTS = ["src", "site", "apps"];
 const EXT = new Set([".ts", ".tsx", ".css", ".html"]);
 
 /** `#abc`, `#aabbcc`, `#aabbccdd`. Not `#` on its own and not a five-digit id. */
@@ -68,11 +70,17 @@ const ALLOWED = new Map([
   ["src/shared/test/theme.test.ts", 7],
 ]);
 
+// Not ours to police, and not ours to fix. src/ and site/ hold no such
+// directories, so this only started mattering when apps/ arrived with a
+// node_modules of its own -- reanimated alone brought thirty-two literals.
+const SKIP = new Set(["node_modules", ".expo", "dist", "out"]);
+
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, out);
-    else if (EXT.has(path.extname(entry.name))) out.push(full);
+    if (entry.isDirectory()) {
+      if (!SKIP.has(entry.name)) walk(full, out);
+    } else if (EXT.has(path.extname(entry.name))) out.push(full);
   }
   return out;
 }

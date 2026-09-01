@@ -42,3 +42,10 @@ i18next.init({
  */
 export const t = (key: string, vars?: Record<string, unknown>): string =>
   i18next.t(key, vars ?? {}) as string;
+
+/**
+ * The tag `Intl` wants, for the few places a date is formatted rather than
+ * translated. Read from i18next rather than kept alongside it, so there is one
+ * answer to "what language is this" and not two that can disagree.
+ */
+export const locale = (): string => i18next.language || "en";

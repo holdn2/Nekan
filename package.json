@@ -13,7 +13,10 @@
     "apps/mobile"
   ],
   "overrides": {
-    "react-native": "0.86.3"
+    "react-native": "0.81.5",
+    "react-native-gesture-handler": "~2.28.0",
+    "react-native-reanimated": "~4.1.1",
+    "react-native-worklets": "0.5.1"
   },
   "author": "makersfarm",
   "license": "MIT",
@@ -21,11 +24,13 @@
     "build": "node tools/build.js",
     "build:watch": "node tools/build.js --watch",
     "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.shared.json",
-    "test": "npm run build && node tools/check-styles.js && node tools/check-colors.js && node --test \"out/test/**/*.test.js\" && vitest run",
+    "test": "npm run build && node tools/check-styles.js && node tools/check-colors.js && node tools/check-native-versions.js && node --test \"out/test/**/*.test.js\" && vitest run",
     "check:styles": "node tools/check-styles.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "start": "npm run build && electron .",
+    "mobile": "npm run --workspace @nekan/mobile start --",
+    "mobile:typecheck": "tsc -p apps/mobile --noEmit",
     "dist": "npm run build && node tools/dist.js",
     "dist:mac": "npm run build && node tools/dist.js --mac",
     "release": "npm run build && node tools/dist.js --publish"
@@ -43,16 +48,16 @@
     "electron-updater": "^6.8.9",
     "i18next": "^26.3.6",
     "lucide-react": "^1.34.0",
-    "react": "^19.2.8",
+    "react": "19.1.0",
     "react-day-picker": "^10.0.1",
-    "react-dom": "^19.2.8",
+    "react-dom": "19.1.0",
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^22.20.1",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
+    "@types/react": "~19.1.0",
+    "@types/react-dom": "~19.1.0",
     "@vitejs/plugin-react": "^6.1.0",
     "electron": "^43.2.0",
     "electron-builder": "^26.15.3",
