@@ -15,7 +15,8 @@
   "overrides": {
     "react-native": "0.81.5",
     "react-native-gesture-handler": "~2.28.0",
-    "react-native-reanimated": "~4.1.1"
+    "react-native-reanimated": "~4.1.1",
+    "react-native-worklets": "0.5.1"
   },
   "author": "makersfarm",
   "license": "MIT",
@@ -23,7 +24,7 @@
     "build": "node tools/build.js",
     "build:watch": "node tools/build.js --watch",
     "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.shared.json",
-    "test": "npm run build && node tools/check-styles.js && node tools/check-colors.js && node --test \"out/test/**/*.test.js\" && vitest run",
+    "test": "npm run build && node tools/check-styles.js && node tools/check-colors.js && node tools/check-native-versions.js && node --test \"out/test/**/*.test.js\" && vitest run",
     "check:styles": "node tools/check-styles.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
