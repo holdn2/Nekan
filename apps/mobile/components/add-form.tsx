@@ -20,7 +20,7 @@ import { INBOX } from "@nekan/shared/core";
 import type { Place } from "@nekan/shared/types";
 import { PlusIcon } from "../icons";
 import { t } from "../i18n";
-import { SP, useColors } from "../theme";
+import { FS, R, SP, useColors } from "../theme";
 import { addTasks } from "../store/mutations";
 
 export function AddForm({ place = INBOX }: { place?: Place }) {
@@ -87,16 +87,16 @@ const s = StyleSheet.create({
     flex: 1,
     minHeight: 38,
     maxHeight: 110,
-    borderRadius: 10,
+    borderRadius: R.panel,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: SP.xl,
     paddingVertical: SP.md,
-    fontSize: 14,
+    fontSize: FS.lg,
   },
   add: {
     width: 38,
     height: 38,
-    borderRadius: 999,
+    borderRadius: R.pill,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -35,7 +35,14 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
                    **매니페스트를 놓는 순간 그 아래 테스트의 `#shared/*`가 깨진다** —
                    아래 `tsconfig.test.json` 항목을 볼 것
     types.ts       Task · Place · Space · Layout · Session · DueInfo · Rect 등 어휘
-    theme.ts       색의 유일한 집. RAMP 15 · PALETTE 역할 36 × 2테마 · SHADOW 6 × 2테마
+    theme.ts       색과 크기의 유일한 집. RAMP 15 · PALETTE 역할 36 × 2테마 · SHADOW 6 × 2테마
+                   **2026-09-01부터 스케일도 여기 있다**: SPACING 13 · RADIUS 6 ·
+                   FONT_SIZE 7 · FONT_WEIGHT 4 · LINE_HEIGHT 4. 색과 같은 이유다 —
+                   두 화면이 읽는 숫자를 두 번 적으면 갈라진다. **데스크톱은 이 파일을
+                   import하지 않는다**: 시트와 유틸리티가 닿으려면 CSS 커스텀 속성이어야
+                   하고, 모서리 여섯은 아래 ④ 때문에 `@theme static`에 있어야 한다.
+                   그래서 숫자가 두 벌로 남고 `tools/check-scale.js`가 둘을 붙들어 둔다
+                   (`npm test`가 부른다. 값이 어긋나도, 한쪽에만 단계가 생겨도 실패한다)
                    **그림자 역할의 이름과 유틸리티 이름이 다르다**: 여기서 `card`인 것이
                    화면에서는 `shadow-default`다(`--sh-card` → `--shadow-default`).
                    아래 ④ 때문에 생긴 갈림이니 한쪽 이름으로 다른 쪽을 grep하지 말 것
@@ -825,7 +832,11 @@ apps/mobile/
     task/[id].tsx   상세. 라우트인 이유는 위젯이 언젠가 할 일을 직접 열어야 해서다
   store/          state · selectors · mutations · persist · use-store
   components/     add-form · task-row · task-list(드래그가 여기 산다)
-  theme.ts        PALETTE를 읽어 RN 스타일로. 색을 한 줄도 새로 적지 않는다
+  theme.ts        PALETTE와 스케일을 읽어 RN 스타일로. **색도 크기도 한 줄도 새로 적지
+                  않는다** — `SP`·`R`·`FS`·`FW`가 `@nekan/shared/theme`의 재수출이다.
+                  폰이 데스크톱보다 큰 단계를 골라 쓸 수는 있지만 단계 **밖의 값은 쓰지
+                  않는다**(2026-09-01에 리터럴 48개를 스케일로 끌어왔고, 그중
+                  15·17·22px와 반지름 14px는 데스크톱에 없는 값이었다)
   i18n.ts         세 번째 i18next 초기화. 카탈로그는 shared 한 벌
   icons.tsx       react-native-svg. 규칙 11대로 기호는 글자가 아니다
   metro.config.js watchFolders + `.js`→`.ts` resolver (아래)
@@ -888,6 +899,12 @@ npm은 lock을 믿는다. 그리고 **lock을 통째로 재생성하면 데스�
 그쪽이 잡히고, 루트를 프로젝트로 잡아 저장소의 `.env`까지 읽는다. 플래그는
 `npm run mobile -- --clear`처럼 넘긴다(스크립트 끝의 `--`가 그걸 통과시킨다).
 타입은 `npm run mobile:typecheck`가 따로 본다.
+
+**`start`가 아닌 명령에도 같은 함정이 있다.** 번들이 실제로 묶이는지 보려면
+`apps/mobile`에서 `node ../../node_modules/expo/bin/cli export --platform ios`로 부른다 —
+`npx expo export`는 전역 CLI를 잡고 **1,500개를 다 묶은 뒤에** 자기 폴리필을
+`D:\C:\Users\...` 같은 경로에서 찾다가 죽는다. 타입검사는 이걸 못 잡는다:
+import 경로가 틀려도 `tsc`는 통과하고 Metro만 죽는다.
 
 **`LayoutAnimation`은 New Architecture에서 no-op이다.** 덜 되는 것이 아니라 아무 일도 안 한다 —
 애니메이션은 Reanimated로 쓴다. 그리고 **RN의 점선은 dash 길이를 border width에서 계산한다**:
@@ -1031,8 +1048,8 @@ hairline이면 점이 선처럼 보인다.
 
 ## 검증
 
-**`npm test`는 검사 둘 + 러너 둘이다** — 빌드 → `check-styles.js` → `check-colors.js` →
-`node --test` → `vitest run`. **`prettier --check .`는 여기 없다**(CI 관문이라 커밋 전에 따로
+**`npm test`는 검사 넷 + 러너 둘이다** — 빌드 → `check-styles.js` → `check-colors.js` →
+`check-scale.js` → `check-native-versions.js` → `node --test` → `vitest run`. **`prettier --check .`는 여기 없다**(CI 관문이라 커밋 전에 따로
 돌릴 것). `node --test`가 `out/test/`의 237개로 `src/shared/`의 순수
 함수를 덮고 — 데이터가 날아가는 규칙(정규화 기본값, quadrant 유효성, temp+rename 저장, 손상
 파일 폴백)이 거기 있으니 그 파일들을 건드렸으면 반드시 돌린다 — 이어서 `vitest run`이

@@ -28,7 +28,7 @@ import { INBOX, dueInfo, formatDue } from "@nekan/shared/core";
 import type { Task } from "@nekan/shared/types";
 import { CheckCircleIcon, MemoIcon } from "../icons";
 import { locale, t } from "../i18n";
-import { SP, useColors, type Colors } from "../theme";
+import { FS, FW, R, SP, useColors, type Colors } from "../theme";
 import { completeTask, deleteTask } from "../store/mutations";
 
 interface Props {
@@ -141,12 +141,12 @@ const s = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   first: { borderTopWidth: 0 },
-  text: { flex: 1, fontSize: 14 },
+  text: { flex: 1, fontSize: FS.lg },
   due: {
-    fontSize: 11,
+    fontSize: FS.xs,
     paddingHorizontal: SP.md,
     paddingVertical: SP["2xs"],
-    borderRadius: 999,
+    borderRadius: R.pill,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
@@ -156,5 +156,5 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  actionLabel: { fontSize: 13, fontWeight: "600" },
+  actionLabel: { fontSize: FS.md, fontWeight: FW.semibold },
 });

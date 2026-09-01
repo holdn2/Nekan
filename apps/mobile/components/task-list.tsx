@@ -34,7 +34,7 @@ import * as Haptics from "expo-haptics";
 import type { Place, Task } from "@nekan/shared/types";
 import { TaskRow } from "./task-row";
 import { moveTask, moveToTop } from "../store/mutations";
-import { useColors } from "../theme";
+import { R, SP, useColors } from "../theme";
 
 /** Where a card is on screen, in window coordinates. */
 export interface Rect {
@@ -264,5 +264,5 @@ const s = StyleSheet.create({
   // A rule where the row will land. A hole in the list was tried first and
   // read as a glitch: it moves everything below it, so the list appears to
   // jump rather than to be pointed at.
-  mark: { height: 2, marginHorizontal: 15, borderRadius: 999 },
+  mark: { height: 2, marginHorizontal: SP["4xl"], borderRadius: R.pill },
 });

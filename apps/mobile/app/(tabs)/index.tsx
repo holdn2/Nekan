@@ -30,7 +30,7 @@ import { AddForm } from "../../components/add-form";
 import { TaskList, type CardRects } from "../../components/task-list";
 import { CloseIcon } from "../../icons";
 import { t } from "../../i18n";
-import { SP, useColors } from "../../theme";
+import { FS, FW, R, SP, useColors } from "../../theme";
 import { router } from "expo-router";
 import { activeOf, counts, inboxTasks, quadrants } from "../../store/selectors";
 import { currentSpace, isReady, setSpace } from "../../store/state";
@@ -235,19 +235,19 @@ const s = StyleSheet.create({
     paddingVertical: SP.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  brand: { fontSize: 17, fontWeight: "700" },
+  brand: { fontSize: FS.xl, fontWeight: FW.semibold },
   switch_: {
     flexDirection: "row",
-    borderRadius: 999,
+    borderRadius: R.pill,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
   switchItem: {
     paddingHorizontal: SP["3xl"],
     paddingVertical: SP.sm,
-    fontSize: 13,
-    fontWeight: "600",
-    borderRadius: 999,
+    fontSize: FS.md,
+    fontWeight: FW.semibold,
+    borderRadius: R.pill,
     overflow: "hidden",
   },
   // Shrinks so the grid keeps its size; the grid is what you drop onto.
@@ -257,7 +257,7 @@ const s = StyleSheet.create({
     minHeight: 0,
     margin: SP["4xl"],
     marginBottom: SP.md,
-    borderRadius: 14,
+    borderRadius: R.lg,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
@@ -270,21 +270,21 @@ const s = StyleSheet.create({
     paddingTop: SP["4xl"],
     paddingBottom: SP.xl,
   },
-  panelTitle: { fontSize: 15, fontWeight: "700", flexShrink: 1 },
-  shared: { fontSize: 11 },
+  panelTitle: { fontSize: FS.lg, fontWeight: FW.semibold, flexShrink: 1 },
+  shared: { fontSize: FS.xs },
   emptyBox: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: SP["4xl"],
   },
-  empty: { fontSize: 13, textAlign: "center" },
+  empty: { fontSize: FS.md, textAlign: "center" },
   list: { flex: 1 },
   listInner: { paddingBottom: SP.xl },
   row: {
     paddingHorizontal: SP["4xl"],
     paddingVertical: SP.xl,
-    fontSize: 14,
+    fontSize: FS.lg,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   firstRow: { borderTopWidth: 0 },
@@ -299,7 +299,7 @@ const s = StyleSheet.create({
     flexBasis: "47%",
     flexGrow: 1,
     height: 96,
-    borderRadius: 14,
+    borderRadius: R.lg,
     borderWidth: StyleSheet.hairlineWidth,
     padding: SP.xl,
     overflow: "hidden",
@@ -308,6 +308,6 @@ const s = StyleSheet.create({
   // A band rather than a fill: at this size a whole card of quadrant colour
   // would out-shout the counts, and the counts are the content.
   wash: { position: "absolute", left: 0, right: 0, top: 0, height: 4 },
-  cardTitle: { fontSize: 13, fontWeight: "600", marginTop: SP.xs },
-  count: { fontSize: 20, fontWeight: "700" },
+  cardTitle: { fontSize: FS.md, fontWeight: FW.semibold, marginTop: SP.xs },
+  count: { fontSize: FS["3xl"], fontWeight: FW.semibold },
 });

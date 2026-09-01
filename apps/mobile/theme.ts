@@ -11,7 +11,15 @@
  * colour changed in theme.ts shows up in both without being typed twice.
  */
 import { useColorScheme } from "react-native";
-import { PALETTE, type ColorRole, type ThemeName } from "@nekan/shared/theme";
+import {
+  FONT_SIZE,
+  FONT_WEIGHT,
+  PALETTE,
+  RADIUS,
+  SPACING,
+  type ColorRole,
+  type ThemeName,
+} from "@nekan/shared/theme";
 
 export type Colors = Record<ColorRole, string>;
 
@@ -25,22 +33,14 @@ export function useColors(): Colors {
 }
 
 /**
- * Named steps, not numbers -- the same scale the desktop uses, so a value can
- * be moved between the two without translating it. Tailwind holds these on the
- * web side; here they are the object itself.
+ * The scale, re-exported under short names.
+ *
+ * Not defined here. `@nekan/shared/theme` holds the numbers and the desktop
+ * reads the same ones through CSS custom properties, so a step changed there
+ * moves both screens -- `tools/check-scale.js` fails if the two ever disagree.
+ * The names are short because they appear in almost every style object.
  */
-export const SP = {
-  hair: 1,
-  "2xs": 2,
-  xs: 4,
-  sm: 6,
-  md: 8,
-  lg: 10,
-  xl: 12,
-  "2xl": 14,
-  "3xl": 16,
-  "4xl": 20,
-  "5xl": 24,
-  "6xl": 32,
-  "7xl": 40,
-} as const;
+export const SP = SPACING;
+export const R = RADIUS;
+export const FS = FONT_SIZE;
+export const FW = FONT_WEIGHT;

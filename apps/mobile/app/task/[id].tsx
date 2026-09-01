@@ -30,7 +30,7 @@ import { INBOX, QUADS, dueInfo, formatDue } from "@nekan/shared/core";
 import type { Quadrant } from "@nekan/shared/types";
 import { CloseIcon } from "../../icons";
 import { locale, t } from "../../i18n";
-import { SP, useColors } from "../../theme";
+import { FS, FW, R, SP, useColors } from "../../theme";
 import { findTask } from "../../store/state";
 import { useStore } from "../../store/use-store";
 import {
@@ -223,17 +223,17 @@ const s = StyleSheet.create({
     paddingVertical: SP.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  title: { fontSize: 13, fontWeight: "600", flexShrink: 1 },
+  title: { fontSize: FS.md, fontWeight: FW.semibold, flexShrink: 1 },
   body: { padding: SP["4xl"], gap: SP.xl, paddingBottom: SP["7xl"] },
   text: {
     minHeight: 64,
-    borderRadius: 12,
+    borderRadius: R.lg,
     borderWidth: StyleSheet.hairlineWidth,
     padding: SP["3xl"],
-    fontSize: 16,
+    fontSize: FS.xl,
     ...Platform.select({ ios: { lineHeight: 22 }, default: {} }),
   },
-  label: { fontSize: 12, fontWeight: "600", marginTop: SP.lg },
+  label: { fontSize: FS.sm, fontWeight: FW.semibold, marginTop: SP.lg },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: SP.md },
   chip: {
     flexDirection: "row",
@@ -241,26 +241,26 @@ const s = StyleSheet.create({
     gap: SP.md,
     paddingHorizontal: SP["3xl"],
     paddingVertical: SP.lg,
-    borderRadius: 999,
+    borderRadius: R.pill,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  chipText: { fontSize: 13 },
-  dot: { width: 8, height: 8, borderRadius: 999 },
-  note: { fontSize: 12 },
+  chipText: { fontSize: FS.md },
+  dot: { width: 8, height: 8, borderRadius: R.pill },
+  note: { fontSize: FS.sm },
   memo: {
     minHeight: 120,
-    borderRadius: 12,
+    borderRadius: R.lg,
     borderWidth: StyleSheet.hairlineWidth,
     padding: SP["3xl"],
-    fontSize: 14,
+    fontSize: FS.lg,
   },
   delete: {
     marginTop: SP["5xl"],
     alignSelf: "flex-start",
     paddingHorizontal: SP["4xl"],
     paddingVertical: SP.lg,
-    borderRadius: 999,
+    borderRadius: R.pill,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  deleteText: { fontSize: 13, fontWeight: "600" },
+  deleteText: { fontSize: FS.md, fontWeight: FW.semibold },
 });
