@@ -116,6 +116,11 @@ export function TaskList({ tasks, cards, onOpen }: Props) {
       style={s.scroll}
       contentContainerStyle={s.inner}
       scrollEnabled={heldId === null}
+      // Scrolling the list puts the keyboard away; tapping a row does what the
+      // row does. Without "handled" the first tap is spent dismissing, so
+      // opening a task while typing would take two.
+      keyboardDismissMode="on-drag"
+      keyboardShouldPersistTaps="handled"
     >
       {tasks.map((task, i) => (
         <DraggableRow

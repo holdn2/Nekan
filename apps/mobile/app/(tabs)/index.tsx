@@ -15,6 +15,7 @@
  */
 import { useCallback, useRef, useState } from "react";
 import {
+  Keyboard,
   LayoutAnimation,
   Pressable,
   StyleSheet,
@@ -52,6 +53,10 @@ export default function MatrixScreen() {
   const rows = open ? activeOf(open) : inboxTasks();
 
   const toggle = (q: Quadrant) => {
+    // A card is one of the "somewhere else" the keyboard should go away for.
+    // The wrapper below cannot do it: a tap that lands on a child Pressable
+    // never reaches the parent.
+    Keyboard.dismiss();
     ease();
     setOpen((prev) => (prev === q ? null : q));
   };
@@ -67,116 +72,130 @@ export default function MatrixScreen() {
 
   return (
     <SafeAreaView style={[s.root, { backgroundColor: c.bg }]} edges={["top"]}>
-      <View style={[s.bar, { borderBottomColor: c.line }]}>
-        <Text style={[s.brand, { color: c.text }]}>Nekan</Text>
-        <View
-          style={[
-            s.switch_,
-            { backgroundColor: c["panel-2"], borderColor: c.line },
-          ]}
-        >
-          {SPACES.map((sp: Space) => (
-            <Pressable key={sp} onPress={() => setSpace(sp)} hitSlop={4}>
-              <Text
-                style={[
-                  s.switchItem,
-                  sp === space
-                    ? { backgroundColor: c.accent, color: c["on-accent"] }
-                    : { color: c.muted },
-                ]}
-              >
-                {t(`space.${sp}`)}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-
-      <View
-        style={[s.panel, { backgroundColor: c.panel, borderColor: c.line }]}
+      {/* Anything that is not the field puts the keyboard away. This catches
+          the bare parts -- the bar, the gaps, the panel's own background --
+          and the controls that sit on top of it say so themselves, because a
+          tap consumed by a child never reaches here. */}
+      <Pressable
+        style={s.dismiss}
+        onPress={() => Keyboard.dismiss()}
+        accessible={false}
       >
-        <View style={s.panelHead}>
-          <Text style={[s.panelTitle, { color: c.text }]} numberOfLines={1}>
-            {open ? t(`quad.${open}.action`) : t("inbox.title")}
-          </Text>
-          {open ? (
-            <Pressable
-              onPress={() => toggle(open)}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel={t("common.close")}
-            >
-              <CloseIcon color={c.muted} />
-            </Pressable>
-          ) : (
-            <Text style={[s.shared, { color: c.faint }]}>
-              {t("inbox.shared")}
-            </Text>
-          )}
+        <View style={[s.bar, { borderBottomColor: c.line }]}>
+          <Text style={[s.brand, { color: c.text }]}>Nekan</Text>
+          <View
+            style={[
+              s.switch_,
+              { backgroundColor: c["panel-2"], borderColor: c.line },
+            ]}
+          >
+            {SPACES.map((sp: Space) => (
+              <Pressable key={sp} onPress={() => setSpace(sp)} hitSlop={4}>
+                <Text
+                  style={[
+                    s.switchItem,
+                    sp === space
+                      ? { backgroundColor: c.accent, color: c["on-accent"] }
+                      : { color: c.muted },
+                  ]}
+                >
+                  {t(`space.${sp}`)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
 
-        {rows.length === 0 ? (
-          // Nothing at all until the file has been read: an empty-state
-          // sentence shown over a board that has simply not loaded yet would
-          // be a lie for the frame it is on screen.
-          <Text style={[s.empty, { color: c.faint }]}>
-            {!isReady() ? "" : open ? t("matrix.empty") : t("inbox.empty")}
-          </Text>
-        ) : (
-          <TaskList
-            tasks={rows}
-            cards={cards.current}
-            onOpen={(task: Task) => router.push(`/task/${task.id}`)}
-          />
-        )}
-
-        {/* Typing only ever happens in the dump: a quadrant is somewhere you
-            move things to, which is also why the dump is the shared one. */}
-        {open ? null : <AddForm />}
-      </View>
-
-      <View style={s.grid}>
-        {quadrants().map((q) => {
-          const selected = q === open;
-          return (
-            <Pressable
-              key={q}
-              onLayout={measureCard(q)}
-              onPress={() => toggle(q)}
-              style={[
-                s.card,
-                { backgroundColor: c.panel, borderColor: c.line },
-                // The open quadrant is drawn as somewhere you cannot drop,
-                // because its rows are already the list above.
-                selected && {
-                  borderColor: c.danger,
-                  borderStyle: "dashed",
-                  opacity: 0.45,
-                },
-              ]}
-            >
-              <View style={[s.wash, { backgroundColor: c[q] }]} />
-              <Text style={[s.cardTitle, { color: c.text }]} numberOfLines={2}>
-                {t(`quad.${q}.action`)}
+        <View
+          style={[s.panel, { backgroundColor: c.panel, borderColor: c.line }]}
+        >
+          <View style={s.panelHead}>
+            <Text style={[s.panelTitle, { color: c.text }]} numberOfLines={1}>
+              {open ? t(`quad.${open}.action`) : t("inbox.title")}
+            </Text>
+            {open ? (
+              <Pressable
+                onPress={() => toggle(open)}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel={t("common.close")}
+              >
+                <CloseIcon color={c.muted} />
+              </Pressable>
+            ) : (
+              <Text style={[s.shared, { color: c.faint }]}>
+                {t("inbox.shared")}
               </Text>
-              <Text
+            )}
+          </View>
+
+          {rows.length === 0 ? (
+            // Nothing at all until the file has been read: an empty-state
+            // sentence shown over a board that has simply not loaded yet would
+            // be a lie for the frame it is on screen.
+            <Text style={[s.empty, { color: c.faint }]}>
+              {!isReady() ? "" : open ? t("matrix.empty") : t("inbox.empty")}
+            </Text>
+          ) : (
+            <TaskList
+              tasks={rows}
+              cards={cards.current}
+              onOpen={(task: Task) => router.push(`/task/${task.id}`)}
+            />
+          )}
+
+          {/* Typing only ever happens in the dump: a quadrant is somewhere you
+            move things to, which is also why the dump is the shared one. */}
+          {open ? null : <AddForm />}
+        </View>
+
+        <View style={s.grid}>
+          {quadrants().map((q) => {
+            const selected = q === open;
+            return (
+              <Pressable
+                key={q}
+                onLayout={measureCard(q)}
+                onPress={() => toggle(q)}
                 style={[
-                  s.count,
-                  { color: isCrowded(q, n[q]) ? c.danger : c.muted },
+                  s.card,
+                  { backgroundColor: c.panel, borderColor: c.line },
+                  // The open quadrant is drawn as somewhere you cannot drop,
+                  // because its rows are already the list above.
+                  selected && {
+                    borderColor: c.danger,
+                    borderStyle: "dashed",
+                    opacity: 0.45,
+                  },
                 ]}
               >
-                {n[q]}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+                <View style={[s.wash, { backgroundColor: c[q] }]} />
+                <Text
+                  style={[s.cardTitle, { color: c.text }]}
+                  numberOfLines={2}
+                >
+                  {t(`quad.${q}.action`)}
+                </Text>
+                <Text
+                  style={[
+                    s.count,
+                    { color: isCrowded(q, n[q]) ? c.danger : c.muted },
+                  ]}
+                >
+                  {n[q]}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Pressable>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
   root: { flex: 1 },
+  dismiss: { flex: 1 },
   bar: {
     flexDirection: "row",
     alignItems: "center",

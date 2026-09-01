@@ -89,7 +89,11 @@ export default function TaskScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={s.body}>
+      <ScrollView
+        contentContainerStyle={s.body}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+      >
         <TextInput
           style={[
             s.text,
