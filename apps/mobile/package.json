@@ -17,7 +17,7 @@
     "expo-router": "~6.0.24",
     "expo-status-bar": "~3.0.9",
     "i18next": "^26.3.6",
-    "react": "^19.1.0",
+    "react": "19.1.0",
     "react-native": "0.81.5",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-reanimated": "~4.1.1",
