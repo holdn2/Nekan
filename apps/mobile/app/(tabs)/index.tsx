@@ -119,8 +119,42 @@ export default function MatrixScreen() {
           </View>
         </View>
 
+        {/* Filing was one-way without this. A task typed into the dump goes down
+          into a quadrant and could never come back: the four cards were the
+          only things a drag could aim at, and the detail screen offered only
+          the other three quadrants.
+
+          It sits outside the panel rather than above the list inside it, and
+          both halves of that matter. It reads as the dump collapsed -- which is
+          what the desktop shows in the same place -- and it is far enough from
+          the first row that dragging one to the top does not get caught by it
+          on the way. */}
+        {open ? (
+          <View
+            onLayout={measureCard(INBOX)}
+            style={[
+              s.unfile,
+              { backgroundColor: c.panel, borderColor: c.line },
+            ]}
+          >
+            <Text style={[s.unfileTitle, { color: c.text }]}>
+              {t("inbox.title")}
+            </Text>
+            <Text style={[s.unfileHint, { color: c.faint }]} numberOfLines={1}>
+              {t("matrix.unfile")}
+            </Text>
+            <Text style={[s.unfileCount, { color: c.faint }]}>
+              {inboxTasks().length}
+            </Text>
+          </View>
+        ) : null}
+
         <View
-          style={[s.panel, { backgroundColor: c.panel, borderColor: c.line }]}
+          style={[
+            s.panel,
+            open && s.panelUnderBox,
+            { backgroundColor: c.panel, borderColor: c.line },
+          ]}
         >
           <View style={s.panelHead}>
             <Text style={[s.panelTitle, { color: c.text }]} numberOfLines={1}>
@@ -141,29 +175,6 @@ export default function MatrixScreen() {
               </Text>
             )}
           </View>
-
-          {/* Filing is one-way without this. A task typed into the dump goes
-              down into a quadrant and, until now, could never come back: the
-              four cards were the only things a drag could aim at and the
-              detail screen only offered the other three quadrants. So the dump
-              stays on screen while a quadrant is open -- as a line to drag up
-              to, which is what the desktop's collapsed dump is. */}
-          {open ? (
-            <View
-              onLayout={measureCard(INBOX)}
-              style={[
-                s.unfile,
-                { borderColor: c.line, backgroundColor: c["panel-2"] },
-              ]}
-            >
-              <Text style={[s.unfileText, { color: c.faint }]}>
-                {t("matrix.unfile")}
-              </Text>
-              <Text style={[s.unfileCount, { color: c.faint }]}>
-                {inboxTasks().length}
-              </Text>
-            </View>
-          ) : null}
 
           {/* Keyed by which list it is, so swapping one for the other is a
               new element fading in rather than the same one changing its
@@ -286,6 +297,7 @@ const s = StyleSheet.create({
     minHeight: 0,
     margin: SP["4xl"],
     marginBottom: SP.md,
+
     borderRadius: R.lg,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
@@ -299,21 +311,25 @@ const s = StyleSheet.create({
     paddingTop: SP["4xl"],
     paddingBottom: SP.xl,
   },
-  // A line rather than a card: it is somewhere to let go of a row, not
-  // somewhere to look at. The count is what says the dump is still there.
+  // The box brings its own top margin, so the panel gives up most of its own.
+  // Two full margins read as a gap with nothing in it.
+  panelUnderBox: { marginTop: SP.md },
+  // Shaped like the panel below it, because it is the same thing collapsed.
   unfile: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: SP.md,
     marginHorizontal: SP["4xl"],
-    marginBottom: SP.md,
+    marginTop: SP["4xl"],
     paddingHorizontal: SP.xl,
-    paddingVertical: SP.md,
+    paddingVertical: SP.lg,
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: R.md,
+    borderRadius: R.lg,
   },
-  unfileText: { fontSize: FS.xs },
-  unfileCount: { fontSize: FS.xs, fontVariant: ["tabular-nums"] },
+  unfileTitle: { fontSize: FS.md, fontWeight: FW.semibold },
+  // Takes the slack, so the count stays pinned to the right edge.
+  unfileHint: { flex: 1, fontSize: FS.xs },
+  unfileCount: { fontSize: FS.md, fontVariant: ["tabular-nums"] },
   panelTitle: { fontSize: FS.lg, fontWeight: FW.semibold, flexShrink: 1 },
   shared: { fontSize: FS.xs },
   emptyBox: {
