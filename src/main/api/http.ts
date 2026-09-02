@@ -10,25 +10,23 @@
  */
 
 import { clockOffset, nextOffset } from "../../shared/sync";
+import {
+  SUPABASE_ANON_KEY as SHARED_KEY,
+  SUPABASE_URL as SHARED_URL,
+} from "../../shared/supabase";
 
 /**
- * The project. Both values are public by design: the anon key is a JWT whose
- * payload says `"role": "anon"`, and every client that speaks to the project
- * has to carry it -- shipping it in the app is the intended arrangement, not a
- * leak. The boundary is row level security, which 0001_tasks.sql puts on the
- * table and supabase/verify.js checks against the live project.
+ * The project. The two values live in `shared/supabase.ts` now, because the
+ * phone speaks to the same project and a URL written twice is a URL that
+ * drifts -- see the note there for why both are public by design and why
+ * `service_role` must never appear anywhere in the app.
  *
- * `service_role` must never appear here or anywhere else in the app. It
- * bypasses RLS completely.
- *
- * The env overrides are for pointing a dev run at a second project so it does
- * not share rows with the one verify.js writes to.
+ * The env overrides stay here: they point a dev run at a second project so it
+ * does not share rows with the one verify.js writes to, and only this side has
+ * an environment to read.
  */
-const SUPABASE_URL =
-  process.env.NEKAN_SUPABASE_URL || "https://bycfderwvgceffqorkup.supabase.co";
-const SUPABASE_ANON_KEY =
-  process.env.NEKAN_SUPABASE_ANON_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5Y2ZkZXJ3dmdjZWZmcW9ya3VwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4OTE4NTIsImV4cCI6MjEwMTQ2Nzg1Mn0.qh8jKRtKdJ9-_GSSHwtD35_VWS-YOR0sb9edyoORFt8";
+const SUPABASE_URL = process.env.NEKAN_SUPABASE_URL || SHARED_URL;
+const SUPABASE_ANON_KEY = process.env.NEKAN_SUPABASE_ANON_KEY || SHARED_KEY;
 
 /**
  * A request that never comes back is worse than one that fails: the caller is

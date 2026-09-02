@@ -12,7 +12,7 @@
  * nothing -- `orderKey` does.
  */
 import { normalizeTasks, sanitizeSpace } from "@nekan/shared/core";
-import type { Space, Task } from "@nekan/shared/types";
+import type { PublicSession, Space, Task } from "@nekan/shared/types";
 import { load, save, type Stored } from "./persist";
 
 let tasks: Task[] = [];
@@ -92,6 +92,24 @@ export const allTasks = (): readonly Task[] => tasks;
  * them, so this is where "everything changed" gets said.
  */
 export const redraw = (): void => notify();
+
+/**
+ * Who is signed in, as much of it as a screen may know.
+ *
+ * Not persisted here and not part of `Stored`: the session itself lives in
+ * the keychain, and this is the shadow of it that screens are allowed to see.
+ * `shared/auth`'s `publicSession()` decides what that is by *picking* fields
+ * rather than deleting them, so a field added to Session later cannot leak by
+ * being forgotten.
+ */
+let auth: PublicSession | null = null;
+
+export const currentAuth = (): PublicSession | null => auth;
+
+export function setAuth(next: PublicSession | null): void {
+  auth = next;
+  notify();
+}
 
 export type ThemeChoice = "light" | "dark" | null;
 

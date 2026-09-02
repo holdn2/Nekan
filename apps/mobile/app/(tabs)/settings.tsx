@@ -26,6 +26,7 @@ import { ChevronIcon } from "../../icons";
 import { SUPPORTED } from "@nekan/shared/i18n/locales";
 import { applyLanguage, t } from "../../i18n";
 import { exportBoard, type Format } from "../../export";
+import { AccountBlock } from "../../components/account";
 import { FS, FW, R, SP, useColors } from "../../theme";
 import {
   languageChoice,
@@ -108,6 +109,8 @@ export default function SettingsScreen() {
     <SafeAreaView style={[s.root, { backgroundColor: c.bg }]} edges={["top"]}>
       <ScrollView contentContainerStyle={s.body}>
         <Text style={[s.title, { color: c.text }]}>{t("settings.title")}</Text>
+
+        <AccountBlock />
 
         <Choices<ThemeChoice>
           label={t("settings.theme")}

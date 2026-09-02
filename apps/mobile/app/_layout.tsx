@@ -13,7 +13,8 @@ import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useColors, useThemeName } from "../theme";
-import { init, languageChoice, redraw } from "../store/state";
+import { init, languageChoice, redraw, setAuth } from "../store/state";
+import { initAuth } from "../api/session";
 import { applyLanguage } from "../i18n";
 
 export default function RootLayout() {
@@ -33,6 +34,10 @@ export default function RootLayout() {
     void init().then(() => {
       if (applyLanguage(languageChoice())) redraw();
     });
+    // Separately from the board: a session that has to be renewed talks to the
+    // network, and nothing on screen may wait for that. Whoever was signed in
+    // last simply appears a moment later.
+    void initAuth().then(setAuth);
   }, []);
 
   // "System" has to go on meaning the system, and the two settings did not
