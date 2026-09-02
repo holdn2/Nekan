@@ -916,6 +916,16 @@ npm은 lock을 믿는다. 그리고 **lock을 통째로 재생성하면 데스�
 `D:\C:\Users\...` 같은 경로에서 찾다가 죽는다. 타입검사는 이걸 못 잡는다:
 import 경로가 틀려도 `tsc`는 통과하고 Metro만 죽는다.
 
+**Google 로그인의 리디렉트는 환경마다 다르고, Supabase 허용목록에 있어야 한다.**
+`makeRedirectUri`는 `Linking.createURL`로 내려가므로 Expo Go에서는
+`exp://<LAN IP>:8081/--/auth`, dev client·스토어 빌드에서는 `nekan://auth`가 된다 —
+**IP가 바뀌면 값이 바뀌므로 정확한 주소를 적어 둘 수 없다.** 대시보드
+(Authentication → URL Configuration → Redirect URLs)에 `nekan://**`와 `exp://**` 두 줄이
+필요하고, `**`는 `/`를 넘어서까지 매칭한다. **Google Cloud Console은 건드릴 필요가 없다** —
+Google이 보는 리디렉트는 언제나 Supabase의 `/auth/v1/callback`이고 앱의 주소는 그 다음
+단계다. 개발 실행은 `oauth redirect: …`를 찍어 준다(데스크톱이 loopback URL을 찍는 것과
+같은 이유다: 소스만 봐서는 알 수 없는 값이다). **`exp://**`는 스토어에 내기 전에 뺀다.**
+
 **타입 라우트는 개발 서버만 다시 쓴다.** `apps/mobile/.expo/types/router.d.ts`는
 `expo start`가 만들고 **`expo export`는 건드리지 않는다.** 새 라우트를 만든 뒤
 `mobile:typecheck`가 `"/guide"를 모른다`고 하면 코드가 아니라 **그 파일이 낡은 것**이다 —
