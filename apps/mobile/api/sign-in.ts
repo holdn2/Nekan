@@ -28,16 +28,27 @@ export type SignInResult =
 /**
  * Where Google sends the code back.
  *
- * `makeRedirectUri` answers differently per environment -- `nekan://auth` in a
- * build of its own, an `exp://` address inside Expo Go -- and both have to be
- * in the project's Redirect URL allowlist or the round trip ends on Supabase's
- * error page rather than back in the app. The dev log prints whichever one
- * this run will use, which is the same courtesy the desktop does for its
- * loopback URL, and for the same reason: the value cannot be guessed from the
- * source.
+ * `native` is not optional here, and leaving it out is a trap worth naming.
+ * Without it `makeRedirectUri` falls through to `Linking.createURL`, which
+ * builds `<scheme>://<hostUri><path>` -- and in a development build the
+ * hostUri is the dev server's address, so the redirect comes out as
+ * `nekan://192.168.x.x:8081/auth` with the machine's IP baked into it. Every
+ * address change would then need another allowlist entry. Passing `native`
+ * short-circuits that for anything that is not Expo Go, which is exactly the
+ * set of builds that own the scheme.
+ *
+ * Expo Go still gets `exp://<ip>:8081/--/auth`, and there is no fixing that
+ * from here: expo-linking's own documentation says the URL it produces there
+ * is neither stable nor predictable and that authorization callbacks want a
+ * build. Until there is one, the exact address has to be in the allowlist and
+ * it changes with the network.
+ *
+ * The dev log prints whichever one this run will use -- the same courtesy the
+ * desktop does for its loopback URL, and for the same reason: it cannot be
+ * worked out from the source.
  */
 function redirectUri(): string {
-  const uri = makeRedirectUri({ scheme: "nekan", path: "auth" });
+  const uri = makeRedirectUri({ native: "nekan://auth", path: "auth" });
   if (__DEV__) console.log("oauth redirect:", uri);
   return uri;
 }
@@ -91,7 +102,14 @@ export async function signInWithGoogle(): Promise<SignInResult> {
     `&redirect_to=${encodeURIComponent(redirect)}` +
     `&code_challenge=${challenge}&code_challenge_method=s256`;
 
+  // Both halves of the round trip, in the dev log. Neither can be worked out
+  // from the source -- the redirect is built from the dev server's address --
+  // and when this fails it fails inside a browser that cannot be inspected.
+  if (__DEV__) console.log("oauth authorize:", authorize);
+
   const back = await WebBrowser.openAuthSessionAsync(authorize, redirect);
+  if (__DEV__)
+    console.log("oauth back:", back.type, "url" in back ? back.url : "");
   if (back.type !== "success") return { ok: false, error: "cancelled" };
 
   const code = codeFrom(back.url);

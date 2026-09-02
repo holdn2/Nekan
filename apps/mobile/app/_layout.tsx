@@ -15,6 +15,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useColors, useThemeName } from "../theme";
 import { init, languageChoice, redraw, setAuth } from "../store/state";
 import { initAuth } from "../api/session";
+import { startSync } from "../sync/loop";
 import { applyLanguage } from "../i18n";
 
 export default function RootLayout() {
@@ -45,6 +46,10 @@ export default function RootLayout() {
   // on an appearance change -- while the language was read once and kept.
   // Changing it in the OS does not always restart the app, so coming back to
   // the front is where the question gets asked again.
+  // The loop watches the app's own comings and goings; this only owns its
+  // lifetime, so a reload does not leave a second one running.
+  useEffect(() => startSync(), []);
+
   useEffect(() => {
     const sub = AppState.addEventListener("change", (next) => {
       if (next !== "active" || languageChoice() !== null) return;

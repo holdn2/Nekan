@@ -16,7 +16,7 @@
  * not, so `account.error.*` maps them and anything unrecognised falls through
  * as its code, visible rather than swallowed.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -32,6 +32,13 @@ import { useStore } from "../store/use-store";
 import { signInWithGoogle, signInWithPassword } from "../api/sign-in";
 import { signOut } from "../api/account";
 import { currentSession } from "../api/session";
+import {
+  clearOverwritten,
+  onSyncStatus,
+  stopSync,
+  syncNow,
+  type SyncStatus,
+} from "../sync/loop";
 
 /** Server code to catalogue key. Unlisted codes are shown as themselves. */
 const ERROR_KEY: Record<string, string> = {
@@ -55,6 +62,11 @@ export function AccountBlock() {
   const [problem, setProblem] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // The loop's own state, not the store's: it changes on a schedule that has
+  // nothing to do with the board, and rendering the board for it would be a
+  // redraw a minute.
+  const [sync, setSync] = useState<SyncStatus | null>(null);
+  useEffect(() => onSyncStatus(setSync), []);
 
   const run = async (go: () => Promise<{ ok: boolean; error?: string }>) => {
     if (busy) return;
@@ -64,7 +76,13 @@ export function AccountBlock() {
       const res = await go();
       // The session is the api layer's; the screen reads back what it now
       // holds rather than trusting the reply it was handed.
-      setAuth(currentSession());
+      const next = currentSession();
+      setAuth(next);
+      // The loop stops scheduling once nobody is signed in, so signing in has
+      // to wake it; signing out has to stop it rather than let it discover
+      // the fact on its next tick.
+      if (next) syncNow();
+      else stopSync();
       if (!res.ok && res.error) setProblem(sentence(res.error));
     } finally {
       setBusy(false);
@@ -79,9 +97,18 @@ export function AccountBlock() {
         <View
           style={[s.card, { borderColor: c.line, backgroundColor: c.panel }]}
         >
-          <Text style={[s.email, { color: c.text }]} numberOfLines={1}>
-            {auth.email ?? ""}
-          </Text>
+          <View style={s.who}>
+            <Text style={[s.email, { color: c.text }]} numberOfLines={1}>
+              {auth.email ?? ""}
+            </Text>
+            {sync && sync.phase !== "off" ? (
+              <Text style={[s.state, { color: c.faint }]}>
+                {sync.unsent > 0
+                  ? t("account.state.pending", { count: sync.unsent })
+                  : t(`account.state.${sync.phase}`)}
+              </Text>
+            ) : null}
+          </View>
           <Pressable
             onPress={() =>
               run(async () => {
@@ -172,6 +199,17 @@ export function AccountBlock() {
         </>
       )}
 
+      {/* Losing an edit is the one sync outcome worth interrupting for, and
+          it stays until it is tapped -- a message that cleared itself on the
+          next heartbeat would be gone before it was read. */}
+      {sync && sync.overwritten > 0 ? (
+        <Pressable onPress={clearOverwritten} accessibilityRole="button">
+          <Text style={[s.problem, { color: c.danger }]}>
+            {t("account.overwritten", { count: sync.overwritten })}
+          </Text>
+        </Pressable>
+      ) : null}
+
       {busy ? <ActivityIndicator color={c.muted} /> : null}
       {problem ? (
         <Text style={[s.problem, { color: c.muted }]}>{problem}</Text>
@@ -194,7 +232,9 @@ const s = StyleSheet.create({
   },
   centre: { justifyContent: "center" },
   off: { opacity: 0.4 },
-  email: { flexShrink: 1, fontSize: FS.md, fontWeight: FW.medium },
+  who: { flexShrink: 1, gap: SP["2xs"] },
+  email: { fontSize: FS.md, fontWeight: FW.medium },
+  state: { fontSize: FS.xs },
   action: { fontSize: FS.sm, fontWeight: FW.semibold },
   dev: { gap: SP.md },
   field: {
