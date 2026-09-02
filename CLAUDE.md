@@ -916,6 +916,17 @@ npm은 lock을 믿는다. 그리고 **lock을 통째로 재생성하면 데스�
 `D:\C:\Users\...` 같은 경로에서 찾다가 죽는다. 타입검사는 이걸 못 잡는다:
 import 경로가 틀려도 `tsc`는 통과하고 Metro만 죽는다.
 
+**Expo Go에서는 Google 로그인이 끝까지 가지 않는다. 2026-09-02에 실측했다.**
+동의까지는 정상이고 `?code=`도 발급되는데, Supabase가 그 코드를 `redirect_to`가 아니라
+**Site URL**(`http://localhost:3000`)로 배달한다 — 허용목록에
+`exp://192.168.138.62:8081/--/auth`를 **정확히 그대로 넣어 두었는데도** 그렇다.
+같은 날 **데스크톱의 Google 로그인은 정상이었다**(`http://127.0.0.1:*`). 그래서
+`redirect_to` 왕복 자체는 멀쩡하고, 남은 차이는 셋뿐이다: **스킴이 http가 아니고,
+호스트가 IP이고, 포트가 붙어 있다.** Supabase 문서의 모바일 예시(`com.example.app://callback`)에는
+셋 다 없다. **dev client의 `nekan://auth`는 셋을 전부 피한다** — 거기서 확인할 것.
+`redirect_to`는 Google URL의 쿼리 파라미터로 실려 가고(Google은 그걸 돌려주지 않는다)
+`state`는 UUID 하나뿐이라, 되찾는 일은 전적으로 Supabase 쪽에서 일어난다.
+
 **Google 로그인의 리디렉트는 환경마다 다르고, Supabase 허용목록에 있어야 한다.**
 `makeRedirectUri`는 `Linking.createURL`로 내려가므로 Expo Go에서는
 `exp://<LAN IP>:8081/--/auth`, dev client·스토어 빌드에서는 `nekan://auth`가 된다 —
