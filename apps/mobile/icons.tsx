@@ -41,6 +41,26 @@ export function CloseIcon({ color, size = 18 }: IconProps) {
   );
 }
 
+/** The face of a row that leads somewhere. A `>` in a font is not it. */
+export function ChevronIcon({ color, size = 18 }: IconProps) {
+  return (
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={STROKE}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Polyline points="9 5 16 12 9 19" />
+    </Svg>
+  );
+}
+
 export function PlusIcon({ color, size = 18 }: IconProps) {
   return (
     <Svg

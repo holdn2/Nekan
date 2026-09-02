@@ -179,6 +179,25 @@
     "update": {
       "auto": "<b>There is nothing to do.</b> While the app is running it checks for a new version and downloads it in the background, and what it has downloaded <b>is applied when you close the app</b>. The version you are on is at the bottom of this page and beside the app name in the title bar.",
       "now": "If you would rather not wait, the <b>Update ready</b> button in the title bar restarts and applies it there and then. <b>The button only appears once a version has been downloaded</b> — if it is not there you are either up to date or still downloading."
+    },
+    "phone": {
+      "intro": "A place to sort tasks by how urgent and how important they are. Deciding where one goes is most of the work.",
+      "matrixTitle": "What the four mean",
+      "dumpTitle": "Empty your head first",
+      "dump": "Write everything down without sorting it. Paste several lines at once and each line becomes its own task.",
+      "open": "Tap a quadrant card and its list opens where the brain dump was. While it is open the dump stays above, collapsed; tap that box to bring it back.",
+      "gesturesTitle": "What your finger does",
+      "tap": "Tap — open it. Notes and due dates live there.",
+      "long": "Press and hold — pick it up. Drop it on another quadrant card, or move it within its own list.",
+      "unfile": "Drop it on the brain dump box above to unfile it again.",
+      "swipe": "Swipe left — a Delete button appears. The swipe alone deletes nothing.",
+      "check": "The round check — complete it. It goes to the history.",
+      "spaceTitle": "Work and Life",
+      "space": "The switch at the top right changes boards. The two are entirely separate, but the brain dump is shared — a task belongs to a board the moment it is filed into a quadrant.",
+      "archiveTitle": "Where things go",
+      "archive": "Completed tasks stay in the history, deleted ones in the trash. Both can be brought back; only deleting forever from the trash removes a task.",
+      "dataTitle": "Your data",
+      "data": "For now everything stays on this device. Sync across devices is still on the way."
     }
   },
   "matrix": {

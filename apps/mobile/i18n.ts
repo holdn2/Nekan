@@ -70,6 +70,18 @@ export function applyLanguage(choice: string | null): boolean {
   return true;
 }
 
+/**
+ * The same string with its emphasis removed.
+ *
+ * A handful of catalogue entries carry `<b>`, `<em>` or `<code>`; the renderer
+ * parses those into nodes. Nothing here does, and a phone screen showing a
+ * literal `<b>` is worse than one that has lost a bold word -- so the guide,
+ * which is where those entries live, asks for the words without them. When
+ * this app grows a rich-text component the parsing belongs there, not here.
+ */
+export const plain = (key: string, vars?: Record<string, unknown>): string =>
+  t(key, vars).replace(new RegExp("</?(b|em|code)>", "g"), "");
+
 /** What the device would say, for the "system" option to name it. */
 export const deviceLanguage = (): string =>
   pickLanguage(getLocales()[0]?.languageTag);

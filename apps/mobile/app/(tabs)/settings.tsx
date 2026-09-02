@@ -19,6 +19,8 @@ import {
   type ViewStyle,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
+import { ChevronIcon } from "../../icons";
 import { SUPPORTED } from "@nekan/shared/i18n/locales";
 import { applyLanguage, t } from "../../i18n";
 import { FS, FW, R, SP, useColors } from "../../theme";
@@ -112,6 +114,17 @@ export default function SettingsScreen() {
             })),
           ]}
         />
+        {/* A route rather than a section here: the guide is a document, and
+            one that can be left reads better than one that pushes the settings
+            it was opened from off the bottom. */}
+        <Pressable
+          onPress={() => router.push("/guide")}
+          accessibilityRole="link"
+          style={[s.link, { borderColor: c.line, backgroundColor: c.panel }]}
+        >
+          <Text style={[s.linkText, { color: c.text }]}>{t("tabs.guide")}</Text>
+          <ChevronIcon color={c.faint} size={16} />
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -139,4 +152,13 @@ const s = StyleSheet.create({
     borderRadius: R.md,
   },
   optionText: { fontSize: FS.md, fontWeight: FW.medium },
+  link: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: SP.xl,
+    borderRadius: R.panel,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  linkText: { fontSize: FS.md, fontWeight: FW.medium },
 });
