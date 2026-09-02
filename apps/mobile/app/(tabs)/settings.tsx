@@ -29,6 +29,7 @@ import { exportBoard, type Format } from "../../export";
 import { FS, FW, R, SP, useColors } from "../../theme";
 import {
   languageChoice,
+  redraw,
   setLanguageChoice,
   setThemeChoice,
   themeChoice,
@@ -122,10 +123,13 @@ export default function SettingsScreen() {
         <Choices<string | null>
           label={t("settings.language")}
           value={languageChoice()}
-          // The store holds the choice and i18next holds the language; both
-          // have to move, and the store is what makes the screen redraw.
+          // Two places hold this: the store has the choice, i18next has the
+          // language. Either can move without the other -- picking "system"
+          // again after the device changed its mind moves only the language,
+          // and `setLanguageChoice` returns early on an unchanged value -- so
+          // the redraw is asked for on its own rather than as a side effect.
           onPick={(lang) => {
-            applyLanguage(lang);
+            if (applyLanguage(lang)) redraw();
             setLanguageChoice(lang);
           }}
           options={[

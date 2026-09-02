@@ -41,6 +41,20 @@ const MIME: Record<Format, string> = {
 };
 
 /**
+ * iOS decides what it is being handed from the UTI, not the MIME type.
+ *
+ * Markdown has no system-wide identifier, so plain text is the honest answer:
+ * it is what a receiving app can be relied on to open. HTML and PDF have
+ * their own and saying otherwise makes a browser offer to open a page as
+ * text.
+ */
+const UTI: Record<Format, string> = {
+  pdf: "com.adobe.pdf",
+  html: "public.html",
+  md: "public.plain-text",
+};
+
+/**
  * A fresh handle every time, never a module constant.
  *
  * `move()` rewrites the URI of the object it is called on, and the same care
@@ -87,7 +101,7 @@ export async function exportBoard(format: Format): Promise<boolean> {
 
   await Sharing.shareAsync(uri, {
     mimeType: MIME[format],
-    UTI: format === "pdf" ? "com.adobe.pdf" : "public.plain-text",
+    UTI: UTI[format],
     dialogTitle: t("settings.export"),
   });
   return true;
