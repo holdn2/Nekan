@@ -353,7 +353,8 @@
     "pagePrev": "이전 페이지",
     "pageNext": "다음 페이지",
     "pageLast": "마지막 페이지",
-    "pageNumber": "{{page}}페이지"
+    "pageNumber": "{{page}}페이지",
+    "confirmPurgeOne": "이 항목을 영구 삭제할까요? 되돌릴 수 없습니다."
   },
   "oauth": {
     "done": "확인했습니다. 이 창을 닫고 앱으로 돌아가 주세요.",

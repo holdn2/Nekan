@@ -171,3 +171,50 @@ export function moveToTop(id: string, quadrant: Place): void {
 
 /** Back to the dump, which also takes its board away again. */
 export const unfileTask = (id: string) => moveToTop(id, INBOX);
+
+/**
+ * Permanent for the person, a tombstone in the file.
+ *
+ * The row stays in the array with its text and memo emptied. Removing it would
+ * let another device that has not synced yet push the task straight back in --
+ * a deletion has to be something the file can state, not something it forgets.
+ */
+function tombstone(task: Task): void {
+  task.purgedAt = now();
+  task.text = "";
+  task.memo = null;
+}
+
+export function purgeTask(id: string): void {
+  const task = findTask(id);
+  if (!task) return;
+  tombstone(task);
+  commit(task);
+}
+
+/**
+ * The three that act on a whole tab.
+ *
+ * Each takes the rows the tab is already showing rather than filtering the
+ * array again. The tab has applied the active board; filtering here a second
+ * time would reach the other one, and the person would lose a list they cannot
+ * even see.
+ */
+export function trashAll(items: Task[]): void {
+  if (!items.length) return;
+  const at = now();
+  for (const t of items) t.deletedAt = at;
+  commit(...items);
+}
+
+export function untrashAll(items: Task[]): void {
+  if (!items.length) return;
+  for (const t of items) t.deletedAt = null;
+  commit(...items);
+}
+
+export function purgeAll(items: Task[]): void {
+  if (!items.length) return;
+  for (const t of items) tombstone(t);
+  commit(...items);
+}

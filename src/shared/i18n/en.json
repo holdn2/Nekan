@@ -363,7 +363,8 @@
     "pagePrev": "Previous page",
     "pageNext": "Next page",
     "pageLast": "Last page",
-    "pageNumber": "Page {{page}}"
+    "pageNumber": "Page {{page}}",
+    "confirmPurgeOne": "Delete this task forever? This cannot be undone."
   },
   "oauth": {
     "done": "Got it. You can close this tab and go back to the app.",
