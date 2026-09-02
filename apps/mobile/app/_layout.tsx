@@ -12,7 +12,8 @@ import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useColors, useThemeName } from "../theme";
-import { init } from "../store/state";
+import { init, languageChoice, redraw } from "../store/state";
+import { applyLanguage } from "../i18n";
 
 export default function RootLayout() {
   const c = useColors();
@@ -23,7 +24,14 @@ export default function RootLayout() {
   // matrix screen because the archive reads the same store, and two screens
   // racing to load one file is a bug waiting for a slow disk.
   useEffect(() => {
-    void init();
+    // The stored language cannot be read at import time -- the store loads
+    // from disk and the first screen renders before it lands -- so the device
+    // decides the first paint and this corrects it. The desktop has the same
+    // problem and solves it by handing the language to the window before it
+    // opens; a phone has no such moment.
+    void init().then(() => {
+      if (applyLanguage(languageChoice())) redraw();
+    });
   }, []);
 
   return (

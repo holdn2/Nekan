@@ -236,16 +236,17 @@
     "empty": "Empty the trash"
   },
   "settings": {
-    "title": "Settings",
-    "theme": "Theme",
-    "themeChoose": "Choose a theme",
-    "themeLight": "Light",
-    "themeDark": "Dark",
+    "close": "Close",
     "export": "Export",
     "exportShortcut": "{{mod}}+E",
-    "sync": "Sync across devices",
+    "followSystem": "System",
     "language": "Language",
-    "close": "Close"
+    "sync": "Sync across devices",
+    "theme": "Theme",
+    "themeChoose": "Choose a theme",
+    "themeDark": "Dark",
+    "themeLight": "Light",
+    "title": "Settings"
   },
   "language": {
     "ko": "한국어",
