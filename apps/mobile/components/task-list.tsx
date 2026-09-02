@@ -25,10 +25,10 @@ import {
   type LayoutChangeEvent,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, {
+import {
   runOnJS,
-  useAnimatedStyle,
   useSharedValue,
+  type SharedValue,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import type { Place, Task } from "@nekan/shared/types";
@@ -46,20 +46,44 @@ export interface Rect {
 
 export type CardRects = Partial<Record<Place, Rect>>;
 
+/**
+ * How the carried row gets drawn somewhere this list cannot reach.
+ *
+ * The panel clips its contents -- it has to, or the list spills past its
+ * rounded corner -- so a row dragged towards the quadrant grid disappeared at
+ * the panel's edge, exactly when knowing where it is matters most. The answer
+ * is to leave the row where it is, dimmed, and let the screen draw a copy that
+ * follows the finger above everything.
+ *
+ * Positions are shared values, not state: they are written on every frame from
+ * inside the gesture, and a render per frame is what this list already goes out
+ * of its way to avoid.
+ */
+export interface DragBus {
+  x: SharedValue<number>;
+  y: SharedValue<number>;
+  width: SharedValue<number>;
+  /** Which row is being carried. State, and set twice in a drag -- not a frame. */
+  show: (row: { task: Task; index: number } | null) => void;
+}
+
 interface Props {
   tasks: Task[];
   /** Where the four quadrant cards are, measured by the screen that owns them. */
   cards: CardRects;
+  drag: DragBus;
   onOpen: (task: Task) => void;
 }
 
 const hit = (r: Rect | undefined, x: number, y: number) =>
   !!r && x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height;
 
-export function TaskList({ tasks, cards, onOpen }: Props) {
+export function TaskList({ tasks, cards, drag, onOpen }: Props) {
   // Row geometry, kept in a ref rather than state: it is read during a gesture
   // and writing it would re-render the list mid-drag.
-  const rows = useRef<Record<string, { y: number; height: number }>>({});
+  const rows = useRef<
+    Record<string, { y: number; height: number; width: number }>
+  >({});
   const [heldId, setHeldId] = useState<string | null>(null);
   const [target, setTarget] = useState<{
     card: Place | null;
@@ -67,14 +91,21 @@ export function TaskList({ tasks, cards, onOpen }: Props) {
   }>({ card: null, before: null });
 
   const measure = useCallback((id: string, e: LayoutChangeEvent) => {
-    const { y, height } = e.nativeEvent.layout;
-    rows.current[id] = { y, height };
+    const { y, height, width } = e.nativeEvent.layout;
+    rows.current[id] = { y, height, width };
   }, []);
 
-  const begin = useCallback((id: string) => {
-    setHeldId(id);
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }, []);
+  const begin = useCallback(
+    (task: Task, index: number) => {
+      setHeldId(task.id);
+      // The copy is the row's width; the gesture already put it under the
+      // finger, keeping the grip it was picked up by.
+      drag.width.value = rows.current[task.id]?.width ?? 0;
+      drag.show({ task, index });
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    },
+    [drag],
+  );
 
   /** Called on every move: decide what this finger is currently over. */
   const aim = useCallback(
@@ -111,6 +142,7 @@ export function TaskList({ tasks, cards, onOpen }: Props) {
   const drop = useCallback(
     (id: string, quadrant: Place | null, moved: boolean) => {
       setHeldId(null);
+      drag.show(null);
       const aimed = target;
       setTarget({ card: null, before: null });
       // A cancelled gesture runs onEnd too, and `moved` is how the handler
@@ -127,7 +159,7 @@ export function TaskList({ tasks, cards, onOpen }: Props) {
       // null, and here that means last rather than nowhere.
       if (quadrant) moveTask(id, quadrant, aimed.before);
     },
-    [target],
+    [target, drag],
   );
 
   return (
@@ -155,8 +187,10 @@ export function TaskList({ tasks, cards, onOpen }: Props) {
             target.before === null &&
             i === tasks.length - 1
           }
+          held={heldId === task.id}
+          drag={drag}
           onLayout={(e) => measure(task.id, e)}
-          onBegin={() => begin(task.id)}
+          onBegin={() => begin(task, i)}
           onAim={(x, y, ly) => aim(task.id, x, y, ly)}
           onDrop={(moved) => drop(task.id, task.quadrant, moved)}
           onPress={() => onOpen(task)}
@@ -169,6 +203,9 @@ export function TaskList({ tasks, cards, onOpen }: Props) {
 interface RowProps {
   task: Task;
   index: number;
+  /** Carried right now: it stays put and fades, the copy does the moving. */
+  held: boolean;
+  drag: DragBus;
   markAbove: boolean;
   markBelow: boolean;
   onLayout: (e: LayoutChangeEvent) => void;
@@ -183,6 +220,8 @@ interface RowProps {
 function DraggableRow({
   task,
   index,
+  held,
+  drag,
   markAbove,
   markBelow,
   onLayout,
@@ -192,7 +231,10 @@ function DraggableRow({
   onPress,
 }: RowProps) {
   const c = useColors();
-  const dy = useSharedValue(0);
+  // Where inside the row the finger landed, so the copy keeps that grip
+  // instead of jumping its own top-left corner under the finger.
+  const grabX = useSharedValue(0);
+  const grabY = useSharedValue(0);
   // A press that turned into a drag must not also count as a tap. The row's
   // Pressable is a child of this detector and finishes its own press on
   // release, so it has to be told the gesture took over -- otherwise letting
@@ -215,37 +257,32 @@ function DraggableRow({
   const pan = Gesture.Pan()
     // The long press is the whole reason the three gestures can coexist.
     .activateAfterLongPress(220)
-    .onStart(() => {
+    .onStart((e) => {
+      grabX.value = e.x;
+      grabY.value = e.y;
+      drag.x.value = e.absoluteX - e.x;
+      drag.y.value = e.absoluteY - e.y;
       runOnJS(began)();
     })
     .onUpdate((e) => {
-      dy.value = e.translationY;
-      runOnJS(onAim)(e.absoluteX, e.absoluteY, e.y + e.translationY);
+      drag.x.value = e.absoluteX - grabX.value;
+      drag.y.value = e.absoluteY - grabY.value;
+      // The row no longer moves, so the finger's offset inside it is already
+      // in the row's own frame -- there is no translation left to add back.
+      runOnJS(onAim)(e.absoluteX, e.absoluteY, e.y);
     })
     .onEnd((_e, success) => {
-      dy.value = 0;
       runOnJS(onDrop)(success);
-    })
-    .onFinalize(() => {
-      dy.value = 0;
     });
-
-  // Both transforms belong to the same style object. Splitting the lift into
-  // a static one would silently win -- a later entry in a style array replaces
-  // `transform` outright rather than merging into it, so the row would stop
-  // following the finger and only grow.
-  const style = useAnimatedStyle(() => {
-    const lifted = dy.value !== 0;
-    return {
-      transform: [{ translateY: dy.value }, { scale: lifted ? 1.02 : 1 }],
-      opacity: lifted ? 0.92 : 1,
-      zIndex: lifted ? 1 : 0,
-    };
-  });
 
   return (
     <GestureDetector gesture={pan}>
-      <Animated.View onLayout={onLayout} style={style}>
+      {/* The row stays where it is and fades; the copy above the screen does
+          the travelling. The desktop leaves the dragged row in place at 0.4
+          for the same reason -- the gap it would leave behind is a worse
+          answer than a dimmed row, because the list stops moving under the
+          thing being aimed. */}
+      <View onLayout={onLayout} style={held ? s.held : undefined}>
         {markAbove ? (
           <View style={[s.mark, { backgroundColor: c.text }]} />
         ) : null}
@@ -253,12 +290,13 @@ function DraggableRow({
         {markBelow ? (
           <View style={[s.mark, { backgroundColor: c.text }]} />
         ) : null}
-      </Animated.View>
+      </View>
     </GestureDetector>
   );
 }
 
 const s = StyleSheet.create({
+  held: { opacity: 0.4 },
   scroll: { flex: 1 },
   inner: { paddingBottom: 4 },
   // A rule where the row will land. A hole in the list was tried first and
