@@ -13,7 +13,7 @@
  * writes -- a control that is drawn but does nothing is worse than one that is
  * not drawn yet.
  */
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Keyboard,
   Pressable,
@@ -25,7 +25,7 @@ import {
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { INBOX, SPACES, isCrowded } from "@nekan/shared/core";
-import type { Quadrant, Space, Task } from "@nekan/shared/types";
+import type { Place, Quadrant, Space, Task } from "@nekan/shared/types";
 import { AddForm } from "../../components/add-form";
 import { TaskList, type CardRects } from "../../components/task-list";
 import { CloseIcon } from "../../icons";
@@ -69,13 +69,19 @@ export default function MatrixScreen() {
   };
 
   const measureCard = useCallback(
-    (q: Quadrant) => (e: LayoutChangeEvent) => {
+    (place: Place) => (e: LayoutChangeEvent) => {
       e.target.measureInWindow((x, y, width, height) => {
-        cards.current[q] = { x, y, width, height };
+        cards.current[place] = { x, y, width, height };
       });
     },
     [],
   );
+
+  // The strip below only exists while a quadrant is open, and a rectangle left
+  // behind would go on claiming that part of the screen.
+  useEffect(() => {
+    if (!open) delete cards.current[INBOX];
+  }, [open]);
 
   return (
     <SafeAreaView style={[s.root, { backgroundColor: c.bg }]} edges={["top"]}>
@@ -135,6 +141,29 @@ export default function MatrixScreen() {
               </Text>
             )}
           </View>
+
+          {/* Filing is one-way without this. A task typed into the dump goes
+              down into a quadrant and, until now, could never come back: the
+              four cards were the only things a drag could aim at and the
+              detail screen only offered the other three quadrants. So the dump
+              stays on screen while a quadrant is open -- as a line to drag up
+              to, which is what the desktop's collapsed dump is. */}
+          {open ? (
+            <View
+              onLayout={measureCard(INBOX)}
+              style={[
+                s.unfile,
+                { borderColor: c.line, backgroundColor: c["panel-2"] },
+              ]}
+            >
+              <Text style={[s.unfileText, { color: c.faint }]}>
+                {t("matrix.unfile")}
+              </Text>
+              <Text style={[s.unfileCount, { color: c.faint }]}>
+                {inboxTasks().length}
+              </Text>
+            </View>
+          ) : null}
 
           {/* Keyed by which list it is, so swapping one for the other is a
               new element fading in rather than the same one changing its
@@ -270,6 +299,21 @@ const s = StyleSheet.create({
     paddingTop: SP["4xl"],
     paddingBottom: SP.xl,
   },
+  // A line rather than a card: it is somewhere to let go of a row, not
+  // somewhere to look at. The count is what says the dump is still there.
+  unfile: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginHorizontal: SP["4xl"],
+    marginBottom: SP.md,
+    paddingHorizontal: SP.xl,
+    paddingVertical: SP.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: R.md,
+  },
+  unfileText: { fontSize: FS.xs },
+  unfileCount: { fontSize: FS.xs, fontVariant: ["tabular-nums"] },
   panelTitle: { fontSize: FS.lg, fontWeight: FW.semibold, flexShrink: 1 },
   shared: { fontSize: FS.xs },
   emptyBox: {
