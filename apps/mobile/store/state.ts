@@ -72,6 +72,52 @@ export const currentSpace = () => activeSpace;
 /** Read-only view of the array, for selectors in this folder only. */
 export const allTasks = (): readonly Task[] => tasks;
 
+/**
+ * The two settings the person picks rather than the board decides.
+ *
+ * Both are per-device and neither travels: the desktop keeps `settings.theme`
+ * and `settings.language` out of sync for the same reason, which is that a
+ * laptop in a bright room and a phone in bed are not obliged to agree.
+ *
+ * `null` means "whatever the device says". That is the honest third state --
+ * not a default that was chosen, but the absence of a choice, which is what
+ * a fresh install has and what "follow the system" goes on meaning after the
+ * system changes its mind.
+ */
+/**
+ * Ask every screen to draw again for something that is not a task.
+ *
+ * The language is the one such thing so far: it lives in i18next rather than
+ * here, but the screens subscribed to this store are the ones with words on
+ * them, so this is where "everything changed" gets said.
+ */
+export const redraw = (): void => notify();
+
+export type ThemeChoice = "light" | "dark" | null;
+
+const asTheme = (v: unknown): ThemeChoice =>
+  v === "light" || v === "dark" ? v : null;
+
+export const themeChoice = (): ThemeChoice => asTheme(settings.theme);
+
+export function setThemeChoice(choice: ThemeChoice): void {
+  if (asTheme(settings.theme) === choice) return;
+  settings = { ...settings, theme: choice };
+  notify();
+  void persist();
+}
+
+/** `null` means the device's language, the same way as the theme above. */
+export const languageChoice = (): string | null =>
+  typeof settings.language === "string" ? settings.language : null;
+
+export function setLanguageChoice(lang: string | null): void {
+  if (languageChoice() === lang) return;
+  settings = { ...settings, language: lang };
+  notify();
+  void persist();
+}
+
 export function setSpace(space: Space): void {
   if (space === activeSpace) return;
   activeSpace = space;

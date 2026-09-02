@@ -11,6 +11,8 @@
  * colour changed in theme.ts shows up in both without being typed twice.
  */
 import { useColorScheme } from "react-native";
+import { themeChoice } from "./store/state";
+import { useStore } from "./store/use-store";
 import {
   FONT_SIZE,
   FONT_WEIGHT,
@@ -24,9 +26,19 @@ import {
 
 export type Colors = Record<ColorRole, string>;
 
-/** The phone's setting, defaulting the way the desktop does when unset. */
+/**
+ * The stored choice, or the device when there is none.
+ *
+ * Reading the device is the fallback rather than the rule: the system decides
+ * the first launch and nothing after it, which is what "follow the system"
+ * has to mean for a setting a person can then change. `useStore` is what
+ * makes the change land -- the choice lives in the store, so every screen
+ * already listening for a task redraws for a colour too.
+ */
 export function useThemeName(): ThemeName {
-  return useColorScheme() === "dark" ? "dark" : "light";
+  useStore();
+  const device = useColorScheme() === "dark" ? "dark" : "light";
+  return themeChoice() ?? device;
 }
 
 export function useColors(): Colors {

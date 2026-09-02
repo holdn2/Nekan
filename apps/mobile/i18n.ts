@@ -7,10 +7,16 @@
  * renderer, and this -- because the processes cannot share one instance; what
  * they share is `src/shared/i18n/`, and that is the part that must not drift.
  *
- * The language is read from the device rather than stored, for now. A picker
- * belongs with the settings screen, and `settings.language` is per-device on
- * the desktop too -- it does not arrive over sync, so nothing is lost by
- * deciding it here until that screen exists.
+ * The language starts as the device's and can then be chosen. The device is
+ * the fallback rather than the rule, because "follow the system" has to go on
+ * meaning that after the system changes its mind. It is per-device -- it does
+ * not travel over sync, the same as on the desktop.
+ *
+ * This file cannot read the store at import time: the store loads from disk
+ * and that is async, while the first screen renders before it finishes. So the
+ * device decides the first paint and `applyLanguage` corrects it once the file
+ * is in -- which is the same shape as the desktop's problem, solved there by
+ * handing the language to the window before it opens.
  */
 import i18next from "i18next";
 import { getLocales } from "expo-localization";
@@ -49,3 +55,33 @@ export const t = (key: string, vars?: Record<string, unknown>): string =>
  * answer to "what language is this" and not two that can disagree.
  */
 export const locale = (): string => i18next.language || "en";
+
+/**
+ * Switch, or go back to following the device.
+ *
+ * Returns whether anything changed, so the caller can decide to redraw. It
+ * does not redraw by itself: i18next is not the store, and a screen that
+ * re-renders for a language is one that was already listening for a task.
+ */
+export function applyLanguage(choice: string | null): boolean {
+  const next = choice ?? pickLanguage(getLocales()[0]?.languageTag);
+  if (next === i18next.language) return false;
+  void i18next.changeLanguage(next);
+  return true;
+}
+
+/**
+ * The same string with its emphasis removed.
+ *
+ * A handful of catalogue entries carry `<b>`, `<em>` or `<code>`; the renderer
+ * parses those into nodes. Nothing here does, and a phone screen showing a
+ * literal `<b>` is worse than one that has lost a bold word -- so the guide,
+ * which is where those entries live, asks for the words without them. When
+ * this app grows a rich-text component the parsing belongs there, not here.
+ */
+export const plain = (key: string, vars?: Record<string, unknown>): string =>
+  t(key, vars).replace(new RegExp("</?(b|em|code)>", "g"), "");
+
+/** What the device would say, for the "system" option to name it. */
+export const deviceLanguage = (): string =>
+  pickLanguage(getLocales()[0]?.languageTag);
