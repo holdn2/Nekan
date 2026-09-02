@@ -10,7 +10,9 @@
  * system changing its mind, so it is stored as `null` rather than resolved
  * once and written down.
  */
+import { useState } from "react";
 import {
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -23,6 +25,7 @@ import { router } from "expo-router";
 import { ChevronIcon } from "../../icons";
 import { SUPPORTED } from "@nekan/shared/i18n/locales";
 import { applyLanguage, t } from "../../i18n";
+import { exportBoard, type Format } from "../../export";
 import { FS, FW, R, SP, useColors } from "../../theme";
 import {
   languageChoice,
@@ -80,6 +83,25 @@ function Choices<T extends string | null>({
 export default function SettingsScreen() {
   const c = useColors();
   useStore();
+  // Building the document and writing it takes long enough on a big board to
+  // press twice, and two share sheets is a state nothing recovers from well.
+  const [busy, setBusy] = useState(false);
+
+  const send = async (format: Format) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (!(await exportBoard(format))) {
+        Alert.alert("", t("settings.exportUnavailable"));
+      }
+    } catch {
+      // The person asked for a file and did not get one; which library gave
+      // up on the way is not something they can act on.
+      Alert.alert("", t("settings.exportFailed"));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <SafeAreaView style={[s.root, { backgroundColor: c.bg }]} edges={["top"]}>
@@ -114,6 +136,31 @@ export default function SettingsScreen() {
             })),
           ]}
         />
+        <View style={s.block}>
+          <Text style={[s.label, { color: c.muted }]}>
+            {t("settings.export")}
+          </Text>
+          <View style={s.row}>
+            {(["pdf", "html", "md"] as Format[]).map((f) => (
+              <Pressable
+                key={f}
+                onPress={() => send(f)}
+                disabled={busy}
+                style={[
+                  s.format,
+                  { borderColor: c.line, backgroundColor: c.panel },
+                  busy ? s.off : null,
+                ]}
+                accessibilityRole="button"
+              >
+                <Text style={[s.formatText, { color: c.text }]}>
+                  {f.toUpperCase()}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
         {/* A route rather than a section here: the guide is a document, and
             one that can be left reads better than one that pushes the settings
             it was opened from off the bottom. */}
@@ -161,4 +208,14 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   linkText: { fontSize: FS.md, fontWeight: FW.medium },
+  row: { flexDirection: "row", gap: SP.md },
+  format: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: SP.lg,
+    borderRadius: R.md,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  off: { opacity: 0.4 },
+  formatText: { fontSize: FS.sm, fontWeight: FW.semibold },
 });

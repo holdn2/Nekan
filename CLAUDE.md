@@ -828,8 +828,18 @@ then "draft" else "published" end` (실측: `v1.0.1 -> draft`, `v1.0.0 -> publis
 apps/mobile/
   app/            expo-router의 파일 라우팅
     _layout.tsx     GestureHandlerRootView · SafeAreaProvider · 보드를 한 번 읽는다
-    (tabs)/         매트릭스 · 보관함 · 설정 (보관함·설정은 아직 껍데기)
+                    저장된 언어를 여기서 적용한다 — 첫 페인트는 스토어보다 빠르다
+    (tabs)/         매트릭스 · 보관함 · 설정
     task/[id].tsx   상세. 라우트인 이유는 위젯이 언젠가 할 일을 직접 열어야 해서다
+    guide.tsx       가이드. **데스크톱 가이드를 옮긴 것이 아니다** — 그쪽은 바 모드·
+                    창 크기·단축키를 설명하는데 폰에는 셋 다 없다. 공유하는 것은
+                    `guide.q1`~`q4` 넷뿐이고(분면의 뜻은 화면과 무관하다),
+                    그 문장에 `<b>`가 있어서 `i18n.ts`의 `plain()`이 떼어낸다
+  export.ts       내보내기. 파일 저장이 아니라 **공유 시트**다 — 폰에는 "어디에
+                  저장"이 뜻을 갖는 자리가 없다. 문서는 `shared/export`로 만들어서
+                  데스크톱과 같은 파일이 나온다. PDF는 `expo-print`가 HTML을 찍는다.
+                  **글꼴을 박지 않는다**: 데스크톱은 지워질 임시 파일이라 `file://`로
+                  가리킬 수 있지만, 이 파일은 곧 남에게 건네진다
   store/          state · selectors · mutations · persist · use-store
   components/     add-form · task-row · task-list(드래그가 여기 산다)
   theme.ts        PALETTE와 스케일을 읽어 RN 스타일로. **색도 크기도 한 줄도 새로 적지
@@ -905,6 +915,11 @@ npm은 lock을 믿는다. 그리고 **lock을 통째로 재생성하면 데스�
 `npx expo export`는 전역 CLI를 잡고 **1,500개를 다 묶은 뒤에** 자기 폴리필을
 `D:\C:\Users\...` 같은 경로에서 찾다가 죽는다. 타입검사는 이걸 못 잡는다:
 import 경로가 틀려도 `tsc`는 통과하고 Metro만 죽는다.
+
+**타입 라우트는 개발 서버만 다시 쓴다.** `apps/mobile/.expo/types/router.d.ts`는
+`expo start`가 만들고 **`expo export`는 건드리지 않는다.** 새 라우트를 만든 뒤
+`mobile:typecheck`가 `"/guide"를 모른다`고 하면 코드가 아니라 **그 파일이 낡은 것**이다 —
+개발 서버를 잠깐 띄웠다 끄면 갱신된다(**PID로 종료할 것**).
 
 **`LayoutAnimation`은 New Architecture에서 no-op이다.** 덜 되는 것이 아니라 아무 일도 안 한다 —
 애니메이션은 Reanimated로 쓴다. 그리고 **RN의 점선은 dash 길이를 border width에서 계산한다**:

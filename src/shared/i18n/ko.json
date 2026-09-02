@@ -255,7 +255,9 @@
   "settings": {
     "close": "닫기",
     "export": "내보내기",
+    "exportFailed": "내보내기에 실패했습니다. 다시 시도해 주세요.",
     "exportShortcut": "{{mod}}+E",
+    "exportUnavailable": "이 기기에서는 공유를 쓸 수 없습니다.",
     "followSystem": "시스템 설정",
     "language": "언어",
     "sync": "기기 간 동기화",
