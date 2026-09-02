@@ -67,6 +67,20 @@ function tokens(file, prefix) {
  */
 const PHONE_PROPS = ["fontSize", "borderRadius"];
 
+/**
+ * Whitespace-blind on purpose.
+ *
+ * A first version matched the exact string `fontSize: ` and read one line at a
+ * time, which meant `fontSize:15` and a value Prettier had wrapped onto the
+ * next line both walked straight past it. A gate that only holds while the
+ * formatter agrees with it is not a gate -- and the whole point of this one is
+ * that React Native will not complain on its own.
+ */
+const LITERAL = new RegExp(
+  String.raw`\b(${PHONE_PROPS.join("|")})\s*:\s*-?\d`,
+  "g",
+);
+
 function phoneLiterals() {
   const found = [];
   const walk = (dir) => {
@@ -78,19 +92,14 @@ function phoneLiterals() {
         continue;
       }
       if (!/\.tsx?$/.test(e.name)) continue;
-      const lines = fs.readFileSync(full, "utf8").split("\n");
-      lines.forEach((line, i) => {
-        for (const prop of PHONE_PROPS) {
-          const at = line.indexOf(`${prop}: `);
-          if (at === -1) continue;
-          const rest = line.slice(at + prop.length + 2);
-          if (!/^\d/.test(rest)) continue;
-          found.push(
-            `${path.relative(ROOT, full).split(path.sep).join("/")}:${i + 1}` +
-              ` writes ${prop} as a number, not a step`,
-          );
-        }
-      });
+      const src = fs.readFileSync(full, "utf8");
+      for (const m of src.matchAll(LITERAL)) {
+        const line = src.slice(0, m.index).split("\n").length;
+        found.push(
+          `${path.relative(ROOT, full).split(path.sep).join("/")}:${line}` +
+            ` writes ${m[1]} as a number, not a step`,
+        );
+      }
     }
   };
   const app = path.join(ROOT, "apps", "mobile");
@@ -99,13 +108,16 @@ function phoneLiterals() {
 }
 
 function main() {
-  let scale;
-  try {
-    scale = require(path.join(ROOT, "out", "shared", "theme.js"));
-  } catch {
+  // Skip only when the build has genuinely not run. A `try` around the
+  // `require` itself would swallow a broken or half-written theme.js as well
+  // and report success -- a checker that passes when it could not read its own
+  // input is worse than no checker, because the green line says it looked.
+  const theme = path.join(ROOT, "out", "shared", "theme.js");
+  if (!fs.existsSync(theme)) {
     console.log("check-scale: out/shared/theme.js is not built yet, skipping");
     return 0;
   }
+  const scale = require(theme);
 
   const problems = [];
   let checked = 0;

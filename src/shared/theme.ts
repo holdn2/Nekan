@@ -26,8 +26,10 @@
  * Salt and pepper, extended.
  *
  * The four colours of the reference palette are anchors and appear exactly:
- * `#ffffff` (N00), `#d4d4d4` (N03), `#b3b3b3` (N05), `#2b2b2b` (N13). The rest
- * fill in around them.
+ * `#ffffff` (N00), `#d4d4d4` (N04), `#b3b3b3` (N06), `#2b2b2b` (N14). The rest
+ * fill in around them. Those numbers are the ones after the shift described
+ * below -- this list carried the old ones for a while, three lines above the
+ * paragraph explaining that they had moved.
  *
  * The steps are not evenly spaced and should not be. A UI does not spend greys
  * evenly: four surfaces and two borders crowd the light end, three carry text

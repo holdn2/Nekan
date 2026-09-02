@@ -30,7 +30,7 @@ import { INBOX, QUADS, dueInfo, formatDue } from "@nekan/shared/core";
 import type { Quadrant } from "@nekan/shared/types";
 import { CloseIcon } from "../../icons";
 import { locale, t } from "../../i18n";
-import { FS, FW, R, SP, useColors } from "../../theme";
+import { FS, FW, LH, R, SP, useColors } from "../../theme";
 import { findTask } from "../../store/state";
 import { useStore } from "../../store/use-store";
 import {
@@ -231,7 +231,13 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     padding: SP["3xl"],
     fontSize: FS.xl,
-    ...Platform.select({ ios: { lineHeight: 22 }, default: {} }),
+    // iOS needs this said out loud for a multiline field; Android measures it
+    // for itself and setting it there crops the text. The number comes from
+    // the scale either way.
+    ...Platform.select({
+      ios: { lineHeight: FS.xl * LH.snug },
+      default: {},
+    }),
   },
   label: { fontSize: FS.sm, fontWeight: FW.semibold, marginTop: SP.lg },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: SP.md },
