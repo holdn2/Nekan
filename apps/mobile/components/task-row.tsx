@@ -33,7 +33,8 @@ import { completeTask, deleteTask } from "../store/mutations";
 
 interface Props {
   task: Task;
-  first: boolean;
+  /** Zero-based; the row shows it one-based, the way the desktop does. */
+  index: number;
   onPress: () => void;
   onLongPress?: () => void;
 }
@@ -69,7 +70,7 @@ function DeleteAction({
 
 const ACTION_WIDTH = 88;
 
-export function TaskRow({ task, first, onPress, onLongPress }: Props) {
+export function TaskRow({ task, index, onPress, onLongPress }: Props) {
   const c = useColors();
   const inDump = task.quadrant === INBOX;
   const info = dueInfo(task.dueDate, new Date());
@@ -91,12 +92,16 @@ export function TaskRow({ task, first, onPress, onLongPress }: Props) {
         onPress={onPress}
         onLongPress={onLongPress}
         delayLongPress={220}
-        style={[
+        // Pressed rather than a rule between rows. The desktop draws no
+        // separator either -- a row is a block that lights up when the pointer
+        // is over it, and the phone's equivalent of that is the touch.
+        style={({ pressed }) => [
           s.row,
-          { backgroundColor: c.panel, borderTopColor: c.line },
-          first && s.first,
+          { backgroundColor: pressed ? c["panel-2"] : c.panel },
         ]}
       >
+        <Text style={[s.num, { color: c.faint }]}>{index + 1}.</Text>
+
         {inDump ? null : (
           <Pressable
             onPress={() => completeTask(task.id)}
@@ -138,12 +143,23 @@ const s = StyleSheet.create({
     gap: SP.xl,
     paddingHorizontal: SP["4xl"],
     paddingVertical: SP.xl,
-    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  first: { borderTopWidth: 0 },
+  // The digits form a column, so they are right-aligned and tabular.
+  num: {
+    minWidth: 15,
+    textAlign: "right",
+    fontSize: FS.xs,
+    lineHeight: FS.xs * LH.relaxed,
+    fontVariant: ["tabular-nums"],
+  },
   // The desktop sets `leading-snug` on this text and nothing else does;
   // RN has no ratio, so it is multiplied out here.
-  text: { flex: 1, fontSize: FS.lg, lineHeight: FS.lg * LH.snug },
+  text: {
+    flex: 1,
+    fontSize: FS.lg,
+    lineHeight: FS.lg * LH.snug,
+    fontWeight: FW.light,
+  },
   due: {
     fontSize: FS.xs,
     paddingHorizontal: SP.md,

@@ -145,7 +145,7 @@ export function TaskList({ tasks, cards, onOpen }: Props) {
         <DraggableRow
           key={task.id}
           task={task}
-          first={i === 0}
+          index={i}
           markAbove={
             heldId !== null && target.card === null && target.before === task.id
           }
@@ -168,7 +168,7 @@ export function TaskList({ tasks, cards, onOpen }: Props) {
 
 interface RowProps {
   task: Task;
-  first: boolean;
+  index: number;
   markAbove: boolean;
   markBelow: boolean;
   onLayout: (e: LayoutChangeEvent) => void;
@@ -182,7 +182,7 @@ interface RowProps {
 
 function DraggableRow({
   task,
-  first,
+  index,
   markAbove,
   markBelow,
   onLayout,
@@ -249,7 +249,7 @@ function DraggableRow({
         {markAbove ? (
           <View style={[s.mark, { backgroundColor: c.text }]} />
         ) : null}
-        <TaskRow task={task} first={first} onPress={press} />
+        <TaskRow task={task} index={index} onPress={press} />
         {markBelow ? (
           <View style={[s.mark, { backgroundColor: c.text }]} />
         ) : null}

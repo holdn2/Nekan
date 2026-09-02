@@ -39,5 +39,5 @@ const s = StyleSheet.create({
   },
   tab: { paddingVertical: SP.xl, fontSize: FS.lg, fontWeight: FW.semibold },
   on: { borderBottomWidth: 2 },
-  empty: { padding: SP["4xl"], fontSize: FS.md },
+  empty: { padding: SP["4xl"], fontSize: FS.xs },
 });

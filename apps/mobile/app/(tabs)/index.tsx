@@ -278,7 +278,7 @@ const s = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: SP["4xl"],
   },
-  empty: { fontSize: FS.md, textAlign: "center" },
+  empty: { fontSize: FS.xs, textAlign: "center" },
   list: { flex: 1 },
   listInner: { paddingBottom: SP.xl },
   row: {
