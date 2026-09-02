@@ -26,8 +26,10 @@
  * Salt and pepper, extended.
  *
  * The four colours of the reference palette are anchors and appear exactly:
- * `#ffffff` (N00), `#d4d4d4` (N03), `#b3b3b3` (N05), `#2b2b2b` (N13). The rest
- * fill in around them.
+ * `#ffffff` (N00), `#d4d4d4` (N04), `#b3b3b3` (N06), `#2b2b2b` (N14). The rest
+ * fill in around them. Those numbers are the ones after the shift described
+ * below -- this list carried the old ones for a while, three lines above the
+ * paragraph explaining that they had moved.
  *
  * The steps are not evenly spaced and should not be. A UI does not spend greys
  * evenly: four surfaces and two borders crowd the light end, three carry text
@@ -333,3 +335,71 @@ export const SHADOW: Record<ThemeName, Record<ShadowRole, string>> = {
 };
 
 export const THEMES: readonly ThemeName[] = ["light", "dark"];
+
+/**
+ * The scale: everything that is a size rather than a colour.
+ *
+ * Here for the same reason the palette is -- more than one screen has to read
+ * it, and a number typed twice is a number that drifts. The desktop reaches
+ * these through CSS custom properties (`--sp-*`, `--fs-*`, `--radius-*`) and
+ * the phone imports them directly, because React Native has no cascade to
+ * inherit a value through.
+ *
+ * `tools/check-scale.js` holds the two ends together: it reads the built CSS
+ * and fails if a number here and the same-named token there disagree. The
+ * desktop's stylesheets stay where they are -- the radius steps in particular
+ * live in `@theme static` for a reason that has nothing to do with this file
+ * (see the note on that block) and moving them would break it.
+ *
+ * Every value is pixels except the weights, which are unitless, and the line
+ * heights, which are ratios.
+ */
+export const SPACING = {
+  hair: 1,
+  "2xs": 2,
+  xs: 4,
+  sm: 6,
+  md: 8,
+  lg: 10,
+  xl: 12,
+  "2xl": 14,
+  "3xl": 16,
+  "4xl": 20,
+  "5xl": 24,
+  "6xl": 32,
+  "7xl": 40,
+} as const;
+
+/** `panel` is the odd name: Tailwind takes a bare `--radius` for itself. */
+export const RADIUS = {
+  xs: 4,
+  sm: 6,
+  md: 8,
+  panel: 10,
+  lg: 12,
+  pill: 999,
+} as const;
+
+export const FONT_SIZE = {
+  xs: 11,
+  sm: 12,
+  md: 13,
+  lg: 14,
+  xl: 16,
+  "2xl": 18,
+  "3xl": 20,
+} as const;
+
+export const FONT_WEIGHT = {
+  light: 300,
+  normal: 400,
+  medium: 500,
+  semibold: 600,
+} as const;
+
+export const LINE_HEIGHT = {
+  none: 1,
+  snug: 1.45,
+  normal: 1.55,
+  relaxed: 1.65,
+} as const;

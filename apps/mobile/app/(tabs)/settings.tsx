@@ -9,7 +9,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../../i18n";
-import { SP, useColors } from "../../theme";
+import { FS, FW, R, SP, useColors } from "../../theme";
 
 const ROWS = [
   "settings.theme",
@@ -45,22 +45,22 @@ export default function SettingsScreen() {
 const s = StyleSheet.create({
   root: { flex: 1 },
   title: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: FS["3xl"],
+    fontWeight: FW.semibold,
     paddingHorizontal: SP["4xl"],
     paddingTop: SP["4xl"],
     paddingBottom: SP.xl,
   },
   card: {
     marginHorizontal: SP["4xl"],
-    borderRadius: 14,
+    borderRadius: R.lg,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
   row: {
     paddingHorizontal: SP["4xl"],
     paddingVertical: SP["3xl"],
-    fontSize: 15,
+    fontSize: FS.lg,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   first: { borderTopWidth: 0 },

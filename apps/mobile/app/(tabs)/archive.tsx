@@ -8,7 +8,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../../i18n";
-import { SP, useColors } from "../../theme";
+import { FS, FW, SP, useColors } from "../../theme";
 
 export default function ArchiveScreen() {
   const c = useColors();
@@ -37,7 +37,7 @@ const s = StyleSheet.create({
     paddingHorizontal: SP["4xl"],
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  tab: { paddingVertical: SP.xl, fontSize: 15, fontWeight: "600" },
+  tab: { paddingVertical: SP.xl, fontSize: FS.lg, fontWeight: FW.semibold },
   on: { borderBottomWidth: 2 },
-  empty: { padding: SP["4xl"], fontSize: 13 },
+  empty: { padding: SP["4xl"], fontSize: FS.xs },
 });
