@@ -9,12 +9,27 @@
     "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.makersfarm.nekan",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "icon": "./assets/icon.png"
     },
     "android": {
-      "package": "com.makersfarm.nekan"
+      "package": "com.makersfarm.nekan",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#e9e9e9"
+      }
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      "expo-web-browser",
+      [
+        "expo-speech-recognition",
+        {
+          "speechRecognitionPermission": "Nekan uses speech recognition to turn what you say into a task.",
+          "microphonePermission": "Nekan uses the microphone to hear a new task."
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     },
@@ -23,6 +38,15 @@
     },
     "updates": {
       "fallbackToCacheTimeout": 0
+    },
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#e9e9e9",
+      "dark": {
+        "backgroundColor": "#2b2b2b"
+      }
     }
   }
 }
