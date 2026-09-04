@@ -78,11 +78,21 @@ async function pkcePair(): Promise<{ verifier: string; challenge: string }> {
   return { verifier, challenge };
 }
 
-/** The `code` Supabase appended to the redirect, or null if it did not. */
+/**
+ * The `code` Supabase appended to the redirect, or null if it did not.
+ *
+ * The fragment comes off first, and that is not tidiness. Supabase ends the
+ * redirect with a bare `#` -- `nekan://auth?code=<uuid>#` -- and a parser that
+ * only splits on `?` and `&` reads that hash as the last character of the
+ * code. The exchange then fails with `flow_state_not_found`, which reads like
+ * an expired or replayed login rather than a code with one character too many.
+ */
 function codeFrom(url: string): string | null {
-  const at = url.indexOf("?");
+  const hash = url.indexOf("#");
+  const query = hash === -1 ? url : url.slice(0, hash);
+  const at = query.indexOf("?");
   if (at === -1) return null;
-  for (const pair of url.slice(at + 1).split("&")) {
+  for (const pair of query.slice(at + 1).split("&")) {
     const [key, value] = pair.split("=");
     if (key === "code") return decodeURIComponent(value ?? "");
   }
