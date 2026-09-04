@@ -10,14 +10,19 @@
     "ios": {
       "bundleIdentifier": "com.makersfarm.nekan",
       "supportsTablet": false,
-      "icon": "./assets/icon.png"
+      "icon": "./assets/icon.png",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Nekan uses speech recognition to turn what you say into a task.",
+        "NSMicrophoneUsageDescription": "Nekan uses the microphone to hear a new task."
+      }
     },
     "android": {
       "package": "com.makersfarm.nekan",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#e9e9e9"
-      }
+      },
+      "permissions": ["android.permission.RECORD_AUDIO"]
     },
     "plugins": [
       "expo-router",
@@ -47,6 +52,13 @@
       "dark": {
         "backgroundColor": "#2b2b2b"
       }
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0cab499c-a177-4212-b600-7bafabeb61bc"
+      }
+    },
+    "owner": "holdn2"
   }
 }

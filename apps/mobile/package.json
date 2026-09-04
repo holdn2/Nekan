@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "babel-preset-expo": "~54.0.12",
-    "eas-cli": "^16.0.0",
+    "eas-cli": "^23.2.0",
     "typescript": "~5.9.2"
   }
 }
