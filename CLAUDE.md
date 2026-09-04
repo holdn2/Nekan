@@ -841,7 +841,16 @@ apps/mobile/
                   **글꼴을 박지 않는다**: 데스크톱은 지워질 임시 파일이라 `file://`로
                   가리킬 수 있지만, 이 파일은 곧 남에게 건네진다
   store/          state · selectors · mutations · persist · use-store
-  components/     add-form · task-row · task-list(드래그가 여기 산다)
+  api/            http · session · tokens · sign-in · account
+                  데스크톱 `main/api/`의 짝이다. **토큰은 `data.json`이 아니라
+                  `expo-secure-store`에 있다**(`tokens.ts`, 키 `nekan.session`) —
+                  보드는 사람이 복사해 다닐 문서이고 자격증명은 아니다.
+                  갱신 세 규칙(먼저 저장 · 단일 비행 · `stillOurs()`)은 데스크톱과 같다
+  sync/           transfer(pull·push) · loop(일정) + test/
+                  **`npm test`가 덮는 폰 코드는 지금 여기뿐이다.** 이 앱에서
+                  데이터를 잃을 수 있는 경로라서 먼저 붙였다 — 반쪽만 보낸 push가
+                  워터마크를 옮기면 나머지는 영영 안 올라간다
+  components/     add-form · task-row · task-list(드래그가 여기 산다) · account
   theme.ts        PALETTE와 스케일을 읽어 RN 스타일로. **색도 크기도 한 줄도 새로 적지
                   않는다** — `SP`·`R`·`FS`·`FW`가 `@nekan/shared/theme`의 재수출이다.
                   폰이 데스크톱보다 큰 단계를 골라 쓸 수는 있지만 단계 **밖의 값은 쓰지
@@ -1119,8 +1128,9 @@ hairline이면 점이 선처럼 보인다.
 돌릴 것). `node --test`가 `out/test/`의 237개로 `src/shared/`의 순수
 함수를 덮고 — 데이터가 날아가는 규칙(정규화 기본값, quadrant 유효성, temp+rename 저장, 손상
 파일 폴백)이 거기 있으니 그 파일들을 건드렸으면 반드시 돌린다 — 이어서 `vitest run`이
-**React로 옮긴 렌더러 조각** 151개(파일 27)를 덮는다. **이 숫자는 자주 바뀐다** — 믿지 말고
-`npm test`의 마지막 줄을 볼 것.
+**프로젝트 둘**을 돈다 — `renderer`가 React로 옮긴 조각들을, `mobile`이 폰의 동기화를.
+합쳐 163개(파일 28)다. **이 숫자는 자주 바뀐다** — 믿지 말고 `npm test`의 마지막 줄을 볼 것.
+**한 프로젝트만 돌리려면 `npx vitest run --project mobile`.**
 
 **러너가 둘인 이유**: 번들러가 생기면서 렌더러가 **Node가 require할 수 있는 파일로 존재하지
 않게 됐다.** Vite가 한 덩어리로 묶으니 모듈 단위로 import할 것이 없다. vitest는 그 Vite 파이프라인을
@@ -1128,8 +1138,17 @@ hairline이면 점이 선처럼 보인다.
 두지 않아도 된다. 설정은 `vitest.config.mts`, 헬퍼는 `src/renderer/react/testing.tsx`
 (`mount` · `flush` · `find` · `hidden`).
 
+**폰이 셋째 러너가 아니라 vitest의 둘째 프로젝트인 이유**도 같다: 그 파일들도 Node가 그냥
+require할 수 없다(`@nekan/shared/*`가 소스를 가리킨다). 셋째 invocation을 `npm test`에
+더하면 언젠가 그것만 빼고 돌리는 사람이 생긴다. **두 프로젝트를 가르는 것은 확장자다** —
+`renderer`는 `**/*.test.tsx`, `mobile`은 `**/test/*.test.ts`. 폰 테스트를 `.tsx`로 만들면
+렌더러 프로젝트가 집어가서 happy-dom에서 돈다.
+**폰 쪽에서 유일하게 목으로 바꾸는 것은 `store/persist`다** — 기기에 닿는 모듈이 그거
+하나이고, 스토어·병합·정규화는 실제로 나가는 코드를 그대로 돌린다.
+
 **테스트는 자기가 덮는 코드 옆, 그 폴더의 `test/`에 둔다** — 렌더러도(`views/test/` ·
-`components/test/`) 나머지도(`shared/core/test/` · `main/test/`) 같다. 렌더러 쪽은 진입점이
+`components/test/`) 폰도(`apps/mobile/sync/test/`) 나머지도(`shared/core/test/` ·
+`main/test/`) 같다. 렌더러 쪽은 진입점이
 `index.html`이라 거기서 닿지 않는 파일이 **번들에 들어가지 않는다** — 확인했다.
 vitest의 `include`는 `**/*.test.tsx`라 폴더가 깊어져도 그대로 걸린다.
 

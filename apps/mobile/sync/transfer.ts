@@ -57,11 +57,13 @@ export async function pull(
 
     const rows = Array.isArray(res.body) ? res.body : [];
     if (rows.length) {
-      // Taken before the merge: an edit that had not left this device yet and
-      // then lost to the server's version is exactly "what I wrote is gone",
-      // and it is the one sync failure a person can neither see nor undo.
-      // Network trouble stays silent because there is nothing to do about it.
-      // This does not.
+      // Taken before the store is replaced -- `setTasks` is the line this has
+      // to come first of, not the merge, which returns a new array and leaves
+      // the store alone. An edit that had not left this device yet and then
+      // lost to the server's version is exactly "what I wrote is gone", and it
+      // is the one sync failure a person can neither see nor undo. Network
+      // trouble stays silent because there is nothing to do about it. This
+      // does not.
       const unsent = new Set(
         unsentChanges(allTasks() as Task[], watermark).map((t) => String(t.id)),
       );
