@@ -9,6 +9,7 @@
  * now and then, in a way nobody can reproduce.
  */
 
+import { app } from "electron";
 import { getAccessToken, getPublicSession } from "../api-client";
 import { getStore, persist } from "../store";
 import { pull, push } from "./transfer";
@@ -30,6 +31,14 @@ const IDLE_MS = 60_000;
 const RETRY_MS = [5000, 20_000, 60_000, 300_000];
 /** How often the cursor is thrown away and everything read back. See reconcile. */
 const RECONCILE_MS = 6 * 60 * 60 * 1000;
+/**
+ * How recently a run has to have happened for coming back to be ignored.
+ *
+ * Restoring a minimised window fires focus twice within milliseconds, and
+ * alt-tabbing through a few windows fires it once each. Without this, a person
+ * moving between windows would sync on every hop.
+ */
+const WAKE_GAP_MS = SOON_MS;
 
 let timer: ReturnType<typeof setTimeout> | null = null;
 let running = false;
@@ -37,6 +46,8 @@ let failures = 0;
 let reconciledAt = 0;
 /** A save that arrived mid-run, whose rows this run had already read past. */
 let dirty = false;
+/** When the last run finished. Read by wake(), which see. */
+let ranAt = 0;
 
 /* ---------------------------------------------------------------- the loop */
 
@@ -127,6 +138,7 @@ async function runSync() {
     return backOff();
   } finally {
     running = false;
+    ranAt = Date.now();
   }
 }
 
@@ -160,6 +172,31 @@ function initSync(handlers: Handlers = {}) {
   // Not immediately: the window is still being built, and the first thing a
   // user sees should not be a list rearranging itself.
   schedule(SOON_MS);
+
+  // Coming back to the window, and coming back from sleep. The phone has had
+  // both since it was written -- AppState 'active' is one event meaning both --
+  // and this side had neither, so a change made on the phone sat unseen for up
+  // to a minute while somebody watched the screen it should have appeared on.
+  //
+  // 'browser-window-focus' rather than a window handle, for the reason
+  // updater.ts gives: this module does not know what a BrowserWindow is, and
+  // taking one would move the wiring out of main.ts.
+  app.on("browser-window-focus", wake);
+  // Required here rather than at the top of the file, the way updater.ts does
+  // it: powerMonitor is documented as unusable before the app is ready.
+  require("electron").powerMonitor.on("resume", wake);
+}
+
+/**
+ * Somebody came back. Find out what changed while they were away.
+ *
+ * A laptop that spent the night asleep has stale rows and possibly a dead
+ * access token, and this is the moment to find out -- the same reasoning as
+ * the heartbeat, at the one moment it is worth not waiting for.
+ */
+function wake() {
+  if (running || Date.now() - ranAt < WAKE_GAP_MS) return;
+  schedule(0);
 }
 
 /**
