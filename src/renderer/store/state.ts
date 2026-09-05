@@ -46,16 +46,16 @@ export function setClockOffset(ms: number) {
  * another device. Every write goes through persist(), which is why the stamping
  * lives here rather than in each of the twenty callers.
  */
-function touch(rows: (Task | Task[])[]) {
+function touch(rows: (Task | Task[])[], field: "updatedAt" | "stateAt") {
   const at = now();
   rows.flat().forEach((task) => {
-    if (task) task.updatedAt = at;
+    if (task) task[field] = at;
   });
 }
 
 /** Persist without redrawing — for edits whose caller renders itself. */
 function persist(...touched: (Task | Task[])[]) {
-  touch(touched);
+  touch(touched, "updatedAt");
   window.api.save(tasks);
 }
 
@@ -65,6 +65,20 @@ function persist(...touched: (Task | Task[])[]) {
  */
 function commit(...touched: (Task | Task[])[]) {
   persist(...touched);
+  notify();
+}
+
+/**
+ * The same, for a change of state rather than of content.
+ *
+ * Completing, trashing, restoring and purging stamp `stateAt` and leave
+ * `updatedAt` where it was. That is the whole point of the second stamp: this
+ * device saying "it is done" must not also claim to have written the memo
+ * another device is writing at the same moment. See `mergeIncoming`.
+ */
+function commitState(...touched: (Task | Task[])[]) {
+  touch(touched, "stateAt");
+  window.api.save(tasks);
   notify();
 }
 
@@ -132,4 +146,4 @@ export const inSpace = (t: Task) => t.space === null || t.space === activeSpace;
  */
 const allTasks = () => tasks;
 
-export { allTasks, now, uid, touch, persist, commit };
+export { allTasks, now, uid, persist, commit, commitState };

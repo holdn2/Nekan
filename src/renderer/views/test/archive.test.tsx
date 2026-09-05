@@ -38,6 +38,7 @@ const done = (n: number, over: Partial<Task> = {}): Task => ({
   deletedAt: null,
   purgedAt: null,
   ...over,
+  stateAt: over.stateAt ?? over.updatedAt ?? 1,
 });
 
 /**

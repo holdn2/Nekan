@@ -8,7 +8,7 @@
  * reason -- see RECONCILE_MS there.
  */
 
-import { stamp } from "./rows.js";
+import { changedAt, stamp } from "./rows.js";
 import type { LooseTask } from "./rows.js";
 
 /**
@@ -25,7 +25,7 @@ export function pendingChanges(
   since: unknown,
 ): LooseTask[] {
   const from = stamp(since);
-  return (tasks || []).filter((t) => stamp(t.updatedAt) >= from);
+  return (tasks || []).filter((t) => changedAt(t) >= from);
 }
 
 /**
@@ -41,7 +41,7 @@ export function unsentChanges(
   since: unknown,
 ): LooseTask[] {
   const from = stamp(since);
-  return (tasks || []).filter((t) => stamp(t.updatedAt) > from);
+  return (tasks || []).filter((t) => changedAt(t) > from);
 }
 
 /** How far `pendingChanges` may be advanced once those rows are accepted. */
@@ -50,7 +50,7 @@ export function pushedThrough(
   since: unknown,
 ): number {
   return (pending || []).reduce(
-    (max, t) => Math.max(max, stamp(t.updatedAt)),
+    (max, t) => Math.max(max, changedAt(t)),
     stamp(since),
   );
 }

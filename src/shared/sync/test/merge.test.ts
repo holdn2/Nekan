@@ -23,6 +23,7 @@ function task(over: Partial<Task> = {}): Task {
     deletedAt: null,
     purgedAt: null,
     ...over,
+    stateAt: over.stateAt ?? over.updatedAt ?? 1000,
   };
 }
 
@@ -173,4 +174,111 @@ test("a stale edit cannot resurrect a tombstone", () => {
 
   assert.equal(merged.purgedAt, 5000);
   assert.equal(merged.text, "");
+});
+
+/* ------------------------------------------- the two halves, and their point */
+
+/**
+ * The case the split exists for. Complete a task on one device, write a memo
+ * on another before the completion arrives, and a whole-row merge hands the
+ * memo's row the win -- taking the empty completion it never touched with it.
+ * The task comes back to life on both devices and nobody is told.
+ */
+test("a memo written elsewhere does not undo a completion made here", () => {
+  const local = [
+    task({ id: "t1", completedAt: 2000, stateAt: 2000, updatedAt: 1000 }),
+  ];
+  const rows = [
+    toRow(
+      task({ id: "t1", memo: "초안 먼저", updatedAt: 3000, stateAt: 1000 }),
+      "u1",
+    ),
+  ];
+
+  const merged = mergeIncoming(local, rows).tasks[0];
+
+  assert.equal(merged.memo, "초안 먼저");
+  assert.equal(merged.completedAt, 2000);
+});
+
+test("and the same the other way round", () => {
+  const local = [
+    task({ id: "t1", memo: "초안 먼저", updatedAt: 3000, stateAt: 1000 }),
+  ];
+  const rows = [
+    toRow(
+      task({ id: "t1", completedAt: 4000, stateAt: 4000, updatedAt: 1000 }),
+      "u1",
+    ),
+  ];
+
+  const merged = mergeIncoming(local, rows).tasks[0];
+
+  assert.equal(merged.memo, "초안 먼저");
+  assert.equal(merged.completedAt, 4000);
+});
+
+test("undoing a completion still travels", () => {
+  // The reason the state half is a stamp rather than "whoever says completed
+  // wins": taking it back has to reach the other device too.
+  const local = [task({ id: "t1", completedAt: 2000, stateAt: 2000 })];
+  const rows = [
+    toRow(task({ id: "t1", completedAt: null, stateAt: 5000 }), "u1"),
+  ];
+
+  assert.equal(mergeIncoming(local, rows).tasks[0].completedAt, null);
+});
+
+test("a deletion beats an older completion, and keeps the newer memo", () => {
+  const local = [
+    task({ id: "t1", memo: "여기서 쓴 메모", updatedAt: 6000, stateAt: 2000 }),
+  ];
+  const rows = [
+    toRow(task({ id: "t1", deletedAt: 4000, stateAt: 4000 }), "u1"),
+  ];
+
+  const merged = mergeIncoming(local, rows).tasks[0];
+
+  assert.equal(merged.deletedAt, 4000);
+  assert.equal(merged.memo, "여기서 쓴 메모");
+});
+
+test("two devices editing the same half still settle on one of them", () => {
+  // The split buys the case where each side changed a different half. It does
+  // not pretend to merge two memos, and the loser is still the loser.
+  const local = [task({ id: "t1", memo: "여기", updatedAt: 2000 })];
+  const rows = [toRow(task({ id: "t1", memo: "저기", updatedAt: 3000 }), "u1")];
+
+  assert.equal(mergeIncoming(local, rows).tasks[0].memo, "저기");
+});
+
+test("a row written before the split behaves exactly as it used to", () => {
+  // No state stamp at all: content and state move together, which is what one
+  // stamp for the whole row meant.
+  const legacy = { ...task({ id: "t1", completedAt: 2000, updatedAt: 2000 }) };
+  delete (legacy as Partial<Task>).stateAt;
+  const rows = [toRow({ id: "t1", memo: "나중 것", updatedAt: 3000 }, "u1")];
+
+  const merged = mergeIncoming([legacy], rows).tasks[0];
+
+  assert.equal(merged.memo, "나중 것");
+  assert.equal(merged.completedAt, null);
+});
+
+test("nothing newer in either half leaves the local row alone", () => {
+  const local = [
+    task({ id: "t1", memo: "여기", updatedAt: 5000, stateAt: 5000 }),
+  ];
+  const rows = [
+    toRow(
+      task({ id: "t1", memo: "저기", updatedAt: 1000, stateAt: 1000 }),
+      "u1",
+    ),
+  ];
+
+  const { tasks, applied, kept } = mergeIncoming(local, rows);
+
+  assert.equal(tasks[0].memo, "여기");
+  assert.deepEqual(applied, []);
+  assert.deepEqual(kept, ["t1"]);
 });

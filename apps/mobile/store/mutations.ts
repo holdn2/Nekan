@@ -19,7 +19,15 @@
 import { INBOX, orderKeyBetween, spaceFor } from "@nekan/shared/core";
 import type { Place, Task } from "@nekan/shared/types";
 import { activeOf } from "./selectors";
-import { commit, currentSpace, findTask, insertTask, now, uid } from "./state";
+import {
+  commit,
+  commitState,
+  currentSpace,
+  findTask,
+  insertTask,
+  now,
+  uid,
+} from "./state";
 
 /** The key that lands a row after everything already in `quadrant`. */
 function tailKey(quadrant: Place): string {
@@ -49,6 +57,8 @@ function makeTask(quadrant: Place, text: string): Task {
     orderKey: tailKey(quadrant),
     createdAt: at,
     updatedAt: at,
+    // A new task has never changed state, so both halves start together.
+    stateAt: at,
     completedAt: null,
     deletedAt: null,
     purgedAt: null,
@@ -101,28 +111,28 @@ export function completeTask(id: string): void {
   const task = findTask(id);
   if (!task || task.completedAt) return;
   task.completedAt = now();
-  commit(task);
+  commitState(task);
 }
 
 export function restoreTask(id: string): void {
   const task = findTask(id);
   if (!task || !task.completedAt) return;
   task.completedAt = null;
-  commit(task);
+  commitState(task);
 }
 
 export function deleteTask(id: string): void {
   const task = findTask(id);
   if (!task || task.deletedAt) return;
   task.deletedAt = now();
-  commit(task);
+  commitState(task);
 }
 
 export function untrashTask(id: string): void {
   const task = findTask(id);
   if (!task || !task.deletedAt) return;
   task.deletedAt = null;
-  commit(task);
+  commitState(task);
 }
 
 /**
@@ -189,7 +199,11 @@ export function purgeTask(id: string): void {
   const task = findTask(id);
   if (!task) return;
   tombstone(task);
-  commit(task);
+  // Both halves: `purgedAt` is state, and the text and memo it clears are
+  // content. Stamping only the state would let another device's older content
+  // edit put the text back on a row meant to stay empty for months.
+  task.updatedAt = now();
+  commitState(task);
 }
 
 /**
@@ -204,17 +218,21 @@ export function trashAll(items: Task[]): void {
   if (!items.length) return;
   const at = now();
   for (const t of items) t.deletedAt = at;
-  commit(...items);
+  commitState(...items);
 }
 
 export function untrashAll(items: Task[]): void {
   if (!items.length) return;
   for (const t of items) t.deletedAt = null;
-  commit(...items);
+  commitState(...items);
 }
 
 export function purgeAll(items: Task[]): void {
   if (!items.length) return;
-  for (const t of items) tombstone(t);
-  commit(...items);
+  const at = now();
+  for (const t of items) {
+    tombstone(t);
+    t.updatedAt = at;
+  }
+  commitState(...items);
 }

@@ -27,6 +27,7 @@ const task = (over: Partial<Task> = {}): Task => ({
   deletedAt: null,
   purgedAt: null,
   ...over,
+  stateAt: over.stateAt ?? over.updatedAt ?? 1,
 });
 
 /** The panel is React's, but the <section> it fills belongs to index.html. */

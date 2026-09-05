@@ -18,7 +18,16 @@ import { loadStore, writeStore } from "./store-io";
 import type { Task } from "../shared/types";
 import type { Store } from "./store-io";
 import { dropExpiredTombstones } from "../shared/core";
-import { stamp } from "../shared/sync";
+import { stamp, stateStamp } from "../shared/sync";
+import type { LooseTask } from "../shared/sync";
+
+/** The half a completion, a deletion or a purge moves. See mergeIncoming. */
+const STATE_FIELDS = [
+  "completedAt",
+  "deletedAt",
+  "purgedAt",
+  "stateAt",
+] as const;
 
 let store: Store | null = null;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -96,7 +105,7 @@ function setTasks(tasks: unknown) {
 function mergeRendererTasks(tasks: unknown) {
   // Rows straight off the wire from the renderer: shaped like tasks, but
   // normalizeTasks has not been over them yet.
-  type Incoming = { id: unknown; updatedAt?: unknown };
+  type Incoming = { id: unknown; updatedAt?: unknown; stateAt?: unknown };
   const incoming: Incoming[] = Array.isArray(tasks) ? tasks : [];
   const byId = new Map<string, Incoming>(
     loaded().tasks.map((t: Incoming) => [String(t.id), t]),
@@ -104,9 +113,30 @@ function mergeRendererTasks(tasks: unknown) {
   for (const task of incoming) {
     const id = String(task.id);
     const mine = byId.get(id);
-    if (!mine || stamp(task.updatedAt) >= stamp(mine.updatedAt)) {
+    if (!mine) {
       byId.set(id, task);
+      continue;
     }
+    // Each half on its own, for the reason mergeIncoming gives: the screen may
+    // have completed a task whose text a pull has since changed underneath it,
+    // and comparing whole rows would drop one of the two. Ties go to the
+    // renderer here rather than to the server -- that is what the two sides
+    // are, and the screen is the one somebody is looking at.
+    const content =
+      stamp(task.updatedAt) >=
+      stamp((mine as { updatedAt?: unknown }).updatedAt);
+    const state =
+      stateStamp(task as LooseTask) >= stateStamp(mine as LooseTask);
+    if (content && state) {
+      byId.set(id, task);
+      continue;
+    }
+    const merged: Incoming = { ...(content ? task : mine) };
+    const from = (state ? task : mine) as Record<string, unknown>;
+    for (const field of STATE_FIELDS) {
+      (merged as Record<string, unknown>)[field] = from[field] ?? null;
+    }
+    byId.set(id, merged);
   }
   // Shape-blind on purpose: this function compares timestamps and nothing
   // else, so it works in `Incoming` rather than in Task. They are tasks by the

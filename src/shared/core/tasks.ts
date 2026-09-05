@@ -68,6 +68,14 @@ export function normalizeTasks(list: unknown): Task[] {
       // A row that predates the field has never been edited since it was
       // written, so its creation time is the honest last-changed time.
       updatedAt: Number.isFinite(t?.updatedAt) ? t.updatedAt : createdAt,
+      // A row written before state had a stamp of its own carried one stamp
+      // for the whole row. Reading it as that stamp is what makes such a row
+      // go on meaning what it meant: content and state move together.
+      stateAt: Number.isFinite(t?.stateAt)
+        ? t.stateAt
+        : Number.isFinite(t?.updatedAt)
+          ? t.updatedAt
+          : createdAt,
       purgedAt: Number.isFinite(t?.purgedAt) ? t.purgedAt : null,
       orderKey: hasOrderKey(t) ? t.orderKey : null,
     };

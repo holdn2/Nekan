@@ -42,6 +42,7 @@ const FIELDS: ReadonlyArray<readonly [keyof Task, string]> = [
   ["orderKey", "order_key"],
   ["createdAt", "created_at"],
   ["updatedAt", "updated_at"],
+  ["stateAt", "state_at"],
   ["completedAt", "completed_at"],
   ["deletedAt", "deleted_at"],
   ["purgedAt", "purged_at"],
@@ -51,6 +52,30 @@ const FIELDS: ReadonlyArray<readonly [keyof Task, string]> = [
 export function stamp(value: unknown): number {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
+}
+
+/**
+ * A task's state stamp, falling back to its content stamp.
+ *
+ * Rows written before `stateAt` existed carried one stamp for the whole row,
+ * and reading them this way is what keeps them meaning that. Every comparison
+ * of state goes through here rather than reading the field, because a row from
+ * another device may be one of those.
+ */
+export function stateStamp(task: LooseTask): number {
+  return Number.isFinite(task.stateAt)
+    ? (task.stateAt as number)
+    : stamp(task.updatedAt);
+}
+
+/**
+ * The last time anything on a task changed, either half.
+ *
+ * What the push watermark is measured against. `updatedAt` alone would miss a
+ * task that was only completed, and it would never be sent.
+ */
+export function changedAt(task: LooseTask): number {
+  return Math.max(stamp(task.updatedAt), stateStamp(task));
 }
 
 /** Task -> the row shape the server stores. `userId` is the caller's own. */
