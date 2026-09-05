@@ -12,7 +12,7 @@
  * nothing -- `orderKey` does.
  */
 import { normalizeTasks, sanitizeSpace } from "@nekan/shared/core";
-import type { Space, Task } from "@nekan/shared/types";
+import type { PublicSession, Space, Task } from "@nekan/shared/types";
 import { load, save, type Stored } from "./persist";
 
 let tasks: Task[] = [];
@@ -92,6 +92,74 @@ export const allTasks = (): readonly Task[] => tasks;
  * them, so this is where "everything changed" gets said.
  */
 export const redraw = (): void => notify();
+
+/**
+ * Who is signed in, as much of it as a screen may know.
+ *
+ * Not persisted here and not part of `Stored`: the session itself lives in
+ * the keychain, and this is the shadow of it that screens are allowed to see.
+ * `shared/auth`'s `publicSession()` decides what that is by *picking* fields
+ * rather than deleting them, so a field added to Session later cannot leak by
+ * being forgotten.
+ */
+let auth: PublicSession | null = null;
+
+export const currentAuth = (): PublicSession | null => auth;
+
+export function setAuth(next: PublicSession | null): void {
+  auth = next;
+  notify();
+}
+
+/**
+ * Where sync got to, kept in `settings` so it survives a restart.
+ *
+ * `cursor` is the highest `server_seq` this device has read, and `pushedAt`
+ * the timestamp everything at or before which has been sent. Neither is truth:
+ * the cursor is an optimisation with a known hole (see the loop), and the
+ * merge is last-write-wins either way, so re-reading costs requests and
+ * nothing else.
+ *
+ * `account` is here for one reason. Signing into a different account must not
+ * inherit the previous one's cursor -- it would say "you are up to date" about
+ * rows this device has never seen, and they would be skipped for good.
+ */
+export interface SyncState {
+  cursor: number;
+  pushedAt: number;
+  account: string | null;
+}
+
+const EMPTY_SYNC: SyncState = { cursor: 0, pushedAt: 0, account: null };
+
+export function syncState(): SyncState {
+  const raw = settings.sync as Partial<SyncState> | undefined;
+  return {
+    cursor: Number(raw?.cursor) || 0,
+    pushedAt: Number(raw?.pushedAt) || 0,
+    account: typeof raw?.account === "string" ? raw.account : null,
+  };
+}
+
+export function saveSyncState(next: SyncState): void {
+  settings = { ...settings, sync: next };
+  void persist();
+}
+
+/**
+ * Point the cursor at an account, clearing it if that is a different one.
+ *
+ * Signing out leaves the tasks alone -- they are this device's board and
+ * nothing about leaving an account should remove them. Only the cursor and
+ * the watermark are dropped.
+ */
+export function useAccount(userId: string | null): SyncState {
+  const state = syncState();
+  if (state.account === userId) return state;
+  const next: SyncState = { cursor: 0, pushedAt: 0, account: userId };
+  saveSyncState(next);
+  return next;
+}
 
 export type ThemeChoice = "light" | "dark" | null;
 

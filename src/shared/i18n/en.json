@@ -348,7 +348,10 @@
     "deleteFailed": "Could not delete the account. ({{code}})",
     "deleted": "Account deleted. The tasks on this computer are untouched.",
     "overwritten_one": "{{count}} task was overwritten by changes from another device.",
-    "overwritten_other": "{{count}} tasks were overwritten by changes from another device."
+    "overwritten_other": "{{count}} tasks were overwritten by changes from another device.",
+    "phone": {
+      "signedOut": "Signed out. The tasks on this device are still here."
+    }
   },
   "welcome": {
     "lede": "Where should your tasks live?",

@@ -841,7 +841,16 @@ apps/mobile/
                   **글꼴을 박지 않는다**: 데스크톱은 지워질 임시 파일이라 `file://`로
                   가리킬 수 있지만, 이 파일은 곧 남에게 건네진다
   store/          state · selectors · mutations · persist · use-store
-  components/     add-form · task-row · task-list(드래그가 여기 산다)
+  api/            http · session · tokens · sign-in · account
+                  데스크톱 `main/api/`의 짝이다. **토큰은 `data.json`이 아니라
+                  `expo-secure-store`에 있다**(`tokens.ts`, 키 `nekan.session`) —
+                  보드는 사람이 복사해 다닐 문서이고 자격증명은 아니다.
+                  갱신 세 규칙(먼저 저장 · 단일 비행 · `stillOurs()`)은 데스크톱과 같다
+  sync/           transfer(pull·push) · loop(일정) + test/
+                  **`npm test`가 덮는 폰 코드는 지금 여기뿐이다.** 이 앱에서
+                  데이터를 잃을 수 있는 경로라서 먼저 붙였다 — 반쪽만 보낸 push가
+                  워터마크를 옮기면 나머지는 영영 안 올라간다
+  components/     add-form · task-row · task-list(드래그가 여기 산다) · account
   theme.ts        PALETTE와 스케일을 읽어 RN 스타일로. **색도 크기도 한 줄도 새로 적지
                   않는다** — `SP`·`R`·`FS`·`FW`가 `@nekan/shared/theme`의 재수출이다.
                   폰이 데스크톱보다 큰 단계를 골라 쓸 수는 있지만 단계 **밖의 값은 쓰지
@@ -916,6 +925,50 @@ npm은 lock을 믿는다. 그리고 **lock을 통째로 재생성하면 데스�
 `D:\C:\Users\...` 같은 경로에서 찾다가 죽는다. 타입검사는 이걸 못 잡는다:
 import 경로가 틀려도 `tsc`는 통과하고 Metro만 죽는다.
 
+**한 번의 빌드에 무엇을 실을지는 "나중에 넣으면 빌드를 또 쓰는가"로 정한다.**
+2026-09-04에 첫 dev client 빌드를 준비하며 셋을 갈랐다: **아이콘·스플래시**는 네이티브에
+구워지므로 반드시 지금(설정이 아예 없어서 기본 아이콘으로 나갈 참이었다), **STT의
+네이티브 절반**(`expo-speech-recognition`)은 코드가 없어도 지금 — 나중에 넣으면 빌드
+하나다, **위젯은 뺐다** — Swift 확장 타깃이 필요하고 실물에서만 검증되므로 **지금 넣어도
+빌드를 아끼지 못한다.**
+
+**`expo-speech-recognition`은 SDK 번들 목록에 없는 서드파티라 `check-native-versions.js`가
+못 본다.** 버전 근거는 그 패키지의 `devDependencies.expo`이고, **3.1.3이 `~54.0.32`를
+대상으로 만들어졌다**(그 뒤 56·57로 SDK 번호에 맞춘 버전 체계로 갈아탔으므로 `latest`를
+쓰면 두 SDK 앞선다). SDK를 올리는 날 이 패키지도 손으로 맞춰야 한다.
+
+**빌드를 쓰기 전에 `expo config --type prebuild`로 플러그인을 검증할 수 있다.** 모든 mod를
+평가하므로 권한 문구가 Info.plist 자리에 들어갔는지까지 보이고 **쿼터를 쓰지 않는다.**
+`expo prebuild --platform ios`는 **Windows에서 돌지 않는다**(macOS/Linux가 필요하다) —
+그쪽으로 검증하려다 시간을 쓰지 말 것.
+
+**`app.json`의 `#e9e9e9`·`#2b2b2b`는 팔레트를 손으로 옮겨 적은 유일한 자리다.** 스플래시
+배경은 첫 프레임을 칠하는 값이라 비워 두면 어두운 기기에서 흰 섬광이 되는데, 이 파일은
+Node가 읽고 `theme.ts`는 TypeScript이며 `out/`은 gitignore라 참조할 방법이 없다.
+`check-colors.js`는 `.json`을 보지 않으므로 이 둘은 검사에 걸리지 않는다 — **팔레트의
+`bg`를 바꾸는 날 여기도 함께 고칠 것.**
+
+**Expo Go에서는 Google 로그인이 끝까지 가지 않는다. 2026-09-02에 실측했다.**
+동의까지는 정상이고 `?code=`도 발급되는데, Supabase가 그 코드를 `redirect_to`가 아니라
+**Site URL**(`http://localhost:3000`)로 배달한다 — 허용목록에
+`exp://192.168.138.62:8081/--/auth`를 **정확히 그대로 넣어 두었는데도** 그렇다.
+같은 날 **데스크톱의 Google 로그인은 정상이었다**(`http://127.0.0.1:*`). 그래서
+`redirect_to` 왕복 자체는 멀쩡하고, 남은 차이는 셋뿐이다: **스킴이 http가 아니고,
+호스트가 IP이고, 포트가 붙어 있다.** Supabase 문서의 모바일 예시(`com.example.app://callback`)에는
+셋 다 없다. **dev client의 `nekan://auth`는 셋을 전부 피한다** — 거기서 확인할 것.
+`redirect_to`는 Google URL의 쿼리 파라미터로 실려 가고(Google은 그걸 돌려주지 않는다)
+`state`는 UUID 하나뿐이라, 되찾는 일은 전적으로 Supabase 쪽에서 일어난다.
+
+**Google 로그인의 리디렉트는 환경마다 다르고, Supabase 허용목록에 있어야 한다.**
+`makeRedirectUri`는 `Linking.createURL`로 내려가므로 Expo Go에서는
+`exp://<LAN IP>:8081/--/auth`, dev client·스토어 빌드에서는 `nekan://auth`가 된다 —
+**IP가 바뀌면 값이 바뀌므로 정확한 주소를 적어 둘 수 없다.** 대시보드
+(Authentication → URL Configuration → Redirect URLs)에 `nekan://**`와 `exp://**` 두 줄이
+필요하고, `**`는 `/`를 넘어서까지 매칭한다. **Google Cloud Console은 건드릴 필요가 없다** —
+Google이 보는 리디렉트는 언제나 Supabase의 `/auth/v1/callback`이고 앱의 주소는 그 다음
+단계다. 개발 실행은 `oauth redirect: …`를 찍어 준다(데스크톱이 loopback URL을 찍는 것과
+같은 이유다: 소스만 봐서는 알 수 없는 값이다). **`exp://**`는 스토어에 내기 전에 뺀다.**
+
 **타입 라우트는 개발 서버만 다시 쓴다.** `apps/mobile/.expo/types/router.d.ts`는
 `expo start`가 만들고 **`expo export`는 건드리지 않는다.** 새 라우트를 만든 뒤
 `mobile:typecheck`가 `"/guide"를 모른다`고 하면 코드가 아니라 **그 파일이 낡은 것**이다 —
@@ -952,6 +1005,13 @@ hairline이면 점이 선처럼 보인다.
 - **EAS Update(OTA)는 빌드와 별도 쿼터다** — MAU 기준이고(무료 플랜 1,000) 빌드 횟수를 쓰지
   않는다. **그래서 JS·에셋만 바뀐 반복은 사실상 공짜다.** 위의 "JS만 바뀌었으면 빌드하지
   않는다"가 원칙이 아니라 실제로 싼 길인 이유가 이것이다.
+  **다만 지금 폰에 깔린 빌드는 아직 못 받는다** (2026-09-05). `updates.url`이 오래 비어
+  있었다 — `expo-updates`도 채널도 `runtimeVersion` 정책도 있는데 **주소만 없었고**,
+  `eas config --platform ios --profile development`가 내놓는 해결된 설정에도 없었다
+  (`eas update:configure`가 쓰는 값이고 아무도 그걸 안 돌렸다). 지금은 `app.json`에 있다.
+  **그런데 그 URL은 빌드 때 Info.plist(`EXUpdatesURL`)에 구워진다** — 이미 나간 dev
+  client는 주소를 모른 채 만들어졌으므로, **다음 빌드부터** OTA가 실제로 도착한다.
+  그때까지 JS 변경을 실기기에 올리는 길은 dev 서버뿐이다.
 - `Uploaded builds`가 따로 월 10회 있다 — 로컬에서 만든 바이너리를 올리는 길이다.
   **iOS는 Xcode가 필요해 이 기기(Windows)에서 만들 수 없으므로 Android 전용 탈출구다.**
 - **숫자를 믿기 전에 대시보드를 볼 것.** 위 값들은 2026-08-31의 무료 플랜 기준이고 플랜 정책은
@@ -1068,8 +1128,9 @@ hairline이면 점이 선처럼 보인다.
 돌릴 것). `node --test`가 `out/test/`의 237개로 `src/shared/`의 순수
 함수를 덮고 — 데이터가 날아가는 규칙(정규화 기본값, quadrant 유효성, temp+rename 저장, 손상
 파일 폴백)이 거기 있으니 그 파일들을 건드렸으면 반드시 돌린다 — 이어서 `vitest run`이
-**React로 옮긴 렌더러 조각** 151개(파일 27)를 덮는다. **이 숫자는 자주 바뀐다** — 믿지 말고
-`npm test`의 마지막 줄을 볼 것.
+**프로젝트 둘**을 돈다 — `renderer`가 React로 옮긴 조각들을, `mobile`이 폰의 동기화를.
+합쳐 163개(파일 28)다. **이 숫자는 자주 바뀐다** — 믿지 말고 `npm test`의 마지막 줄을 볼 것.
+**한 프로젝트만 돌리려면 `npx vitest run --project mobile`.**
 
 **러너가 둘인 이유**: 번들러가 생기면서 렌더러가 **Node가 require할 수 있는 파일로 존재하지
 않게 됐다.** Vite가 한 덩어리로 묶으니 모듈 단위로 import할 것이 없다. vitest는 그 Vite 파이프라인을
@@ -1077,8 +1138,17 @@ hairline이면 점이 선처럼 보인다.
 두지 않아도 된다. 설정은 `vitest.config.mts`, 헬퍼는 `src/renderer/react/testing.tsx`
 (`mount` · `flush` · `find` · `hidden`).
 
+**폰이 셋째 러너가 아니라 vitest의 둘째 프로젝트인 이유**도 같다: 그 파일들도 Node가 그냥
+require할 수 없다(`@nekan/shared/*`가 소스를 가리킨다). 셋째 invocation을 `npm test`에
+더하면 언젠가 그것만 빼고 돌리는 사람이 생긴다. **두 프로젝트를 가르는 것은 확장자다** —
+`renderer`는 `**/*.test.tsx`, `mobile`은 `**/test/*.test.ts`. 폰 테스트를 `.tsx`로 만들면
+렌더러 프로젝트가 집어가서 happy-dom에서 돈다.
+**폰 쪽에서 유일하게 목으로 바꾸는 것은 `store/persist`다** — 기기에 닿는 모듈이 그거
+하나이고, 스토어·병합·정규화는 실제로 나가는 코드를 그대로 돌린다.
+
 **테스트는 자기가 덮는 코드 옆, 그 폴더의 `test/`에 둔다** — 렌더러도(`views/test/` ·
-`components/test/`) 나머지도(`shared/core/test/` · `main/test/`) 같다. 렌더러 쪽은 진입점이
+`components/test/`) 폰도(`apps/mobile/sync/test/`) 나머지도(`shared/core/test/` ·
+`main/test/`) 같다. 렌더러 쪽은 진입점이
 `index.html`이라 거기서 닿지 않는 파일이 **번들에 들어가지 않는다** — 확인했다.
 vitest의 `include`는 `**/*.test.tsx`라 폴더가 깊어져도 그대로 걸린다.
 

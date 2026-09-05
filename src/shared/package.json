@@ -13,6 +13,7 @@
     "./errors": "./errors.ts",
     "./i18n/locales": "./i18n/locales.ts",
     "./i18n/ko.json": "./i18n/ko.json",
-    "./i18n/en.json": "./i18n/en.json"
+    "./i18n/en.json": "./i18n/en.json",
+    "./supabase": "./supabase.ts"
   }
 }

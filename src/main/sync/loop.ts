@@ -9,6 +9,7 @@
  * now and then, in a way nobody can reproduce.
  */
 
+import { app } from "electron";
 import { getAccessToken, getPublicSession } from "../api-client";
 import { getStore, persist } from "../store";
 import { pull, push } from "./transfer";
@@ -30,6 +31,14 @@ const IDLE_MS = 60_000;
 const RETRY_MS = [5000, 20_000, 60_000, 300_000];
 /** How often the cursor is thrown away and everything read back. See reconcile. */
 const RECONCILE_MS = 6 * 60 * 60 * 1000;
+/**
+ * The least time between one run and the next a return can ask for.
+ *
+ * Restoring a minimised window fires focus twice within milliseconds, and
+ * alt-tabbing through a few windows fires it once each. Without this, a person
+ * moving between windows would sync on every hop.
+ */
+const WAKE_GAP_MS = SOON_MS;
 
 let timer: ReturnType<typeof setTimeout> | null = null;
 let running = false;
@@ -37,6 +46,10 @@ let failures = 0;
 let reconciledAt = 0;
 /** A save that arrived mid-run, whose rows this run had already read past. */
 let dirty = false;
+/** When the last run finished. Read by wake(), which see. */
+let ranAt = 0;
+/** A return that arrived mid-run, whose rows the pull had already read past. */
+let woke = false;
 
 /* ---------------------------------------------------------------- the loop */
 
@@ -82,6 +95,7 @@ async function runSync() {
   // schedule(0) landing on a live SOON_MS timer is the real path there.
   running = true;
   dirty = false;
+  woke = false;
   report({ state: "syncing" });
   try {
     const token = await getAccessToken();
@@ -115,9 +129,11 @@ async function runSync() {
     // heartbeat that redrew every minute would fight whatever is on screen.
     if (pulled.applied) emitTasks(getStore().tasks, pulled.overwritten);
     report({ state: "synced", unsent: countUnsent(), syncedAt: Date.now() });
-    // A save during the run may have been stamped after push() read the list.
-    // Waiting a whole heartbeat for it would look like the edit did not sync.
-    schedule(dirty ? SOON_MS : IDLE_MS);
+    // A save during the run may have been stamped after push() read the list,
+    // and a window focused during it came back after the pull had already
+    // asked. Waiting a whole heartbeat for either would look like the sync
+    // did not happen.
+    schedule(dirty || woke ? SOON_MS : IDLE_MS);
   } catch (err) {
     // Without this the loop stops for good: an exception skips the schedule()
     // above, no timer is left armed, and nothing restarts it until the user
@@ -127,6 +143,7 @@ async function runSync() {
     return backOff();
   } finally {
     running = false;
+    ranAt = Date.now();
   }
 }
 
@@ -160,6 +177,41 @@ function initSync(handlers: Handlers = {}) {
   // Not immediately: the window is still being built, and the first thing a
   // user sees should not be a list rearranging itself.
   schedule(SOON_MS);
+
+  // Coming back to the window, and coming back from sleep. The phone has had
+  // both since it was written -- AppState 'active' is one event meaning both --
+  // and this side had neither, so a change made on the phone sat unseen for up
+  // to a minute while somebody watched the screen it should have appeared on.
+  //
+  // 'browser-window-focus' rather than a window handle, for the reason
+  // updater.ts gives: this module does not know what a BrowserWindow is, and
+  // taking one would move the wiring out of main.ts.
+  app.on("browser-window-focus", wake);
+  // Required here rather than at the top of the file, the way updater.ts does
+  // it: powerMonitor is documented as unusable before the app is ready.
+  require("electron").powerMonitor.on("resume", wake);
+}
+
+/**
+ * Somebody came back. Find out what changed while they were away.
+ *
+ * A laptop that spent the night asleep has stale rows and possibly a dead
+ * access token, and this is the moment to find out -- the same reasoning as
+ * the heartbeat, at the one moment it is worth not waiting for.
+ *
+ * A recent run delays this one rather than cancelling it. Dropping it looks
+ * equivalent and is not: a heartbeat that finished a second before the phone
+ * pushed leaves rows this window has never seen, and refusing the focus that
+ * would fetch them hands the person the full minute back -- which is the wait
+ * this function exists to remove. Held to WAKE_GAP_MS after the last run, so
+ * a burst of focus events still collapses into one.
+ */
+function wake() {
+  if (running) {
+    woke = true;
+    return;
+  }
+  schedule(Math.max(0, ranAt + WAKE_GAP_MS - Date.now()));
 }
 
 /**

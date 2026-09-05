@@ -3,20 +3,64 @@
     "name": "Nekan",
     "slug": "nekan",
     "scheme": "nekan",
-    "version": "0.0.0",
+    "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.makersfarm.nekan",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "icon": "./assets/icon.png",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Nekan uses speech recognition to turn what you say into a task.",
+        "NSMicrophoneUsageDescription": "Nekan uses the microphone to hear a new task.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "package": "com.makersfarm.nekan"
+      "package": "com.makersfarm.nekan",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#e9e9e9"
+      },
+      "permissions": ["android.permission.RECORD_AUDIO"]
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      "expo-web-browser",
+      [
+        "expo-speech-recognition",
+        {
+          "speechRecognitionPermission": "Nekan uses speech recognition to turn what you say into a task.",
+          "microphonePermission": "Nekan uses the microphone to hear a new task."
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/0cab499c-a177-4212-b600-7bafabeb61bc"
+    },
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#e9e9e9",
+      "dark": {
+        "backgroundColor": "#2b2b2b"
+      }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0cab499c-a177-4212-b600-7bafabeb61bc"
+      }
+    },
+    "owner": "holdn2"
   }
 }
