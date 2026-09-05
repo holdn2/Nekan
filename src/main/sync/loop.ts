@@ -32,7 +32,7 @@ const RETRY_MS = [5000, 20_000, 60_000, 300_000];
 /** How often the cursor is thrown away and everything read back. See reconcile. */
 const RECONCILE_MS = 6 * 60 * 60 * 1000;
 /**
- * How recently a run has to have happened for coming back to be ignored.
+ * The least time between one run and the next a return can ask for.
  *
  * Restoring a minimised window fires focus twice within milliseconds, and
  * alt-tabbing through a few windows fires it once each. Without this, a person
@@ -48,6 +48,8 @@ let reconciledAt = 0;
 let dirty = false;
 /** When the last run finished. Read by wake(), which see. */
 let ranAt = 0;
+/** A return that arrived mid-run, whose rows the pull had already read past. */
+let woke = false;
 
 /* ---------------------------------------------------------------- the loop */
 
@@ -93,6 +95,7 @@ async function runSync() {
   // schedule(0) landing on a live SOON_MS timer is the real path there.
   running = true;
   dirty = false;
+  woke = false;
   report({ state: "syncing" });
   try {
     const token = await getAccessToken();
@@ -126,9 +129,11 @@ async function runSync() {
     // heartbeat that redrew every minute would fight whatever is on screen.
     if (pulled.applied) emitTasks(getStore().tasks, pulled.overwritten);
     report({ state: "synced", unsent: countUnsent(), syncedAt: Date.now() });
-    // A save during the run may have been stamped after push() read the list.
-    // Waiting a whole heartbeat for it would look like the edit did not sync.
-    schedule(dirty ? SOON_MS : IDLE_MS);
+    // A save during the run may have been stamped after push() read the list,
+    // and a window focused during it came back after the pull had already
+    // asked. Waiting a whole heartbeat for either would look like the sync
+    // did not happen.
+    schedule(dirty || woke ? SOON_MS : IDLE_MS);
   } catch (err) {
     // Without this the loop stops for good: an exception skips the schedule()
     // above, no timer is left armed, and nothing restarts it until the user
@@ -193,10 +198,20 @@ function initSync(handlers: Handlers = {}) {
  * A laptop that spent the night asleep has stale rows and possibly a dead
  * access token, and this is the moment to find out -- the same reasoning as
  * the heartbeat, at the one moment it is worth not waiting for.
+ *
+ * A recent run delays this one rather than cancelling it. Dropping it looks
+ * equivalent and is not: a heartbeat that finished a second before the phone
+ * pushed leaves rows this window has never seen, and refusing the focus that
+ * would fetch them hands the person the full minute back -- which is the wait
+ * this function exists to remove. Held to WAKE_GAP_MS after the last run, so
+ * a burst of focus events still collapses into one.
  */
 function wake() {
-  if (running || Date.now() - ranAt < WAKE_GAP_MS) return;
-  schedule(0);
+  if (running) {
+    woke = true;
+    return;
+  }
+  schedule(Math.max(0, ranAt + WAKE_GAP_MS - Date.now()));
 }
 
 /**
