@@ -1005,13 +1005,13 @@ hairline이면 점이 선처럼 보인다.
 - **EAS Update(OTA)는 빌드와 별도 쿼터다** — MAU 기준이고(무료 플랜 1,000) 빌드 횟수를 쓰지
   않는다. **그래서 JS·에셋만 바뀐 반복은 사실상 공짜다.** 위의 "JS만 바뀌었으면 빌드하지
   않는다"가 원칙이 아니라 실제로 싼 길인 이유가 이것이다.
-  **다만 이 앱에는 아직 안 붙어 있다** (2026-09-05 확인). `expo-updates`는 첫 dev client
-  빌드에 실렸고 `eas.json`에 채널이, `app.json`에 `runtimeVersion` 정책이 있는데
-  **`updates.url`이 없다** — `app.json`에도, `eas config --platform ios --profile development`가
-  내놓는 해결된 설정에도 없다(`eas update:configure`가 쓰는 값이고, 아무도 그걸 안 돌렸다).
-  **그 URL은 빌드 때 Info.plist(`EXUpdatesURL`)에 구워지므로 붙이는 일 자체가 네이티브
-  변경이고, 빌드를 한 번 더 쓴다** — 다음 빌드에 함께 실을 것. 그때까지 JS 변경을 실기기에
-  올리는 길은 dev 서버뿐이다.
+  **다만 지금 폰에 깔린 빌드는 아직 못 받는다** (2026-09-05). `updates.url`이 오래 비어
+  있었다 — `expo-updates`도 채널도 `runtimeVersion` 정책도 있는데 **주소만 없었고**,
+  `eas config --platform ios --profile development`가 내놓는 해결된 설정에도 없었다
+  (`eas update:configure`가 쓰는 값이고 아무도 그걸 안 돌렸다). 지금은 `app.json`에 있다.
+  **그런데 그 URL은 빌드 때 Info.plist(`EXUpdatesURL`)에 구워진다** — 이미 나간 dev
+  client는 주소를 모른 채 만들어졌으므로, **다음 빌드부터** OTA가 실제로 도착한다.
+  그때까지 JS 변경을 실기기에 올리는 길은 dev 서버뿐이다.
 - `Uploaded builds`가 따로 월 10회 있다 — 로컬에서 만든 바이너리를 올리는 길이다.
   **iOS는 Xcode가 필요해 이 기기(Windows)에서 만들 수 없으므로 Android 전용 탈출구다.**
 - **숫자를 믿기 전에 대시보드를 볼 것.** 위 값들은 2026-08-31의 무료 플랜 기준이고 플랜 정책은

@@ -34,22 +34,57 @@ export async function readSession(): Promise<Session | null> {
   }
 }
 
-export async function writeSession(session: Session | null): Promise<void> {
+/**
+ * Store a session, or remove the stored one. Says whether it worked.
+ *
+ * The answer matters in one direction more than the other. A failed write
+ * leaves an older session on disk, which the next launch will try, fail to
+ * renew, and drop -- annoying. A failed *delete* leaves a live session on disk
+ * after somebody signed out, and the next launch signs them back in. So a
+ * delete that will not go through is turned into a value that cannot be read
+ * back as a session, which reaches the same place by another road.
+ */
+export async function writeSession(session: Session | null): Promise<boolean> {
   try {
-    if (!session) {
-      await SecureStore.deleteItemAsync(KEY);
-      return;
-    }
+    if (!session) return await removeSession();
     await SecureStore.setItemAsync(KEY, JSON.stringify(session), {
       // The session is only ever needed while somebody is using the app, and
       // this is the strictest option that still survives a restart. It also
       // keeps the token off a device that has no passcode at all.
       keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
     });
-  } catch {
-    // Nothing to do and nothing to say: the next launch will find no session
-    // and ask the person to sign in, which is the honest outcome.
+    return true;
+  } catch (err) {
+    // The next launch will find the older session, fail to renew it and ask
+    // the person to sign in -- which is the honest outcome, but not one worth
+    // reaching in silence.
+    console.warn("[nekan] could not store the session", err);
+    return false;
   }
 }
 
-export const clearSession = (): Promise<void> => writeSession(null);
+/**
+ * Delete the stored session, or failing that make it unreadable.
+ *
+ * A keychain can refuse. Reporting that and stopping would leave the session
+ * on disk for the next launch to restore, so the fallback overwrites it with
+ * a value `readSession` cannot parse -- signed out is signed out, and an
+ * entry that reads back as nothing is as good as no entry.
+ */
+async function removeSession(): Promise<boolean> {
+  try {
+    await SecureStore.deleteItemAsync(KEY);
+    return true;
+  } catch (err) {
+    console.warn("[nekan] could not delete the session", err);
+  }
+  try {
+    await SecureStore.setItemAsync(KEY, "");
+    return true;
+  } catch (err) {
+    console.warn("[nekan] could not invalidate the session either", err);
+    return false;
+  }
+}
+
+export const clearSession = (): Promise<boolean> => writeSession(null);

@@ -15,7 +15,7 @@
  * cost a task every so often, in a way nobody could reproduce.
  */
 import { AppState, type AppStateStatus } from "react-native";
-import { accessToken, currentSession } from "../api/session";
+import { accessToken, currentSession, sessionEpoch } from "../api/session";
 import {
   allTasks,
   saveSyncState,
@@ -114,8 +114,16 @@ async function run(): Promise<void> {
   running = true;
   dirty = false;
   report({ phase: "syncing" });
+  // Claimed before the first await. Signing out cancels the timer but cannot
+  // cancel a request already in the air, and the rest of this run would then
+  // spend a token the person has just revoked: push their rows, write the old
+  // account's cursor, and arm the next run. Every step after an await asks
+  // whether it is still the same session first.
+  const startedAt = sessionEpoch();
+  const ours = () => sessionEpoch() === startedAt;
   try {
     const token = await accessToken();
+    if (!ours()) return;
     // No token while signed in means the renewal failed. That is the network's
     // problem rather than the person's; try again on the usual schedule.
     if (!token) return backOff();
@@ -129,6 +137,7 @@ async function run(): Promise<void> {
       reconcile ? 0 : state.cursor,
       state.pushedAt,
     );
+    if (!ours()) return;
     state.cursor = Math.max(state.cursor, pulled.cursor);
     if (!pulled.ok) {
       saveSyncState(state);
@@ -137,6 +146,7 @@ async function run(): Promise<void> {
     if (reconcile) reconciledAt = Date.now();
 
     const pushed = await push(token, session.userId, state.pushedAt);
+    if (!ours()) return;
     state.pushedAt = pushed.pushedAt;
     saveSyncState(state);
     if (!pushed.ok) return backOff();

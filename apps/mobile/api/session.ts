@@ -46,10 +46,23 @@ let refreshing: Promise<Session | null> | null = null;
  */
 let epoch = 0;
 
-/** Rule 1: storage first, then anywhere else. */
+/**
+ * Rule 1: storage first, then anywhere else.
+ *
+ * The two lines were the other way round, which the comment above already
+ * disagreed with. Order matters because a refresh token rotates: the pair on
+ * disk has to be the new one before anything spends it, or a crash in between
+ * leaves the disk holding a token the server has already retired.
+ *
+ * The new session is adopted whether or not the write succeeded, and that is
+ * deliberate. The rotation happened on the server either way -- the old token
+ * is dead -- so refusing to adopt would end the session now instead of at the
+ * next cold start. writeSession says what happened; there is nothing better
+ * to do with the answer here than what it already does with it.
+ */
 async function remember(next: Session | null): Promise<Session | null> {
-  session = next;
   await writeSession(next);
+  session = next;
   return next;
 }
 

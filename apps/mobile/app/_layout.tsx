@@ -22,23 +22,42 @@ export default function RootLayout() {
   const c = useColors();
   const theme = useThemeName();
 
+  // Start-up, in order, because the order is load-bearing.
+  //
   // Reading the board is the first thing the app does and the only thing that
   // has to finish before rows can be real. It runs here rather than in the
   // matrix screen because the archive reads the same store, and two screens
   // racing to load one file is a bug waiting for a slow disk.
+  //
+  // The stored language cannot be read at import time -- the store loads from
+  // disk and the first screen renders before it lands -- so the device decides
+  // the first paint and this corrects it. The desktop has the same problem and
+  // solves it by handing the language to the window before it opens; a phone
+  // has no such moment.
+  //
+  // Sync goes last, and that is the part that used to be wrong. Started
+  // alongside, a run could reach `saveSyncState` before `init` assigned the
+  // settings it had read off disk -- and that assignment would then drop the
+  // cursor and the watermark the run had just written. Waiting for the session
+  // too costs nothing and spares the first run from finding nobody signed in.
+  //
+  // Nothing on screen waits for any of this. The board appears when it is
+  // read, and whoever was signed in last appears a moment later.
   useEffect(() => {
-    // The stored language cannot be read at import time -- the store loads
-    // from disk and the first screen renders before it lands -- so the device
-    // decides the first paint and this corrects it. The desktop has the same
-    // problem and solves it by handing the language to the window before it
-    // opens; a phone has no such moment.
-    void init().then(() => {
+    let stop: (() => void) | null = null;
+    let cancelled = false;
+    void (async () => {
+      await init();
       if (applyLanguage(languageChoice())) redraw();
-    });
-    // Separately from the board: a session that has to be renewed talks to the
-    // network, and nothing on screen may wait for that. Whoever was signed in
-    // last simply appears a moment later.
-    void initAuth().then(setAuth);
+      setAuth(await initAuth());
+      // The loop watches the app's own comings and goings; this only owns its
+      // lifetime, so a reload does not leave a second one running.
+      if (!cancelled) stop = startSync();
+    })();
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
   }, []);
 
   // "System" has to go on meaning the system, and the two settings did not
@@ -46,10 +65,6 @@ export default function RootLayout() {
   // on an appearance change -- while the language was read once and kept.
   // Changing it in the OS does not always restart the app, so coming back to
   // the front is where the question gets asked again.
-  // The loop watches the app's own comings and goings; this only owns its
-  // lifetime, so a reload does not leave a second one running.
-  useEffect(() => startSync(), []);
-
   useEffect(() => {
     const sub = AppState.addEventListener("change", (next) => {
       if (next !== "active" || languageChoice() !== null) return;

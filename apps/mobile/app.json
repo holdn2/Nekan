@@ -43,7 +43,8 @@
       "policy": "appVersion"
     },
     "updates": {
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/0cab499c-a177-4212-b600-7bafabeb61bc"
     },
     "icon": "./assets/icon.png",
     "splash": {
