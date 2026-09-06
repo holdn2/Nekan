@@ -13,7 +13,7 @@
  */
 import { normalizeTasks, sanitizeSpace } from "@nekan/shared/core";
 import type { PublicSession, Space, Task } from "@nekan/shared/types";
-import { load, save, type Stored } from "./persist";
+import { backup, load, save, type Stored } from "./persist";
 
 let tasks: Task[] = [];
 let settings: Record<string, unknown> = {};
@@ -159,6 +159,27 @@ export function useAccount(userId: string | null): SyncState {
   const next: SyncState = { cursor: 0, pushedAt: 0, account: userId };
   saveSyncState(next);
   return next;
+}
+
+/**
+ * Signing in, and what to do with the tasks already on this device.
+ *
+ * "merge" sends them up into the account; "replace" keeps only what the
+ * account already had. The desktop has asked this since accounts existed and
+ * the phone never did -- it always merged, so signing in on somebody else's
+ * phone copied their list into your account, permanently and quietly.
+ *
+ * Even "replace" destroys nothing. The board is copied aside first and nothing
+ * is cleared unless that copy is on disk: being asked to leave tasks out is
+ * not being asked to lose them, and a write can fail.
+ */
+export function adoptLocalTasks(mode: string): void {
+  if (mode !== "replace") return;
+  if (!backup({ tasks, settings })) {
+    console.warn("[nekan] pre-login backup failed; keeping the local tasks");
+    return;
+  }
+  setTasks([]);
 }
 
 export type ThemeChoice = "light" | "dark" | null;

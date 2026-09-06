@@ -33,6 +33,9 @@ const EMPTY: Stored = { tasks: [], settings: {} };
  * file became data.json after the first save, and the second save tried to
  * move data.json onto the file it had just deleted.
  */
+/** How many rescued boards may pile up before this gives up. */
+const BACKUP_LIMIT = 20;
+
 function handles() {
   const dir = new Directory(Paths.document, "nekan");
   return {
@@ -88,3 +91,38 @@ export async function save(state: Stored): Promise<void> {
 
 /** Where the file is, for the settings screen to show and for diagnosis. */
 export const storePath = () => handles().file.uri;
+
+/**
+ * Copy the whole board aside, without ever overwriting one already there.
+ *
+ * Used when somebody signs in and asks to keep only the account's tasks. The
+ * local ones are not deleted, because "leave mine out" and "destroy mine" are
+ * different requests -- and the second is not one this app is ever given.
+ *
+ * Returns whether the copy is on disk. The caller must not clear anything
+ * unless it is: a write can fail on a full disk, and clearing anyway would
+ * destroy the very list this exists to preserve.
+ *
+ * Numbered rather than replaced, so signing in twice does not overwrite the
+ * first rescue with the second -- by then the board has already been emptied
+ * once and the second copy could be empty.
+ */
+export function backup(state: Stored): string | null {
+  const { dir } = handles();
+  try {
+    dir.create({ intermediates: true, idempotent: true });
+    for (let n = 0; n < BACKUP_LIMIT; n += 1) {
+      const name = n ? `data.before-login.${n}.json` : "data.before-login.json";
+      const copy = new File(dir, name);
+      if (copy.exists) continue;
+      copy.create();
+      copy.write(JSON.stringify(state));
+      return copy.uri;
+    }
+    console.warn("[nekan] too many pre-login backups; keeping the board");
+    return null;
+  } catch (err) {
+    console.warn("[nekan] could not copy the board aside", err);
+    return null;
+  }
+}
