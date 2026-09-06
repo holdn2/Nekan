@@ -32,19 +32,35 @@ test("the architectures come from the build config, not from a copy of it", () =
   assert.deepEqual(macArches(), ARCHES);
 });
 
-test("a Windows-only release passes, and mac is not asked for", () => {
-  const { platforms, missing, unexpected } = auditAssets(WIN, ARCHES);
-  assert.deepEqual(platforms, ["windows"]);
-  assert.deepEqual(missing, []);
-  assert.deepEqual(unexpected, []);
+test("mac is asked for even when nothing of its own arrived", () => {
+  // The hole this closes. It used to be asked for only when a mac file was
+  // already there, so a release whose mac half never ran had no mac files, the
+  // rule switched itself off, and the check said the release was complete.
+  // Nothing looks wrong on the day: mac users just stop being offered updates,
+  // because the feed they read is a latest-mac.yml nobody uploaded.
+  const { platforms, missing } = auditAssets(WIN, ARCHES);
+  assert.deepEqual(platforms, ["windows", "mac"]);
+  assert.deepEqual(missing, [
+    "mac: arm64 dmg",
+    "mac: arm64 zip",
+    "mac: arm64 zip blockmap",
+    "mac: x64 dmg",
+    "mac: x64 zip",
+    "mac: x64 zip blockmap",
+    "mac: latest-mac.yml",
+  ]);
 });
+
+/** Just the entries one platform owes, so a test about Windows is about Windows. */
+const owedBy = (missing: string[], name: string) =>
+  missing.filter((m) => m.startsWith(`${name}:`));
 
 test("Windows is asked for even when nothing of its own arrived", () => {
   // `npm run release` builds Windows, so an empty draft is a silent failure,
   // not a release that has not got there yet.
   const { platforms, missing } = auditAssets([], ARCHES);
-  assert.deepEqual(platforms, ["windows"]);
-  assert.equal(missing.length, 3);
+  assert.deepEqual(platforms, ["windows", "mac"]);
+  assert.equal(owedBy(missing, "windows").length, 3);
 });
 
 test("a missing blockmap fails -- everyone would download the whole installer", () => {
@@ -52,7 +68,7 @@ test("a missing blockmap fails -- everyone would download the whole installer", 
     ["Nekan-Setup-1.0.0.exe", "latest.yml"],
     ARCHES,
   );
-  assert.deepEqual(missing, ["windows: installer blockmap"]);
+  assert.deepEqual(owedBy(missing, "windows"), ["windows: installer blockmap"]);
 });
 
 test("a missing latest.yml fails -- nobody would update at all", () => {
@@ -60,7 +76,7 @@ test("a missing latest.yml fails -- nobody would update at all", () => {
     WIN.filter((n) => n !== "latest.yml"),
     ARCHES,
   );
-  assert.deepEqual(missing, ["windows: latest.yml"]);
+  assert.deepEqual(owedBy(missing, "windows"), ["windows: latest.yml"]);
 });
 
 test("a mac blockmap does not stand in for the installer's", () => {

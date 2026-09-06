@@ -71,7 +71,14 @@ function platforms(arches) {
     },
     {
       name: "mac",
-      always: false,
+      // Asked for whether or not any mac file turned up. It used to be asked
+      // for only when one had, which reads as caution and is the opposite: a
+      // release where the mac half never ran has no mac files, so the rule
+      // switched itself off and the check said "ok -- publish it". Nothing is
+      // wrong on the day; mac users simply stop being offered updates, because
+      // the feed they read is the latest-mac.yml that was never uploaded.
+      // Happened on v1.0.4, which is why the wording above is not hypothetical.
+      always: true,
       owns: (n) =>
         n === "latest-mac.yml" || /\.(dmg|zip)(\.blockmap)?$/.test(n),
       required: [
@@ -161,6 +168,16 @@ if (require.main === module) {
   const tag = `v${version}`;
 
   /**
+   * Whether the mac half is still expected rather than missing.
+   *
+   * Two machines make a release and they cannot both have finished when the
+   * first one asks. This flag is how the Windows half says "I am not the whole
+   * release": the mac entries are reported as owed instead of failing, and the
+   * exit code stays zero. Without it -- which is how `npm run release:check`
+   * and the mac workflow both run -- a release missing either half is an error.
+   */
+  const awaitingMac = process.argv.includes("--awaiting-mac");
+  /**
    * Where this machine's build left its files.
    *
    * tools/dist.js decides it and passes it in, so the build and this check
@@ -169,7 +186,7 @@ if (require.main === module) {
    * it, the default is the configured one.
    */
   const DIST =
-    process.argv[2] ||
+    process.argv.slice(2).find((a) => !a.startsWith("--")) ||
     process.env.NEKAN_DIST ||
     require("../package.json").build?.directories?.output ||
     "dist";
@@ -275,13 +292,25 @@ if (require.main === module) {
     const { platforms, missing, unexpected } = auditAssets(names);
     console.log(`\nchecked: ${platforms.join(", ")}`);
 
-    if (missing.length || unexpected.length) {
-      if (missing.length)
-        console.error(`\ncheck-release: missing ${missing.join(", ")}`);
+    // Owed, not missing: the mac half is built on another machine and cannot
+    // be here yet when the Windows half asks.
+    const owed = awaitingMac ? missing.filter((m) => m.startsWith("mac:")) : [];
+    const broken = missing.filter((m) => !owed.includes(m));
+
+    if (broken.length || unexpected.length) {
+      if (broken.length)
+        console.error(`\ncheck-release: missing ${broken.join(", ")}`);
       if (unexpected.length) {
         console.error(`check-release: unrecognised ${unexpected.join(", ")}`);
       }
       process.exit(1);
+    }
+
+    if (owed.length) {
+      console.log(`\nthe mac half is still owed: ${owed.join(", ")}`);
+      console.log("run the Mac build workflow on main with publish on, then:");
+      console.log("  npm run release:check");
+      return;
     }
 
     console.log("\nok — publish it on GitHub to make it live");

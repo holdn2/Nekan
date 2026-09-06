@@ -134,7 +134,11 @@ function main() {
   // is told where the files are rather than assuming, for the reason in the
   // header.
   if (!publish) return;
-  run(path.join(__dirname, "check-release.js"), [out]);
+  // --awaiting-mac: this machine builds Windows, and the mac half is a separate
+  // workflow on a separate machine. Without the flag the check would call a
+  // half-finished release broken; with it, it names what is still owed and says
+  // how to ask again. See check-release.js.
+  run(path.join(__dirname, "check-release.js"), [out, "--awaiting-mac"]);
 }
 
 module.exports = { outputDir, builderCli, parseArgs };
