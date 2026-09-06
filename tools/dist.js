@@ -134,7 +134,15 @@ function main() {
   // is told where the files are rather than assuming, for the reason in the
   // header.
   if (!publish) return;
-  run(path.join(__dirname, "check-release.js"), [out]);
+  // --awaiting-mac says "the mac half is somebody else's job", which is true of
+  // the Windows build and the exact opposite of the mac one. Passing it either
+  // way would let a mac build that produced nothing report a complete release:
+  // its own missing files would be excused as owed. The flag belongs to the
+  // half that is not building mac. See check-release.js.
+  run(path.join(__dirname, "check-release.js"), [
+    out,
+    ...(mac ? [] : ["--awaiting-mac"]),
+  ]);
 }
 
 module.exports = { outputDir, builderCli, parseArgs };

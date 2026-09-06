@@ -767,6 +767,15 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   `[.[] | select(.tag_name == "<태그>")] | first | if . == null then "missing" elif .draft
 then "draft" else "published" end` (실측: `v1.0.1 -> draft`, `v1.0.0 -> published`,
   `v9.9.9 -> missing`). **페이지네이션이 없어서 기본 30개까지만 본다** — 이슈 #88.
+- **`check-release.js`는 맥 산출물을 언제나 요구한다** (2026-09-06). 예전에는 맥 파일이
+  **이미 있을 때만** 맥 규칙을 켰는데, 그건 조심스러운 것이 아니라 정반대였다 — 맥 절반이
+  아예 안 돌면 맥 파일이 없고, 그러면 규칙이 스스로 꺼져서 **`ok — publish it`이 뜬다.**
+  그날은 아무 문제가 없어 보이고 맥 사용자만 조용히 업데이트를 못 받는다(그들이 읽는 피드가
+  올라간 적 없는 `latest-mac.yml`이다). **v1.0.4에서 실제로 그렇게 통과했다.**
+  그래서 절반짜리 릴리스와 고장난 릴리스를 가르는 플래그가 생겼다: `npm run release`는
+  `--awaiting-mac`으로 부르고(맥은 **아직 빚**이라 exit 0으로 무엇이 남았는지를 찍는다),
+  **`npm run release:check`는 플래그 없이 불러 둘 중 하나라도 없으면 exit 1**이다.
+  공개 직전에 그것을 돌리는 것이 절차이고, **맥 없이 `ok`가 나올 길은 이제 없다.**
 - **electron-builder가 만드는 것은 draft다.** 업로드가 끝나도 공개되지 않는다 —
   `gh release edit v<버전> --notes-file <파일> --draft=false --latest`로 노트를 넣고 공개한다.
   릴리스 노트는 **사용자가 주는 문구를 그대로** 쓴다.
