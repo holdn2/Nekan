@@ -28,8 +28,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { INBOX, SPACES, isCrowded } from "@nekan/shared/core";
+import { INBOX, isCrowded } from "@nekan/shared/core";
 import type { Place, Quadrant, Space, Task } from "@nekan/shared/types";
 import { AddForm } from "../../components/add-form";
 import { TaskList, type CardRects } from "../../components/task-list";
@@ -39,7 +38,7 @@ import { t } from "../../i18n";
 import { FS, FW, R, SP, useColors } from "../../theme";
 import { router } from "expo-router";
 import { activeOf, counts, inboxTasks, quadrants } from "../../store/selectors";
-import { currentSpace, isReady, setSpace } from "../../store/state";
+import { currentSpace, isReady } from "../../store/state";
 import { useStore } from "../../store/use-store";
 
 // LayoutAnimation does nothing under the New Architecture -- not degraded,
@@ -108,7 +107,7 @@ export default function MatrixScreen() {
 
   return (
     <View style={[s.window, { backgroundColor: c.bg }]}>
-      <SafeAreaView style={s.root} edges={["top"]}>
+      <View style={s.root}>
         {/* Anything that is not the field puts the keyboard away. This catches
           the bare parts -- the bar, the gaps, the panel's own background --
           and the controls that sit on top of it say so themselves, because a
@@ -118,31 +117,6 @@ export default function MatrixScreen() {
           onPress={() => Keyboard.dismiss()}
           accessible={false}
         >
-          <View style={[s.bar, { borderBottomColor: c.line }]}>
-            <Text style={[s.brand, { color: c.text }]}>Nekan</Text>
-            <View
-              style={[
-                s.switch_,
-                { backgroundColor: c["panel-2"], borderColor: c.line },
-              ]}
-            >
-              {SPACES.map((sp: Space) => (
-                <Pressable key={sp} onPress={() => setSpace(sp)} hitSlop={4}>
-                  <Text
-                    style={[
-                      s.switchItem,
-                      sp === space
-                        ? { backgroundColor: c.accent, color: c["on-accent"] }
-                        : { color: c.muted },
-                    ]}
-                  >
-                    {t(`space.${sp}`)}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
           {/* Filing was one-way without this. A task typed into the dump goes down
           into a quadrant and could never come back: the four cards were the
           only things a drag could aim at, and the detail screen offered only
@@ -296,7 +270,7 @@ export default function MatrixScreen() {
             })}
           </View>
         </Pressable>
-      </SafeAreaView>
+      </View>
 
       {/* Outside the safe area on purpose: the gesture reports window
           coordinates, and a container that starts below the notch would put
@@ -340,29 +314,6 @@ const s = StyleSheet.create({
     elevation: 6,
   },
   dismiss: { flex: 1 },
-  bar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: SP["4xl"],
-    paddingVertical: SP.lg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  brand: { fontSize: FS.xl, fontWeight: FW.semibold },
-  switch_: {
-    flexDirection: "row",
-    borderRadius: R.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: "hidden",
-  },
-  switchItem: {
-    paddingHorizontal: SP["3xl"],
-    paddingVertical: SP.sm,
-    fontSize: FS.md,
-    fontWeight: FW.semibold,
-    borderRadius: R.pill,
-    overflow: "hidden",
-  },
   // Shrinks so the grid keeps its size; the grid is what you drop onto.
   panelBody: { flex: 1, minHeight: 0 },
   panel: {
