@@ -262,6 +262,18 @@ export function touch(task: Task): void {
   task.updatedAt = now();
 }
 
+/**
+ * The same, for a change of state rather than of content.
+ *
+ * Completing, trashing, restoring and purging stamp `stateAt` and leave
+ * `updatedAt` where it was. That is the whole point of the second stamp: this
+ * device saying "it is done" must not also claim to have written the memo
+ * another device is writing at the same moment. See `mergeIncoming`.
+ */
+export function touchState(task: Task): void {
+  task.stateAt = now();
+}
+
 /** Rows are pushed, never spliced -- a task leaves a board by timestamp. */
 export function insertTask(task: Task): void {
   tasks.push(task);
@@ -270,6 +282,13 @@ export function insertTask(task: Task): void {
 /** Save and redraw. Every mutation ends here so neither can be forgotten. */
 export function commit(...touched: Task[]): void {
   for (const task of touched) touch(task);
+  notify();
+  void persist();
+}
+
+/** commit(), for the state half. See touchState. */
+export function commitState(...touched: Task[]): void {
+  for (const task of touched) touchState(task);
   notify();
   void persist();
 }

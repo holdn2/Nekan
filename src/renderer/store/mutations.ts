@@ -15,6 +15,7 @@ import { clampText, orderKeyBetween, spaceFor } from "../../shared/core.js";
 import {
   allTasks,
   commit,
+  commitState,
   findTask,
   getSpace,
   now,
@@ -46,6 +47,10 @@ function makeTask(quadrant: Place, text: string, dueDate: string | null): Task {
     orderKey: tailKey(quadrant),
     createdAt: at,
     updatedAt: at,
+    // A new task has never changed state, so both halves start together --
+    // which is also what a stamp of zero would mean, only without the special
+    // case every comparison would then have to make.
+    stateAt: at,
     completedAt: null,
     deletedAt: null,
     purgedAt: null,
@@ -87,7 +92,7 @@ export function completeTask(id: string) {
   const task = findTask(id);
   if (!task) return;
   task.completedAt = now();
-  commit(task);
+  commitState(task);
 }
 
 /** Undo a completion — back to the quadrant it came from. */
@@ -95,7 +100,7 @@ export function restoreTask(id: string) {
   const task = findTask(id);
   if (!task) return;
   task.completedAt = null;
-  commit(task);
+  commitState(task);
 }
 
 /** Set or clear the due date ('YYYY-MM-DD' or null). */
@@ -111,7 +116,7 @@ export function deleteTask(id: string) {
   const task = findTask(id);
   if (!task) return;
   task.deletedAt = now();
-  commit(task);
+  commitState(task);
 }
 
 /** Undo a soft delete. */
@@ -119,7 +124,7 @@ export function untrashTask(id: string) {
   const task = findTask(id);
   if (!task) return;
   task.deletedAt = null;
-  commit(task);
+  commitState(task);
 }
 
 /**
@@ -140,7 +145,9 @@ export function purgeTask(id: string) {
   const task = findTask(id);
   if (!task) return;
   tombstone(task);
-  commit(task);
+  // Both halves: see purgeAll() in bulk.js for why.
+  task.updatedAt = now();
+  commitState(task);
 }
 
 /**

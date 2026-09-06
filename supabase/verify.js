@@ -146,6 +146,11 @@ const pull = (token, since = 0, limit = 500) =>
     order_key: "V",
     created_at: t0,
     updated_at: t0,
+    // Both halves, always. A payload that leaves one out does not merely skip
+    // it: PostgREST updates only the columns it was given, so the trigger sees
+    // the stored value as `new`, reads a tie, and keeps the old half -- which
+    // looks exactly like the write being rejected.
+    state_at: t0,
     completed_at: null,
     deleted_at: null,
     purged_at: null,
@@ -234,7 +239,13 @@ const pull = (token, since = 0, limit = 500) =>
 
   console.log("\n== 묘비 ==");
   await push(mine.access_token, [
-    row({ text: "", memo: null, purged_at: t0 + 20, updated_at: t0 + 20 }),
+    row({
+      text: "",
+      memo: null,
+      purged_at: t0 + 20,
+      updated_at: t0 + 20,
+      state_at: t0 + 20,
+    }),
   ]);
   const buried = await readBack(id("a"));
   check("묘비가 행으로 남는다", buried?.purged_at === t0 + 20);
@@ -248,6 +259,87 @@ const pull = (token, since = 0, limit = 500) =>
     "오래된 수정이 묘비를 되살리지 못한다",
     stillBuried.purged_at === t0 + 20 && stillBuried.text === "",
     `text=${stillBuried.text} purged=${stillBuried.purged_at}`,
+  );
+
+  console.log("\n== 두 갈래 ==");
+  // The point of the second stamp: a device that changed one half must not
+  // carry the other half's older copy over what somebody else wrote there.
+  const split = id("split");
+  await push(mine.access_token, [
+    row({ id: split, text: "처음", updated_at: t0, state_at: t0 }),
+  ]);
+
+  // One device completes it. Content untouched, so its content stamp stays.
+  await push(mine.access_token, [
+    row({
+      id: split,
+      text: "처음",
+      updated_at: t0,
+      completed_at: t0 + 30,
+      state_at: t0 + 30,
+    }),
+  ]);
+  // Another writes a memo without having heard about the completion yet: newer
+  // content, and the state half as it last saw it.
+  await push(mine.access_token, [
+    row({
+      id: split,
+      text: "처음",
+      memo: "초안 먼저",
+      updated_at: t0 + 40,
+      completed_at: null,
+      state_at: t0,
+    }),
+  ]);
+  const both = await readBack(split);
+  check(
+    "새 메모가 들어가고",
+    both?.memo === "초안 먼저" && both?.updated_at === t0 + 40,
+    `memo=${both?.memo} updated=${both?.updated_at}`,
+  );
+  check(
+    "완료는 그대로 남는다",
+    both?.completed_at === t0 + 30 && both?.state_at === t0 + 30,
+    `completed=${both?.completed_at} state=${both?.state_at}`,
+  );
+
+  // And the other direction: newer state, older content.
+  await push(mine.access_token, [
+    row({
+      id: split,
+      text: "옛 제목",
+      memo: null,
+      updated_at: t0 + 5,
+      completed_at: null,
+      state_at: t0 + 50,
+    }),
+  ]);
+  const undone = await readBack(split);
+  check(
+    "되돌리기는 전파되고",
+    undone?.completed_at === null && undone?.state_at === t0 + 50,
+    `completed=${undone?.completed_at} state=${undone?.state_at}`,
+  );
+  check(
+    "옛 내용은 덮지 못한다",
+    undone?.memo === "초안 먼저" && undone?.updated_at === t0 + 40,
+    `memo=${undone?.memo} updated=${undone?.updated_at}`,
+  );
+
+  const beforeStale = (await readBack(split)).server_seq;
+  await push(mine.access_token, [
+    row({
+      id: split,
+      text: "둘 다 옛것",
+      updated_at: t0 + 1,
+      state_at: t0 + 1,
+    }),
+  ]);
+  const afterStale = await readBack(split);
+  check(
+    "두 갈래 다 옛것이면 커서가 안 움직인다",
+    afterStale.server_seq === beforeStale,
+    `${beforeStale} -> ${afterStale.server_seq}`,
   );
 
   console.log("\n== 지울 수 없다 ==");

@@ -9,6 +9,7 @@ import {
   mergeIncoming,
   pendingChanges,
   pushedThrough,
+  unsentChanges,
   nextCursor,
   hasMore,
   PAGE_SIZE,
@@ -30,6 +31,7 @@ function task(over: Partial<Task> = {}): Task {
     deletedAt: null,
     purgedAt: null,
     ...over,
+    stateAt: over.stateAt ?? over.updatedAt ?? 1000,
   };
 }
 
@@ -152,4 +154,22 @@ test("a first sync whose total lands exactly on a page boundary still ends", () 
   // 3 + 3 + 0: the empty round is the cost of not being able to tell a full
   // last page from a full middle one.
   assert.equal(rounds, 3);
+});
+
+/* -------------------------------------------------- the state half counts too */
+
+test("a task that was only completed is still waiting to be sent", () => {
+  // `updatedAt` alone would miss it: completing stamps the other half, and a
+  // watermark that only looked at content would leave the completion here
+  // forever while calling the device up to date.
+  const tasks = [task({ id: "done", updatedAt: 100, stateAt: 900 })];
+
+  assert.equal(pendingChanges(tasks, 500).length, 1);
+  assert.equal(unsentChanges(tasks, 500).length, 1);
+});
+
+test("and it moves the watermark past itself", () => {
+  const pending = [task({ id: "done", updatedAt: 100, stateAt: 900 })];
+
+  assert.equal(pushedThrough(pending, 500), 900);
 });

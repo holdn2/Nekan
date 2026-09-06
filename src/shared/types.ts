@@ -37,8 +37,24 @@ export interface Task {
   memo: string | null;
   dueDate: string | null;
   createdAt: number;
-  /** What last-write-wins compares. Written through the renderer's now(). */
+  /**
+   * When the *content* last changed -- text, place, order, memo, due date.
+   *
+   * Not the whole row: completing or deleting a task stamps `stateAt` instead.
+   * The two are compared separately when devices disagree, so a memo written
+   * here cannot undo a completion made there. See `mergeIncoming`.
+   *
+   * Written through the store's now(), never Date.now().
+   */
   updatedAt: number;
+  /**
+   * When the task last changed *state* -- completed, trashed, purged.
+   *
+   * A row written before this field existed has none, and every reader treats
+   * that as `updatedAt`: the old behaviour was one stamp for the whole row, so
+   * that is what such a row still means.
+   */
+  stateAt: number;
   completedAt: number | null;
   deletedAt: number | null;
   purgedAt: number | null;

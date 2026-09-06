@@ -28,6 +28,7 @@ const task = (n: number, over: Partial<Task> = {}): Task => ({
   deletedAt: null,
   purgedAt: null,
   ...over,
+  stateAt: over.stateAt ?? over.updatedAt ?? 1,
 });
 
 /** The four sections index.html owns and React fills. */

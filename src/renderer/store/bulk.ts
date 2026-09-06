@@ -8,7 +8,7 @@
  */
 
 import type { Task } from "../../shared/types.js";
-import { commit, now } from "./state.js";
+import { commitState, now } from "./state.js";
 import { tombstone } from "./mutations.js";
 
 /**
@@ -31,7 +31,7 @@ export function trashAll(items: Task[]) {
   items.forEach((t) => {
     t.deletedAt = at;
   });
-  commit(items);
+  commitState(items);
 }
 
 /** "전체 복원" — pull the whole trash list back out. */
@@ -40,12 +40,23 @@ export function untrashAll(items: Task[]) {
   items.forEach((t) => {
     t.deletedAt = null;
   });
-  commit(items);
+  commitState(items);
 }
 
-/** "휴지통 비우기" — permanent for the user, a tombstone in the file. */
+/**
+ * "휴지통 비우기" — permanent for the user, a tombstone in the file.
+ *
+ * The only one here that stamps both halves, because a tombstone changes both:
+ * `purgedAt` is state, and the text and memo it clears are content. Stamping
+ * only the state would let another device's older content edit put the text
+ * back on a row that is meant to be empty for months.
+ */
 export function purgeAll(items: Task[]) {
   if (!items.length) return;
-  items.forEach(tombstone);
-  commit(items);
+  const at = now();
+  items.forEach((t) => {
+    tombstone(t);
+    t.updatedAt = at;
+  });
+  commitState(items);
 }
