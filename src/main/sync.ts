@@ -14,4 +14,10 @@
  */
 
 export { getSyncStatus } from "./sync/status";
-export { initSync, announceTasks, syncSoon, syncAccount } from "./sync/loop";
+export {
+  initSync,
+  announceTasks,
+  syncSoon,
+  syncNow,
+  syncAccount,
+} from "./sync/loop";

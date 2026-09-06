@@ -397,5 +397,18 @@
   },
   "app": {
     "startFailed": "Could not start. Please launch the app again."
+  },
+  "ago": {
+    "now": "just now",
+    "minutes_one": "{{count}} minute ago",
+    "minutes_other": "{{count}} minutes ago",
+    "hours_one": "{{count}} hour ago",
+    "hours_other": "{{count}} hours ago",
+    "days_one": "{{count}} day ago",
+    "days_other": "{{count}} days ago"
+  },
+  "sync": {
+    "now": "Sync now",
+    "stateAgo": "{{state}} · {{ago}}"
   }
 }

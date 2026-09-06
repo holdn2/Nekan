@@ -241,6 +241,30 @@ function syncSoon() {
 }
 
 /**
+ * Somebody pressed the button. Go now, and forget how badly it was going.
+ *
+ * Resetting `failures` is the whole point rather than a tidy-up. After a run
+ * of failures the wait is up to five minutes, so a person whose network just
+ * came back watches "오프라인" and has no way to say "try again" -- which is
+ * precisely the button. Scheduling without the reset would go once and then
+ * fall back into the same five minutes on the next failure.
+ *
+ * A run already in flight is left alone: it is doing the thing that was asked
+ * for, and starting a second would have the two overwrite each other's cursor.
+ * `woke` is what makes the press count anyway -- the run reschedules soon
+ * instead of at the next heartbeat, so a press during a sync still produces a
+ * fresh one after it.
+ */
+function syncNow() {
+  failures = 0;
+  if (running) {
+    woke = true;
+    return;
+  }
+  schedule(0);
+}
+
+/**
  * The account changed. Starts over from nothing, on purpose: after a login
  * every local task counts as pending and goes up.
  *
@@ -261,4 +285,11 @@ function syncAccount(userId: string | null) {
   }
 }
 
-export { initSync, getSyncStatus, announceTasks, syncSoon, syncAccount };
+export {
+  initSync,
+  getSyncStatus,
+  announceTasks,
+  syncSoon,
+  syncNow,
+  syncAccount,
+};
