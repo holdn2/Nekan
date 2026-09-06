@@ -134,11 +134,15 @@ function main() {
   // is told where the files are rather than assuming, for the reason in the
   // header.
   if (!publish) return;
-  // --awaiting-mac: this machine builds Windows, and the mac half is a separate
-  // workflow on a separate machine. Without the flag the check would call a
-  // half-finished release broken; with it, it names what is still owed and says
-  // how to ask again. See check-release.js.
-  run(path.join(__dirname, "check-release.js"), [out, "--awaiting-mac"]);
+  // --awaiting-mac says "the mac half is somebody else's job", which is true of
+  // the Windows build and the exact opposite of the mac one. Passing it either
+  // way would let a mac build that produced nothing report a complete release:
+  // its own missing files would be excused as owed. The flag belongs to the
+  // half that is not building mac. See check-release.js.
+  run(path.join(__dirname, "check-release.js"), [
+    out,
+    ...(mac ? [] : ["--awaiting-mac"]),
+  ]);
 }
 
 module.exports = { outputDir, builderCli, parseArgs };
