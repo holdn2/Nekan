@@ -16,6 +16,25 @@
 -- *different halves* of the same task, and leaves the rest alone: two devices
 -- editing the same memo still settle on one of them.
 
+-- Applying this and updating the clients is one sitting, not two.
+--
+-- A client from before the split stamps the whole row with `updated_at` and
+-- sends no `state_at` -- and PostgREST updates only the columns it was given,
+-- so the trigger sees the stored value as `new` and reads a tie. Its content
+-- half lands and its completion is dropped. Worse, on that client's next pull
+-- the server's row ties on `updated_at`, the server wins the tie, and the
+-- completion goes from the screen too.
+--
+-- The other order is no better. A new client completing a task stamps only
+-- `state_at`, and the old trigger compares `updated_at`, sees no change, and
+-- skips the row -- while the client's watermark moves past it. That one is a
+-- permanent loss, not a delayed one.
+--
+-- There is no clause that fixes both, because a BEFORE trigger cannot tell
+-- "no state_at was sent" from "a state_at equal to mine was sent", and the
+-- rules those two need are opposite. So the answer is not SQL: apply this and
+-- put the new code on every device before using any of them again.
+
 alter table public.tasks
   add column if not exists state_at bigint not null default 0;
 
