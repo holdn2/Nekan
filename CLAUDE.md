@@ -279,6 +279,20 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
     지우면 아직 동기화하지 않은 다른 기기가 그 항목을 도로 밀어 넣는다.
   - 실제 `filter`로 제거하는 곳은 `dropExpiredTombstones()` 단 하나뿐이고,
     `main/store.ts`의 `load()`가 시작할 때 한 번 부른다 (TTL 90일).
+- **도장이 둘이다. 완료·삭제는 `updatedAt`이 아니라 `stateAt`을 찍는다** (2026-09-06).
+  `updatedAt`은 **내용**(제목·분면·순서·메모·마감일)이, `stateAt`은 **상태**(완료·휴지통·
+  영구삭제)가 바뀐 시각이고, 병합은 **두 절반을 따로** 비교한다. 그래서 데스크톱은
+  `commit()` 옆에 `commitState()`가, 폰은 `touch()` 옆에 `touchState()`가 있다 —
+  **완료를 `commit()`으로 저장하면 그 완료가 다른 기기의 메모 편집에 조용히 지워진다.**
+  묘비만 예외로 **둘 다** 찍는다(`purgedAt`은 상태이고, 그때 비우는 `text`·`memo`는 내용이다).
+  비교하는 곳은 셋이고 셋이 같은 규칙을 지켜야 한다: `shared/sync`의 `mergeIncoming`,
+  **서버 트리거**(`supabase/migrations/0004_state_stamp.sql`), 그리고 `main/store.ts`의
+  `mergeRendererTasks` — 마지막 것은 **데스크톱 한 대만 써도** 걸린다(메인이 pull로 새 제목을
+  받은 뒤 화면이 완료를 누르는 경우).
+  **`stateAt`이 없는 행은 `updatedAt`으로 읽는다**(`stateStamp()`) — 그게 도장 하나였던 시절의
+  뜻이라 옛 행끼리는 예전과 똑같이 비교된다. 새 스탬프를 더한다면 이 규칙을 그대로 지킬 것.
+  **워터마크는 `changedAt()`(둘 중 큰 값)으로 잰다** — `updatedAt`만 보면 완료만 한 할 일이
+  "보낼 것 없음"이 되어 영영 안 올라간다.
 - **분면 안의 순서는 배열 위치가 아니라 `orderKey`다.** 문자열을 사전순으로 비교하고
   (`compareOrder`), 두 행 사이에 끼울 키는 `orderKeyBetween()`이 만든다 — 한 행만 쓰면 되므로
   이동이 전체 목록 쓰기가 되지 않는다. 키는 **`(quadrant, space)` 조합 안에서만** 유효하니
