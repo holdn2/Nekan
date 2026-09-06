@@ -282,3 +282,42 @@ test("nothing newer in either half leaves the local row alone", () => {
   assert.deepEqual(applied, []);
   assert.deepEqual(kept, ["t1"]);
 });
+
+test("the state winner's stamp survives even when it never had one", () => {
+  // The row that wins the state half predates the split, so its stamp is its
+  // content stamp. Copying the absent field would leave the merged row with
+  // none, and normalizeTasks would fill it from the *content* winner's
+  // stamp -- a number from another device's clock, and a later one. A real
+  // state change in between would then arrive looking stale.
+  const local = [task({ id: "t1", memo: "여기", updatedAt: 200, stateAt: 50 })];
+  const legacy = {
+    id: "t1",
+    text: "할 일",
+    quadrant: "q1" as Place,
+    updatedAt: 100,
+  };
+  const rows = [toRow(legacy, "u1")];
+
+  const merged = mergeIncoming(local, rows).tasks[0];
+
+  assert.equal(merged.memo, "여기");
+  assert.equal(merged.stateAt, 100);
+});
+
+test("and a state change after it still wins", () => {
+  // The point of the one above: 150 has to beat what the merge wrote, and it
+  // would not if the merge had written 200.
+  const local = [task({ id: "t1", memo: "여기", updatedAt: 200, stateAt: 50 })];
+  const legacy = {
+    id: "t1",
+    text: "할 일",
+    quadrant: "q1" as Place,
+    updatedAt: 100,
+  };
+  const after = mergeIncoming(local, [toRow(legacy, "u1")]).tasks;
+
+  const done = [
+    toRow(task({ id: "t1", completedAt: 150, stateAt: 150 }), "u1"),
+  ];
+  assert.equal(mergeIncoming(after, done).tasks[0].completedAt, 150);
+});

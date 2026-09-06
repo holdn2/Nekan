@@ -38,12 +38,6 @@
 alter table public.tasks
   add column if not exists state_at bigint not null default 0;
 
--- Existing rows carried one stamp for the whole row, so that is what their
--- state stamp is. Zero would say "this row's state is older than anything",
--- and the first row to arrive from any device would take the state half of
--- every task in the account.
-update public.tasks set state_at = updated_at where state_at = 0;
-
 -- The clients do the same, in `stateStamp()`: a row with no state stamp
 -- answers with its content stamp. The two rules have to agree or a row that
 -- predates this migration would merge differently on either side.
@@ -96,3 +90,18 @@ drop trigger if exists tasks_before_write on public.tasks;
 create trigger tasks_before_write
   before insert or update on public.tasks
   for each row execute function public.tasks_before_write();
+
+-- Last, not first, and that is not tidiness.
+--
+-- Run before the trigger is replaced, this does nothing at all: it changes
+-- only `state_at`, the old trigger compares `new.updated_at <= old.updated_at`,
+-- reads that as an equal stamp, and returns null -- which in a BEFORE trigger
+-- skips the row silently. The statement reports rows updated and none are.
+-- Measured on the live database after doing exactly that: every row still sat
+-- at `state_at = 0` with a real `updated_at` beside it.
+--
+-- And zero is not a harmless placeholder here. It says "this row's state is
+-- older than anything", so the first device to push its own stamp -- every
+-- client derives one from `updated_at` for a row that has none -- takes the
+-- state half of every task in the account, however stale its copy is.
+update public.tasks set state_at = updated_at where state_at = 0;

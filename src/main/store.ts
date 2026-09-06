@@ -22,12 +22,7 @@ import { stamp, stateStamp } from "../shared/sync";
 import type { LooseTask } from "../shared/sync";
 
 /** The half a completion, a deletion or a purge moves. See mergeIncoming. */
-const STATE_FIELDS = [
-  "completedAt",
-  "deletedAt",
-  "purgedAt",
-  "stateAt",
-] as const;
+const STATE_FIELDS = ["completedAt", "deletedAt", "purgedAt"] as const;
 
 let store: Store | null = null;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -132,10 +127,16 @@ function mergeRendererTasks(tasks: unknown) {
       continue;
     }
     const merged: Incoming = { ...(content ? task : mine) };
-    const from = (state ? task : mine) as Record<string, unknown>;
+    const from = state ? task : mine;
     for (const field of STATE_FIELDS) {
-      (merged as Record<string, unknown>)[field] = from[field] ?? null;
+      (merged as Record<string, unknown>)[field] =
+        (from as Record<string, unknown>)[field] ?? null;
     }
+    // Read rather than copied, for the reason mergeOne gives -- and it bites
+    // harder here: loadStore() does not normalize, so a row off disk from
+    // before the split has no state stamp at all, and nothing normalizes these
+    // on the way out either.
+    merged.stateAt = stateStamp(from as LooseTask);
     byId.set(id, merged);
   }
   // Shape-blind on purpose: this function compares timestamps and nothing

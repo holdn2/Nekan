@@ -25,13 +25,8 @@ import type { Task } from "../types.js";
 import { fromRow, stamp, stateStamp } from "./rows.js";
 import type { LooseTask, Row } from "./rows.js";
 
-/** The half a completion, a deletion or a purge moves. */
-const STATE_FIELDS = [
-  "completedAt",
-  "deletedAt",
-  "purgedAt",
-  "stateAt",
-] as const;
+/** The half a completion, a deletion or a purge moves, minus its own stamp. */
+const STATE_FIELDS = ["completedAt", "deletedAt", "purgedAt"] as const;
 
 /**
  * Does the copy that came back from the server replace the one held locally?
@@ -73,6 +68,13 @@ function mergeOne(local: LooseTask, remote: LooseTask): LooseTask {
   for (const field of STATE_FIELDS) {
     (merged as Record<string, unknown>)[field] = from[field] ?? null;
   }
+  // Read rather than copied. The winner may be a row from before the split,
+  // whose state stamp is its content stamp -- copying the absent field would
+  // leave the merged row with none, and normalizeTasks would then fill it from
+  // the *content* winner's stamp, which is somebody else's clock entirely. A
+  // genuine state change in between would arrive looking older than a stamp
+  // nothing ever wrote.
+  merged.stateAt = stateStamp(from);
   return merged;
 }
 
