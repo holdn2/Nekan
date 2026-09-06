@@ -25,6 +25,29 @@ import {
   displayState,
 } from "../../views/account/status.js";
 
+/**
+ * Re-render on the clock, so "방금" stops saying so when it stops being true.
+ *
+ * Nothing else brings this back. The screen redraws when main pushes a new
+ * status, and main stops pushing when nothing in it changes -- which is
+ * exactly what a long stretch offline looks like: the same phase, the same
+ * count, the same `syncedAt`, no push. The label would sit on "2분 전" for an
+ * hour, which is worse than saying nothing, because this control exists to be
+ * believed.
+ *
+ * Thirty seconds against a scale whose smallest step is a minute: the words
+ * are never more than half a step stale, and the cost is one state change a
+ * minute per open window.
+ */
+function useTick(active: boolean) {
+  const [, bump] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const id = setInterval(() => bump((n) => n + 1), 30_000);
+    return () => clearInterval(id);
+  }, [active]);
+}
+
 export function SyncNow() {
   useRenderSignal();
   /**
@@ -65,6 +88,7 @@ export function SyncNow() {
 
   const status = currentStatus();
   const state = displayState(status);
+  useTick(state !== "off");
   // Nobody signed in: there is nothing to sync and nothing to say about it.
   if (state === "off") return null;
 

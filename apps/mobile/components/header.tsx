@@ -27,6 +27,26 @@ import { onSyncStatus, syncNow, type SyncStatus } from "../sync/loop";
 /** How long the button keeps looking busy after a press. See below. */
 const HELD_MS = 600;
 
+/**
+ * Re-render on the clock, so "방금" stops saying so when it stops being true.
+ *
+ * Nothing else brings this back. The screen redraws when the loop reports a
+ * new status, and it stops reporting when nothing in it changes -- which is
+ * what a long stretch offline looks like: the same phase, the same count, the
+ * same `syncedAt`, no report. The label would sit on "2분 전" for an hour,
+ * which is worse than saying nothing, because this exists to be believed.
+ *
+ * Thirty seconds against a scale whose smallest step is a minute.
+ */
+function useTick(active: boolean) {
+  const [, bump] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const id = setInterval(() => bump((n) => n + 1), 30_000);
+    return () => clearInterval(id);
+  }, [active]);
+}
+
 function SyncNow() {
   const c = useColors();
   const [status, setStatus] = useState<SyncStatus | null>(null);
@@ -41,6 +61,7 @@ function SyncNow() {
    * Truthful and invisible -- somebody pressed a button and the screen never
    * answered, which is the failure this control exists to avoid.
    */
+  useTick(Boolean(status) && status?.phase !== "off");
   const [pressed, setPressed] = useState(false);
   const holding = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
