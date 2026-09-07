@@ -12,7 +12,7 @@ import { getMode } from "../window";
 import { getClockOffset, getPublicSession } from "../api-client";
 import { getSettings, getStore, mergeRendererTasks, persist } from "../store";
 import { getUpdateStatus } from "../updater";
-import { getSyncStatus, syncSoon } from "../sync";
+import { getSyncStatus, syncNow, syncSoon } from "../sync";
 
 function registerStateIpc() {
   /* ------------------------------------------------------------- state */
@@ -50,6 +50,15 @@ function registerStateIpc() {
     mergeRendererTasks(tasks);
     persist();
     syncSoon();
+    return true;
+  });
+
+  // The button in the title bar. Returns nothing worth reading: the answer
+  // arrives on the sync channel like every other change of state, so the
+  // screen learns "동기화 중" the same way it learns everything else and there
+  // is no second path to keep in step.
+  ipcMain.handle("sync:now", () => {
+    syncNow();
     return true;
   });
 }

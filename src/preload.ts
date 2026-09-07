@@ -66,6 +66,8 @@ const api = {
   setLanguage: (next: string) => ipcRenderer.invoke("settings:language", next),
   load: () => ipcRenderer.invoke("state:load"),
   save: (tasks: unknown) => ipcRenderer.invoke("state:save", tasks),
+  // Nothing to read back: what happened arrives on the sync:status channel.
+  syncNow: () => ipcRenderer.invoke("sync:now"),
   collapse: () => ipcRenderer.invoke("win:collapse"),
   expand: () => ipcRenderer.invoke("win:expand"),
   minimize: () => ipcRenderer.invoke("win:minimize"),

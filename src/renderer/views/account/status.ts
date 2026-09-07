@@ -24,6 +24,8 @@ interface SignInResult {
 interface SyncStatus {
   state: string;
   unsent: number;
+  /** When the last run finished, by main's clock. Null until one has. */
+  syncedAt?: number | null;
   session?: PublicSession | null;
 }
 

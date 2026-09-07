@@ -44,3 +44,35 @@
 #settingsBtn[data-sync="offline"] .sync-dot {
   background: var(--danger);
 }
+
+/**
+ * The sync button, turning while a run is in flight.
+ *
+ * Here rather than in a utility for the reason the toast's fade is: this is a
+ * state transition with a timing curve, and the box around it is utilities on
+ * the component. The words beside it are the guarantee -- they say "동기화 중"
+ * the moment the button is pressed, and they say it whether or not anything
+ * animates. This is the part that makes the press *feel* answered.
+ */
+@keyframes nekan-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sync-btn.is-syncing {
+  /* Not only the spin. Somebody who asked for less movement still has to see
+     that the press was heard, and a colour change is not movement. */
+  color: var(--accent);
+}
+
+.sync-btn.is-syncing svg {
+  animation: nekan-spin 900ms linear infinite;
+}
+
+/* Somebody who asked for less movement still gets the words. */
+@media (prefers-reduced-motion: reduce) {
+  .sync-btn.is-syncing svg {
+    animation: none;
+  }
+}

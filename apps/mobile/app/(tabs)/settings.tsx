@@ -20,7 +20,6 @@ import {
   View,
   type ViewStyle,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { ChevronIcon } from "../../icons";
 import { SUPPORTED } from "@nekan/shared/i18n/locales";
@@ -106,7 +105,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={[s.root, { backgroundColor: c.bg }]} edges={["top"]}>
+    <View style={[s.root, { backgroundColor: c.bg }]}>
       <ScrollView contentContainerStyle={s.body}>
         <Text style={[s.title, { color: c.text }]}>{t("settings.title")}</Text>
 
@@ -180,7 +179,7 @@ export default function SettingsScreen() {
           <ChevronIcon color={c.faint} size={16} />
         </Pressable>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

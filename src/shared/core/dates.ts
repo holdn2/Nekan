@@ -117,3 +117,33 @@ export function formatDue(
 
   return { text, hint };
 }
+
+/**
+ * How long ago something happened, in words, or null if it never did.
+ *
+ * `t` comes in as an argument for the same reason `formatDue` takes one:
+ * `shared/` cannot hold a catalogue, because the two apps each initialise
+ * i18next themselves and this file knows about neither.
+ *
+ * The steps are coarse on purpose. This says whether a sync is current, and
+ * "3분 전" answers that as well as "3분 12초 전" while changing four times an
+ * hour instead of sixty times a minute -- which matters, because whatever
+ * shows this has to redraw for the words to stay true.
+ */
+export function formatAgo(
+  at: number | null | undefined,
+  now: number,
+  t: (key: string, vars?: Record<string, unknown>) => string,
+): string | null {
+  if (!Number.isFinite(at)) return null;
+  // A stamp from the future is a clock disagreeing, not a time to describe.
+  // Sync measures the server's clock against this device's, so the offset is
+  // usually small -- but "3분 후" would be nonsense either way.
+  const seconds = Math.max(0, Math.round((now - (at as number)) / 1000));
+  if (seconds < 60) return t("ago.now");
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return t("ago.minutes", { count: minutes });
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return t("ago.hours", { count: hours });
+  return t("ago.days", { count: Math.floor(hours / 24) });
+}

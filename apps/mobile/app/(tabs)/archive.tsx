@@ -28,7 +28,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { INBOX } from "@nekan/shared/core";
 import type { Task } from "@nekan/shared/types";
 import { locale, t } from "../../i18n";
@@ -131,7 +130,7 @@ export default function ArchiveScreen() {
     );
 
   return (
-    <SafeAreaView style={[s.root, { backgroundColor: c.bg }]} edges={["top"]}>
+    <View style={[s.root, { backgroundColor: c.bg }]}>
       <View style={[s.tabs, { borderBottomColor: c.line }]}>
         {(["history", "trash"] as Tab[]).map((name) => (
           <Pressable key={name} onPress={() => setTab(name)}>
@@ -221,7 +220,7 @@ export default function ArchiveScreen() {
           </Text>
         }
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

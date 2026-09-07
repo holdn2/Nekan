@@ -10,8 +10,16 @@
  * the palette. Drawing the blur ourselves was considered and dropped: a
  * surface whose colour is decided by whatever scrolls behind it cannot be
  * checked by the contrast tests that guard every other colour in this app.
+ *
+ * The header is ours rather than the navigator's, and it is here rather than
+ * in each screen because the sync state has to be readable from all three --
+ * it used to live inside settings, which is the tab somebody is least likely
+ * to be looking at when they wonder whether their work has left the device.
+ * `board` is passed per screen: the switch scopes the matrix and the archive,
+ * and scopes nothing in settings.
  */
 import { Tabs } from "expo-router";
+import { AppHeader } from "../../components/header";
 import { t } from "../../i18n";
 import { useColors } from "../../theme";
 
@@ -20,15 +28,26 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
         tabBarActiveTintColor: c.accent,
         tabBarInactiveTintColor: c.muted,
         tabBarStyle: { backgroundColor: c.panel, borderTopColor: c.line },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: t("tabs.matrix") }} />
-      <Tabs.Screen name="archive" options={{ title: t("tabs.archive") }} />
-      <Tabs.Screen name="settings" options={{ title: t("settings.title") }} />
+      <Tabs.Screen
+        name="index"
+        options={{ title: t("tabs.matrix"), header: () => <AppHeader board /> }}
+      />
+      <Tabs.Screen
+        name="archive"
+        options={{
+          title: t("tabs.archive"),
+          header: () => <AppHeader board />,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{ title: t("settings.title"), header: () => <AppHeader /> }}
+      />
     </Tabs>
   );
 }

@@ -27,8 +27,18 @@ import {
 const SOON_MS = 3000;
 /** The heartbeat, for changes that arrived on another device. */
 const IDLE_MS = 60_000;
-/** Backoff after a failure; the last one repeats for as long as it keeps failing. */
-const RETRY_MS = [5000, 20_000, 60_000, 300_000];
+/**
+ * Backoff after a failure, in order. The last one repeats.
+ *
+ * It stops at the heartbeat rather than climbing past it. A longer wait only
+ * saves requests during an outage, and the requests it saves are the cheap
+ * kind -- a device with no network fails before anything leaves it. What it
+ * costs is the case that actually happens: somebody walks out of a tunnel with
+ * the app open, and the app waits five minutes to notice. Ending the ladder at
+ * IDLE_MS means a failing sync is never slower to recover than a working one
+ * is to run.
+ */
+const RETRY_MS = [5000, 20_000, IDLE_MS];
 /** How often the cursor is thrown away and everything read back. See reconcile. */
 const RECONCILE_MS = 6 * 60 * 60 * 1000;
 /**
@@ -241,6 +251,30 @@ function syncSoon() {
 }
 
 /**
+ * Somebody pressed the button. Go now, and forget how badly it was going.
+ *
+ * Resetting `failures` is the whole point rather than a tidy-up. After a run
+ * of failures the wait is up to five minutes, so a person whose network just
+ * came back watches "오프라인" and has no way to say "try again" -- which is
+ * precisely the button. Scheduling without the reset would go once and then
+ * fall back into the same five minutes on the next failure.
+ *
+ * A run already in flight is left alone: it is doing the thing that was asked
+ * for, and starting a second would have the two overwrite each other's cursor.
+ * `woke` is what makes the press count anyway -- the run reschedules soon
+ * instead of at the next heartbeat, so a press during a sync still produces a
+ * fresh one after it.
+ */
+function syncNow() {
+  failures = 0;
+  if (running) {
+    woke = true;
+    return;
+  }
+  schedule(0);
+}
+
+/**
  * The account changed. Starts over from nothing, on purpose: after a login
  * every local task counts as pending and goes up.
  *
@@ -261,4 +295,11 @@ function syncAccount(userId: string | null) {
   }
 }
 
-export { initSync, getSyncStatus, announceTasks, syncSoon, syncAccount };
+export {
+  initSync,
+  getSyncStatus,
+  announceTasks,
+  syncSoon,
+  syncNow,
+  syncAccount,
+};

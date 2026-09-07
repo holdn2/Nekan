@@ -136,3 +136,30 @@ export function MemoIcon({ color, size = 14 }: IconProps) {
     </Svg>
   );
 }
+
+/**
+ * "Sync now". Lucide's `refresh-cw`, path for path, so the two apps draw the
+ * same mark -- two arrows chasing each other round a circle, because syncing
+ * goes both ways. A single arrow reads as reload, which is half the story.
+ */
+export function SyncIcon({ color, size = 18 }: IconProps) {
+  return (
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={STROKE}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+      <Path d="M21 3v5h-5" />
+      <Path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+      <Path d="M8 16H3v5" />
+    </Svg>
+  );
+}

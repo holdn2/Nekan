@@ -387,5 +387,15 @@
   },
   "app": {
     "startFailed": "시작하지 못했습니다. 앱을 다시 실행해 주세요."
+  },
+  "ago": {
+    "now": "방금",
+    "minutes": "{{count}}분 전",
+    "hours": "{{count}}시간 전",
+    "days": "{{count}}일 전"
+  },
+  "sync": {
+    "now": "지금 동기화",
+    "stateAgo": "{{state}} · {{ago}}"
   }
 }

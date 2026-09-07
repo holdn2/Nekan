@@ -17,7 +17,14 @@
  * icon renders at. Each icon below carries its own arithmetic.
  */
 
-import { Calendar, ChevronRight, FileText, Plus, X } from "lucide-react";
+import {
+  Calendar,
+  ChevronRight,
+  FileText,
+  Plus,
+  RefreshCw,
+  X,
+} from "lucide-react";
 
 import { cn } from "./cn.js";
 
@@ -45,6 +52,16 @@ export function PlusIcon() {
 export function NoteIcon() {
   // Was 1.3 on 16 (effective 1.3*11/16 = 0.89375px). 1.3 * 1.5 = 1.95.
   return <FileText size={11} strokeWidth={1.95} aria-hidden="true" />;
+}
+
+/**
+ * "Sync now". Two arrows chasing each other round a circle, because syncing
+ * goes both ways -- a single arrow reads as reload, which is half the story.
+ */
+export function SyncIcon() {
+  // 1.6 on a 24 viewBox at 13px: 1.6 * 1.5 = 2.4 would be heavier than the
+  // faint text beside it, so this one is drawn lighter on purpose.
+  return <RefreshCw size={13} strokeWidth={1.9} aria-hidden="true" />;
 }
 
 /** The face of an empty due chip -- the click target that opens the picker. */

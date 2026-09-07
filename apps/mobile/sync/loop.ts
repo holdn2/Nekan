@@ -31,8 +31,18 @@ import { pull, push } from "./transfer";
 const SOON_MS = 3000;
 /** Nothing happening. */
 const IDLE_MS = 60_000;
-/** After a failure, in order. The last one repeats. */
-const RETRY_MS = [5000, 20_000, 60_000, 300_000];
+/**
+ * Backoff after a failure, in order. The last one repeats.
+ *
+ * It stops at the heartbeat rather than climbing past it. A longer wait only
+ * saves requests during an outage, and the requests it saves are the cheap
+ * kind -- a device with no network fails before anything leaves it. What it
+ * costs is the case that actually happens: somebody walks out of a tunnel with
+ * the app open, and the app waits five minutes to notice. Ending the ladder at
+ * IDLE_MS means a failing sync is never slower to recover than a working one
+ * is to run.
+ */
+const RETRY_MS = [5000, 20_000, IDLE_MS];
 /** How often the cursor is thrown away and everything read back. */
 const RECONCILE_MS = 6 * 60 * 60 * 1000;
 

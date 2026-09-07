@@ -15,6 +15,7 @@ import type { Place } from "../../../shared/types.js";
 import { t } from "../../i18n.js";
 import { activeOf, getSpace, inboxTasks } from "../../store.js";
 import { getMode, toggleSize } from "../mode.js";
+import { SyncNow } from "./sync-now.js";
 import { isSettingsOpen, toggleSettings } from "../../panels.js";
 import { applyInboxOpen } from "../../views/inbox.js";
 import { useRenderSignal } from "../../react/use-store.js";
@@ -152,6 +153,14 @@ function TitleBar() {
           </button>
         ))}
       </div>
+
+      {/* Right of the board switch: the switch says which board, this says
+          whether that board is anywhere but here. Not rendered at all in a
+          bar, rather than hidden by collapsed.css -- the mode is already a
+          value this component reads, so the element that has nowhere to go
+          simply is not there, with no rule to keep in step with a class.
+          684px is spoken for by five chips. */}
+      {getMode() !== "collapsed" && <SyncNow />}
 
       <div
         className="bar-summary ml-auto flex items-center gap-sm [-webkit-app-region:no-drag]"
