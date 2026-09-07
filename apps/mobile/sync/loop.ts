@@ -188,9 +188,15 @@ async function run(): Promise<void> {
 /* ------------------------------------------------------------------ public */
 
 /**
- * Go now. Signing in is the caller: the loop reports "off" and stops
+ * Go now. Two callers: signing in -- the loop reports "off" and stops
  * scheduling when nobody is signed in, so something has to wake it when
- * somebody is.
+ * somebody is -- and the header's button.
+ *
+ * The button preempts a pending backoff (schedule() drops the standing timer)
+ * but does not clear `failures`, so the next failure resumes where the ladder
+ * left off. The desktop's syncNow() resets it. The ladders both end at the
+ * heartbeat, so the divergence is worth at most a minute -- but it is a
+ * divergence, not a decision anybody made.
  */
 export function syncNow(): void {
   schedule(0);

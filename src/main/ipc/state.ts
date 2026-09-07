@@ -53,7 +53,8 @@ function registerStateIpc() {
     return true;
   });
 
-  // The button in the title bar. Returns nothing worth reading: the answer
+  // The button in the title bar, and the renderer's `online` listener.
+  // Returns nothing worth reading: the answer
   // arrives on the sync channel like every other change of state, so the
   // screen learns "동기화 중" the same way it learns everything else and there
   // is no second path to keep in step.
