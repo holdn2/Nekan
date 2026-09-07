@@ -344,7 +344,9 @@
     "overwritten_other": "다른 기기에서 바꾼 내용으로 {{count}}개를 덮어썼습니다.",
     "phone": {
       "signedOut": "로그아웃했습니다. 이 기기의 할 일은 그대로 있습니다."
-    }
+    },
+    "adoptHintPhone": "끄면 계정에 있는 것만 남습니다. 지금 있는 할 일은 지워지지 않고 이 기기에 따로 보관합니다.",
+    "adoptPhone_other": "이 기기에 있는 할 일 {{count}}개도 계정에 합치기"
   },
   "welcome": {
     "lede": "할 일을 어디에 둘까요?",

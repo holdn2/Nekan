@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
+  Switch,
   StyleSheet,
   Text,
   TextInput,
@@ -27,7 +28,12 @@ import {
 } from "react-native";
 import { t } from "../i18n";
 import { FS, FW, R, SP, useColors } from "../theme";
-import { currentAuth, setAuth } from "../store/state";
+import {
+  adoptLocalTasks,
+  allTasks,
+  currentAuth,
+  setAuth,
+} from "../store/state";
 import { useStore } from "../store/use-store";
 import { signInWithGoogle, signInWithPassword } from "../api/sign-in";
 import { signOut } from "../api/account";
@@ -66,14 +72,34 @@ export function AccountBlock() {
   // nothing to do with the board, and rendering the board for it would be a
   // redraw a minute.
   const [sync, setSync] = useState<SyncStatus | null>(null);
+  /**
+   * Whether to send this device's tasks up with the sign-in.
+   *
+   * Defaults to on, which is what the phone always did. The point of asking is
+   * the other answer: signing in on somebody else's phone used to copy their
+   * list into your account, quietly and for good.
+   */
+  const [adopt, setAdopt] = useState(true);
+  // Only the tasks this device would actually send: a purged row is a
+  // tombstone, and offering to "merge 3 tasks" that are three tombstones is a
+  // sentence about nothing.
+  const localCount = allTasks().filter((task) => !task.purgedAt).length;
+  const mode = adopt ? "merge" : "replace";
   useEffect(() => onSyncStatus(setSync), []);
 
-  const run = async (go: () => Promise<{ ok: boolean; error?: string }>) => {
+  const run = async (
+    go: () => Promise<{ ok: boolean; error?: string }>,
+    mode?: string,
+  ) => {
     if (busy) return;
     setBusy(true);
     setProblem(null);
     try {
       const res = await go();
+      // Before the loop is woken, and only on the way in. A "replace" that
+      // happened after the first push would have sent the tasks it is meant
+      // to hold back.
+      if (res.ok && mode) adoptLocalTasks(mode);
       // The session is the api layer's; the screen reads back what it now
       // holds rather than trusting the reply it was handed.
       const next = currentSession();
@@ -127,8 +153,32 @@ export function AccountBlock() {
         </View>
       ) : (
         <>
+          {/* Only when there is something to decide about. An empty board has
+              no question in it, and a switch that always says the same thing
+              is one more thing to read past. */}
+          {localCount > 0 ? (
+            <View style={[s.adopt, { borderColor: c.line }]}>
+              <View style={s.adoptRow}>
+                <Text style={[s.adoptLabel, { color: c.text }]}>
+                  {t("account.adoptPhone", { count: localCount })}
+                </Text>
+                <Switch
+                  value={adopt}
+                  onValueChange={setAdopt}
+                  disabled={busy}
+                  accessibilityLabel={t("account.adoptPhone", {
+                    count: localCount,
+                  })}
+                />
+              </View>
+              <Text style={[s.adoptHint, { color: c.faint }]}>
+                {t("account.adoptHintPhone")}
+              </Text>
+            </View>
+          ) : null}
+
           <Pressable
-            onPress={() => run(signInWithGoogle)}
+            onPress={() => run(() => signInWithGoogle(), mode)}
             disabled={busy}
             style={[
               s.card,
@@ -181,7 +231,9 @@ export function AccountBlock() {
                 accessibilityLabel={t("account.devPassword")}
               />
               <Pressable
-                onPress={() => run(() => signInWithPassword(email, password))}
+                onPress={() =>
+                  run(() => signInWithPassword(email, password), mode)
+                }
                 disabled={busy || !email || !password}
                 style={[
                   s.devGo,
@@ -220,6 +272,22 @@ export function AccountBlock() {
 
 const s = StyleSheet.create({
   block: { gap: SP.md },
+  adopt: {
+    gap: SP.sm,
+    padding: SP.lg,
+    borderRadius: R.md,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  adoptRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: SP.md,
+  },
+  // Shrinks rather than pushing the switch off the row: the sentence carries a
+  // count, and a count can be three digits.
+  adoptLabel: { flexShrink: 1, fontSize: FS.sm },
+  adoptHint: { fontSize: FS.xs, lineHeight: FS.xs * 1.5 },
   label: { fontSize: FS.sm, fontWeight: FW.semibold },
   card: {
     flexDirection: "row",
