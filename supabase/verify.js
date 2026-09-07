@@ -342,6 +342,51 @@ const pull = (token, since = 0, limit = 500) =>
     `${beforeStale} -> ${afterStale.server_seq}`,
   );
 
+  console.log("\n== 묘비는 되돌릴 수 없다 ==");
+  // The one exception to the rule above, and why it is one.
+  //
+  // Completed and trashed are two ends of the same move, so the later stamp
+  // wins and that is right. A purge is not a third place -- it is the end, and
+  // what is left is a marker saying this id existed. A device that only
+  // trashed the task has a newer state half, and handing it the whole half
+  // rubs the marker out. The task is alive again with no text, because the
+  // content half came from the side that buried it.
+  const grave = id("grave");
+  await push(mine.access_token, [
+    row({ id: grave, text: "묻을 것", updated_at: t0, state_at: t0 }),
+  ]);
+  await push(mine.access_token, [
+    row({
+      id: grave,
+      text: "",
+      memo: null,
+      purged_at: t0 + 10,
+      updated_at: t0 + 10,
+      state_at: t0 + 10,
+    }),
+  ]);
+  // The other device, which never heard about the burial, trashes it later.
+  await push(mine.access_token, [
+    row({
+      id: grave,
+      text: "묻을 것",
+      deleted_at: t0 + 20,
+      updated_at: t0,
+      state_at: t0 + 20,
+    }),
+  ]);
+  const freshGrave = await readBack(grave);
+  check(
+    "늦게 온 휴지통이 묘비를 지우지 못한다",
+    freshGrave?.purged_at === t0 + 10,
+    `purged=${freshGrave?.purged_at} deleted=${freshGrave?.deleted_at}`,
+  );
+  check(
+    "글자도 돌아오지 않는다",
+    freshGrave?.text === "",
+    `text=${JSON.stringify(freshGrave?.text)}`,
+  );
+
   console.log("\n== 지울 수 없다 ==");
   const del = await api(`/rest/v1/tasks?id=eq.${id("a")}`, {
     token: mine.access_token,
