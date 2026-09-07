@@ -15,6 +15,7 @@
  */
 import { clockOffset, nextOffset } from "@nekan/shared/sync";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@nekan/shared/supabase";
+import { setClockOffset } from "../store/state";
 
 /** A request that never comes back leaves a screen waiting on a promise. */
 const TIMEOUT_MS = 15_000;
@@ -79,6 +80,12 @@ export async function request(
     // the offset is known from the first request the app ever makes, rather
     // than after a sync has already stamped something with a wrong clock.
     skew = nextOffset(skew, clockOffset(res.headers.get("date"), Date.now()));
+    // Handed to the store in the same breath. On the desktop these are two
+    // processes and the offset travels by IPC; here they are one, so the only
+    // thing between measuring it and stamping with it is this line -- and for
+    // a while there was no line, so the phone measured the skew and threw it
+    // away while now() stayed on the raw device clock.
+    setClockOffset(skew);
     const raw = await res.text();
     let parsed: unknown = null;
     try {
@@ -106,11 +113,3 @@ export function errorCode(res: Reply): string {
   const body = (res.body ?? {}) as { error_code?: string; error?: string };
   return body.error_code || body.error || `http_${res.status}`;
 }
-
-/**
- * Add this to `Date.now()` for the server's idea of now.
- *
- * Zero until the first reply lands, and zero forever for anyone who never
- * signs in -- an offline app has no second clock to disagree with.
- */
-export const serverOffset = (): number => skew;

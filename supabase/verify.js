@@ -537,6 +537,14 @@ const pull = (token, since = 0, limit = 500) =>
 
   // Bury this run's leftovers. They cannot be deleted -- that is the rule being
   // tested above -- so they leave the only way anything leaves.
+  //
+  // `state_at` has to move too, and forgetting it was silent in exactly the way
+  // the two halves are designed to be. `purged_at` is state; a push that leaves
+  // the state stamp where the factory put it ties, the trigger keeps the stored
+  // half, and the burial is dropped while the content half -- the emptied text
+  // -- lands. What is left is a live row with no text, which is what a person
+  // then finds on their screen. One of these outlived a run before the check
+  // below existed.
   await push(
     mine.access_token,
     [id("a"), id("b")].map((rowId) =>
@@ -546,9 +554,21 @@ const pull = (token, since = 0, limit = 500) =>
         memo: null,
         purged_at: t0 + 30,
         updated_at: t0 + 30,
+        state_at: t0 + 30,
       }),
     ),
   );
+
+  // Cleanup that is not checked is not cleanup. This runs last and leaves
+  // rows behind in somebody's account, so the run has to say whether it did.
+  for (const name of ["a", "b"]) {
+    const grave = await readBack(id(name));
+    check(
+      `찌꺼기 ${name}는 묘비가 되어 남는다`,
+      grave?.purged_at === t0 + 30 && grave?.text === "",
+      `purged=${grave?.purged_at} text=${JSON.stringify(grave?.text)}`,
+    );
+  }
 
   console.log(
     `\n${passed} passed, ${failed} failed${skipped ? `, ${skipped} skipped` : ""}\n`,

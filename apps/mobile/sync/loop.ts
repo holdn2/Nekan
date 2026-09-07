@@ -192,13 +192,14 @@ async function run(): Promise<void> {
  * scheduling when nobody is signed in, so something has to wake it when
  * somebody is -- and the header's button.
  *
- * The button preempts a pending backoff (schedule() drops the standing timer)
- * but does not clear `failures`, so the next failure resumes where the ladder
- * left off. The desktop's syncNow() resets it. The ladders both end at the
- * heartbeat, so the divergence is worth at most a minute -- but it is a
- * divergence, not a decision anybody made.
+ * `failures` is cleared for the same reason the desktop clears it: the press
+ * means "the thing you gave up on is worth trying again", and leaving the
+ * count where it was would send the very next failure back up the ladder. The
+ * pending timer is dropped by schedule() either way, so without this the press
+ * bought one attempt and nothing more.
  */
 export function syncNow(): void {
+  failures = 0;
   schedule(0);
 }
 

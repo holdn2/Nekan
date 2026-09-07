@@ -277,6 +277,14 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   - 휴지통: `deletedAt !== null`
   - 영구 삭제: `purgedAt !== null` — **묘비다.** 행은 파일에 남고 `text`·`memo`만 비운다.
     지우면 아직 동기화하지 않은 다른 기기가 그 항목을 도로 밀어 넣는다.
+    **그리고 병합이 지우지도 못한다** (2026-09-07): 상태 절반이 어느 쪽으로 가든
+    `purgedAt`은 한쪽에라도 있으면 남는다. 상태 절반은 완료↔휴지통을 오가라고 만든
+    것이고 **영구 삭제는 자리가 아니라 끝**이라, 그 표식을 "휴지통에 넣기만 한" 기기에게
+    넘기면 할 일이 **글자 없이** 되살아난다(내용 절반은 묻은 쪽에서 오고, 묻는다는 것이
+    곧 글자를 비우는 일이다). 지키는 곳이 셋이고 **셋이 함께 움직여야 한다**:
+    `shared/sync/merge.ts`의 `mergeOne` · `main/store.ts`의 `mergeRendererTasks` ·
+    `supabase/migrations/0005_purge_is_final.sql`. 두 도장 이전에도 되살아났고
+    (그때는 글자를 달고) 아무도 몰랐다 — 나눈 것이 만든 결함이 아니라 드러낸 결함이다.
   - 실제 `filter`로 제거하는 곳은 `dropExpiredTombstones()` 단 하나뿐이고,
     `main/store.ts`의 `load()`가 시작할 때 한 번 부른다 (TTL 90일).
 - **도장이 둘이다. 완료·삭제는 `updatedAt`이 아니라 `stateAt`을 찍는다** (2026-09-06).
@@ -901,8 +909,13 @@ apps/mobile/
 
 **스토어는 렌더러와 같은 모양이고 같은 두 규칙을 지킨다**: 모든 목록이 `inSpace()`를 지나고,
 순서는 배열이 아니라 `compareOrder()`에서 온다. 쓰기도 데스크톱과 같다 — task를 배열에서
-지우지 않고, `space`는 `spaceFor()` 한 곳에서만 정해지며, `now()`는 `Date.now() + clockOffset`이다
-(오프셋은 동기화가 붙기 전까지 0이지만 **지금 이렇게 써 두어야 그때 고칠 곳이 한 줄이다**).
+지우지 않고, `space`는 `spaceFor()` 한 곳에서만 정해지며, `now()`는 `Date.now() + clockOffset`이다.
+**오프셋을 넣는 곳은 `api/http.ts`다** — `Date` 헤더로 잰 자리에서 곧바로
+`setClockOffset()`을 부른다(데스크톱은 프로세스가 둘이라 IPC를 타지만 폰은 하나다).
+**2026-09-07까지 그 한 줄이 없었다**: 재는 코드와 받는 함수는 양쪽 다 있었고 잇는 줄만
+없어서, 폰은 매 응답마다 오차를 재서 버렸다. **아무것도 실패하지 않는다** — 대가는
+남의 편집이 이기는 것뿐이고 화면에 나타나지 않는다. `apps/mobile/api/test/http.test.ts`가
+지킨다.
 
 **저장은 `Paths.document/nekan/data.json`이고 temp+rename이다.** `AsyncStorage`가 아닌 이유는
 Android 상한(약 6MB)에서 **조용히** 깨지고, 동기화가 붙을 때 양끝이 같은 문서를 읽어야 해서다.

@@ -166,6 +166,73 @@ test("a row arriving without an orderKey is given one", () => {
   assert.notEqual(merged.orderKey, "");
 });
 
+/* ------------------------------------------------ a burial is not undone */
+
+// The scenario in three lines, the same one in every direction below: one
+// device purges a task, the other -- which has not seen that yet -- trashes
+// it. Trashing is newer, so the state half is the trasher's, and the state
+// half is where the burial lives. Without the rule the task is alive again on
+// both devices, and its text is gone: the content half came from the side
+// that buried it, and burying is what emptied the text.
+
+test("a purge survives a later trash arriving from the server", () => {
+  const local = [task({ deletedAt: 6000, stateAt: 6000, updatedAt: 1000 })];
+  const rows = [
+    toRow(
+      task({
+        text: "",
+        memo: null,
+        purgedAt: 5000,
+        updatedAt: 5000,
+        stateAt: 5000,
+      }),
+      "u1",
+    ),
+  ];
+
+  const merged = mergeIncoming(local, rows).tasks[0];
+
+  assert.equal(merged.purgedAt, 5000);
+  assert.equal(merged.text, "");
+});
+
+test("a purge survives a later trash held locally", () => {
+  const local = [
+    task({ text: "", purgedAt: 5000, updatedAt: 5000, stateAt: 5000 }),
+  ];
+  const rows = [
+    toRow(task({ deletedAt: 6000, stateAt: 6000, updatedAt: 1000 }), "u1"),
+  ];
+
+  const merged = mergeIncoming(local, rows).tasks[0];
+
+  assert.equal(merged.purgedAt, 5000);
+});
+
+test("a purge survives a row that is newer in both halves", () => {
+  // Both halves go to the server copy, which is the path that returns it
+  // whole. The burial has to be put back by hand or this shortcut loses it --
+  // and this is the shape a device that has been offline for a while sends.
+  const local = [
+    task({ text: "", purgedAt: 5000, updatedAt: 5000, stateAt: 5000 }),
+  ];
+  const rows = [
+    toRow(
+      task({
+        text: "살아있다",
+        deletedAt: 9000,
+        updatedAt: 9000,
+        stateAt: 9000,
+      }),
+      "u1",
+    ),
+  ];
+
+  const merged = mergeIncoming(local, rows).tasks[0];
+
+  assert.equal(merged.purgedAt, 5000);
+});
+
 test("a stale edit cannot resurrect a tombstone", () => {
   const local = [task({ text: "", purgedAt: 5000, updatedAt: 5000 })];
   const rows = [toRow(task({ text: "살아있다", updatedAt: 4000 }), "u1")];

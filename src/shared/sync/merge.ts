@@ -25,8 +25,15 @@ import type { Task } from "../types.js";
 import { fromRow, stamp, stateStamp } from "./rows.js";
 import type { LooseTask, Row } from "./rows.js";
 
-/** The half a completion, a deletion or a purge moves, minus its own stamp. */
-const STATE_FIELDS = ["completedAt", "deletedAt", "purgedAt"] as const;
+/**
+ * The half a completion, a deletion or a purge moves, minus its own stamp.
+ *
+ * Exported because main/store.ts merges too -- a save from the renderer meets
+ * whatever a pull has put in main since the screen last drew -- and the two
+ * declaring their own copies is a list that drifts. There is no third copy:
+ * the server names the columns in SQL.
+ */
+export const STATE_FIELDS = ["completedAt", "deletedAt", "purgedAt"] as const;
 
 /**
  * Does the copy that came back from the server replace the one held locally?
@@ -62,12 +69,29 @@ export function remoteStateWins(local: LooseTask, remote: LooseTask): boolean {
 function mergeOne(local: LooseTask, remote: LooseTask): LooseTask {
   const content = remoteWins(local, remote);
   const state = remoteStateWins(local, remote);
-  if (content && state) return remote;
+  // A burial the remote copy does not carry has to be put back by hand, so
+  // the shortcut only applies when there is none to lose.
+  if (content && state && !local.purgedAt) return remote;
   const merged: LooseTask = { ...(content ? remote : local) };
   const from = state ? remote : local;
+  const other = state ? local : remote;
   for (const field of STATE_FIELDS) {
     (merged as Record<string, unknown>)[field] = from[field] ?? null;
   }
+  // Except this one, which only ever moves in one direction.
+  //
+  // Everything else in the state half belongs to whichever side stamped it
+  // later, and for completed and trashed that is right: a task moves between
+  // those two, and the last device to move it says where it is. A purge is
+  // not a place -- it is the end -- and the row that is left is a marker
+  // saying "this existed, do not accept it again". Handing that half to a
+  // device that merely trashed the task rubs the marker out, and the task
+  // comes back on both devices with its text already gone: the content half
+  // came from the side that buried it, and burying empties the text.
+  //
+  // Nothing is lost by keeping it. No screen in either app undoes a purge;
+  // the only thing that removes a tombstone is the 90-day TTL, on both sides.
+  merged.purgedAt = from.purgedAt ?? other.purgedAt ?? null;
   // Read rather than copied. The winner may be a row from before the split,
   // whose state stamp is its content stamp -- copying the absent field would
   // leave the merged row with none, and normalizeTasks would then fill it from
