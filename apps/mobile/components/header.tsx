@@ -117,6 +117,13 @@ export function AppHeader({ board }: { board?: boolean }) {
   return (
     <SafeAreaView edges={["top"]} style={{ backgroundColor: c.bg }}>
       <View style={[s.bar, { borderBottomColor: c.line }]}>
+        {/* The app's name and how its board is doing, together on the left --
+            the second is about the first. The board switch goes to the far
+            right, where a thumb reaches it. */}
+        <View style={s.left}>
+          <Text style={[s.brand, { color: c.text }]}>Nekan</Text>
+          <SyncNow />
+        </View>
         {board ? (
           <View
             style={[
@@ -139,10 +146,7 @@ export function AppHeader({ board }: { board?: boolean }) {
               </Pressable>
             ))}
           </View>
-        ) : (
-          <Text style={[s.brand, { color: c.text }]}>Nekan</Text>
-        )}
-        <SyncNow />
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -156,6 +160,14 @@ const s = StyleSheet.create({
     paddingHorizontal: SP["4xl"],
     paddingVertical: SP.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  // Shrinks first: the sync words carry a count and a relative time, and the
+  // switch is a control that must stay whole.
+  left: {
+    flexShrink: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SP.lg,
   },
   brand: { fontSize: FS.lg, fontWeight: FW.semibold },
   switch_: {
@@ -173,6 +185,11 @@ const s = StyleSheet.create({
     fontWeight: FW.semibold,
     overflow: "hidden",
   },
-  sync: { flexDirection: "row", alignItems: "center", gap: SP.sm },
+  sync: {
+    flexShrink: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SP.sm,
+  },
   state: { fontSize: FS.xs },
 });
