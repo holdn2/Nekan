@@ -17,6 +17,7 @@ import { normalizeTasks } from "../shared/core.js";
 import { setClockOffset, setTasks } from "./store.js";
 import { subscribe } from "./render-bus.js";
 import { scheduleDayRollover, watchForDayChange } from "./app/day-rollover.js";
+import { wireNetwork } from "./app/network.js";
 import { wireShortcuts } from "./app/shortcuts.js";
 import {
   enterMode,
@@ -119,6 +120,7 @@ async function init() {
   mountArchive();
   mountMemo();
   wireShortcuts();
+  wireNetwork();
   watchForDayChange();
   wireDragAndDrop();
   wireQuadEdges();
