@@ -57,6 +57,7 @@ export function normalizeTasks(list: unknown): Task[] {
   const normalized = list.map((t) => {
     const quadrant = PLACES.includes(t?.quadrant) ? t.quadrant : FALLBACK_QUAD;
     const createdAt = Number.isFinite(t?.createdAt) ? t.createdAt : 0;
+    const purged = Number.isFinite(t?.purgedAt);
     return {
       dueDate: null,
       deletedAt: null,
@@ -64,7 +65,7 @@ export function normalizeTasks(list: unknown): Task[] {
       ...t,
       quadrant,
       space: spaceFor(quadrant, t?.space),
-      memo: typeof t?.memo === "string" ? clampMemo(t.memo) : null,
+      memo: purged || typeof t?.memo !== "string" ? null : clampMemo(t.memo),
       // A row that predates the field has never been edited since it was
       // written, so its creation time is the honest last-changed time.
       updatedAt: Number.isFinite(t?.updatedAt) ? t.updatedAt : createdAt,
@@ -76,7 +77,14 @@ export function normalizeTasks(list: unknown): Task[] {
         : Number.isFinite(t?.updatedAt)
           ? t.updatedAt
           : createdAt,
-      purgedAt: Number.isFinite(t?.purgedAt) ? t.purgedAt : null,
+      purgedAt: purged ? (t.purgedAt as number) : null,
+      // A tombstone carries no content. purgeTask empties both when it
+      // buries, so a buried row that still has words got them from somewhere
+      // else: a merge that kept the newer half, or a build from before the
+      // rule. Every screen filters these out, so the words would sit in the
+      // file and go up to the server unseen for the ninety days the tombstone
+      // lives -- which is exactly what the purge was asked to prevent.
+      text: purged ? "" : typeof t?.text === "string" ? t.text : "",
       orderKey: hasOrderKey(t) ? t.orderKey : null,
     };
   });

@@ -94,6 +94,21 @@ function setTasks(tasks: unknown) {
  * a timestamp, so there is no such thing as a save that legitimately drops a
  * row. Ties go to the renderer: it is the copy the user is looking at.
  */
+/**
+ * A buried row carries no content, the same rule mergeOne holds.
+ *
+ * Spelled out again here rather than leaned on from normalizeTasks, because
+ * nothing on this path normalizes: loadStore() does not, and neither does
+ * anything between this and the file.
+ */
+function bury<T>(task: T): T {
+  const row = task as Record<string, unknown>;
+  if (!row.purgedAt) return task;
+  row.text = "";
+  row.memo = null;
+  return task;
+}
+
 function mergeRendererTasks(tasks: unknown) {
   // Rows straight off the wire from the renderer: shaped like tasks, but
   // normalizeTasks has not been over them yet.
@@ -123,7 +138,7 @@ function mergeRendererTasks(tasks: unknown) {
     // reason: the shortcut hands over a row that may be missing a burial the
     // other side is holding.
     if (content && state && !(mine as Record<string, unknown>).purgedAt) {
-      byId.set(id, task);
+      byId.set(id, bury({ ...task }));
       continue;
     }
     const merged: Incoming = { ...(content ? task : mine) };
@@ -147,7 +162,7 @@ function mergeRendererTasks(tasks: unknown) {
     // before the split has no state stamp at all, and nothing normalizes these
     // on the way out either.
     merged.stateAt = stateStamp(from as LooseTask);
-    byId.set(id, merged);
+    byId.set(id, bury(merged));
   }
   // Shape-blind on purpose: this function compares timestamps and nothing
   // else, so it works in `Incoming` rather than in Task. They are tasks by the

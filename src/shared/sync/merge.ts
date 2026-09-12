@@ -71,7 +71,7 @@ function mergeOne(local: LooseTask, remote: LooseTask): LooseTask {
   const state = remoteStateWins(local, remote);
   // A burial the remote copy does not carry has to be put back by hand, so
   // the shortcut only applies when there is none to lose.
-  if (content && state && !local.purgedAt) return remote;
+  if (content && state && !local.purgedAt) return bury({ ...remote });
   const merged: LooseTask = { ...(content ? remote : local) };
   const from = state ? remote : local;
   const other = state ? local : remote;
@@ -99,7 +99,24 @@ function mergeOne(local: LooseTask, remote: LooseTask): LooseTask {
   // genuine state change in between would arrive looking older than a stamp
   // nothing ever wrote.
   merged.stateAt = stateStamp(from);
-  return merged;
+  return bury(merged);
+}
+
+/**
+ * A row that is buried carries no content, whichever half won.
+ *
+ * Keeping the tombstone while taking the newer text puts back the words the
+ * purge existed to destroy -- invisibly, because every view filters a purged
+ * row out, and durably, because the row still goes up and sits on the server
+ * for the ninety days the tombstone lives. Emptying here is what purgeTask
+ * itself does; a later edit from a device that had not heard is an edit to a
+ * task that no longer exists.
+ */
+function bury(task: LooseTask): LooseTask {
+  if (!task.purgedAt) return task;
+  task.text = "";
+  task.memo = null;
+  return task;
 }
 
 /**
@@ -138,7 +155,17 @@ export function mergeIncoming(
     // Nothing the server holds is newer in either half. The local row stands
     // as it is -- and stays the one that goes up on the next push, which is
     // how the server hears about the half it is behind on.
-    if (!remoteWins(local, remote) && !remoteStateWins(local, remote)) {
+    //
+    // A burial is the exception, because it is not a half and does not race:
+    // the server holding one that this device does not means the task was
+    // destroyed somewhere, and losing that here leaves this device showing a
+    // task everybody else has buried, for as long as its stamps stay ahead --
+    // which, having just won both, they will.
+    if (
+      !remoteWins(local, remote) &&
+      !remoteStateWins(local, remote) &&
+      !(remote.purgedAt && !local.purgedAt)
+    ) {
       kept.push(remote.id);
       continue;
     }

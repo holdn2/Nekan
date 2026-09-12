@@ -233,6 +233,58 @@ test("a purge survives a row that is newer in both halves", () => {
   assert.equal(merged.purgedAt, 5000);
 });
 
+test("a burial arrives even when the local row is newer in both halves", () => {
+  // The fast path in mergeIncoming returns the local row untouched when the
+  // server has nothing newer. A burial is not a half and does not race, so it
+  // has to come through anyway -- otherwise this device goes on showing a task
+  // everybody else destroyed, for as long as its stamps stay ahead.
+  const local = [task({ text: "살아있다", updatedAt: 9000, stateAt: 9000 })];
+  const rows = [
+    toRow(
+      task({ text: "", purgedAt: 5000, updatedAt: 5000, stateAt: 5000 }),
+      "u1",
+    ),
+  ];
+
+  const merged = mergeIncoming(local, rows).tasks[0];
+
+  assert.equal(merged.purgedAt, 5000);
+});
+
+test("a grave keeps none of the words the newer half was carrying", () => {
+  // Restoring the tombstone while taking the newer content puts back exactly
+  // what the purge destroyed. Invisible -- every view filters a purged row out
+  // -- and stored, on every device and on the server, for the tombstone's
+  // ninety days.
+  const local = [
+    task({
+      text: "",
+      memo: null,
+      purgedAt: 5000,
+      updatedAt: 5000,
+      stateAt: 5000,
+    }),
+  ];
+  const rows = [
+    toRow(
+      task({
+        text: "살아있다",
+        memo: "지워졌어야 하는 메모",
+        deletedAt: 9000,
+        updatedAt: 9000,
+        stateAt: 9000,
+      }),
+      "u1",
+    ),
+  ];
+
+  const merged = mergeIncoming(local, rows).tasks[0];
+
+  assert.equal(merged.purgedAt, 5000);
+  assert.equal(merged.text, "");
+  assert.equal(merged.memo, null);
+});
+
 test("a stale edit cannot resurrect a tombstone", () => {
   const local = [task({ text: "", purgedAt: 5000, updatedAt: 5000 })];
   const rows = [toRow(task({ text: "살아있다", updatedAt: 4000 }), "u1")];

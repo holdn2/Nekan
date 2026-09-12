@@ -387,6 +387,82 @@ const pull = (token, since = 0, limit = 500) =>
     `text=${JSON.stringify(freshGrave?.text)}`,
   );
 
+  // A burial does not race. Whichever side holds one is the side that is
+  // right -- the other has simply not heard yet -- so it has to survive even
+  // when its state stamp is the older of the two. 0005 read it as part of the
+  // state half and lost it in this direction.
+  const late = id("late");
+  await push(mine.access_token, [
+    row({ id: late, text: "늦게 온 매장", updated_at: t0, state_at: t0 }),
+  ]);
+  // The other device completes it first, with the newer state stamp.
+  await push(mine.access_token, [
+    row({
+      id: late,
+      text: "늦게 온 매장",
+      completed_at: t0 + 20,
+      updated_at: t0,
+      state_at: t0 + 20,
+    }),
+  ]);
+  // Then the burial arrives, stamped earlier because it happened earlier.
+  await push(mine.access_token, [
+    row({
+      id: late,
+      text: "",
+      memo: null,
+      purged_at: t0 + 10,
+      updated_at: t0 + 10,
+      state_at: t0 + 10,
+    }),
+  ]);
+  const lateGrave = await readBack(late);
+  check(
+    "상태 도장에서 져도 매장은 도착한다",
+    lateGrave?.purged_at === t0 + 10,
+    `purged=${lateGrave?.purged_at} state=${lateGrave?.state_at}`,
+  );
+
+  // And a grave holds no words, whichever half won them.
+  const words = id("words");
+  await push(mine.access_token, [
+    row({ id: words, text: "처음", updated_at: t0, state_at: t0 }),
+  ]);
+  await push(mine.access_token, [
+    row({
+      id: words,
+      text: "",
+      memo: null,
+      purged_at: t0 + 10,
+      updated_at: t0 + 10,
+      state_at: t0 + 10,
+    }),
+  ]);
+  // A device that never heard about the burial edits the text. Its content
+  // half is newer, so without the rule those words land on the tombstone and
+  // sit here for the ninety days it lives -- unseen, because every screen
+  // filters a purged row out.
+  await push(mine.access_token, [
+    row({
+      id: words,
+      text: "돌아온 글자",
+      memo: "돌아온 메모",
+      updated_at: t0 + 25,
+      state_at: t0 + 5,
+    }),
+  ]);
+  const kept = await readBack(words);
+  check(
+    "묘비에는 글자가 남지 않는다",
+    kept?.text === "" && kept?.memo === null,
+    `text=${JSON.stringify(kept?.text)} memo=${JSON.stringify(kept?.memo)}`,
+  );
+  check(
+    "그러면서 묘비 자체는 그대로다",
+    kept?.purged_at === t0 + 10,
+    `purged=${kept?.purged_at}`,
+  );
+
   console.log("\n== 지울 수 없다 ==");
   const del = await api(`/rest/v1/tasks?id=eq.${id("a")}`, {
     token: mine.access_token,
@@ -598,15 +674,16 @@ const pull = (token, since = 0, limit = 500) =>
   const BURIAL = t0 + 1000;
   await push(
     mine.access_token,
-    [id("a"), id("b"), id("split"), id("grave")].map((rowId) =>
-      row({
-        id: rowId,
-        text: "",
-        memo: null,
-        purged_at: BURIAL,
-        updated_at: BURIAL,
-        state_at: BURIAL,
-      }),
+    [id("a"), id("b"), id("split"), id("grave"), id("late"), id("words")].map(
+      (rowId) =>
+        row({
+          id: rowId,
+          text: "",
+          memo: null,
+          purged_at: BURIAL,
+          updated_at: BURIAL,
+          state_at: BURIAL,
+        }),
     ),
   );
 
@@ -617,7 +694,7 @@ const pull = (token, since = 0, limit = 500) =>
   // remembered. `split` was left alive by every run for as long as the two
   // halves have existed -- one row per run, and nobody noticed because the
   // checks above only ever read the row they had just written.
-  for (const name of ["a", "b", "split", "grave"]) {
+  for (const name of ["a", "b", "split", "grave", "late", "words"]) {
     const grave = await readBack(id(name));
     check(
       `찌꺼기 ${name}는 묘비가 되어 남는다`,

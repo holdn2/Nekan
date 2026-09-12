@@ -283,8 +283,19 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
     넘기면 할 일이 **글자 없이** 되살아난다(내용 절반은 묻은 쪽에서 오고, 묻는다는 것이
     곧 글자를 비우는 일이다). 지키는 곳이 셋이고 **셋이 함께 움직여야 한다**:
     `shared/sync/merge.ts`의 `mergeOne` · `main/store.ts`의 `mergeRendererTasks` ·
-    `supabase/migrations/0005_purge_is_final.sql`. 두 도장 이전에도 되살아났고
+    `supabase/migrations/0006_a_grave_holds_no_words.sql`. 두 도장 이전에도 되살아났고
     (그때는 글자를 달고) 아무도 몰랐다 — 나눈 것이 만든 결함이 아니라 드러낸 결함이다.
+  - **매장은 어느 절반에도 속하지 않는다.** 도장 비교보다 **먼저** 정하고, 두 절반이
+    끝난 뒤에 얹는다. 0005는 상태 절반이 `purged_at`을 덮은 **뒤에** `coalesce`를 둬서,
+    **들어온 매장이 상태 도장에서 지면 사라졌다** — A가 T에 영구삭제하고 B가 T+1에
+    완료해서 먼저 도착하면 그렇게 된다. 클라이언트는 맞게 하고 있었으니 **셋이 어긋나
+    있었다.** 그리고 건너뛰기(`return null`)의 조건에도 매장이 들어가야 한다 — 두 절반이
+    다 동점이어도 그 쓰기가 매장을 들고 온 것일 수 있다.
+  - **묘비에는 글자가 없다.** `purgedAt`이 있으면 `text`는 `""`, `memo`는 `null`이다.
+    무덤을 지키면서 내용 절반의 새 글자를 받으면 **지운 글자가 되돌아온다** — 화면에는
+    안 보이고(모든 뷰가 거른다) 파일과 서버에 TTL 90일 동안 남는다. 사용자가 없애 달라고
+    한 바로 그 글자가. 지키는 곳은 `normalizeTasks`(모든 입구) · `mergeOne` ·
+    `mergeRendererTasks`(여기는 정규화가 없다) · 트리거 넷이다.
   - 실제 `filter`로 제거하는 곳은 `dropExpiredTombstones()` 단 하나뿐이고,
     `main/store.ts`의 `load()`가 시작할 때 한 번 부른다 (TTL 90일).
 - **도장이 둘이다. 완료·삭제는 `updatedAt`이 아니라 `stateAt`을 찍는다** (2026-09-06).
