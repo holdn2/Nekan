@@ -8,9 +8,11 @@
  * that fits in a 48px bar, where these words do not.
  *
  * The button's real job is the backoff. After a run of failures the loop waits
- * up to five minutes, so somebody whose network just came back watches
+ * a whole heartbeat, so somebody whose network just came back watches
  * "오프라인" with no way to say try again. `syncNow` in main resets `failures`
- * for exactly that, and this is the only thing that calls it.
+ * for exactly that. The `online` listener in app/network.ts reaches the same
+ * channel for the same reason -- this is the half a person can reach when the
+ * browser has not noticed.
  */
 
 import { useEffect, useRef, useState } from "react";

@@ -18,11 +18,8 @@ import { loadStore, writeStore } from "./store-io";
 import type { Task } from "../shared/types";
 import type { Store } from "./store-io";
 import { dropExpiredTombstones } from "../shared/core";
-import { stamp, stateStamp } from "../shared/sync";
+import { STATE_FIELDS, isBuried, stamp, stateStamp } from "../shared/sync";
 import type { LooseTask } from "../shared/sync";
-
-/** The half a completion, a deletion or a purge moves. See mergeIncoming. */
-const STATE_FIELDS = ["completedAt", "deletedAt", "purgedAt"] as const;
 
 let store: Store | null = null;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -97,6 +94,21 @@ function setTasks(tasks: unknown) {
  * a timestamp, so there is no such thing as a save that legitimately drops a
  * row. Ties go to the renderer: it is the copy the user is looking at.
  */
+/**
+ * A buried row carries no content, the same rule mergeOne holds.
+ *
+ * Spelled out again here rather than leaned on from normalizeTasks, because
+ * nothing on this path normalizes: loadStore() does not, and neither does
+ * anything between this and the file.
+ */
+function bury<T>(task: T): T {
+  if (!isBuried(task as LooseTask)) return task;
+  const row = task as Record<string, unknown>;
+  row.text = "";
+  row.memo = null;
+  return task;
+}
+
 function mergeRendererTasks(tasks: unknown) {
   // Rows straight off the wire from the renderer: shaped like tasks, but
   // normalizeTasks has not been over them yet.
@@ -122,22 +134,35 @@ function mergeRendererTasks(tasks: unknown) {
       stamp((mine as { updatedAt?: unknown }).updatedAt);
     const state =
       stateStamp(task as LooseTask) >= stateStamp(mine as LooseTask);
-    if (content && state) {
-      byId.set(id, task);
+    // The purge check is the same one mergeOne makes, and for the same
+    // reason: the shortcut hands over a row that may be missing a burial the
+    // other side is holding.
+    if (content && state && !isBuried(mine as LooseTask)) {
+      byId.set(id, bury({ ...task }));
       continue;
     }
     const merged: Incoming = { ...(content ? task : mine) };
     const from = state ? task : mine;
+    const other = state ? mine : task;
     for (const field of STATE_FIELDS) {
       (merged as Record<string, unknown>)[field] =
         (from as Record<string, unknown>)[field] ?? null;
     }
+    // A burial is final here too. This is the third place the rule is
+    // written, and the one that bites with a single desktop and no phone at
+    // all: main can be holding a tombstone a pull just brought in while the
+    // screen, which has not seen it yet, saves the same task as merely
+    // trashed.
+    (merged as Record<string, unknown>).purgedAt =
+      (from as Record<string, unknown>).purgedAt ??
+      (other as Record<string, unknown>).purgedAt ??
+      null;
     // Read rather than copied, for the reason mergeOne gives -- and it bites
     // harder here: loadStore() does not normalize, so a row off disk from
     // before the split has no state stamp at all, and nothing normalizes these
     // on the way out either.
     merged.stateAt = stateStamp(from as LooseTask);
-    byId.set(id, merged);
+    byId.set(id, bury(merged));
   }
   // Shape-blind on purpose: this function compares timestamps and nothing
   // else, so it works in `Incoming` rather than in Task. They are tasks by the

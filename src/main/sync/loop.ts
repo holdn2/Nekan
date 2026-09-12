@@ -251,13 +251,16 @@ function syncSoon() {
 }
 
 /**
- * Somebody pressed the button. Go now, and forget how badly it was going.
+ * Somebody pressed the button, or the machine said it is back on the network.
+ * Go now, and forget how badly it was going.
  *
  * Resetting `failures` is the whole point rather than a tidy-up. After a run
- * of failures the wait is up to five minutes, so a person whose network just
+ * of failures the wait is a whole heartbeat, so a person whose network just
  * came back watches "오프라인" and has no way to say "try again" -- which is
  * precisely the button. Scheduling without the reset would go once and then
- * fall back into the same five minutes on the next failure.
+ * fall back into the same minute on the next failure. The ladder used to climb
+ * to five, which is where this reasoning started; ending it at IDLE_MS shortened
+ * the wait without removing the reason to have a way to say now.
  *
  * A run already in flight is left alone: it is doing the thing that was asked
  * for, and starting a second would have the two overwrite each other's cursor.

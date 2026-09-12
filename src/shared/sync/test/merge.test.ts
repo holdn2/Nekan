@@ -166,6 +166,141 @@ test("a row arriving without an orderKey is given one", () => {
   assert.notEqual(merged.orderKey, "");
 });
 
+/* ------------------------------------------------ a burial is not undone */
+
+// The scenario in three lines, the same one in every direction below: one
+// device purges a task, the other -- which has not seen that yet -- trashes
+// it. Trashing is newer, so the state half is the trasher's, and the state
+// half is where the burial lives. Without the rule the task is alive again on
+// both devices, and its text is gone: the content half came from the side
+// that buried it, and burying is what emptied the text.
+
+test("a purge survives a later trash arriving from the server", () => {
+  const local = [task({ deletedAt: 6000, stateAt: 6000, updatedAt: 1000 })];
+  const rows = [
+    toRow(
+      task({
+        text: "",
+        memo: null,
+        purgedAt: 5000,
+        updatedAt: 5000,
+        stateAt: 5000,
+      }),
+      "u1",
+    ),
+  ];
+
+  const merged = mergeIncoming(local, rows).tasks[0];
+
+  assert.equal(merged.purgedAt, 5000);
+  assert.equal(merged.text, "");
+});
+
+test("a purge survives a later trash held locally", () => {
+  const local = [
+    task({ text: "", purgedAt: 5000, updatedAt: 5000, stateAt: 5000 }),
+  ];
+  const rows = [
+    toRow(task({ deletedAt: 6000, stateAt: 6000, updatedAt: 1000 }), "u1"),
+  ];
+
+  const merged = mergeIncoming(local, rows).tasks[0];
+
+  assert.equal(merged.purgedAt, 5000);
+});
+
+test("a purge survives a row that is newer in both halves", () => {
+  // Both halves go to the server copy, which is the path that returns it
+  // whole. The burial has to be put back by hand or this shortcut loses it --
+  // and this is the shape a device that has been offline for a while sends.
+  const local = [
+    task({ text: "", purgedAt: 5000, updatedAt: 5000, stateAt: 5000 }),
+  ];
+  const rows = [
+    toRow(
+      task({
+        text: "살아있다",
+        deletedAt: 9000,
+        updatedAt: 9000,
+        stateAt: 9000,
+      }),
+      "u1",
+    ),
+  ];
+
+  const merged = mergeIncoming(local, rows).tasks[0];
+
+  assert.equal(merged.purgedAt, 5000);
+});
+
+test("a burial arrives even when the local row is newer in both halves", () => {
+  // The fast path in mergeIncoming returns the local row untouched when the
+  // server has nothing newer. A burial is not a half and does not race, so it
+  // has to come through anyway -- otherwise this device goes on showing a task
+  // everybody else destroyed, for as long as its stamps stay ahead.
+  const local = [task({ text: "살아있다", updatedAt: 9000, stateAt: 9000 })];
+  const rows = [
+    toRow(
+      task({ text: "", purgedAt: 5000, updatedAt: 5000, stateAt: 5000 }),
+      "u1",
+    ),
+  ];
+
+  const merged = mergeIncoming(local, rows).tasks[0];
+
+  assert.equal(merged.purgedAt, 5000);
+});
+
+test("a grave keeps none of the words the newer half was carrying", () => {
+  // Restoring the tombstone while taking the newer content puts back exactly
+  // what the purge destroyed. Invisible -- every view filters a purged row out
+  // -- and stored, on every device and on the server, for the tombstone's
+  // ninety days.
+  const local = [
+    task({
+      text: "",
+      memo: null,
+      purgedAt: 5000,
+      updatedAt: 5000,
+      stateAt: 5000,
+    }),
+  ];
+  const rows = [
+    toRow(
+      task({
+        text: "살아있다",
+        memo: "지워졌어야 하는 메모",
+        deletedAt: 9000,
+        updatedAt: 9000,
+        stateAt: 9000,
+      }),
+      "u1",
+    ),
+  ];
+
+  const merged = mergeIncoming(local, rows).tasks[0];
+
+  assert.equal(merged.purgedAt, 5000);
+  assert.equal(merged.text, "");
+  assert.equal(merged.memo, null);
+});
+
+test("a burial stamped zero is still a burial", () => {
+  // 1970 is a time. normalizeTasks keeps a purgedAt of 0, so anything that
+  // asks the question with truthiness disagrees with it for that one value --
+  // and the disagreement is the shape of every bug in this file: the merge
+  // drops the grave while the normalizer thinks the row is buried.
+  const local = [task({ text: "살아있다", updatedAt: 9000, stateAt: 9000 })];
+  const rows = [
+    toRow(task({ text: "", purgedAt: 0, updatedAt: 1, stateAt: 1 }), "u1"),
+  ];
+
+  const merged = mergeIncoming(local, rows).tasks[0];
+
+  assert.equal(merged.purgedAt, 0);
+  assert.equal(merged.text, "");
+});
+
 test("a stale edit cannot resurrect a tombstone", () => {
   const local = [task({ text: "", purgedAt: 5000, updatedAt: 5000 })];
   const rows = [toRow(task({ text: "살아있다", updatedAt: 4000 }), "u1")];

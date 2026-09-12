@@ -253,9 +253,14 @@ export function persist(): Promise<void> {
 /**
  * How far this device's clock is from the server's.
  *
- * Zero until sync measures it, and that is the only reason this file can be
- * written before sync exists: every timestamp already goes through `now()`, so
- * the day the offset becomes real, nothing else has to change.
+ * Set from the `Date` header of every reply, in api/http.ts. Zero until the
+ * first one lands, and zero forever for anyone who never signs in -- an app
+ * with no server has no second clock to disagree with.
+ *
+ * The plumbing sat unfinished for a while and it was quiet: the measurement
+ * was being taken and nothing called this, so `now()` was the raw device
+ * clock. Nothing failed, and nothing could -- the cost is only ever somebody
+ * else's edit winning.
  *
  * It matters more than it looks. `updatedAt` decides who wins when two devices
  * edited the same row, so a phone whose clock is ten minutes slow loses every

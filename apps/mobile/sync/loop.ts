@@ -188,11 +188,18 @@ async function run(): Promise<void> {
 /* ------------------------------------------------------------------ public */
 
 /**
- * Go now. Signing in is the caller: the loop reports "off" and stops
+ * Go now. Two callers: signing in -- the loop reports "off" and stops
  * scheduling when nobody is signed in, so something has to wake it when
- * somebody is.
+ * somebody is -- and the header's button.
+ *
+ * `failures` is cleared for the same reason the desktop clears it: the press
+ * means "the thing you gave up on is worth trying again", and leaving the
+ * count where it was would send the very next failure back up the ladder. The
+ * pending timer is dropped by schedule() either way, so without this the press
+ * bought one attempt and nothing more.
  */
 export function syncNow(): void {
+  failures = 0;
   schedule(0);
 }
 

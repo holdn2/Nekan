@@ -62,6 +62,19 @@ export function stamp(value: unknown): number {
  * of state goes through here rather than reading the field, because a row from
  * another device may be one of those.
  */
+/**
+ * Is this row a tombstone?
+ *
+ * A stamp of 0 is a real one -- 1970 is a time, and normalizeTasks keeps it --
+ * so the question cannot be asked with truthiness. It was, in four places, and
+ * they disagreed with normalizeTasks for that one value: the merge would drop
+ * a burial stamped 0 while the normalizer treated it as buried and emptied the
+ * text. One predicate so the two cannot part company again.
+ */
+export function isBuried(task: LooseTask): boolean {
+  return Number.isFinite(task.purgedAt);
+}
+
 export function stateStamp(task: LooseTask): number {
   return Number.isFinite(task.stateAt)
     ? (task.stateAt as number)

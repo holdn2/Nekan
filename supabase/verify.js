@@ -342,6 +342,127 @@ const pull = (token, since = 0, limit = 500) =>
     `${beforeStale} -> ${afterStale.server_seq}`,
   );
 
+  console.log("\n== 묘비는 되돌릴 수 없다 ==");
+  // The one exception to the rule above, and why it is one.
+  //
+  // Completed and trashed are two ends of the same move, so the later stamp
+  // wins and that is right. A purge is not a third place -- it is the end, and
+  // what is left is a marker saying this id existed. A device that only
+  // trashed the task has a newer state half, and handing it the whole half
+  // rubs the marker out. The task is alive again with no text, because the
+  // content half came from the side that buried it.
+  const grave = id("grave");
+  await push(mine.access_token, [
+    row({ id: grave, text: "묻을 것", updated_at: t0, state_at: t0 }),
+  ]);
+  await push(mine.access_token, [
+    row({
+      id: grave,
+      text: "",
+      memo: null,
+      purged_at: t0 + 10,
+      updated_at: t0 + 10,
+      state_at: t0 + 10,
+    }),
+  ]);
+  // The other device, which never heard about the burial, trashes it later.
+  await push(mine.access_token, [
+    row({
+      id: grave,
+      text: "묻을 것",
+      deleted_at: t0 + 20,
+      updated_at: t0,
+      state_at: t0 + 20,
+    }),
+  ]);
+  const freshGrave = await readBack(grave);
+  check(
+    "늦게 온 휴지통이 묘비를 지우지 못한다",
+    freshGrave?.purged_at === t0 + 10,
+    `purged=${freshGrave?.purged_at} deleted=${freshGrave?.deleted_at}`,
+  );
+  check(
+    "글자도 돌아오지 않는다",
+    freshGrave?.text === "",
+    `text=${JSON.stringify(freshGrave?.text)}`,
+  );
+
+  // A burial does not race. Whichever side holds one is the side that is
+  // right -- the other has simply not heard yet -- so it has to survive even
+  // when its state stamp is the older of the two. 0005 read it as part of the
+  // state half and lost it in this direction.
+  const late = id("late");
+  await push(mine.access_token, [
+    row({ id: late, text: "늦게 온 매장", updated_at: t0, state_at: t0 }),
+  ]);
+  // The other device completes it first, with the newer state stamp.
+  await push(mine.access_token, [
+    row({
+      id: late,
+      text: "늦게 온 매장",
+      completed_at: t0 + 20,
+      updated_at: t0,
+      state_at: t0 + 20,
+    }),
+  ]);
+  // Then the burial arrives, stamped earlier because it happened earlier.
+  await push(mine.access_token, [
+    row({
+      id: late,
+      text: "",
+      memo: null,
+      purged_at: t0 + 10,
+      updated_at: t0 + 10,
+      state_at: t0 + 10,
+    }),
+  ]);
+  const lateGrave = await readBack(late);
+  check(
+    "상태 도장에서 져도 매장은 도착한다",
+    lateGrave?.purged_at === t0 + 10,
+    `purged=${lateGrave?.purged_at} state=${lateGrave?.state_at}`,
+  );
+
+  // And a grave holds no words, whichever half won them.
+  const words = id("words");
+  await push(mine.access_token, [
+    row({ id: words, text: "처음", updated_at: t0, state_at: t0 }),
+  ]);
+  await push(mine.access_token, [
+    row({
+      id: words,
+      text: "",
+      memo: null,
+      purged_at: t0 + 10,
+      updated_at: t0 + 10,
+      state_at: t0 + 10,
+    }),
+  ]);
+  // A device that never heard about the burial edits the text. Its content
+  // half is newer, so without the rule those words land on the tombstone and
+  // sit here for the ninety days it lives -- unseen, because every screen
+  // filters a purged row out.
+  await push(mine.access_token, [
+    row({
+      id: words,
+      text: "돌아온 글자",
+      memo: "돌아온 메모",
+      updated_at: t0 + 25,
+      state_at: t0 + 5,
+    }),
+  ]);
+  const kept = await readBack(words);
+  check(
+    "묘비에는 글자가 남지 않는다",
+    kept?.text === "" && kept?.memo === null,
+    `text=${JSON.stringify(kept?.text)} memo=${JSON.stringify(kept?.memo)}`,
+  );
+  check(
+    "그러면서 묘비 자체는 그대로다",
+    kept?.purged_at === t0 + 10,
+    `purged=${kept?.purged_at}`,
+  );
+
   console.log("\n== 지울 수 없다 ==");
   const del = await api(`/rest/v1/tasks?id=eq.${id("a")}`, {
     token: mine.access_token,
@@ -537,18 +658,50 @@ const pull = (token, since = 0, limit = 500) =>
 
   // Bury this run's leftovers. They cannot be deleted -- that is the rule being
   // tested above -- so they leave the only way anything leaves.
+  //
+  // `state_at` has to move too, and forgetting it was silent in exactly the way
+  // the two halves are designed to be. `purged_at` is state; a push that leaves
+  // the state stamp where the factory put it ties, the trigger keeps the stored
+  // half, and the burial is dropped while the content half -- the emptied text
+  // -- lands. What is left is a live row with no text, which is what a person
+  // then finds on their screen. One of these outlived a run before the check
+  // below existed.
+  // Later than every stamp this run writes, not a number that happens to be
+  // bigger than the two rows the first draft thought about. `split` climbs to
+  // t0 + 50 in the two-halves section, so a burial at t0 + 30 tied on both
+  // halves and the trigger dropped the whole write -- which is the same
+  // silence as the state stamp that was missing before it.
+  const BURIAL = t0 + 1000;
   await push(
     mine.access_token,
-    [id("a"), id("b")].map((rowId) =>
-      row({
-        id: rowId,
-        text: "",
-        memo: null,
-        purged_at: t0 + 30,
-        updated_at: t0 + 30,
-      }),
+    [id("a"), id("b"), id("split"), id("grave"), id("late"), id("words")].map(
+      (rowId) =>
+        row({
+          id: rowId,
+          text: "",
+          memo: null,
+          purged_at: BURIAL,
+          updated_at: BURIAL,
+          state_at: BURIAL,
+        }),
     ),
   );
+
+  // Cleanup that is not checked is not cleanup. This runs last and leaves
+  // rows behind in somebody's account, so the run has to say whether it did.
+  //
+  // Every id the run creates is on the list, not just the two the first draft
+  // remembered. `split` was left alive by every run for as long as the two
+  // halves have existed -- one row per run, and nobody noticed because the
+  // checks above only ever read the row they had just written.
+  for (const name of ["a", "b", "split", "grave", "late", "words"]) {
+    const grave = await readBack(id(name));
+    check(
+      `찌꺼기 ${name}는 묘비가 되어 남는다`,
+      grave?.purged_at === BURIAL && grave?.text === "",
+      `purged=${grave?.purged_at} text=${JSON.stringify(grave?.text)}`,
+    );
+  }
 
   console.log(
     `\n${passed} passed, ${failed} failed${skipped ? `, ${skipped} skipped` : ""}\n`,
