@@ -38,6 +38,11 @@ export function AddForm({ place = INBOX }: { place?: Place }) {
   textRef.current = text;
   const dictation = useDictation({ textRef, onText: setText });
   const listening = dictation.state === "listening";
+  // "asking" counts too. The permission sheet is up, the field is still live
+  // behind it, and the text is read the moment it closes -- so a task added in
+  // that gap is taken away *and* comes back, because the first result composes
+  // against the text that was there when the sheet opened.
+  const dictating = dictation.state === "asking" || listening;
   const hint =
     place === INBOX ? t("inbox.placeholder") : t("matrix.addPlaceholder");
 
@@ -46,7 +51,7 @@ export function AddForm({ place = INBOX }: { place?: Place }) {
   // task added mid-dictation is a task made from half of what was said, and
   // the other half then lands in an empty field with nowhere to go. Stopping
   // is one press, and the button lights up the moment it lands.
-  const canAdd = Boolean(text.trim()) && !listening;
+  const canAdd = Boolean(text.trim()) && !dictating;
 
   const submit = () => {
     if (!canAdd) return;

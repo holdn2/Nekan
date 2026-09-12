@@ -3,7 +3,7 @@
  */
 
 import { expect, test } from "vitest";
-import { composeDictation, speechLocale } from "../transcript";
+import { composeDictation, hasModelFor, speechLocale } from "../transcript";
 
 test("the recogniser is asked for a region, not a bare language", () => {
   // iOS answers "language-not-supported" to a bare tag, which reads on screen
@@ -39,4 +39,18 @@ test("no space is invented where one would look wrong", () => {
 test("silence leaves the field alone", () => {
   expect(composeDictation("이미 쓴 것", "")).toBe("이미 쓴 것");
   expect(composeDictation("이미 쓴 것", "   ")).toBe("이미 쓴 것");
+});
+
+test("a model is matched on the language, not the exact tag", () => {
+  // Platforms report what they hold in their own shape. A strict match turns
+  // the feature off on a device that can do the job.
+  expect(hasModelFor("ko-KR", ["ko-KR", "en-US"])).toBe(true);
+  expect(hasModelFor("ko-KR", ["ko_KR"])).toBe(true);
+  expect(hasModelFor("ko-KR", ["ko"])).toBe(true);
+  expect(hasModelFor("en-US", ["en-GB"])).toBe(true);
+});
+
+test("a language the device does not hold is not a match", () => {
+  expect(hasModelFor("ko-KR", ["en-US", "ja-JP"])).toBe(false);
+  expect(hasModelFor("ko-KR", [])).toBe(false);
 });

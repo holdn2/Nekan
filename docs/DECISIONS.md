@@ -1195,6 +1195,16 @@ await 뒤마다 자기 세대가 아직 유효한지 묻고, 아니면 쓰지 �
 돌지만 **약속이 조건부가 되고**, 조건은 사용자가 볼 수 없는 곳(네트워크 상태)에 있다.
 조건부 프라이버시는 프라이버시가 아니다.
 
+**플래그 하나로는 약속이 안 지켜진다.** `requiresOnDeviceRecognition`의 문서가
+_"[Default: false] Prevent device from sending audio over the network. **Only enabled if
+the device supports it.**"_ 이고, 이어서 _"Use `getSupportedLocales()` to verify if the
+locale is installed"_ 라고 적어 두었다. **못 하는 경우에 실패하는 것이 아니라 조용히 다른
+일을 할 수 있다는 뜻이다** — 그 다른 일이 바로 음성을 밖으로 보내는 것이다. 그래서 세 가지를
+다 묻는다: 인식이 되는가 · 기기가 온디바이스를 하는가 · **그 언어의 모델이 깔려 있는가.**
+셋째가 빠지면 앞의 문단은 약속이 아니라 희망이다. 다만 `getSupportedLocales()`가 **거절하는
+것은 "아니오"가 아니다** — iOS에는 모델을 설치한다는 개념이 없어 그냥 실패할 수 있고, 그걸
+불가로 읽으면 가장 잘 되는 플랫폼에서 기능이 꺼진다.
+
 **함정** 부분 결과는 **덧붙일 새 낱말이 아니라 같은 문장의 더 긴 판**이다. 이어붙이면
 "우유 우유 사기"가 된다. 누를 때의 글자를 붙들어 두고 매번 그것과 합성한다
 (`composeDictation`). 그리고 그 붙드는 시점은 **권한 시트가 닫힌 뒤**다 — 시트가 떠 있는

@@ -43,3 +43,20 @@ export function composeDictation(base: string, heard: string): string {
   if (!base) return said;
   return /\s$/.test(base) ? base + said : `${base} ${said}`;
 }
+
+/**
+ * Is the model for this tag among the ones the device has installed?
+ *
+ * Compared loosely on purpose. The recogniser reports what it has in whatever
+ * shape its platform uses -- `ko-KR`, `ko_KR`, sometimes just `ko` -- and a
+ * strict match would turn the feature off on a device that can perfectly well
+ * do the job. The language is what has to agree; the region is a preference,
+ * and asking for ko-KR on a device holding only `ko` is not a refusal.
+ */
+export function hasModelFor(tag: string, installed: string[]): boolean {
+  const want = tag.toLowerCase().replace("_", "-").split("-")[0];
+  return (installed || []).some(
+    (have) =>
+      String(have).toLowerCase().replace("_", "-").split("-")[0] === want,
+  );
+}

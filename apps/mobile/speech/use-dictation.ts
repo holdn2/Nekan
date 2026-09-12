@@ -19,7 +19,7 @@ import {
   useSpeechRecognitionEvent,
 } from "expo-speech-recognition";
 import { locale } from "../i18n";
-import { composeDictation, speechLocale } from "./transcript";
+import { composeDictation, hasModelFor, speechLocale } from "./transcript";
 
 /** What the button is doing, which is all the screen needs to know. */
 export type DictationState = "off" | "unavailable" | "asking" | "listening";
@@ -42,15 +42,32 @@ export function useDictation({ textRef, onText }: Options) {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      // Two separate questions, and the second is the one that decides this.
-      // A phone can have a recogniser and still not be able to run it without
-      // a network, and that is the case this refuses.
-      const [available, onDevice] = await Promise.all([
+      // Three questions, and the third is the one that is easy to miss.
+      // `supportsOnDeviceRecognition` answers for the device, not for the
+      // language: a phone can do offline recognition and still not have the
+      // model for the language this app is in.
+      //
+      // That gap matters more than an error message. The option's own
+      // documentation says "only enabled if the device supports it" and tells
+      // you to check getSupportedLocales() first -- so a request that asks for
+      // on-device recognition of a language the device has no model for may
+      // not fail at all. It may quietly do the other thing, which is send the
+      // audio away. The promise this file makes is only as good as this check.
+      const [available, onDevice, supported] = await Promise.all([
         ExpoSpeechRecognitionModule.isRecognitionAvailable(),
         ExpoSpeechRecognitionModule.supportsOnDeviceRecognition(),
+        ExpoSpeechRecognitionModule.getSupportedLocales({}).catch(() => null),
       ]);
       if (cancelled) return;
-      if (!available || !onDevice) setState("unavailable");
+      if (!available || !onDevice) return setState("unavailable");
+      // A refusal to answer is not an answer of "no". iOS has no notion of
+      // installing a model the way Android does, and the call can simply
+      // reject; treating that as unavailable would turn the feature off on
+      // the platform it works best on. start() still surfaces a real refusal.
+      if (!supported) return;
+      if (!hasModelFor(speechLocale(locale()), supported.installedLocales)) {
+        setState("unavailable");
+      }
     })();
     return () => {
       cancelled = true;
