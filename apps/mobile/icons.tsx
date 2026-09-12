@@ -13,7 +13,7 @@
  * The name belongs to the button, not to the icon: these are marked hidden
  * from the accessibility tree and the Pressable around them carries the label.
  */
-import Svg, { Circle, Line, Path, Polyline } from "react-native-svg";
+import Svg, { Circle, Line, Path, Polyline, Rect } from "react-native-svg";
 
 interface IconProps {
   color: string;
@@ -160,6 +160,49 @@ export function SyncIcon({ color, size = 18 }: IconProps) {
       <Path d="M21 3v5h-5" />
       <Path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
       <Path d="M8 16H3v5" />
+    </Svg>
+  );
+}
+
+export function MicIcon({ color, size = 18 }: IconProps) {
+  return (
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={STROKE}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z" />
+      <Path d="M5 11v1a7 7 0 0 0 14 0v-1" />
+      <Line x1="12" y1="19" x2="12" y2="22" />
+    </Svg>
+  );
+}
+
+/**
+ * Listening: a filled square, the universal "stop", inside the same circle the
+ * microphone sat in. Filled rather than outlined because the state it marks is
+ * the one where pressing again *ends* something -- an outline would read as
+ * one more thing to start.
+ */
+export function StopIcon({ color, size = 18 }: IconProps) {
+  return (
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill={color}
+      stroke="none"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Rect x="7" y="7" width="10" height="10" rx="2" />
     </Svg>
   );
 }
