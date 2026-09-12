@@ -413,5 +413,13 @@
   "sync": {
     "now": "Sync now",
     "stateAgo": "{{state}} · {{ago}}"
+  },
+  "speech": {
+    "start": "Speak a task",
+    "stop": "Stop listening",
+    "listening": "Listening",
+    "unavailable": "This device cannot transcribe without a network.",
+    "denied": "Nekan needs the microphone and speech recognition. Turn them on in Settings.",
+    "failed": "Nothing was transcribed. Try again."
   }
 }
