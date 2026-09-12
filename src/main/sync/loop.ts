@@ -54,6 +54,14 @@ let timer: ReturnType<typeof setTimeout> | null = null;
 let running = false;
 let failures = 0;
 let reconciledAt = 0;
+/**
+ * Bumped whenever the cursor is reset under a run's feet.
+ *
+ * The phone guards the same way with the session epoch; this side had no
+ * equivalent, so a run that started before a reset could finish after it and
+ * write its stale answer over the fresh state.
+ */
+let generation = 0;
 /** A save that arrived mid-run, whose rows this run had already read past. */
 let dirty = false;
 /** When the last run finished. Read by wake(), which see. */
@@ -94,8 +102,16 @@ async function runSync() {
   if (running) return;
 
   const session = getPublicSession();
-  if (!session || !session.userId)
+  if (!session || !session.userId) {
+    // Not only sign-out gets here. A refresh that fails with 4xx discards the
+    // session where it stands, and api/ knows nothing about sync -- by design,
+    // the barrel does not even re-export it. So the loop is the only thing
+    // that finds out, and forgetting here is what stops a cursor from
+    // outliving the account it describes. Without it the next sign-in, merge
+    // or replace, asks only for rows past a number from the last session.
+    useAccount(null);
     return report({ state: "off", unsent: 0, syncedAt: null });
+  }
 
   // Claimed before the first await, not after. getAccessToken() can spend a
   // network round trip renewing, and a second call arriving in that window
@@ -114,6 +130,14 @@ async function runSync() {
     if (!token) return backOff();
 
     useAccount(session.userId);
+    // Taken after useAccount, which can bump it itself. Everything below has
+    // an await in front of it, and what waits on the other side of an await
+    // is a cursor that somebody may have reset in the meantime -- signing out
+    // and back in, or a "replace" asking to start from the account's copy.
+    // Writing this run's answer into that would put the old number back and
+    // undo the reset in silence.
+    const mine = generation;
+    const ours = () => mine === generation;
     const state = syncState();
     const reconcile = reconcileDue();
 
@@ -122,6 +146,9 @@ async function runSync() {
       reconcile ? 0 : state.cursor,
       state.pushedAt,
     );
+    // schedule(0) rather than falling through: the reset's own schedule(0)
+    // was swallowed by `running`, so nothing is armed unless this arms it.
+    if (!ours()) return schedule(0);
     state.cursor = Math.max(state.cursor, pulled.cursor);
     if (!pulled.ok) {
       persist();
@@ -130,6 +157,7 @@ async function runSync() {
     if (reconcile) reconciledAt = Date.now();
 
     const pushed = await push(token, session.userId, state.pushedAt);
+    if (!ours()) return schedule(0);
     state.pushedAt = pushed.pushedAt;
     persist();
     if (!pushed.ok) return backOff();
@@ -172,6 +200,7 @@ function useAccount(userId: string | null) {
   state.cursor = 0;
   state.pushedAt = 0;
   reconciledAt = 0;
+  generation += 1;
   persist();
 }
 
@@ -286,8 +315,22 @@ function syncNow() {
  * when, is the next piece; until then this does the obvious thing rather than a
  * half-measure that would be harder to undo.
  */
-function syncAccount(userId: string | null) {
+function syncAccount(userId: string | null, fresh = false) {
   useAccount(userId || null);
+  // useAccount only drops the cursor when the account is a different one, and
+  // "replace" is usually the *same* account -- somebody signing in again on
+  // their own machine and asking to keep only what the account has. The board
+  // has been emptied by then, so a cursor still saying "I have everything up
+  // to N" stops anything from coming back: the pull asks for rows past N and
+  // is told there are none. The window ends up empty and stays that way until
+  // the next restart, which is indistinguishable from losing the lot.
+  if (fresh && userId) {
+    const state = syncState();
+    state.cursor = 0;
+    reconciledAt = 0;
+    generation += 1;
+    persist();
+  }
   failures = 0;
   if (userId) {
     report({ state: "syncing", unsent: countUnsent(), syncedAt: null });
