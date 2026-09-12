@@ -296,6 +296,9 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
     안 보이고(모든 뷰가 거른다) 파일과 서버에 TTL 90일 동안 남는다. 사용자가 없애 달라고
     한 바로 그 글자가. 지키는 곳은 `normalizeTasks`(모든 입구) · `mergeOne` ·
     `mergeRendererTasks`(여기는 정규화가 없다) · 트리거 넷이다.
+    **묘비인지 묻는 것은 `isBuried()` 하나다**(`shared/sync/rows.ts`) — `purgedAt: 0`은
+    진짜 도장인데(1970도 시각이고 `normalizeTasks`가 보존한다) truthiness로 물으면
+    없는 것이 된다. 네 곳이 그렇게 묻고 있었고, 그 한 값에서 정규화와 병합이 갈렸다.
   - 실제 `filter`로 제거하는 곳은 `dropExpiredTombstones()` 단 하나뿐이고,
     `main/store.ts`의 `load()`가 시작할 때 한 번 부른다 (TTL 90일).
 - **도장이 둘이다. 완료·삭제는 `updatedAt`이 아니라 `stateAt`을 찍는다** (2026-09-06).

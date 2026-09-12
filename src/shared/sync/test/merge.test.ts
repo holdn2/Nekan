@@ -285,6 +285,22 @@ test("a grave keeps none of the words the newer half was carrying", () => {
   assert.equal(merged.memo, null);
 });
 
+test("a burial stamped zero is still a burial", () => {
+  // 1970 is a time. normalizeTasks keeps a purgedAt of 0, so anything that
+  // asks the question with truthiness disagrees with it for that one value --
+  // and the disagreement is the shape of every bug in this file: the merge
+  // drops the grave while the normalizer thinks the row is buried.
+  const local = [task({ text: "살아있다", updatedAt: 9000, stateAt: 9000 })];
+  const rows = [
+    toRow(task({ text: "", purgedAt: 0, updatedAt: 1, stateAt: 1 }), "u1"),
+  ];
+
+  const merged = mergeIncoming(local, rows).tasks[0];
+
+  assert.equal(merged.purgedAt, 0);
+  assert.equal(merged.text, "");
+});
+
 test("a stale edit cannot resurrect a tombstone", () => {
   const local = [task({ text: "", purgedAt: 5000, updatedAt: 5000 })];
   const rows = [toRow(task({ text: "살아있다", updatedAt: 4000 }), "u1")];

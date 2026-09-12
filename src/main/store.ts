@@ -18,7 +18,7 @@ import { loadStore, writeStore } from "./store-io";
 import type { Task } from "../shared/types";
 import type { Store } from "./store-io";
 import { dropExpiredTombstones } from "../shared/core";
-import { STATE_FIELDS, stamp, stateStamp } from "../shared/sync";
+import { STATE_FIELDS, isBuried, stamp, stateStamp } from "../shared/sync";
 import type { LooseTask } from "../shared/sync";
 
 let store: Store | null = null;
@@ -102,8 +102,8 @@ function setTasks(tasks: unknown) {
  * anything between this and the file.
  */
 function bury<T>(task: T): T {
+  if (!isBuried(task as LooseTask)) return task;
   const row = task as Record<string, unknown>;
-  if (!row.purgedAt) return task;
   row.text = "";
   row.memo = null;
   return task;
@@ -137,7 +137,7 @@ function mergeRendererTasks(tasks: unknown) {
     // The purge check is the same one mergeOne makes, and for the same
     // reason: the shortcut hands over a row that may be missing a burial the
     // other side is holding.
-    if (content && state && !(mine as Record<string, unknown>).purgedAt) {
+    if (content && state && !isBuried(mine as LooseTask)) {
       byId.set(id, bury({ ...task }));
       continue;
     }

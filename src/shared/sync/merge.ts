@@ -22,7 +22,7 @@
 
 import { normalizeTasks } from "../core.js";
 import type { Task } from "../types.js";
-import { fromRow, stamp, stateStamp } from "./rows.js";
+import { fromRow, isBuried, stamp, stateStamp } from "./rows.js";
 import type { LooseTask, Row } from "./rows.js";
 
 /**
@@ -71,7 +71,7 @@ function mergeOne(local: LooseTask, remote: LooseTask): LooseTask {
   const state = remoteStateWins(local, remote);
   // A burial the remote copy does not carry has to be put back by hand, so
   // the shortcut only applies when there is none to lose.
-  if (content && state && !local.purgedAt) return bury({ ...remote });
+  if (content && state && !isBuried(local)) return bury({ ...remote });
   const merged: LooseTask = { ...(content ? remote : local) };
   const from = state ? remote : local;
   const other = state ? local : remote;
@@ -113,7 +113,7 @@ function mergeOne(local: LooseTask, remote: LooseTask): LooseTask {
  * task that no longer exists.
  */
 function bury(task: LooseTask): LooseTask {
-  if (!task.purgedAt) return task;
+  if (!isBuried(task)) return task;
   task.text = "";
   task.memo = null;
   return task;
@@ -164,7 +164,7 @@ export function mergeIncoming(
     if (
       !remoteWins(local, remote) &&
       !remoteStateWins(local, remote) &&
-      !(remote.purgedAt && !local.purgedAt)
+      !(isBuried(remote) && !isBuried(local))
     ) {
       kept.push(remote.id);
       continue;
