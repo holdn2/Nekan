@@ -41,8 +41,15 @@ export function AddForm({ place = INBOX }: { place?: Place }) {
   const hint =
     place === INBOX ? t("inbox.placeholder") : t("matrix.addPlaceholder");
 
+  // Adding is off while the microphone is open. The recogniser is still
+  // revising the sentence -- every partial result rewrites the field -- so a
+  // task added mid-dictation is a task made from half of what was said, and
+  // the other half then lands in an empty field with nowhere to go. Stopping
+  // is one press, and the button lights up the moment it lands.
+  const canAdd = Boolean(text.trim()) && !listening;
+
   const submit = () => {
-    if (!text.trim()) return;
+    if (!canAdd) return;
     addTasks(place, text);
     setText("");
   };
@@ -108,16 +115,13 @@ export function AddForm({ place = INBOX }: { place?: Place }) {
         </Pressable>
         <Pressable
           onPress={submit}
-          disabled={!text.trim()}
+          disabled={!canAdd}
           hitSlop={6}
           accessibilityRole="button"
           accessibilityLabel={t("common.add")}
-          style={[
-            s.add,
-            { backgroundColor: text.trim() ? c.accent : c.disabled },
-          ]}
+          style={[s.add, { backgroundColor: canAdd ? c.accent : c.disabled }]}
         >
-          <PlusIcon color={text.trim() ? c["on-accent"] : c.faint} />
+          <PlusIcon color={canAdd ? c["on-accent"] : c.faint} />
         </Pressable>
       </View>
     </View>
