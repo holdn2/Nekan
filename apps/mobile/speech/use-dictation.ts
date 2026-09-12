@@ -60,12 +60,17 @@ export function useDictation({ textRef, onText }: Options) {
       ]);
       if (cancelled) return;
       if (!available || !onDevice) return setState("unavailable");
-      // A refusal to answer is not an answer of "no". iOS has no notion of
-      // installing a model the way Android does, and the call can simply
-      // reject; treating that as unavailable would turn the feature off on
-      // the platform it works best on. start() still surfaces a real refusal.
-      if (!supported) return;
-      if (!hasModelFor(speechLocale(locale()), supported.installedLocales)) {
+      // Not knowing is not the same as knowing "no", and there are two ways
+      // not to know. The call can reject -- iOS has no notion of installing a
+      // model the way Android does -- and it can answer with an empty list
+      // for the same reason. Reading either as unavailable would switch the
+      // feature off on the platform it works best on, and switch it off on a
+      // device where it has already been seen working. Only a list that names
+      // languages and does not name this one is an answer. A real refusal
+      // still arrives from start().
+      const installed = supported?.installedLocales;
+      if (!installed?.length) return;
+      if (!hasModelFor(speechLocale(locale()), installed)) {
         setState("unavailable");
       }
     })();
