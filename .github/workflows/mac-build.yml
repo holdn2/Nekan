@@ -160,7 +160,22 @@ jobs:
 
   build:
     needs: preflight
-    runs-on: macos-latest
+    # Pinned, not `macos-latest`. On 2026-09-12 that label started resolving to
+    # macos-26 and every signed build stopped, always at the same step:
+    #
+    #   /usr/bin/security set-key-partition-list ... failed 1
+    #   security: SecKeychainUnlock: The user name or passphrase you entered is not correct.
+    #
+    # electron-builder makes a temporary keychain, picks its password, and then
+    # cannot unlock the thing it just made -- the legacy keychain API it uses is
+    # being taken away. Nothing in this repository changed; the label moved
+    # under it, which is what a floating label is for and why it is wrong here.
+    #
+    # This is the one job whose inputs must not drift on their own: it is only
+    # ever run to produce a release, so a broken image is discovered on the day
+    # somebody is trying to ship. Raise this deliberately, with a signed build
+    # to prove it, rather than by leaving it floating.
+    runs-on: macos-15
     env:
       # One place decides it, so the key step, the checks and the artifact name
       # cannot disagree about what this run produced. Why the answer is "a manual

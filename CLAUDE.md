@@ -779,6 +779,17 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   이상이 됐을 때"**다. 지금 옮기면 소유자가 자기 실행을 자기가 승인하는 절차만 생기고,
   **대상을 릴리스 브랜치로 좁히면 서명 검증 자체가 불가능해진다** — 위 항목대로 PR에서는
   서명이 돌지 않으므로 기능 브랜치에 대고 손으로 돌리는 것이 유일한 확인 방법이다.
+- **맥 러너는 `macos-15`로 고정돼 있다. `macos-latest`로 되돌리지 말 것** (2026-09-12).
+  그날 그 라벨이 **macos-26**을 가리키기 시작했고 서명 빌드가 전부 같은 자리에서 죽었다:
+  `security set-key-partition-list ... failed 1`, 그리고 그 **한 줄 아래**에 진짜 원인이 있다 —
+  `SecKeychainUnlock: The user name or passphrase you entered is not correct.`
+  electron-builder(26.15.3)가 임시 키체인을 만들고 비밀번호를 정한 뒤 **자기가 만든 것을 못
+  연다.** 쓰고 있는 레거시 키체인 API가 사라지는 중이다. 저장소는 한 줄도 안 바뀌었고 **라벨이
+  발밑에서 움직였다.**
+  **이 잡은 떠 있는 라벨을 쓰면 안 되는 유일한 자리다**: 릴리스를 낼 때만 돌기 때문에, 이미지가
+  깨진 것을 **하필 내보내려는 날** 알게 된다. 올릴 때는 서명 빌드를 한 번 성공시켜 보고 올린다.
+  **`⨯ ... failed 1`만 읽고 일시적 실패로 넘기지 말 것** — 두 번 연속 같은 자리에서 죽으면
+  그 아래 줄을 봐야 한다. 2026-09-12에 재실행부터 하다가 한 번 헛돌았다.
 - **빌드 로그의 "notarization successful"은 빌더의 자기 진술이다.** 실제로 열리는지는 OS에
   물어야 한다 — `codesign --verify --deep --strict` · `xcrun stapler validate` ·
   `spctl --assess --type execute`. 특히 stapler가 중요하다: 티켓이 발급됐지만 stapling이 안 되면
