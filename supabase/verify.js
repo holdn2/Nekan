@@ -590,27 +590,38 @@ const pull = (token, since = 0, limit = 500) =>
   // -- lands. What is left is a live row with no text, which is what a person
   // then finds on their screen. One of these outlived a run before the check
   // below existed.
+  // Later than every stamp this run writes, not a number that happens to be
+  // bigger than the two rows the first draft thought about. `split` climbs to
+  // t0 + 50 in the two-halves section, so a burial at t0 + 30 tied on both
+  // halves and the trigger dropped the whole write -- which is the same
+  // silence as the state stamp that was missing before it.
+  const BURIAL = t0 + 1000;
   await push(
     mine.access_token,
-    [id("a"), id("b")].map((rowId) =>
+    [id("a"), id("b"), id("split"), id("grave")].map((rowId) =>
       row({
         id: rowId,
         text: "",
         memo: null,
-        purged_at: t0 + 30,
-        updated_at: t0 + 30,
-        state_at: t0 + 30,
+        purged_at: BURIAL,
+        updated_at: BURIAL,
+        state_at: BURIAL,
       }),
     ),
   );
 
   // Cleanup that is not checked is not cleanup. This runs last and leaves
   // rows behind in somebody's account, so the run has to say whether it did.
-  for (const name of ["a", "b"]) {
+  //
+  // Every id the run creates is on the list, not just the two the first draft
+  // remembered. `split` was left alive by every run for as long as the two
+  // halves have existed -- one row per run, and nobody noticed because the
+  // checks above only ever read the row they had just written.
+  for (const name of ["a", "b", "split", "grave"]) {
     const grave = await readBack(id(name));
     check(
       `찌꺼기 ${name}는 묘비가 되어 남는다`,
-      grave?.purged_at === t0 + 30 && grave?.text === "",
+      grave?.purged_at === BURIAL && grave?.text === "",
       `purged=${grave?.purged_at} text=${JSON.stringify(grave?.text)}`,
     );
   }
