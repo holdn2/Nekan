@@ -286,8 +286,21 @@ function syncNow() {
  * when, is the next piece; until then this does the obvious thing rather than a
  * half-measure that would be harder to undo.
  */
-function syncAccount(userId: string | null) {
+function syncAccount(userId: string | null, fresh = false) {
   useAccount(userId || null);
+  // useAccount only drops the cursor when the account is a different one, and
+  // "replace" is usually the *same* account -- somebody signing in again on
+  // their own machine and asking to keep only what the account has. The board
+  // has been emptied by then, so a cursor still saying "I have everything up
+  // to N" stops anything from coming back: the pull asks for rows past N and
+  // is told there are none. The window ends up empty and stays that way until
+  // the next restart, which is indistinguishable from losing the lot.
+  if (fresh && userId) {
+    const state = syncState();
+    state.cursor = 0;
+    reconciledAt = 0;
+    persist();
+  }
   failures = 0;
   if (userId) {
     report({ state: "syncing", unsent: countUnsent(), syncedAt: null });

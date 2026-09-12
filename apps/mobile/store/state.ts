@@ -180,6 +180,13 @@ export function adoptLocalTasks(mode: string): void {
     return;
   }
   setTasks([]);
+  // The cursor said "I have everything up to N". Emptying the board makes that
+  // false, and nothing else will notice: signing into the same account is not
+  // an account change, so useAccount() leaves it alone, and the pull then asks
+  // for rows past N and is told there are none. The board stays empty until
+  // the app is restarted -- which looks exactly like losing everything.
+  const state = syncState();
+  saveSyncState({ ...state, cursor: 0 });
 }
 
 export type ThemeChoice = "light" | "dark" | null;

@@ -77,8 +77,11 @@ function registerAuthIpc() {
     }
     adoptLocalTasks(mode);
     // Resets the cursor, so signing in as somebody else cannot inherit the last
-    // account's idea of being up to date.
-    syncAccount(result.session.userId);
+    // account's idea of being up to date -- and, when the local board was just
+    // set aside, so signing in as *oneself* cannot either. adoptLocalTasks has
+    // emptied the store by then, which makes the stored cursor a claim about a
+    // board that no longer exists.
+    syncAccount(result.session.userId, mode === "replace");
     return result;
   }
 

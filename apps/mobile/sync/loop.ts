@@ -242,10 +242,28 @@ export function clearOverwritten(): void {
   if (status.overwritten) report({ overwritten: 0 });
 }
 
-/** Signing out stops the loop and clears what it was showing. */
+/**
+ * Signing out stops the loop, clears what it was showing, and forgets where
+ * it had got to.
+ *
+ * The cursor is the part that was missing. A pull asks for rows past it, so a
+ * cursor that outlives the sign-out has the next sign-in asking for changes
+ * since a moment that is no longer meaningful -- and `useAccount` does not
+ * catch it, because signing back into the *same* account is not an account
+ * change. What came back was everything that happened after the sign-out and
+ * nothing that happened before it.
+ *
+ * The tasks themselves stay. They always have: sync has never deleted a local
+ * row, and an account is not the only reason to have a board.
+ */
 export function stopSync(): void {
   if (timer) clearTimeout(timer);
   timer = null;
   failures = 0;
+  useAccount(null);
+  // Loop-local, so useAccount cannot reach it. Without this the next sign-in
+  // is inside the six-hour window and skips the full re-read that would have
+  // papered over a stale cursor.
+  reconciledAt = 0;
   report({ phase: "off", unsent: 0, syncedAt: null, overwritten: 0 });
 }
