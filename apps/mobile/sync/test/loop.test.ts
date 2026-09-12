@@ -41,7 +41,7 @@ vi.mock("../transfer", () => ({
   push: async () => ({ ok: false, pushedAt: 0 }),
 }));
 
-const { stopSync } = await import("../loop");
+const { stopSync, syncNow } = await import("../loop");
 const { adoptLocalTasks, saveSyncState, syncState, setTasks } =
   await import("../../store/state");
 
@@ -54,6 +54,10 @@ test("signing out forgets where the pull had got to", () => {
 
   expect(syncState().cursor).toBe(0);
   expect(syncState().account).toBe(null);
+  // The watermark too. Without this the test passes on a version that clears
+  // only the cursor, and a stale watermark has its own failure: local edits
+  // made while signed out look already sent and never go up.
+  expect(syncState().pushedAt).toBe(0);
 });
 
 test("replacing the board forgets it too", () => {
@@ -87,4 +91,20 @@ test("merging keeps it, because the board still holds those rows", () => {
   adoptLocalTasks("merge");
 
   expect(syncState().cursor).toBe(4321);
+});
+
+test("a session that vanished without a sign-out is forgotten too", async () => {
+  // currentSession() is mocked to null, which is what the app looks like after
+  // a refresh fails with 4xx: the session is gone and nobody called stopSync,
+  // because nobody signed out. The loop is the only thing that finds out.
+  vi.useFakeTimers();
+  try {
+    syncNow();
+    await vi.advanceTimersByTimeAsync(10);
+  } finally {
+    vi.useRealTimers();
+  }
+
+  expect(syncState().cursor).toBe(0);
+  expect(syncState().pushedAt).toBe(0);
 });

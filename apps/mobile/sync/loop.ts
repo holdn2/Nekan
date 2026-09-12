@@ -117,6 +117,12 @@ async function run(): Promise<void> {
   if (running) return;
   const session = currentSession();
   if (!session?.userId) {
+    // Sign-out is not the only way to get here: a refresh that fails with 4xx
+    // drops the session where it stands, and api/ knows nothing about sync.
+    // The loop is the only thing that finds out, so it is the one that has to
+    // forget -- otherwise the cursor outlives the account it describes and the
+    // next sign-in, merge or replace, asks only for what changed since.
+    useAccount(null);
     report({ phase: "off", unsent: 0 });
     return;
   }
