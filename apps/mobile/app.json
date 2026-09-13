@@ -41,7 +41,7 @@
       "typedRoutes": true
     },
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "fingerprint"
     },
     "updates": {
       "fallbackToCacheTimeout": 0,

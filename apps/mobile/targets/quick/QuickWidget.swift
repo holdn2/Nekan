@@ -100,9 +100,3 @@ struct QuickWidget: Widget {
         .supportedFamilies([.systemMedium])
     }
 }
-
-#Preview(as: .systemMedium) {
-    QuickWidget()
-} timeline: {
-    QuickEntry(date: Date())
-}

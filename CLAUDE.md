@@ -1035,6 +1035,23 @@ Android 상한(약 6MB)에서 **조용히** 깨지고, 동기화가 붙을 때 �
 Xcode의 `DEVELOPMENT_TEAM`은 이 값에서 온다. **비밀이 아니다** — Apple Developer의
 Membership 화면에 있는 10자짜리 식별자다.
 
+**`runtimeVersion`은 `appVersion`이 아니라 `fingerprint`다** (2026-09-13). 앞의 것은
+`app.json`의 `version`을 그대로 쓰므로 **사람이 숫자를 올려야만 움직인다** — 네이티브
+모듈을 하나 더하고 버전을 안 올리면, 그 네이티브가 없는 빌드에 OTA가 그대로 내려앉는다.
+핑거프린트는 네이티브 프로젝트에서 계산되니 그 경우가 성립하지 않는다.
+**Windows에서도 계산된다**(실측: `node node_modules/expo-updates/bin/cli.js
+fingerprint:generate --platform ios`).
+
+**무엇이 해시되는지는 좁다. 실측으로 확인할 것.** 프로젝트 쪽 소스는 아홉뿐이고
+(`.gitignore` · `eas.json` · 아이콘 · **`targets/quick/expo-target.config.js`** ·
+autolinking 둘 · `expoConfig` · `package:react-native` · `packageJson:scripts`),
+**`QuickWidget.swift`와 `Localizable.xcstrings`는 들어 있지 않다.** Swift에 한 줄을
+붙여 넣고 다시 재면 해시가 그대로다 — 처음엔 `targets`가 소스 목록에 있다고 읽었는데
+그건 `@bacons/apple-targets`의 경로가 걸린 것이었다.
+**그래서 남는 위험은 하나다: 딥링크 계약.** Swift가 `nekan://quick?mode=…`를 들고 있고
+JS가 그 라우트를 갖는데, 그 주소를 바꾸는 변경은 **JS만 OTA로 나가고 위젯은 옛 주소를
+든 채 남을 수 있다.** 주소를 바꾼다면 빌드도 함께다.
+
 **위젯 타깃의 번들 id는 손으로 적는다.** 플러그인은 타깃 이름이 아니라 **종류**에서
 뽑아서 `.widget`을 준다 — 위젯이 둘이 되는 날 둘 다 같은 id를 원하고, 증상은 이름
 충돌이 아니라 **서명 실패**다.
