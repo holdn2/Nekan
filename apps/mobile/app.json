@@ -16,7 +16,8 @@
         "NSMicrophoneUsageDescription": "Nekan uses the microphone to hear a new task.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "2"
+      "buildNumber": "2",
+      "appleTeamId": "3PW3FZG3GR"
     },
     "android": {
       "package": "com.makersfarm.nekan",
