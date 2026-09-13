@@ -21,6 +21,7 @@ const fs = require("fs");
 const path = require("path");
 const { spawn, spawnSync } = require("child_process");
 const { writeTheme, writeSite } = require("./build-theme.js");
+const { writeWidgetStrings } = require("./build-widget-strings.js");
 
 const ROOT = path.join(__dirname, "..");
 const SRC = path.join(ROOT, "src");
@@ -257,6 +258,12 @@ compile(watch);
 markSharedAsEsm();
 writeTheme({ quiet: watch });
 writeSite({ quiet: watch });
+// Nothing downstream of this reads its output -- the widget is compiled by
+// Xcode, not here -- but it belongs to the same family as the two above: a
+// committed file generated from one source of truth, kept honest by a test
+// that fails when the committed copy is stale. It reads the JSON catalogues
+// directly, so unlike the palette it does not need the compilers to have run.
+writeWidgetStrings({ quiet: watch });
 bundleRenderer(watch);
 
 if (watch) {

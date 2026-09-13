@@ -34,6 +34,14 @@ interface Options {
 export function useDictation({ textRef, onText }: Options) {
   const [state, setState] = useState<DictationState>("off");
   const [problem, setProblem] = useState<string | null>(null);
+  // Whether the three questions below have been answered yet.
+  //
+  // The button does not need this -- pressing it is already later than the
+  // answer -- but anything that starts dictation *by itself* does. Until the
+  // probe lands, "off" and "cannot" look the same, and a screen opened
+  // straight into the microphone would start on a device that cannot do it,
+  // turning a disabled button into an error message.
+  const [checked, setChecked] = useState(false);
   // The text as it stood when the mic was pressed. Every partial result is
   // composed against this rather than against the field, which is already
   // being rewritten by the previous partial.
@@ -59,6 +67,9 @@ export function useDictation({ textRef, onText }: Options) {
         ExpoSpeechRecognitionModule.getSupportedLocales({}).catch(() => null),
       ]);
       if (cancelled) return;
+      // Answered, whatever the answer is. Every path below this line is a
+      // verdict, so this is the one place that can say the probe is done.
+      setChecked(true);
       if (!available || !onDevice) return setState("unavailable");
       // Not knowing is not the same as knowing "no", and there are two ways
       // not to know. The call can reject -- iOS has no notion of installing a
@@ -131,5 +142,5 @@ export function useDictation({ textRef, onText }: Options) {
     });
   }, [textRef]);
 
-  return { state, problem, start, stop };
+  return { state, problem, checked, start, stop };
 }

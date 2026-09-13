@@ -980,6 +980,15 @@ apps/mobile/
                   이어붙이면 "우유 우유 사기"가 된다
   i18n.ts         세 번째 i18next 초기화. 카탈로그는 shared 한 벌
   icons.tsx       react-native-svg. 규칙 11대로 기호는 글자가 아니다
+  targets/quick/  iOS 위젯. **JS가 한 줄도 없는 네이티브 타깃이다** —
+                  @bacons/apple-targets가 이 폴더를 Xcode에 synchronized root
+                  group으로 달아서, **확장자만 보고 분류한다**(그래서
+                  Localizable.xcstrings에 배선이 필요 없다). 문 두 개가 전부이고
+                  보드를 보여주지 않는다 — 그러려면 App Group과 두 번째 형식의
+                  보드가 필요한데, 정작 어려운 것은 할 일 하나를 적기까지의 네 번
+                  터치다. `.systemMedium` 하나만 지원하는 것은 취향이 아니라
+                  제약이다: **systemSmall에서는 iOS가 `Link`를 무시하고** 타일
+                  전체를 `widgetURL` 하나로 보낸다
   metro.config.js watchFolders + `.js`→`.ts` resolver (아래)
 ```
 
@@ -1002,6 +1011,33 @@ Android 상한(약 6MB)에서 **조용히** 깨지고, 동기화가 붙을 때 �
 **`metro.config.js`가 하는 일 둘.** `watchFolders`로 저장소 전체를 보고(shared에는 이쪽을 위한
 빌드 단계가 없다), **`.js` import를 옆의 `.ts`에 잇는다** — 렌더러에서 `vite.config.mts`의
 플러그인이 하는 일과 같은 것이다. **빼면 첫 shared 파일에서 번들이 죽는다**(실측).
+
+### 위젯의 낱말은 생성물이다. 그리고 `ios.appleTeamId`가 필요하다
+
+**위젯은 어떤 카탈로그도 닿지 않는 자리다.** Swift에서 `ko.json`을 읽을 방법이 없고,
+`tools/find-untranslated.js`는 `.js`·`.ts`·`.html`·`.css` 넷만 보므로 **Swift 문자열은
+이 저장소의 모든 검사에 안 보인다.** 그래서 `tools/build-widget-strings.js`가
+`src/shared/i18n/{ko,en}.json`에서 `apps/mobile/targets/quick/Localizable.xcstrings`를
+만든다 — 팔레트와 같은 방식이다(생성물이고, 커밋하고, `tools/test/`가 낡았는지 지킨다).
+**마이크 라벨은 새 문자열이 아니라 `speech.start` 그 자체다** — 같은 행위에 이름이 둘
+붙는 것을 막는 것이 GLOSSARY의 존재 이유이고, 네이티브 타깃이 바로 그게 조용히 일어나는
+자리다. 테스트가 Swift에서 `widget.*` 키를 뽑아 생성 목록과 **양방향으로** 대조한다:
+없는 키를 Swift가 부르면 빌드가 죽는 게 아니라 **화면에 `widget.speak`라고 나온다.**
+
+**위젯의 언어는 앱 설정이 아니라 시스템 언어다.** 폰을 영어로 쓰면서 Nekan만 한국어로
+둔 사람은 영어 위젯을 본다. 고치려면 고른 언어를 공유 컨테이너에 써서 Swift가 읽어야
+하는데, 라벨 두 개 값이 아니다.
+
+**`ios.appleTeamId`가 `app.json`에 있어야 한다.** 없으면 플러그인이 경고만 하고 넘어가는데
+(`iOS builds may fail until this is corrected`), 그 경고는 `expo config --type prebuild`
+에서만 보이고 **빌드는 30분 뒤에 서명에서 죽는다.** EAS 쪽 서명은 플러그인이
+`extra.eas.build.experimental.ios.appExtensions`에 확장을 등록해 주므로 붙지만,
+Xcode의 `DEVELOPMENT_TEAM`은 이 값에서 온다. **비밀이 아니다** — Apple Developer의
+Membership 화면에 있는 10자짜리 식별자다.
+
+**위젯 타깃의 번들 id는 손으로 적는다.** 플러그인은 타깃 이름이 아니라 **종류**에서
+뽑아서 `.widget`을 준다 — 위젯이 둘이 되는 날 둘 다 같은 id를 원하고, 증상은 이름
+충돌이 아니라 **서명 실패**다.
 
 ### 버전은 폰이 정한다. npm의 `latest`가 아니다
 

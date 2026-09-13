@@ -421,5 +421,13 @@
     "unavailable": "This device cannot transcribe without a network.",
     "denied": "Nekan needs the microphone and speech recognition. Turn them on in Settings.",
     "failed": "Nothing was transcribed. Try again."
+  },
+  "quick": {
+    "title": "Quick capture",
+    "added": "Added to your brain dump"
+  },
+  "widget": {
+    "description": "Write a task straight from the home screen.",
+    "write": "Type a task"
   }
 }

@@ -34,7 +34,8 @@
           "speechRecognitionPermission": "Nekan uses speech recognition to turn what you say into a task.",
           "microphonePermission": "Nekan uses the microphone to hear a new task."
         }
-      ]
+      ],
+      "@bacons/apple-targets"
     ],
     "experiments": {
       "typedRoutes": true
