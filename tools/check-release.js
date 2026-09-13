@@ -17,6 +17,8 @@
 
 const fs = require("fs");
 const path = require("path");
+const { spawnSync } = require("child_process");
+const { STAMP } = require("./dist.js");
 
 const REPO = "holdn2/Nekan";
 
@@ -152,7 +154,23 @@ function planFold(drafts) {
   };
 }
 
-module.exports = { auditAssets, macArches, planFold };
+/**
+ * The message for a tag that would name the wrong commit, or null.
+ *
+ * Separate from the reading of files and the asking of git so that the
+ * judgement can be checked without a repository in a particular state.
+ */
+function tagWouldLie(built, head) {
+  if (!built || !head || built === head) return null;
+  return [
+    `built from ${built}, but HEAD is now ${head}.`,
+    "  Publishing tags the release at HEAD, so the tag would name a",
+    "  commit these installers were not made from. Either move the tag",
+    "  yourself after publishing, or rebuild from HEAD.",
+  ].join("\n");
+}
+
+module.exports = { auditAssets, macArches, planFold, tagWouldLie };
 
 // Everything below talks to GitHub. Guarded so that requiring this file for
 // the function above does not start a release check -- and, without a token,
@@ -190,6 +208,42 @@ if (require.main === module) {
     process.env.NEKAN_DIST ||
     require("../package.json").build?.directories?.output ||
     "dist";
+
+  /**
+   * Did the tree move after the installers were made?
+   *
+   * The tag is created when the draft is published, from whatever main points
+   * at then -- electron-builder sends no target_commitish and makes no tag at
+   * build time, so the number in the release is the number at publish time,
+   * not the number that was compiled. Let a commit land in between and the tag
+   * describes a build nobody shipped.
+   *
+   * It is a question this can only ask on the machine that built, so it is
+   * asked from the stamp that machine left rather than from GitHub. No stamp
+   * is not a pass: it means a half was built somewhere else, which is exactly
+   * what the mac workflow does, and saying so is more use than silence.
+   */
+  function builtElsewhere(dir) {
+    const stampFile = path.join(dir, STAMP);
+    if (!fs.existsSync(stampFile)) {
+      console.log(`\nno ${STAMP} here — the commit this was built from cannot`);
+      console.log(
+        "be checked from this machine. Run the final check on the one",
+      );
+      console.log("that built the installers.");
+      return null;
+    }
+    const built = fs.readFileSync(stampFile, "utf8").trim();
+    const head = spawnSync("git", ["rev-parse", "HEAD"], {
+      cwd: path.join(__dirname, ".."),
+      encoding: "utf8",
+    });
+    if (head.status !== 0) return null;
+    const now = head.stdout.trim();
+    const drift = tagWouldLie(built, now);
+    if (!drift) console.log(`\nbuilt from ${built}, still HEAD`);
+    return drift;
+  }
 
   const api = async (url, init = {}) => {
     const res = await fetch(
@@ -311,6 +365,12 @@ if (require.main === module) {
       console.log("run the Mac build workflow on main with publish on, then:");
       console.log("  npm run release:check");
       return;
+    }
+
+    const drift = builtElsewhere(DIST);
+    if (drift) {
+      console.error(`\ncheck-release: ${drift}`);
+      process.exit(1);
     }
 
     console.log("\nok — publish it on GitHub to make it live");

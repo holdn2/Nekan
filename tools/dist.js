@@ -28,6 +28,7 @@
  * build.directories.output, which is `dist`.
  */
 
+const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
 
@@ -68,6 +69,78 @@ function run(script, args) {
   // A signal leaves status null. Exiting 0 there would report a killed build as
   // a finished one.
   if (result.status !== 0) process.exit(result.status ?? 1);
+}
+
+/** Ask git one question, or answer null if git cannot be reached. */
+function git(...args) {
+  const r = spawnSync("git", args, { cwd: ROOT, encoding: "utf8" });
+  return r.status === 0 ? r.stdout.trim() : null;
+}
+
+/**
+ * The name this build writes beside the installers, holding the commit it came
+ * from. check-release.js reads it back before it says a release may go live.
+ */
+const STAMP = "built-from.txt";
+
+/**
+ * Refuse to build a release from anywhere the tag will not point at.
+ *
+ * The mac workflow has said this since it was written -- "The release is built
+ * from main, so this would upload a bundle that is not what the tag points at"
+ * -- and the asymmetry was backwards: the half with the guards only fills in a
+ * draft that already exists, and the half with none creates the draft and
+ * makes the installer every Windows user downloads.
+ *
+ * A dirty tree is the same objection in a smaller shape. An installer built
+ * over uncommitted edits is not any commit's: nothing in the repository, and
+ * no tag, describes what a person is running.
+ *
+ * Only on the way to a real upload. `npm run dist` is how somebody tries a
+ * package locally, and a local try is exactly when the tree is dirty.
+ */
+function releaseBlocker({ branch, dirty }) {
+  if (branch === null) {
+    return [
+      "publish was asked for, and git could not be read.",
+      "The release is built from main and stamped with its commit;",
+      "neither can be answered here.",
+    ];
+  }
+  if (branch !== "main") {
+    return [
+      `publish was asked for on ${branch}.`,
+      "The release is built from main, so this would upload a bundle",
+      "that is not what the tag points at.",
+    ];
+  }
+  // --porcelain is empty on a clean tree and one line per change otherwise.
+  // Untracked files count: dist/ and out/ are ignored, so what is left is
+  // something somebody made and has not decided about.
+  if (dirty) {
+    return [
+      "publish was asked for with uncommitted changes:",
+      ...dirty
+        .split("\n")
+        .slice(0, 10)
+        .map((line) => `  ${line}`),
+      "An installer built over these is not any commit's.",
+    ];
+  }
+  return null;
+}
+
+/** Ask git, judge, and stop if the answer is no. Returns the commit built. */
+function refuseUnlessReleasable() {
+  const blocker = releaseBlocker({
+    branch: git("rev-parse", "--abbrev-ref", "HEAD"),
+    dirty: git("status", "--porcelain"),
+  });
+  if (blocker) {
+    for (const line of blocker) console.error(line);
+    process.exit(2);
+  }
+  return git("rev-parse", "HEAD");
 }
 
 /** Where electron-builder's own bin lives, asked of the package itself. */
@@ -117,6 +190,7 @@ function main() {
     console.error(e.message);
     process.exit(2);
   }
+  const commit = publish ? refuseUnlessReleasable() : null;
   const out = outputDir();
 
   if (out !== (pkg.build?.directories?.output ?? "dist")) {
@@ -134,6 +208,10 @@ function main() {
   // is told where the files are rather than assuming, for the reason in the
   // header.
   if (!publish) return;
+  // Written after the build rather than before it, so a build that died leaves
+  // no claim about what it produced.
+  fs.writeFileSync(path.join(ROOT, out, STAMP), `${commit}\n`);
+  console.log(`built from ${commit}`);
   // --awaiting-mac says "the mac half is somebody else's job", which is true of
   // the Windows build and the exact opposite of the mac one. Passing it either
   // way would let a mac build that produced nothing report a complete release:
@@ -145,6 +223,6 @@ function main() {
   ]);
 }
 
-module.exports = { outputDir, builderCli, parseArgs };
+module.exports = { outputDir, builderCli, parseArgs, STAMP, releaseBlocker };
 
 if (require.main === module) main();

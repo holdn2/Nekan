@@ -794,6 +794,20 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   물어야 한다 — `codesign --verify --deep --strict` · `xcrun stapler validate` ·
   `spctl --assess --type execute`. 특히 stapler가 중요하다: 티켓이 발급됐지만 stapling이 안 되면
   **첫 실행마다 네트워크가 필요해진다.**
+- **`npm run release`는 `main`에서, 깨끗한 트리에서만 돈다** (2026-09-13, #88). 아니면
+  **빌드를 시작하기 전에** exit 2로 멈춘다. 맥 워크플로는 처음부터 그렇게 했는데
+  (_"the release is built from main, so this would upload a bundle that is not what the
+  tag points at"_) 비대칭이 뒤집혀 있었다 — **가드가 빡빡한 쪽은 이미 있는 draft를 채우기만
+  하고, 없는 쪽이 draft를 만들고 사람들이 받는 설치 파일을 냈다.** 더러운 트리도 같은
+  반대다: 커밋 안 된 편집 위에서 만든 설치본은 **어느 커밋의 것도 아니라** 저장소의 무엇도
+  그걸 설명하지 못한다. `npm run dist`(로컬 확인)는 막지 않는다 — 그때는 더러운 게 정상이다.
+  그리고 `release`가 이제 **`npm test`를 지난다**(맥 쪽은 원래 그랬다).
+- **빌드한 커밋은 출력 폴더의 `built-from.txt`에 적힌다.** `check-release.js`가 공개 직전에
+  그게 아직 HEAD인지 보고, 아니면 exit 1로 멈춘다. **태그는 publish 시점의 `main`에서
+  만들어지기 때문이다** — electron-builder는 `target_commitish`를 안 보내고 빌드 때 태그도
+  안 만든다. 그 사이에 커밋이 들어가면 **태그가 아무도 받지 않은 빌드를 가리킨다.**
+  v1.0.5가 실제로 그랬다(빌드 `5a0ab6e`, 태그 `a0eb0e7`). **파일이 없으면 통과가 아니라
+  "여기서는 못 본다"고 말한다** — 맥 절반은 다른 기계에서 만들어져 스탬프를 안 남긴다.
 - **`npm run release`에는 `GH_TOKEN`이 필요하다.** 없으면 빌드는 끝나고 업로드에서만 죽는다
   (`GitHub Personal Access Token is not set`). `gh`가 로그인돼 있으면 따로 만들 것 없이
   `GH_TOKEN="$(gh auth token)" npm run release`로 넘기면 된다. **토큰을 로그나 파일에 찍지 말 것.**
