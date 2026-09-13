@@ -154,23 +154,7 @@ function planFold(drafts) {
   };
 }
 
-/**
- * The message for a tag that would name the wrong commit, or null.
- *
- * Separate from the reading of files and the asking of git so that the
- * judgement can be checked without a repository in a particular state.
- */
-function tagWouldLie(built, head) {
-  if (!built || !head || built === head) return null;
-  return [
-    `built from ${built}, but HEAD is now ${head}.`,
-    "  Publishing tags the release at HEAD, so the tag would name a",
-    "  commit these installers were not made from. Either move the tag",
-    "  yourself after publishing, or rebuild from HEAD.",
-  ].join("\n");
-}
-
-module.exports = { auditAssets, macArches, planFold, tagWouldLie };
+module.exports = { auditAssets, macArches, planFold };
 
 // Everything below talks to GitHub. Guarded so that requiring this file for
 // the function above does not start a release check -- and, without a token,
@@ -210,39 +194,29 @@ if (require.main === module) {
     "dist";
 
   /**
-   * Did the tree move after the installers were made?
+   * The commit this machine's build came from, or null if it did not build.
    *
-   * The tag is created when the draft is published, from whatever main points
-   * at then -- electron-builder sends no target_commitish and makes no tag at
-   * build time, so the number in the release is the number at publish time,
-   * not the number that was compiled. Let a commit land in between and the tag
-   * describes a build nobody shipped.
-   *
-   * It is a question this can only ask on the machine that built, so it is
-   * asked from the stamp that machine left rather than from GitHub. No stamp
-   * is not a pass: it means a half was built somewhere else, which is exactly
-   * what the mac workflow does, and saying so is more use than silence.
+   * No stamp is not a pass and not a failure: it means the files here were
+   * made somewhere else, which is exactly what the mac workflow does. Saying
+   * so is more use than silence -- #114 is what silence costs.
    */
-  function builtElsewhere(dir) {
+  function builtCommit(dir) {
     const stampFile = path.join(dir, STAMP);
     if (!fs.existsSync(stampFile)) {
-      console.log(`\nno ${STAMP} here — the commit this was built from cannot`);
-      console.log(
-        "be checked from this machine. Run the final check on the one",
-      );
-      console.log("that built the installers.");
+      console.log(`\nno ${STAMP} here — these files were built elsewhere,`);
+      console.log("so the tag cannot be pinned from this machine.");
       return null;
     }
-    const built = fs.readFileSync(stampFile, "utf8").trim();
+    return fs.readFileSync(stampFile, "utf8").trim() || null;
+  }
+
+  /** What HEAD is now, or null if git cannot say. Reported, never a gate. */
+  function headCommit() {
     const head = spawnSync("git", ["rev-parse", "HEAD"], {
       cwd: path.join(__dirname, ".."),
       encoding: "utf8",
     });
-    if (head.status !== 0) return null;
-    const now = head.stdout.trim();
-    const drift = tagWouldLie(built, now);
-    if (!drift) console.log(`\nbuilt from ${built}, still HEAD`);
-    return drift;
+    return head.status === 0 ? head.stdout.trim() : null;
   }
 
   const api = async (url, init = {}) => {
@@ -367,10 +341,29 @@ if (require.main === module) {
       return;
     }
 
-    const drift = builtElsewhere(DIST);
-    if (drift) {
-      console.error(`\ncheck-release: ${drift}`);
-      process.exit(1);
+    // Pin the tag rather than warn about it.
+    //
+    // GitHub creates the tag when the draft is published, from the release's
+    // target_commitish -- and electron-builder never sets one, so it falls
+    // back to whatever the default branch has reached by then. v1.0.5 shipped
+    // exactly that way: installers from one commit, tag two commits later.
+    //
+    // Comparing against local HEAD and refusing would have been a guard with
+    // a hole in it. The clone can be behind the remote, and anything can land
+    // between this check and the person pressing publish. Writing the commit
+    // into the release closes both: there is no window left in which the
+    // answer can change, because the answer is now stored rather than asked.
+    const built = builtCommit(DIST);
+    if (built) {
+      await api(`/repos/${REPO}/releases/${keep.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ target_commitish: built }),
+      });
+      console.log(`\ntag pinned to ${built}`);
+      const now = headCommit();
+      if (now && now !== built) {
+        console.log(`  HEAD has since moved to ${now}; the tag stays put.`);
+      }
     }
 
     console.log("\nok — publish it on GitHub to make it live");

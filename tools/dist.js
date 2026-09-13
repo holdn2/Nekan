@@ -99,8 +99,11 @@ const STAMP = "built-from.txt";
  * Only on the way to a real upload. `npm run dist` is how somebody tries a
  * package locally, and a local try is exactly when the tree is dirty.
  */
-function releaseBlocker({ branch, dirty }) {
-  if (branch === null) {
+function releaseBlocker({ branch, dirty, head }) {
+  // Any unanswered question is a no. `git status` failing returns null, and a
+  // null read as "nothing changed" is the guard agreeing with a tree it never
+  // saw; a null head would be written into the stamp as the word "null".
+  if (branch === null || dirty === null || head === null) {
     return [
       "publish was asked for, and git could not be read.",
       "The release is built from main and stamped with its commit;",
@@ -132,15 +135,17 @@ function releaseBlocker({ branch, dirty }) {
 
 /** Ask git, judge, and stop if the answer is no. Returns the commit built. */
 function refuseUnlessReleasable() {
+  const head = git("rev-parse", "HEAD");
   const blocker = releaseBlocker({
     branch: git("rev-parse", "--abbrev-ref", "HEAD"),
     dirty: git("status", "--porcelain"),
+    head,
   });
   if (blocker) {
     for (const line of blocker) console.error(line);
     process.exit(2);
   }
-  return git("rev-parse", "HEAD");
+  return head;
 }
 
 /** Where electron-builder's own bin lives, asked of the package itself. */
@@ -166,7 +171,7 @@ function builderCli() {
  * look like it did something and did not.
  */
 function parseArgs(argv) {
-  const known = new Set(["--mac", "--publish"]);
+  const known = new Set(["--mac", "--publish", "--preflight"]);
   const unknown = argv.filter((arg) => !known.has(arg));
   if (unknown.length > 0) {
     throw new Error(
@@ -178,18 +183,31 @@ function parseArgs(argv) {
       ].join("\n"),
     );
   }
-  return { mac: argv.includes("--mac"), publish: argv.includes("--publish") };
+  return {
+    mac: argv.includes("--mac"),
+    publish: argv.includes("--publish"),
+    preflight: argv.includes("--preflight"),
+  };
 }
 
 function main() {
-  let mac, publish;
+  let mac, publish, preflight;
   try {
-    ({ mac, publish } = parseArgs(process.argv.slice(2)));
+    ({ mac, publish, preflight } = parseArgs(process.argv.slice(2)));
   } catch (e) {
     // The message is the point; a stack trace would bury it.
     console.error(e.message);
     process.exit(2);
   }
+  // Asked before the tests rather than only inside the build, because the
+  // tests begin with a full build: without this, a publish from the wrong
+  // branch is refused several minutes and one compiled application later. The
+  // same check runs again below -- a tree can be edited while the tests run.
+  if (preflight) {
+    refuseUnlessReleasable();
+    return;
+  }
+
   const commit = publish ? refuseUnlessReleasable() : null;
   const out = outputDir();
 

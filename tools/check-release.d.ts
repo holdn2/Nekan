@@ -51,17 +51,3 @@ export function planFold(drafts: DraftRelease[]): {
   fold: DraftRelease[];
   leave: DraftRelease[];
 };
-
-/**
- * The complaint for a tag that would name the wrong commit, or null.
- *
- * The tag is made when the draft is published, from whatever main points at
- * then: electron-builder sends no target_commitish and creates no tag while
- * building. A commit landing in between leaves the tag describing a build
- * nobody shipped. Either side being unknown is not a complaint -- the mac half
- * is built on another machine and leaves no stamp here.
- */
-export function tagWouldLie(
-  built: string | null | undefined,
-  head: string | null | undefined,
-): string | null;

@@ -1,12 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {
-  auditAssets,
-  macArches,
-  planFold,
-  tagWouldLie,
-} from "#tools/check-release.js";
+import { auditAssets, macArches, planFold } from "#tools/check-release.js";
 import { releaseBlocker } from "#tools/dist.js";
 
 // The names electron-builder actually produced for v1.0.0.
@@ -231,44 +226,42 @@ test("with no latest.yml anywhere it keeps the first and folds the rest", () => 
 test("publishing from anywhere but main is refused, and the branch is named", () => {
   // The mac workflow has refused this since it was written. The half that
   // makes the installer every Windows user downloads did not.
-  const blocked = releaseBlocker({ branch: "feat/something", dirty: "" });
+  const blocked = releaseBlocker({
+    branch: "feat/something",
+    dirty: "",
+    head: "abc123",
+  });
   assert.ok(blocked);
   assert.match(blocked[0], /feat\/something/);
 });
 
 test("publishing from main with a clean tree is allowed", () => {
-  assert.equal(releaseBlocker({ branch: "main", dirty: "" }), null);
+  assert.equal(
+    releaseBlocker({ branch: "main", dirty: "", head: "abc123" }),
+    null,
+  );
 });
 
 test("an unreadable git is refused rather than assumed to be main", () => {
   // Answering "probably fine" here would be the whole guard, undone.
-  assert.ok(releaseBlocker({ branch: null, dirty: "" }));
+  assert.ok(releaseBlocker({ branch: null, dirty: "", head: "abc123" }));
 });
 
 test("a dirty tree is refused, and the changes are shown", () => {
   const blocked = releaseBlocker({
     branch: "main",
     dirty: " M src/main/store.ts\n?? scratch.txt",
+    head: "abc123",
   });
   assert.ok(blocked);
   assert.ok(blocked.some((line) => line.includes("src/main/store.ts")));
   assert.ok(blocked.some((line) => line.includes("scratch.txt")));
 });
 
-test("a tag that would name the built commit is not a complaint", () => {
-  assert.equal(tagWouldLie("abc123", "abc123"), null);
-});
-
-test("a tag that would name a later commit is", () => {
-  // What happened on 2026-09-12: the installers were built, two commits
-  // landed, and the tag was created from whichever one main had reached.
-  const drift = tagWouldLie("5a0ab6e", "a0eb0e7");
-  assert.ok(drift);
-  assert.match(drift, /5a0ab6e/);
-  assert.match(drift, /a0eb0e7/);
-});
-
-test("nothing to compare is not a complaint -- the mac half builds elsewhere", () => {
-  assert.equal(tagWouldLie(null, "a0eb0e7"), null);
-  assert.equal(tagWouldLie("5a0ab6e", null), null);
+test("a git that will not answer blocks, rather than reading as clean", () => {
+  // `git status` failing returns null, and null is falsy: the first draft of
+  // this guard agreed with a tree it had never seen.
+  assert.ok(releaseBlocker({ branch: "main", dirty: null, head: "abc123" }));
+  // A null head would otherwise be written into the stamp as the word "null".
+  assert.ok(releaseBlocker({ branch: "main", dirty: "", head: null }));
 });
