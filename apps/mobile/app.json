@@ -15,7 +15,8 @@
         "NSSpeechRecognitionUsageDescription": "Nekan uses speech recognition to turn what you say into a task.",
         "NSMicrophoneUsageDescription": "Nekan uses the microphone to hear a new task.",
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "buildNumber": "2"
     },
     "android": {
       "package": "com.makersfarm.nekan",
