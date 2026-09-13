@@ -794,6 +794,30 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   물어야 한다 — `codesign --verify --deep --strict` · `xcrun stapler validate` ·
   `spctl --assess --type execute`. 특히 stapler가 중요하다: 티켓이 발급됐지만 stapling이 안 되면
   **첫 실행마다 네트워크가 필요해진다.**
+- **`npm run release`는 `main`에서, 깨끗한 트리에서만 돈다** (2026-09-13, #88). 아니면
+  **빌드를 시작하기 전에** exit 2로 멈춘다. 맥 워크플로는 처음부터 그렇게 했는데
+  (_"the release is built from main, so this would upload a bundle that is not what the
+  tag points at"_) 비대칭이 뒤집혀 있었다 — **가드가 빡빡한 쪽은 이미 있는 draft를 채우기만
+  하고, 없는 쪽이 draft를 만들고 사람들이 받는 설치 파일을 냈다.** 더러운 트리도 같은
+  반대다: 커밋 안 된 편집 위에서 만든 설치본은 **어느 커밋의 것도 아니라** 저장소의 무엇도
+  그걸 설명하지 못한다. `npm run dist`(로컬 확인)는 막지 않는다 — 그때는 더러운 게 정상이다.
+  그리고 `release`가 이제 **`npm test`를 지난다**(맥 쪽은 원래 그랬다).
+- **빌드한 커밋은 출력 폴더의 `built-from.txt`에 적히고, `check-release.js`가 그것을 릴리스의
+  `target_commitish`에 박는다.** 경고가 아니라 **고정**이다. 태그는 publish 시점에
+  `target_commitish`에서 만들어지는데 electron-builder는 그걸 안 보내서, 기본값인
+  "그때의 기본 브랜치"가 된다 — 그 사이에 커밋이 들어가면 **태그가 아무도 받지 않은 빌드를
+  가리킨다.** v1.0.5가 실제로 그랬다(빌드 `5a0ab6e`, 태그 `a0eb0e7`).
+  **HEAD와 비교해서 거부하는 것으로는 부족하다**: 클론이 원격보다 뒤처져 있을 수 있고, 검사와
+  사람이 publish를 누르는 사이에도 커밋이 들어올 수 있다. **답을 물어보는 대신 적어 두면**
+  그 창이 사라진다. **파일이 없으면 통과가 아니라 "여기서는 고정할 수 없다"고 말한다** —
+  맥 절반은 다른 기계에서 만들어져 스탬프를 안 남긴다.
+- **가드는 `npm test`보다 먼저 물어야 한다.** `npm test`가 `npm run build`로 시작하므로,
+  `dist.js` 안에서만 묻던 첫 판은 **앱을 다 컴파일한 뒤에** 거부했다. 그래서
+  `release` 스크립트가 `node tools/dist.js --preflight`로 시작한다. 빌드 안쪽에서도 한 번 더
+  묻는다 — 테스트가 도는 동안 트리가 더러워질 수 있다.
+- **git이 대답하지 못하는 것은 "예"가 아니다.** `git status`가 실패하면 null이 오는데 null은
+  falsy라, 첫 판은 **본 적도 없는 트리를 깨끗하다고 판정**했다. 세 물음(브랜치·더러움·HEAD)
+  중 하나라도 null이면 막는다.
 - **`npm run release`에는 `GH_TOKEN`이 필요하다.** 없으면 빌드는 끝나고 업로드에서만 죽는다
   (`GitHub Personal Access Token is not set`). `gh`가 로그인돼 있으면 따로 만들 것 없이
   `GH_TOKEN="$(gh auth token)" npm run release`로 넘기면 된다. **토큰을 로그나 파일에 찍지 말 것.**

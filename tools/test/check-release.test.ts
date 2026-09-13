@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { auditAssets, macArches, planFold } from "#tools/check-release.js";
+import { releaseBlocker } from "#tools/dist.js";
 
 // The names electron-builder actually produced for v1.0.0.
 const WIN = [
@@ -218,4 +219,49 @@ test("with no latest.yml anywhere it keeps the first and folds the rest", () => 
     plan.fold.map((r) => r.id),
     [2],
   );
+});
+
+/* ------------------------------------------------- the guards on a release */
+
+test("publishing from anywhere but main is refused, and the branch is named", () => {
+  // The mac workflow has refused this since it was written. The half that
+  // makes the installer every Windows user downloads did not.
+  const blocked = releaseBlocker({
+    branch: "feat/something",
+    dirty: "",
+    head: "abc123",
+  });
+  assert.ok(blocked);
+  assert.match(blocked[0], /feat\/something/);
+});
+
+test("publishing from main with a clean tree is allowed", () => {
+  assert.equal(
+    releaseBlocker({ branch: "main", dirty: "", head: "abc123" }),
+    null,
+  );
+});
+
+test("an unreadable git is refused rather than assumed to be main", () => {
+  // Answering "probably fine" here would be the whole guard, undone.
+  assert.ok(releaseBlocker({ branch: null, dirty: "", head: "abc123" }));
+});
+
+test("a dirty tree is refused, and the changes are shown", () => {
+  const blocked = releaseBlocker({
+    branch: "main",
+    dirty: " M src/main/store.ts\n?? scratch.txt",
+    head: "abc123",
+  });
+  assert.ok(blocked);
+  assert.ok(blocked.some((line) => line.includes("src/main/store.ts")));
+  assert.ok(blocked.some((line) => line.includes("scratch.txt")));
+});
+
+test("a git that will not answer blocks, rather than reading as clean", () => {
+  // `git status` failing returns null, and null is falsy: the first draft of
+  // this guard agreed with a tree it had never seen.
+  assert.ok(releaseBlocker({ branch: "main", dirty: null, head: "abc123" }));
+  // A null head would otherwise be written into the stamp as the word "null".
+  assert.ok(releaseBlocker({ branch: "main", dirty: "", head: null }));
 });

@@ -165,9 +165,14 @@ npm run release   # 빌드 + GitHub Release에 업로드 (아래 GH_TOKEN 참고
 **릴리스 절차**
 
 1. `package.json`의 `version`을 올리고 커밋한다.
-2. `npm run release` — electron-builder가 설치 파일과 `latest.yml`을 만들어
-   해당 버전의 **draft** Release로 올린다.
+2. `npm run release` — **`main`에서, 커밋되지 않은 변경 없이** 돌려야 한다. 아니면
+   빌드를 시작하기 전에 멈춘다. 테스트를 먼저 지나고, electron-builder가 설치 파일과
+   `latest.yml`을 만들어 해당 버전의 **draft** Release로 올린다. 빌드한 커밋은
+   출력 폴더의 `built-from.txt`에 적힌다.
 3. GitHub에서 그 Release를 **publish**한다. 설치된 앱들은 이때부터 새 버전을 보게 된다.
+   그 전에 `npm run release:check`가 통과해야 하고, **빌드 이후에 커밋이 들어갔으면
+   거기서 멈춘다** — 태그는 publish 시점의 `main`에서 만들어지므로, 그대로 두면 태그가
+   아무도 받지 않은 빌드를 가리킨다.
 
 `latest.yml`이 곧 업데이트 피드다. 설치 파일만 따로 올리면 아무도 업데이트되지 않는다.
 

@@ -91,12 +91,16 @@ test("a flag meant for electron-builder is refused, not dropped", () => {
   }
 });
 
-test("the two flags it does take still work, together and apart", () => {
-  assert.deepEqual(parseArgs([]), { mac: false, publish: false });
-  assert.deepEqual(parseArgs(["--mac"]), { mac: true, publish: false });
-  assert.deepEqual(parseArgs(["--publish"]), { mac: false, publish: true });
+test("the flags it does take still work, together and apart", () => {
+  const off = { mac: false, publish: false, preflight: false };
+  assert.deepEqual(parseArgs([]), off);
+  assert.deepEqual(parseArgs(["--mac"]), { ...off, mac: true });
+  assert.deepEqual(parseArgs(["--publish"]), { ...off, publish: true });
   assert.deepEqual(parseArgs(["--mac", "--publish"]), {
+    ...off,
     mac: true,
     publish: true,
   });
+  // The guards, asked before the tests rather than after a full build.
+  assert.deepEqual(parseArgs(["--preflight"]), { ...off, preflight: true });
 });

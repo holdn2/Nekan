@@ -17,6 +17,8 @@
 
 const fs = require("fs");
 const path = require("path");
+const { spawnSync } = require("child_process");
+const { STAMP } = require("./dist.js");
 
 const REPO = "holdn2/Nekan";
 
@@ -191,6 +193,32 @@ if (require.main === module) {
     require("../package.json").build?.directories?.output ||
     "dist";
 
+  /**
+   * The commit this machine's build came from, or null if it did not build.
+   *
+   * No stamp is not a pass and not a failure: it means the files here were
+   * made somewhere else, which is exactly what the mac workflow does. Saying
+   * so is more use than silence -- #114 is what silence costs.
+   */
+  function builtCommit(dir) {
+    const stampFile = path.join(dir, STAMP);
+    if (!fs.existsSync(stampFile)) {
+      console.log(`\nno ${STAMP} here — these files were built elsewhere,`);
+      console.log("so the tag cannot be pinned from this machine.");
+      return null;
+    }
+    return fs.readFileSync(stampFile, "utf8").trim() || null;
+  }
+
+  /** What HEAD is now, or null if git cannot say. Reported, never a gate. */
+  function headCommit() {
+    const head = spawnSync("git", ["rev-parse", "HEAD"], {
+      cwd: path.join(__dirname, ".."),
+      encoding: "utf8",
+    });
+    return head.status === 0 ? head.stdout.trim() : null;
+  }
+
   const api = async (url, init = {}) => {
     const res = await fetch(
       url.startsWith("http") ? url : `https://api.github.com${url}`,
@@ -311,6 +339,31 @@ if (require.main === module) {
       console.log("run the Mac build workflow on main with publish on, then:");
       console.log("  npm run release:check");
       return;
+    }
+
+    // Pin the tag rather than warn about it.
+    //
+    // GitHub creates the tag when the draft is published, from the release's
+    // target_commitish -- and electron-builder never sets one, so it falls
+    // back to whatever the default branch has reached by then. v1.0.5 shipped
+    // exactly that way: installers from one commit, tag two commits later.
+    //
+    // Comparing against local HEAD and refusing would have been a guard with
+    // a hole in it. The clone can be behind the remote, and anything can land
+    // between this check and the person pressing publish. Writing the commit
+    // into the release closes both: there is no window left in which the
+    // answer can change, because the answer is now stored rather than asked.
+    const built = builtCommit(DIST);
+    if (built) {
+      await api(`/repos/${REPO}/releases/${keep.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ target_commitish: built }),
+      });
+      console.log(`\ntag pinned to ${built}`);
+      const now = headCommit();
+      if (now && now !== built) {
+        console.log(`  HEAD has since moved to ${now}; the tag stays put.`);
+      }
     }
 
     console.log("\nok — publish it on GitHub to make it live");

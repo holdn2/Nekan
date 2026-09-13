@@ -171,9 +171,15 @@ npm run release   # build + upload to a GitHub Release (see GH_TOKEN below)
 **Release procedure**
 
 1. Bump `version` in `package.json` and commit it.
-2. `npm run release` — electron-builder builds the installer and `latest.yml` and uploads them to a **draft**
-   Release for that version.
+2. `npm run release` — run it **on `main`, with nothing uncommitted**, or it stops
+   before the build starts. It goes through the tests first, then electron-builder
+   builds the installer and `latest.yml` and uploads them to a **draft** Release for
+   that version. The commit it built from is written to `built-from.txt` in the
+   output directory.
 3. **Publish** that Release on GitHub. Installed apps start seeing the new version from that moment.
+   `npm run release:check` has to pass first, and it stops if a commit landed after
+   the build: the tag is created from `main` at publish time, so leaving it would
+   have the tag name a build nobody received.
 
 `latest.yml` is the update feed. Upload the installer on its own and nobody updates.
 

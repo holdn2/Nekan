@@ -38,4 +38,36 @@ export function builderCli(): string;
  * electron-builder, and `--publish never` -- what package.json said one commit
  * ago -- would otherwise read as `--publish` and upload.
  */
-export function parseArgs(argv: string[]): { mac: boolean; publish: boolean };
+export function parseArgs(argv: string[]): {
+  mac: boolean;
+  publish: boolean;
+  /** Ask the release guards and stop, without building anything. */
+  preflight: boolean;
+};
+
+/** The name of the file a publishing build leaves beside its installers. */
+export const STAMP: string;
+
+/**
+ * Why this build may not be published, as lines to print, or null to go ahead.
+ *
+ * The mac workflow has refused a publish from outside main since it was
+ * written -- "the release is built from main, so this would upload a bundle
+ * that is not what the tag points at" -- and the half that creates the draft
+ * and makes the installer people download had no such guard. A dirty tree is
+ * the same objection in a smaller shape: an installer built over uncommitted
+ * edits belongs to no commit, so nothing in the repository describes it.
+ *
+ * Takes the answers rather than asking git itself, so the judgement can be
+ * checked without putting a repository into each state. **Any null blocks** --
+ * an unanswered question is not a yes, and a null `dirty` read as falsy is the
+ * guard agreeing with a tree it never saw.
+ */
+export function releaseBlocker(state: {
+  /** The current branch, or null if git could not answer. */
+  branch: string | null;
+  /** `git status --porcelain` -- empty on a clean tree, null if git could not answer. */
+  dirty: string | null;
+  /** The commit that would be stamped, or null if git could not answer. */
+  head: string | null;
+}): string[] | null;
