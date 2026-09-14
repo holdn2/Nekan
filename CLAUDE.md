@@ -1233,13 +1233,15 @@ hairline이면 점이 선처럼 보인다.
 - **EAS Update(OTA)는 빌드와 별도 쿼터다** — MAU 기준이고(무료 플랜 1,000) 빌드 횟수를 쓰지
   않는다. **그래서 JS·에셋만 바뀐 반복은 사실상 공짜다.** 위의 "JS만 바뀌었으면 빌드하지
   않는다"가 원칙이 아니라 실제로 싼 길인 이유가 이것이다.
-  **다만 지금 폰에 깔린 빌드는 아직 못 받는다** (2026-09-05). `updates.url`이 오래 비어
-  있었다 — `expo-updates`도 채널도 `runtimeVersion` 정책도 있는데 **주소만 없었고**,
-  `eas config --platform ios --profile development`가 내놓는 해결된 설정에도 없었다
-  (`eas update:configure`가 쓰는 값이고 아무도 그걸 안 돌렸다). 지금은 `app.json`에 있다.
-  **그런데 그 URL은 빌드 때 Info.plist(`EXUpdatesURL`)에 구워진다** — 이미 나간 dev
-  client는 주소를 모른 채 만들어졌으므로, **다음 빌드부터** OTA가 실제로 도착한다.
-  그때까지 JS 변경을 실기기에 올리는 길은 dev 서버뿐이다.
+  **OTA를 받을 수 있는 첫 빌드는 2026-09-14의 preview `6f3f6112`다** (`com.yoshi.nekan`,
+  build 2, 커밋 `6b66cd9`). 로그로 확인한 값: Node 22.20.0 · 런타임 버전 `0.1.0` ·
+  `Expo.plist`의 요청 헤더 `{"expo-channel-name":"preview"}`. **그래서 이 빌드에 닿는
+  OTA는 `--channel preview`로 올린다.** `updates.url`은 오래 비어 있었고
+  (`eas update:configure`가 쓰는 값인데 아무도 안 돌렸다) **빌드 때 `Expo.plist`에
+  구워지므로** 그 전의 dev client(`com.makersfarm.nekan`)는 영영 못 받는다.
+  **dev client는 Debug라 `SKIP_BUNDLING`으로 JS 번들을 건너뛰고 expo-updates도 쓰지
+  않는다** — 그 빌드가 통과한 것은 Release의 두 단계를 한 줄도 증명하지 않았고, 이 빌드에
+  이르기까지 EAS 빌드 둘이 정확히 그 두 단계에서 죽었다(`runtimeVersion` · Node).
 - `Uploaded builds`가 따로 월 10회 있다 — 로컬에서 만든 바이너리를 올리는 길이다.
   **iOS는 Xcode가 필요해 이 기기(Windows)에서 만들 수 없으므로 Android 전용 탈출구다.**
 - **숫자를 믿기 전에 대시보드를 볼 것.** 위 값들은 2026-08-31의 무료 플랜 기준이고 플랜 정책은
