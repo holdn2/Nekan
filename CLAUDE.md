@@ -1035,22 +1035,29 @@ Android 상한(약 6MB)에서 **조용히** 깨지고, 동기화가 붙을 때 �
 Xcode의 `DEVELOPMENT_TEAM`은 이 값에서 온다. **비밀이 아니다** — Apple Developer의
 Membership 화면에 있는 10자짜리 식별자다.
 
-**`runtimeVersion`은 `appVersion`이 아니라 `fingerprint`다** (2026-09-13). 앞의 것은
-`app.json`의 `version`을 그대로 쓰므로 **사람이 숫자를 올려야만 움직인다** — 네이티브
-모듈을 하나 더하고 버전을 안 올리면, 그 네이티브가 없는 빌드에 OTA가 그대로 내려앉는다.
-핑거프린트는 네이티브 프로젝트에서 계산되니 그 경우가 성립하지 않는다.
-**Windows에서도 계산된다**(실측: `node node_modules/expo-updates/bin/cli.js
-fingerprint:generate --platform ios`).
-
-**무엇이 해시되는지는 좁다. 실측으로 확인할 것.** 프로젝트 쪽 소스는 아홉뿐이고
-(`.gitignore` · `eas.json` · 아이콘 · **`targets/quick/expo-target.config.js`** ·
-autolinking 둘 · `expoConfig` · `package:react-native` · `packageJson:scripts`),
-**`QuickWidget.swift`와 `Localizable.xcstrings`는 들어 있지 않다.** Swift에 한 줄을
-붙여 넣고 다시 재면 해시가 그대로다 — 처음엔 `targets`가 소스 목록에 있다고 읽었는데
-그건 `@bacons/apple-targets`의 경로가 걸린 것이었다.
-**그래서 남는 위험은 하나다: 딥링크 계약.** Swift가 `nekan://quick?mode=…`를 들고 있고
-JS가 그 라우트를 갖는데, 그 주소를 바꾸는 변경은 **JS만 OTA로 나가고 위젯은 옛 주소를
-든 채 남을 수 있다.** 주소를 바꾼다면 빌드도 함께다.
+**`runtimeVersion`은 `appVersion`이다. `fingerprint`로 바꾸지 말 것** (2026-09-14).
+하루 동안 `fingerprint`였고 **그 정책으로 돌린 EAS 빌드 한 번이 쿼터만 쓰고 죽었다**:
+`Runtime version calculated on local machine not equal to runtime version calculated
+during build.` 이 Windows 기기와 EAS의 Linux 서버가 **서로 다른 해시**를 냈고, 차이는
+앱과 무관한 세 갈래였다 — ① 로컬만 설정 평가 때 불러온 플러그인 JS 140여 개
+(`expoConfigPlugins`, 상당수가 `hash: null`)를 넣었고 ② `react-native-worklets` 폴더
+해시가 로컬 설치와 서버 설치에서 달랐고 ③ 서버에는 prebuild가 만든 `ios/`가 있었다
+(gitignore인데도 `bareNativeDir`로 들어갔다).
+**빌드 실패보다 더 나쁜 것이 그 뒤에 있었다**: 통과했더라도 이 PC에서 `eas update`로
+올리는 OTA가 **전부 다른 런타임 버전으로 올라가 폰에 한 번도 적용되지 않는다.**
+OTA로 빌드를 아끼자는 목적을 정면으로 깬다.
+**"Windows에서 계산된다"는 확인은 아무것도 증명하지 못했다** — 물어야 했던 것은
+"계산되는가"가 아니라 **"EAS와 같은 값이 나오는가"**였고, 그건 빌드를 돌려야만 알 수 있었다.
+`appVersion`은 `app.json`의 `version` 문자열이라 어디서 계산해도 같다
+(`node node_modules/expo-updates/bin/cli.js runtimeversion:resolve --platform ios` →
+`"0.1.0"`, `fingerprintSources: null`).
+**대가는 사람이 지켜야 하는 규칙 하나다: 네이티브를 바꾸면 `version`을 올린다.**
+안 올리면 새 네이티브가 없는 옛 빌드에 그것을 전제한 JS가 OTA로 내려앉는다. 네이티브
+변경이란 대략 네이티브 의존성·config plugin·권한·`targets/`의 Swift다 —
+**위젯 Swift는 어떤 정책에서도 자동으로 잡히지 않았다**(fingerprint였을 때도 해시에
+없었다). 특히 **딥링크 주소**(`nekan://quick?mode=…`)는 Swift와 JS 라우트의 계약이라,
+주소를 바꾸면 JS만 OTA로 나가고 위젯은 옛 주소를 든 채 남는다. 주소를 바꾼다면 빌드도
+함께다.
 
 **폰의 id는 `com.yoshi.nekan`이고, 데스크톱의 `com.makersfarm.nekan`과 일부러 다르다**
 (2026-09-14). `makersfarm`은 사용자의 이름이 아니다 — 사용자가 못 박았다: _"makersfarm은
