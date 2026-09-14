@@ -1204,6 +1204,30 @@ Google이 보는 리디렉트는 언제나 Supabase의 `/auth/v1/callback`이고
 `mobile:typecheck`가 `"/guide"를 모른다`고 하면 코드가 아니라 **그 파일이 낡은 것**이다 —
 개발 서버를 잠깐 띄웠다 끄면 갱신된다(**PID로 종료할 것**).
 
+**할 일 행의 제스처는 서로를 취소한다. 둘을 새로 겹칠 때마다 "누가 누구를 취소하나"부터
+물을 것** (2026-09-14). 두 번 조용히 깨졌다.
+① **목록은 gesture-handler의 `ScrollView`여야 한다.** 삭제용 `ReanimatedSwipeable`의 Pan은
+가로 임계값(`activeOffsetX`)만 있어서, 행 위에서 시작한 세로 스크롤을 "가로로 갈지도 모른다"며
+붙들었다. RN 기본 `ScrollView`는 gesture-handler 제스처를 모르니 그걸 취소하지 못했고,
+**목록은 손가락이 행 사이에 떨어질 때만 스크롤됐다.**
+② **행의 탭은 `Pressable`이 아니라 `components/task-row.tsx`가 가진 `Gesture.Tap`이다.**
+`ReanimatedSwipeable`은 자식 전체를 **자기 `Gesture.Tap`**(열린 행 닫기)으로 감싸고 그 탭은
+**매번 활성화된다.** 활성화된 제스처는 동시로 선언되지 않은 제스처를 취소하는데, gesture-handler의
+`Pressable`은 안쪽 네이티브 버튼 제스처가 **시작돼야만** `onPress`를 부른다
+(`Pressable.tsx`의 `Gesture.Native()` → `NATIVE_START`). 그래서 **행 탭이 아무 일도 안 했다** —
+삭제 버튼만 됐던 이유는 Swipeable이 그걸 자기 탭 **바깥**(`rightElement()`)에 그리기 때문이다.
+라이브러리의 탭도 Pressable의 속 제스처도 밖에서 이름을 부를 수 없으니, 제스처를 직접 만들고
+`simultaneousWithExternalGesture`로 Swipeable에 알린다. **그 제스처는 반드시 메모이즈한다** —
+누른 표시(`pressed`)가 터치다운에 다시 그리는데, 그때 새로 만들어진 제스처는 다시 붙으면서
+**진행 중이던 탭을 취소로 끝낸다.** 콜백은 ref로 읽는다.
+**둘 다 단위 테스트로는 안 잡힌다**(vitest의 폰 프로젝트는 제스처를 돌리지 않는다). 폰에서만 보인다.
+
+**새 행은 목록 끝에 붙고, 입력칸은 목록 아래에 있다. 추가하면 스크롤해서 보여줘야 한다.**
+안 그러면 긴 목록에서 행이 화면 밖에 생기고 **입력칸만 비어서 "저장이 안 된다"로 신고된다** —
+2026-09-14에 실제로 그렇게 신고됐고, 저장도 동기화도 멀쩡했다. `TaskList`의 `reveal`이 그 일을
+하고, 레이아웃이 끝난 뒤(`onContentSizeChange`)에 스크롤한다 — 이펙트에서 하면 새 행의 높이가
+정해지기 전이라 옛 끝으로 간다.
+
 **`LayoutAnimation`은 New Architecture에서 no-op이다.** 덜 되는 것이 아니라 아무 일도 안 한다 —
 애니메이션은 Reanimated로 쓴다. 그리고 **RN의 점선은 dash 길이를 border width에서 계산한다**:
 hairline이면 점이 선처럼 보인다.
