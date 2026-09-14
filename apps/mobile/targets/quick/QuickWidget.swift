@@ -1,5 +1,5 @@
 //
-//  Two doors into the app, on the home screen.
+//  Two doors into the app, on the lock screen and the home screen.
 //
 //  The widget shows no tasks. That is a decision, not a stage: showing them
 //  would mean a shared container, the board written out in a second format,
@@ -7,15 +7,26 @@
 //  thing that is actually hard about capturing a task is the four taps before
 //  the keyboard appears, and a door removes those without any of it.
 //
+//  The lock screen is the one that matters. A thought worth writing down tends
+//  to arrive with the phone still locked, and the rectangular slot under the
+//  clock is the largest place iOS gives a widget there -- there is no bigger
+//  one to ask for. The home-screen size stays because it costs nothing more.
+//
 //  Nothing here is a colour literal. Nekan's accent *is* ink -- the ramp's
-//  darkest step in light, its lightest in dark -- which is exactly what
-//  `Color.primary` already means on iOS, and a home-screen widget sits among
-//  system widgets rather than inside the app. Reaching for the palette here
-//  would mean hand-copying hex into a third place no check watches.
+//  darkest step in light, its lightest in dark -- which is what `Color.primary`
+//  already means on iOS, and the lock screen renders every widget in one tint
+//  of its own choosing anyway. Reaching for the palette here would mean
+//  hand-copying hex into a third place no check watches.
 //
 
 import SwiftUI
 import WidgetKit
+
+// The contract with the app. app/quick.tsx is the route and reads `mode`; an
+// update over the air can change that screen but not these two strings, so
+// moving the route means a build as well.
+private let speakURL = URL(string: "nekan://quick?mode=voice")!
+private let writeURL = URL(string: "nekan://quick?mode=text")!
 
 /// Nothing here changes with time, so the entry carries only what TimelineEntry
 /// demands.
@@ -40,12 +51,12 @@ private struct QuickProvider: TimelineProvider {
     }
 }
 
-/// One tap target: an icon that opens the app at a URL.
+/// A home-screen door: a filled tile with an icon.
 ///
 /// The label is for VoiceOver only. The words come from the shared catalogue
 /// via Localizable.xcstrings -- see tools/build-widget-strings.js -- so the
 /// microphone says the same thing here as it does inside the app.
-private struct Door: View {
+private struct TileDoor: View {
     let symbol: String
     let label: LocalizedStringKey
     let url: URL
@@ -65,19 +76,59 @@ private struct Door: View {
     }
 }
 
-struct QuickWidgetView: View {
+/// A lock-screen door: icon over word, as large as half the slot allows.
+///
+/// Words here, unlike the tile. The slot is small and monochrome, and two bare
+/// glyphs side by side under the clock read as decoration rather than as two
+/// things to press. No colour and no background: the lock screen draws widgets
+/// in its own vibrant tint and would override either.
+///
+/// Two `Link`s work in this family -- the kkume app measured it on a device --
+/// where the small home-screen size and the circular lock-screen one send the
+/// whole widget to a single URL. No `widgetURL` as a fallback, on purpose: with
+/// one, a dead `Link` would still open the app, and nobody would know which
+/// door had actually been used.
+private struct LockDoor: View {
+    let symbol: String
+    let label: LocalizedStringKey
+    let url: URL
+
     var body: some View {
-        HStack(spacing: 12) {
-            Door(
-                symbol: "mic.fill",
-                label: "widget.speak",
-                url: URL(string: "nekan://quick?mode=voice")!
-            )
-            Door(
-                symbol: "keyboard",
-                label: "widget.write",
-                url: URL(string: "nekan://quick?mode=text")!
-            )
+        Link(destination: url) {
+            VStack(spacing: 3) {
+                Image(systemName: symbol)
+                    .font(.system(size: 22, weight: .semibold))
+                Text(label)
+                    .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
+        }
+    }
+}
+
+struct QuickWidgetView: View {
+    @Environment(\.widgetFamily) private var family
+
+    var body: some View {
+        switch family {
+        case .accessoryRectangular:
+            HStack(spacing: 0) {
+                LockDoor(symbol: "mic.fill", label: "widget.speak", url: speakURL)
+                LockDoor(symbol: "keyboard", label: "widget.write", url: writeURL)
+            }
+            // iOS 17 asks every family for a container background and draws a
+            // "please adopt" placeholder instead of a widget that does not give
+            // one. Clear is the lock screen's answer: it paints its own.
+            .containerBackground(for: .widget) { Color.clear }
+        default:
+            HStack(spacing: 12) {
+                TileDoor(symbol: "mic.fill", label: "widget.speak", url: speakURL)
+                TileDoor(symbol: "keyboard", label: "widget.write", url: writeURL)
+            }
+            .containerBackground(.fill.tertiary, for: .widget)
         }
     }
 }
@@ -89,14 +140,13 @@ struct QuickWidget: Widget {
         // identifier, and writing one there invites the two to drift.
         StaticConfiguration(kind: "quick", provider: QuickProvider()) { _ in
             QuickWidgetView()
-                .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName(Text(verbatim: "Nekan"))
         .description(Text("widget.description"))
-        // Medium only, and this is a constraint rather than a preference: iOS
-        // ignores `Link` in a systemSmall widget and sends the whole tile to
-        // one `widgetURL`. A small size would therefore have to pick which of
-        // the two doors wins, and both of them are the point.
-        .supportedFamilies([.systemMedium])
+        // Two families, and the missing ones are constraints rather than taste:
+        // iOS ignores `Link` in systemSmall and in accessoryCircular and sends
+        // the whole widget to one URL, so either would have to pick which door
+        // wins -- and both of them are the point.
+        .supportedFamilies([.accessoryRectangular, .systemMedium])
     }
 }

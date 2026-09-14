@@ -423,11 +423,10 @@
     "failed": "Nothing was transcribed. Try again."
   },
   "quick": {
-    "title": "Quick capture",
-    "added": "Added to your brain dump"
+    "title": "Quick capture"
   },
   "widget": {
-    "description": "Write a task straight from the home screen.",
+    "description": "Write a task straight from the lock screen or the home screen.",
     "write": "Type a task"
   }
 }

@@ -7,13 +7,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Write a task straight from the home screen."
+            "value": "Write a task straight from the lock screen or the home screen."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "홈 화면에서 바로 할 일을 적습니다"
+            "value": "잠금화면이나 홈 화면에서 바로 할 일을 적습니다"
           }
         }
       }

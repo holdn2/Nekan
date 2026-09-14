@@ -82,12 +82,28 @@ interface Props {
   cards: CardRects;
   drag: DragBus;
   onOpen: (task: Task) => void;
+  /** Scroll to the last row once the list has laid it out, then call onRevealed. */
+  reveal?: boolean;
+  onRevealed?: () => void;
 }
 
 const hit = (r: Rect | undefined, x: number, y: number) =>
   !!r && x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height;
 
-export function TaskList({ tasks, cards, drag, onOpen }: Props) {
+export function TaskList({
+  tasks,
+  cards,
+  drag,
+  onOpen,
+  reveal = false,
+  onRevealed,
+}: Props) {
+  const scroller = useRef<ScrollView>(null);
+  // Read from the size callback, which runs after layout rather than render.
+  // Scrolling from an effect instead would run before the new row has a
+  // height, and scroll to where the end used to be.
+  const revealing = useRef(reveal);
+  revealing.current = reveal;
   // Row geometry, kept in a ref rather than state: it is read during a gesture
   // and writing it would re-render the list mid-drag.
   const rows = useRef<
@@ -173,9 +189,16 @@ export function TaskList({ tasks, cards, drag, onOpen }: Props) {
 
   return (
     <ScrollView
+      ref={scroller}
       style={s.scroll}
       contentContainerStyle={s.inner}
       scrollEnabled={heldId === null}
+      onContentSizeChange={() => {
+        if (!revealing.current) return;
+        revealing.current = false;
+        scroller.current?.scrollToEnd({ animated: true });
+        onRevealed?.();
+      }}
       // Scrolling the list puts the keyboard away; tapping a row does what the
       // row does. Without "handled" the first tap is spent dismissing, so
       // opening a task while typing would take two.

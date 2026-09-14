@@ -1,5 +1,5 @@
 /**
- * The screen the home-screen widget opens.
+ * The screen the widget opens, from the lock screen or the home screen.
  *
  * A route of its own rather than the matrix with the keyboard up, because the
  * widget's whole argument is that capturing a task should not cost the four
@@ -14,11 +14,13 @@
  * that does not ask where a task belongs, and deciding that is a separate act
  * from remembering it -- which is the same reason the dump exists at all.
  *
- * It does not close after one task. Somebody who opened this to say one thing
- * often says three, and a screen that vanished after the first would make the
- * second cost more than it did before the widget existed.
+ * Adding hands over to the app, onto the brain dump with the new row in view.
+ * The first version stayed open for another task instead, on the guess that
+ * somebody who says one thing says three; the person using it asked for the
+ * opposite -- "입력 완료하면 앱 내부로 들어가고" -- and seeing the task land is
+ * also the only confirmation that it did. A second task is one more tap on the
+ * field that is already there.
  */
-import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
@@ -31,11 +33,8 @@ import { useStore } from "../store/use-store";
 
 export default function QuickScreen() {
   const c = useColors();
-  // The form writes into the store, and the confirmation below has to survive
-  // the redraw that follows.
   useStore();
   const { mode } = useLocalSearchParams<{ mode?: string }>();
-  const [added, setAdded] = useState(false);
 
   const speaking = mode === "voice";
 
@@ -64,17 +63,21 @@ export default function QuickScreen() {
         </Pressable>
       </View>
 
-      <View style={s.body}>
-        {added ? (
-          <Text style={[s.added, { color: c.faint }]}>{t("quick.added")}</Text>
-        ) : null}
-      </View>
+      <View style={s.body} />
 
       <AddForm
         place={INBOX}
         autoFocus={!speaking}
         autoSpeak={speaking}
-        onAdded={() => setAdded(true)}
+        // `replace`, not `push`: back from the board must not return to a
+        // capture screen whose task is already written. The value is fresh each
+        // time so the board reveals again even if it was still mounted.
+        onAdded={() =>
+          router.replace({
+            pathname: "/",
+            params: { reveal: String(Date.now()) },
+          })
+        }
       />
     </SafeAreaView>
   );
@@ -105,8 +108,5 @@ const s = StyleSheet.create({
     justifyContent: "flex-end",
     paddingHorizontal: SP["4xl"],
     paddingBottom: SP.xl,
-  },
-  added: {
-    fontSize: FS.sm,
   },
 });

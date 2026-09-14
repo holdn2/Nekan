@@ -984,11 +984,13 @@ apps/mobile/
                   @bacons/apple-targets가 이 폴더를 Xcode에 synchronized root
                   group으로 달아서, **확장자만 보고 분류한다**(그래서
                   Localizable.xcstrings에 배선이 필요 없다). 문 두 개가 전부이고
-                  보드를 보여주지 않는다 — 그러려면 App Group과 두 번째 형식의
-                  보드가 필요한데, 정작 어려운 것은 할 일 하나를 적기까지의 네 번
-                  터치다. `.systemMedium` 하나만 지원하는 것은 취향이 아니라
-                  제약이다: **systemSmall에서는 iOS가 `Link`를 무시하고** 타일
-                  전체를 `widgetURL` 하나로 보낸다
+                  보드를 보여주지 않는다. 크기는 **잠금화면 `accessoryRectangular`
+                  와 홈 화면 `systemMedium` 둘**이다 — 사용자가 못 박은 우선순위는
+                  잠금화면이고, 그 칸이 잠금화면에서 가장 큰 자리다. 나머지 크기가
+                  없는 것은 제약이다: **`systemSmall`과 `accessoryCircular`에서는
+                  iOS가 `Link`를 무시하고** 위젯 전체를 URL 하나로 보낸다.
+                  잠금화면 크기는 홈 화면 갤러리가 아니라 **잠금화면 편집**에서만
+                  보인다 — "위젯이 안 뜬다"는 신고는 어느 쪽에서 찾았는지부터 물을 것
   metro.config.js watchFolders + `.js`→`.ts` resolver (아래)
 ```
 
