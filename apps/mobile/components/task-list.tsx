@@ -267,24 +267,14 @@ function DraggableRow({
   // instead of jumping its own top-left corner under the finger.
   const grabX = useSharedValue(0);
   const grabY = useSharedValue(0);
-  // A press that turned into a drag must not also count as a tap. The row's
-  // Pressable is a child of this detector and finishes its own press on
-  // release, so it has to be told the gesture took over -- otherwise letting
-  // go of a dragged row opens it.
-  const dragged = useRef(false);
-
-  const began = () => {
-    dragged.current = true;
-    onBegin();
-  };
-
-  const press = () => {
-    if (dragged.current) {
-      dragged.current = false;
-      return;
-    }
-    onPress();
-  };
+  // A drag cannot end as a tap. The row's tap is a gesture of its own (see
+  // task-row.tsx) and this pan is not declared simultaneous with it, so the
+  // moment the long press activates the pan, the tap is cancelled. The flag
+  // that used to guard against "letting go of a dragged row opens it" belonged
+  // to Pressable, which finished its press on release regardless -- and with a
+  // cancelled tap it would never have been reset, swallowing the next real one.
+  const began = () => onBegin();
+  const press = () => onPress();
 
   const pan = Gesture.Pan()
     // The long press is the whole reason the three gestures can coexist.

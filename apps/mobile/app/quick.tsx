@@ -21,7 +21,15 @@
  * also the only confirmation that it did. A second task is one more tap on the
  * field that is already there.
  */
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { INBOX } from "@nekan/shared/core";
@@ -63,22 +71,36 @@ export default function QuickScreen() {
         </Pressable>
       </View>
 
-      <View style={s.body} />
+      {/* The keyboard opens the moment this screen does, and the field is at
+          the bottom -- so without this the keyboard lands on top of the one
+          thing on the screen, which is how it was first reported. */}
+      <KeyboardAvoidingView
+        style={s.fill}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        {/* The empty space is where a thumb goes to put the keyboard away, the
+          same as the bare parts of the matrix. */}
+        <Pressable
+          style={s.body}
+          onPress={() => Keyboard.dismiss()}
+          accessible={false}
+        />
 
-      <AddForm
-        place={INBOX}
-        autoFocus={!speaking}
-        autoSpeak={speaking}
-        // `replace`, not `push`: back from the board must not return to a
-        // capture screen whose task is already written. The value is fresh each
-        // time so the board reveals again even if it was still mounted.
-        onAdded={() =>
-          router.replace({
-            pathname: "/",
-            params: { reveal: String(Date.now()) },
-          })
-        }
-      />
+        <AddForm
+          place={INBOX}
+          autoFocus={!speaking}
+          autoSpeak={speaking}
+          // `replace`, not `push`: back from the board must not return to a
+          // capture screen whose task is already written. The value is fresh each
+          // time so the board reveals again even if it was still mounted.
+          onAdded={() =>
+            router.replace({
+              pathname: "/",
+              params: { reveal: String(Date.now()) },
+            })
+          }
+        />
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -103,6 +125,9 @@ const s = StyleSheet.create({
   },
   // The form sits at the bottom where it does everywhere else, so this holds
   // the space above it open rather than letting the two meet in the middle.
+  fill: {
+    flex: 1,
+  },
   body: {
     flex: 1,
     justifyContent: "flex-end",
