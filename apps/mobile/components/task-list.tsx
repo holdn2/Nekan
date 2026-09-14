@@ -14,17 +14,26 @@
  * a card takes a ring.
  *
  * The gesture waits for a long press before it activates, which is what keeps
- * it from stealing the scroll and from starting on the swipe that reveals
- * Delete. Those three share a finger going down and nothing else.
+ * it from starting on the swipe that reveals Delete. Those three share a finger
+ * going down and nothing else. Waiting was not enough to keep the scroll,
+ * though -- see the ScrollView import for what was.
  */
 import { useCallback, useRef, useState } from "react";
+import { StyleSheet, View, type LayoutChangeEvent } from "react-native";
+// The gesture-handler ScrollView, not React Native's. Every row carries three
+// gesture-handler gestures -- the long-press drag, the swipe to Delete and the
+// press -- and the swipe only has a horizontal threshold, so a vertical flick
+// that starts on a row leaves it waiting for a sideways move that never comes.
+// React Native's ScrollView cannot tell it to stop waiting: the two systems do
+// not know about each other, and the list scrolled only when the finger landed
+// between rows. This one is a gesture too, so when it starts scrolling the rows'
+// pending gestures are cancelled, while a sideways swipe or a held press still
+// wins before the scroll ever begins.
 import {
+  Gesture,
+  GestureDetector,
   ScrollView,
-  StyleSheet,
-  View,
-  type LayoutChangeEvent,
-} from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+} from "react-native-gesture-handler";
 import {
   runOnJS,
   useSharedValue,
