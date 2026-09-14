@@ -105,9 +105,6 @@ export function TaskRow({ task, index, onPress }: Props) {
     () =>
       Gesture.Tap()
         .runOnJS(true)
-        // The icon is small; the reach is the gesture's, since a View's
-        // hitSlop only widens React Native's own touch system.
-        .hitSlop(8)
         .onEnd((_e, success) => {
           if (success) completeTask(task.id);
         }),
@@ -172,7 +169,12 @@ export function TaskRow({ task, index, onPress }: Props) {
 
           {inDump ? null : (
             <GestureDetector gesture={complete}>
-              <View>
+              {/* The icon is small, so the reach is widened -- on the View, not
+                the gesture. A gesture's positive hitSlop does nothing on iOS:
+                a recognizer only sees touches that UIKit's hit test already
+                routed to its view, and only a view can widen that test
+                (RNGestureHandler.mm says so beside shouldReceiveTouch). */}
+              <View hitSlop={8}>
                 <CheckCircleIcon color={c.muted} tickColor={c["on-accent"]} />
               </View>
             </GestureDetector>

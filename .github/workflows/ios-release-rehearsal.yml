@@ -16,6 +16,11 @@ name: iOS release rehearsal
 on:
   push:
     paths:
+      # The root lockfile decides the native build as much as the app's own
+      # manifest does: the install runs at the root, and the metro-runtime that
+      # broke an EAS build on 2026-09-14 was a root lock entry.
+      - "package.json"
+      - "package-lock.json"
       - "apps/mobile/app.json"
       - "apps/mobile/eas.json"
       - "apps/mobile/package.json"
