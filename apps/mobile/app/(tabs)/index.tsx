@@ -36,7 +36,7 @@ import { TaskRow } from "../../components/task-row";
 import { CloseIcon } from "../../icons";
 import { t } from "../../i18n";
 import { FS, FW, R, SP, useColors } from "../../theme";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { activeOf, counts, inboxTasks, quadrants } from "../../store/selectors";
 import { currentSpace, isReady } from "../../store/state";
 import { useStore } from "../../store/use-store";
@@ -81,6 +81,23 @@ export default function MatrixScreen() {
   const space = currentSpace();
   const n = counts();
   const rows = open ? activeOf(open) : inboxTasks();
+
+  // Bring the newest row into view once, after it has been laid out.
+  //
+  // A task is added at the end of its list, and the form sits below the list,
+  // so on a list longer than the panel the row was created out of sight: the
+  // field emptied and nothing on screen changed. It read as a save that never
+  // happened -- and on the desktop the same row sat at the bottom of the same
+  // list, so it looked missing there too.
+  //
+  // `reveal` arrives as a search param when the quick-capture screen hands
+  // over, and it is a fresh value each time, so a second hand-over to a screen
+  // that is still mounted is not mistaken for the first.
+  const { reveal: revealParam } = useLocalSearchParams<{ reveal?: string }>();
+  const [reveal, setReveal] = useState(false);
+  useEffect(() => {
+    if (revealParam) setReveal(true);
+  }, [revealParam]);
 
   const toggle = (q: Quadrant) => {
     // A card is one of the "somewhere else" the keyboard should go away for.
@@ -214,6 +231,8 @@ export default function MatrixScreen() {
                   cards={cards.current}
                   drag={drag}
                   onOpen={(task: Task) => router.push(`/task/${task.id}`)}
+                  reveal={reveal}
+                  onRevealed={() => setReveal(false)}
                 />
               )}
             </Animated.View>
@@ -222,7 +241,7 @@ export default function MatrixScreen() {
               written into directly -- the desktop gives every quadrant its own
               field for the same reason. What is typed into the dump still
               belongs to neither board until it is filed. */}
-            <AddForm place={open ?? INBOX} />
+            <AddForm place={open ?? INBOX} onAdded={() => setReveal(true)} />
           </View>
 
           <View style={s.grid}>

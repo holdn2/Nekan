@@ -9,6 +9,7 @@
     "android": "expo start --android"
   },
   "dependencies": {
+    "@bacons/apple-targets": "^4.0.7",
     "@nekan/shared": "*",
     "expo": "^54.0.37",
     "expo-auth-session": "~7.0.11",

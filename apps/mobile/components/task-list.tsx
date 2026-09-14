@@ -14,17 +14,26 @@
  * a card takes a ring.
  *
  * The gesture waits for a long press before it activates, which is what keeps
- * it from stealing the scroll and from starting on the swipe that reveals
- * Delete. Those three share a finger going down and nothing else.
+ * it from starting on the swipe that reveals Delete. Those three share a finger
+ * going down and nothing else. Waiting was not enough to keep the scroll,
+ * though -- see the ScrollView import for what was.
  */
 import { useCallback, useRef, useState } from "react";
+import { StyleSheet, View, type LayoutChangeEvent } from "react-native";
+// The gesture-handler ScrollView, not React Native's. Every row carries three
+// gesture-handler gestures -- the long-press drag, the swipe to Delete and the
+// press -- and the swipe only has a horizontal threshold, so a vertical flick
+// that starts on a row leaves it waiting for a sideways move that never comes.
+// React Native's ScrollView cannot tell it to stop waiting: the two systems do
+// not know about each other, and the list scrolled only when the finger landed
+// between rows. This one is a gesture too, so when it starts scrolling the rows'
+// pending gestures are cancelled, while a sideways swipe or a held press still
+// wins before the scroll ever begins.
 import {
+  Gesture,
+  GestureDetector,
   ScrollView,
-  StyleSheet,
-  View,
-  type LayoutChangeEvent,
-} from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+} from "react-native-gesture-handler";
 import {
   runOnJS,
   useSharedValue,
@@ -73,12 +82,28 @@ interface Props {
   cards: CardRects;
   drag: DragBus;
   onOpen: (task: Task) => void;
+  /** Scroll to the last row once the list has laid it out, then call onRevealed. */
+  reveal?: boolean;
+  onRevealed?: () => void;
 }
 
 const hit = (r: Rect | undefined, x: number, y: number) =>
   !!r && x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height;
 
-export function TaskList({ tasks, cards, drag, onOpen }: Props) {
+export function TaskList({
+  tasks,
+  cards,
+  drag,
+  onOpen,
+  reveal = false,
+  onRevealed,
+}: Props) {
+  const scroller = useRef<ScrollView>(null);
+  // Read from the size callback, which runs after layout rather than render.
+  // Scrolling from an effect instead would run before the new row has a
+  // height, and scroll to where the end used to be.
+  const revealing = useRef(reveal);
+  revealing.current = reveal;
   // Row geometry, kept in a ref rather than state: it is read during a gesture
   // and writing it would re-render the list mid-drag.
   const rows = useRef<
@@ -164,9 +189,16 @@ export function TaskList({ tasks, cards, drag, onOpen }: Props) {
 
   return (
     <ScrollView
+      ref={scroller}
       style={s.scroll}
       contentContainerStyle={s.inner}
       scrollEnabled={heldId === null}
+      onContentSizeChange={() => {
+        if (!revealing.current) return;
+        revealing.current = false;
+        scroller.current?.scrollToEnd({ animated: true });
+        onRevealed?.();
+      }}
       // Scrolling the list puts the keyboard away; tapping a row does what the
       // row does. Without "handled" the first tap is spent dismissing, so
       // opening a task while typing would take two.
@@ -235,24 +267,14 @@ function DraggableRow({
   // instead of jumping its own top-left corner under the finger.
   const grabX = useSharedValue(0);
   const grabY = useSharedValue(0);
-  // A press that turned into a drag must not also count as a tap. The row's
-  // Pressable is a child of this detector and finishes its own press on
-  // release, so it has to be told the gesture took over -- otherwise letting
-  // go of a dragged row opens it.
-  const dragged = useRef(false);
-
-  const began = () => {
-    dragged.current = true;
-    onBegin();
-  };
-
-  const press = () => {
-    if (dragged.current) {
-      dragged.current = false;
-      return;
-    }
-    onPress();
-  };
+  // A drag cannot end as a tap. The row's tap is a gesture of its own (see
+  // task-row.tsx) and this pan is not declared simultaneous with it, so the
+  // moment the long press activates the pan, the tap is cancelled. The flag
+  // that used to guard against "letting go of a dragged row opens it" belonged
+  // to Pressable, which finished its press on release regardless -- and with a
+  // cancelled tap it would never have been reset, swallowing the next real one.
+  const began = () => onBegin();
+  const press = () => onPress();
 
   const pan = Gesture.Pan()
     // The long press is the whole reason the three gestures can coexist.

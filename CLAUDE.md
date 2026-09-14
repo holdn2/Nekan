@@ -980,6 +980,17 @@ apps/mobile/
                   이어붙이면 "우유 우유 사기"가 된다
   i18n.ts         세 번째 i18next 초기화. 카탈로그는 shared 한 벌
   icons.tsx       react-native-svg. 규칙 11대로 기호는 글자가 아니다
+  targets/quick/  iOS 위젯. **JS가 한 줄도 없는 네이티브 타깃이다** —
+                  @bacons/apple-targets가 이 폴더를 Xcode에 synchronized root
+                  group으로 달아서, **확장자만 보고 분류한다**(그래서
+                  Localizable.xcstrings에 배선이 필요 없다). 문 두 개가 전부이고
+                  보드를 보여주지 않는다. 크기는 **잠금화면 `accessoryRectangular`
+                  와 홈 화면 `systemMedium` 둘**이다 — 사용자가 못 박은 우선순위는
+                  잠금화면이고, 그 칸이 잠금화면에서 가장 큰 자리다. 나머지 크기가
+                  없는 것은 제약이다: **`systemSmall`과 `accessoryCircular`에서는
+                  iOS가 `Link`를 무시하고** 위젯 전체를 URL 하나로 보낸다.
+                  잠금화면 크기는 홈 화면 갤러리가 아니라 **잠금화면 편집**에서만
+                  보인다 — "위젯이 안 뜬다"는 신고는 어느 쪽에서 찾았는지부터 물을 것
   metro.config.js watchFolders + `.js`→`.ts` resolver (아래)
 ```
 
@@ -1002,6 +1013,98 @@ Android 상한(약 6MB)에서 **조용히** 깨지고, 동기화가 붙을 때 �
 **`metro.config.js`가 하는 일 둘.** `watchFolders`로 저장소 전체를 보고(shared에는 이쪽을 위한
 빌드 단계가 없다), **`.js` import를 옆의 `.ts`에 잇는다** — 렌더러에서 `vite.config.mts`의
 플러그인이 하는 일과 같은 것이다. **빼면 첫 shared 파일에서 번들이 죽는다**(실측).
+
+### 위젯의 낱말은 생성물이다. 그리고 `ios.appleTeamId`가 필요하다
+
+**위젯은 어떤 카탈로그도 닿지 않는 자리다.** Swift에서 `ko.json`을 읽을 방법이 없고,
+`tools/find-untranslated.js`는 `.js`·`.ts`·`.html`·`.css` 넷만 보므로 **Swift 문자열은
+이 저장소의 모든 검사에 안 보인다.** 그래서 `tools/build-widget-strings.js`가
+`src/shared/i18n/{ko,en}.json`에서 `apps/mobile/targets/quick/Localizable.xcstrings`를
+만든다 — 팔레트와 같은 방식이다(생성물이고, 커밋하고, `tools/test/`가 낡았는지 지킨다).
+**마이크 라벨은 새 문자열이 아니라 `speech.start` 그 자체다** — 같은 행위에 이름이 둘
+붙는 것을 막는 것이 GLOSSARY의 존재 이유이고, 네이티브 타깃이 바로 그게 조용히 일어나는
+자리다. 테스트가 Swift에서 `widget.*` 키를 뽑아 생성 목록과 **양방향으로** 대조한다:
+없는 키를 Swift가 부르면 빌드가 죽는 게 아니라 **화면에 `widget.speak`라고 나온다.**
+
+**위젯 Swift를 컴파일해 보는 곳은 `.github/workflows/widget-typecheck.yml` 하나다.**
+이 Windows 기기에는 Xcode가 없고 `npm test`는 Swift를 안 읽어서, 그게 없으면 Swift를
+처음 컴파일하는 것이 **쿼터를 쓰는 EAS 빌드**다. `targets/**`가 바뀐 push·PR에 맥
+러너에서 `swiftc -typecheck`를 돌리고, **일부러 틀린 사본으로 실패하는지까지 본다**
+(통과만 보면 아무것도 안 보는 검사와 구별이 안 된다). **빌드가 아니라 타입검사다** —
+API 이름과 배포 버전은 잡지만 링크·에셋·서명은 못 본다. EAS가 Xcode 26.0으로 짓으므로
+이미지에 그 버전이 있으면 그걸 고르고, 없으면 경고를 남긴다.
+
+**EAS 빌드를 쓰기 전의 리허설은 `.github/workflows/ios-release-rehearsal.yml`이다.**
+맥 러너(공개 저장소라 무료)에서 EAS preview 빌드가 하는 일을 **서명만 빼고** 한다 —
+Node 22.20으로 `npm ci` → prebuild → `pod install` → **서명 없는 Release `xcodebuild`** →
+만들어진 `.app`을 열어 번들 id·위젯 임베드·위젯 버전 일치·업데이트 URL·런타임 버전·
+스킴·JS 번들을 읽는다. **업데이트 두 값은 `Info.plist`가 아니라 `Expo.plist`에 있다**
+(`@expo/config-plugins/build/ios/Updates.js`) — `Info.plist`에서 읽으면 멀쩡한 빌드를
+실패로 판정한다. 무거워서(대략 한 시간) 네이티브를 정하는 파일이 바뀔 때만 돈다.
+
+**위젯의 언어는 앱 설정이 아니라 시스템 언어다.** 폰을 영어로 쓰면서 Nekan만 한국어로
+둔 사람은 영어 위젯을 본다. 고치려면 고른 언어를 공유 컨테이너에 써서 Swift가 읽어야
+하는데, 라벨 두 개 값이 아니다.
+
+**`ios.appleTeamId`가 `app.json`에 있어야 한다.** 없으면 플러그인이 경고만 하고 넘어가는데
+(`iOS builds may fail until this is corrected`), 그 경고는 `expo config --type prebuild`
+에서만 보이고 **빌드는 30분 뒤에 서명에서 죽는다.** EAS 쪽 서명은 플러그인이
+`extra.eas.build.experimental.ios.appExtensions`에 확장을 등록해 주므로 붙지만,
+Xcode의 `DEVELOPMENT_TEAM`은 이 값에서 온다. **비밀이 아니다** — Apple Developer의
+Membership 화면에 있는 10자짜리 식별자다.
+
+**EAS 빌드의 Node는 `eas.json`에서 22.20.0으로 고정한다** (2026-09-14). 기본 이미지는
+**Node 20.19.4**이고, 이 PC는 22.20이다. lock의 루트 `node_modules/metro-runtime`이
+**0.87.0 · `optional` · `peer` · `engines: node ^22.13`** 인데, npm은 엔진이 안 맞는
+**선택적** 의존성을 경고 없이 건너뛴다(엔진이 안 맞는 일반 의존성은 EBADENGINE 경고를
+남기고 설치한다 — `electron`이 그렇다). 그래서 서버에만 그 폴더가 없고, `@expo/cli`가
+`require.resolve('metro-runtime/package.json')`에서 죽는다:
+`Cannot find module 'metro-runtime/package.json'` → `export:embed … exited with non-zero code: 1`.
+**이 항목은 위젯 이전부터 lock에 있었다**(`984ae8a`·`9d65de3` 둘 다). 9월 dev client
+빌드가 통과한 것은 **Debug라 `SKIP_BUNDLING`으로 JS 번들을 건너뛰었기 때문**이다 —
+**dev client 빌드의 성공은 Release의 JS 번들을 한 줄도 증명하지 않는다.**
+재현법: 루트 `node_modules/metro-runtime`을 잠깐 치우고 `apps/mobile`에서
+`node ../../node_modules/expo/bin/cli export:embed --eager --platform ios --dev false
+--bundle-output <임시>/main.jsbundle --assets-dest <임시>`를 돌리면 같은 오류가 난다.
+**고치는 길로 lock을 재생성하지 말 것** — 위 "커밋된 lock 위에서 설치할 것"과 같은 이유다.
+Node를 맞추면 서버의 설치가 이 PC의 설치와 같아진다.
+
+**`runtimeVersion`은 `appVersion`이다. `fingerprint`로 바꾸지 말 것** (2026-09-14).
+하루 동안 `fingerprint`였고 **그 정책으로 돌린 EAS 빌드 한 번이 쿼터만 쓰고 죽었다**:
+`Runtime version calculated on local machine not equal to runtime version calculated
+during build.` 이 Windows 기기와 EAS의 Linux 서버가 **서로 다른 해시**를 냈고, 차이는
+앱과 무관한 세 갈래였다 — ① 로컬만 설정 평가 때 불러온 플러그인 JS 140여 개
+(`expoConfigPlugins`, 상당수가 `hash: null`)를 넣었고 ② `react-native-worklets` 폴더
+해시가 로컬 설치와 서버 설치에서 달랐고 ③ 서버에는 prebuild가 만든 `ios/`가 있었다
+(gitignore인데도 `bareNativeDir`로 들어갔다).
+**빌드 실패보다 더 나쁜 것이 그 뒤에 있었다**: 통과했더라도 이 PC에서 `eas update`로
+올리는 OTA가 **전부 다른 런타임 버전으로 올라가 폰에 한 번도 적용되지 않는다.**
+OTA로 빌드를 아끼자는 목적을 정면으로 깬다.
+**"Windows에서 계산된다"는 확인은 아무것도 증명하지 못했다** — 물어야 했던 것은
+"계산되는가"가 아니라 **"EAS와 같은 값이 나오는가"**였고, 그건 빌드를 돌려야만 알 수 있었다.
+`appVersion`은 `app.json`의 `version` 문자열이라 어디서 계산해도 같다
+(`node node_modules/expo-updates/bin/cli.js runtimeversion:resolve --platform ios` →
+`"0.1.0"`, `fingerprintSources: null`).
+**대가는 사람이 지켜야 하는 규칙 하나다: 네이티브를 바꾸면 `version`을 올린다.**
+안 올리면 새 네이티브가 없는 옛 빌드에 그것을 전제한 JS가 OTA로 내려앉는다. 네이티브
+변경이란 대략 네이티브 의존성·config plugin·권한·`targets/`의 Swift다 —
+**위젯 Swift는 어떤 정책에서도 자동으로 잡히지 않았다**(fingerprint였을 때도 해시에
+없었다). 특히 **딥링크 주소**(`nekan://quick?mode=…`)는 Swift와 JS 라우트의 계약이라,
+주소를 바꾸면 JS만 OTA로 나가고 위젯은 옛 주소를 든 채 남는다. 주소를 바꾼다면 빌드도
+함께다.
+
+**폰의 id는 `com.yoshi.nekan`이고, 데스크톱의 `com.makersfarm.nekan`과 일부러 다르다**
+(2026-09-14). `makersfarm`은 사용자의 이름이 아니다 — 사용자가 못 박았다: _"makersfarm은
+내 이름이 아니라서 안돼."_ 폰은 스토어에 한 번도 안 나가서 바꿀 수 있었고, **데스크톱은
+v1.0.0~1.0.5가 그 id로 나갔다** — Windows 설치 프로그램이 appId에서 설치 GUID를 만들어서,
+바꾸면 기존 설치본이 업데이트로 이어지지 않고 두 번째 앱으로 깔린다. **둘을 한쪽으로
+맞추지 말 것.** 동기화는 계정 단위라 id가 달라도 아무 문제가 없다.
+**폰 id도 스토어에 한 번 나가면 영영 못 바꾼다** — 그 전에 다시 물을 일이 생기면 지금이
+마지막 기회라는 것부터 말할 것.
+
+**위젯 타깃의 번들 id는 손으로 적는다.** 플러그인은 타깃 이름이 아니라 **종류**에서
+뽑아서 `.widget`을 준다 — 위젯이 둘이 되는 날 둘 다 같은 id를 원하고, 증상은 이름
+충돌이 아니라 **서명 실패**다.
 
 ### 버전은 폰이 정한다. npm의 `latest`가 아니다
 
@@ -1101,6 +1204,30 @@ Google이 보는 리디렉트는 언제나 Supabase의 `/auth/v1/callback`이고
 `mobile:typecheck`가 `"/guide"를 모른다`고 하면 코드가 아니라 **그 파일이 낡은 것**이다 —
 개발 서버를 잠깐 띄웠다 끄면 갱신된다(**PID로 종료할 것**).
 
+**할 일 행의 제스처는 서로를 취소한다. 둘을 새로 겹칠 때마다 "누가 누구를 취소하나"부터
+물을 것** (2026-09-14). 두 번 조용히 깨졌다.
+① **목록은 gesture-handler의 `ScrollView`여야 한다.** 삭제용 `ReanimatedSwipeable`의 Pan은
+가로 임계값(`activeOffsetX`)만 있어서, 행 위에서 시작한 세로 스크롤을 "가로로 갈지도 모른다"며
+붙들었다. RN 기본 `ScrollView`는 gesture-handler 제스처를 모르니 그걸 취소하지 못했고,
+**목록은 손가락이 행 사이에 떨어질 때만 스크롤됐다.**
+② **행의 탭은 `Pressable`이 아니라 `components/task-row.tsx`가 가진 `Gesture.Tap`이다.**
+`ReanimatedSwipeable`은 자식 전체를 **자기 `Gesture.Tap`**(열린 행 닫기)으로 감싸고 그 탭은
+**매번 활성화된다.** 활성화된 제스처는 동시로 선언되지 않은 제스처를 취소하는데, gesture-handler의
+`Pressable`은 안쪽 네이티브 버튼 제스처가 **시작돼야만** `onPress`를 부른다
+(`Pressable.tsx`의 `Gesture.Native()` → `NATIVE_START`). 그래서 **행 탭이 아무 일도 안 했다** —
+삭제 버튼만 됐던 이유는 Swipeable이 그걸 자기 탭 **바깥**(`rightElement()`)에 그리기 때문이다.
+라이브러리의 탭도 Pressable의 속 제스처도 밖에서 이름을 부를 수 없으니, 제스처를 직접 만들고
+`simultaneousWithExternalGesture`로 Swipeable에 알린다. **그 제스처는 반드시 메모이즈한다** —
+누른 표시(`pressed`)가 터치다운에 다시 그리는데, 그때 새로 만들어진 제스처는 다시 붙으면서
+**진행 중이던 탭을 취소로 끝낸다.** 콜백은 ref로 읽는다.
+**둘 다 단위 테스트로는 안 잡힌다**(vitest의 폰 프로젝트는 제스처를 돌리지 않는다). 폰에서만 보인다.
+
+**새 행은 목록 끝에 붙고, 입력칸은 목록 아래에 있다. 추가하면 스크롤해서 보여줘야 한다.**
+안 그러면 긴 목록에서 행이 화면 밖에 생기고 **입력칸만 비어서 "저장이 안 된다"로 신고된다** —
+2026-09-14에 실제로 그렇게 신고됐고, 저장도 동기화도 멀쩡했다. `TaskList`의 `reveal`이 그 일을
+하고, 레이아웃이 끝난 뒤(`onContentSizeChange`)에 스크롤한다 — 이펙트에서 하면 새 행의 높이가
+정해지기 전이라 옛 끝으로 간다.
+
 **`LayoutAnimation`은 New Architecture에서 no-op이다.** 덜 되는 것이 아니라 아무 일도 안 한다 —
 애니메이션은 Reanimated로 쓴다. 그리고 **RN의 점선은 dash 길이를 border width에서 계산한다**:
 hairline이면 점이 선처럼 보인다.
@@ -1132,13 +1259,15 @@ hairline이면 점이 선처럼 보인다.
 - **EAS Update(OTA)는 빌드와 별도 쿼터다** — MAU 기준이고(무료 플랜 1,000) 빌드 횟수를 쓰지
   않는다. **그래서 JS·에셋만 바뀐 반복은 사실상 공짜다.** 위의 "JS만 바뀌었으면 빌드하지
   않는다"가 원칙이 아니라 실제로 싼 길인 이유가 이것이다.
-  **다만 지금 폰에 깔린 빌드는 아직 못 받는다** (2026-09-05). `updates.url`이 오래 비어
-  있었다 — `expo-updates`도 채널도 `runtimeVersion` 정책도 있는데 **주소만 없었고**,
-  `eas config --platform ios --profile development`가 내놓는 해결된 설정에도 없었다
-  (`eas update:configure`가 쓰는 값이고 아무도 그걸 안 돌렸다). 지금은 `app.json`에 있다.
-  **그런데 그 URL은 빌드 때 Info.plist(`EXUpdatesURL`)에 구워진다** — 이미 나간 dev
-  client는 주소를 모른 채 만들어졌으므로, **다음 빌드부터** OTA가 실제로 도착한다.
-  그때까지 JS 변경을 실기기에 올리는 길은 dev 서버뿐이다.
+  **OTA를 받을 수 있는 첫 빌드는 2026-09-14의 preview `6f3f6112`다** (`com.yoshi.nekan`,
+  build 2, 커밋 `6b66cd9`). 로그로 확인한 값: Node 22.20.0 · 런타임 버전 `0.1.0` ·
+  `Expo.plist`의 요청 헤더 `{"expo-channel-name":"preview"}`. **그래서 이 빌드에 닿는
+  OTA는 `--channel preview`로 올린다.** `updates.url`은 오래 비어 있었고
+  (`eas update:configure`가 쓰는 값인데 아무도 안 돌렸다) **빌드 때 `Expo.plist`에
+  구워지므로** 그 전의 dev client(`com.makersfarm.nekan`)는 영영 못 받는다.
+  **dev client는 Debug라 `SKIP_BUNDLING`으로 JS 번들을 건너뛰고 expo-updates도 쓰지
+  않는다** — 그 빌드가 통과한 것은 Release의 두 단계를 한 줄도 증명하지 않았고, 이 빌드에
+  이르기까지 EAS 빌드 둘이 정확히 그 두 단계에서 죽었다(`runtimeVersion` · Node).
 - `Uploaded builds`가 따로 월 10회 있다 — 로컬에서 만든 바이너리를 올리는 길이다.
   **iOS는 Xcode가 필요해 이 기기(Windows)에서 만들 수 없으므로 Android 전용 탈출구다.**
 - **숫자를 믿기 전에 대시보드를 볼 것.** 위 값들은 2026-08-31의 무료 플랜 기준이고 플랜 정책은

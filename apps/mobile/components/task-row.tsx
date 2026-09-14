@@ -17,8 +17,13 @@
  * should not be able to remove anything, and because "undo" on a phone is a
  * thing you have to remember exists.
  */
-import { StyleSheet, Text } from "react-native";
-import { Pressable } from "react-native-gesture-handler";
+import { useMemo, useRef, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import {
+  Gesture,
+  GestureDetector,
+  Pressable,
+} from "react-native-gesture-handler";
 import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import Animated, {
   useAnimatedStyle,
@@ -36,7 +41,6 @@ interface Props {
   /** Zero-based; the row shows it one-based, the way the desktop does. */
   index: number;
   onPress: () => void;
-  onLongPress?: () => void;
 }
 
 /** The action the swipe uncovers. Its width is fixed so the row can slide. */
@@ -70,16 +74,64 @@ function DeleteAction({
 
 const ACTION_WIDTH = 88;
 
-export function TaskRow({ task, index, onPress, onLongPress }: Props) {
+export function TaskRow({ task, index, onPress }: Props) {
   const c = useColors();
   const inDump = task.quadrant === INBOX;
   const info = dueInfo(task.dueDate, new Date());
   const due = formatDue(info, t, locale());
+  const [pressed, setPressed] = useState(false);
+
+  // The row and its completion circle answer taps with gestures this file
+  // owns, not with Pressable, and that is the fix for a row that would not
+  // open.
+  //
+  // ReanimatedSwipeable wraps its children in a Tap of its own -- it closes an
+  // open row -- and that Tap activates on every tap. An activating gesture
+  // cancels every gesture it is not declared simultaneous with, and the one it
+  // cancelled was the Pressable's native button: Pressable only calls onPress
+  // after that button starts, so the press was dropped without a word. The
+  // Delete button kept working because the swipeable renders it outside that
+  // Tap. The swipeable's Tap cannot be named from here, but the swipeable can
+  // be told which outside gestures run alongside it, and a Pressable's inner
+  // gestures cannot be named either -- hence gestures of our own.
+  //
+  // They must be stable. A gesture rebuilt mid-press is re-attached, and the
+  // press it was tracking ends as a cancel: `pressed` changes on touch-down, so
+  // anything that rebuilt on render would never finish a tap. The callback is
+  // read through a ref for that reason.
+  const onPressRef = useRef(onPress);
+  onPressRef.current = onPress;
+  const complete = useMemo(
+    () =>
+      Gesture.Tap()
+        .runOnJS(true)
+        .onEnd((_e, success) => {
+          if (success) completeTask(task.id);
+        }),
+    [task.id],
+  );
+  const open = useMemo(
+    () =>
+      Gesture.Tap()
+        .runOnJS(true)
+        .maxDistance(10)
+        // The circle sits inside the row. Without this a tap on it would
+        // complete the task and open it in the same motion.
+        .requireExternalGestureToFail(complete)
+        .onBegin(() => setPressed(true))
+        .onFinalize(() => setPressed(false))
+        .onEnd((_e, success) => {
+          if (success) onPressRef.current();
+        }),
+    [complete],
+  );
+  const alongside = useMemo(() => [open, complete], [open, complete]);
 
   return (
     <ReanimatedSwipeable
       friction={2}
       rightThreshold={ACTION_WIDTH / 2}
+      simultaneousWithExternalGesture={alongside}
       renderRightActions={(_progress, drag) => (
         <DeleteAction
           drag={drag}
@@ -88,50 +140,66 @@ export function TaskRow({ task, index, onPress, onLongPress }: Props) {
         />
       )}
     >
-      <Pressable
-        onPress={onPress}
-        onLongPress={onLongPress}
-        delayLongPress={220}
-        // Pressed rather than a rule between rows. The desktop draws no
-        // separator either -- a row is a block that lights up when the pointer
-        // is over it, and the phone's equivalent of that is the touch.
-        style={({ pressed }) => [
-          s.row,
-          { backgroundColor: pressed ? c["panel-2"] : c.panel },
-        ]}
-      >
-        <Text style={[s.num, { color: c.faint }]}>{index + 1}.</Text>
+      <GestureDetector gesture={open}>
+        <View
+          // Pressed rather than a rule between rows. The desktop draws no
+          // separator either -- a row is a block that lights up when the pointer
+          // is over it, and the phone's equivalent of that is the touch.
+          style={[s.row, { backgroundColor: pressed ? c["panel-2"] : c.panel }]}
+          // Gestures are invisible to VoiceOver, so what a tap does is also
+          // offered as actions: the double-tap opens, and completing is a
+          // named action rather than a child the grouped row would hide.
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={task.text}
+          accessibilityActions={
+            inDump
+              ? [{ name: "activate" }]
+              : [
+                  { name: "activate" },
+                  { name: "complete", label: t("item.complete") },
+                ]
+          }
+          onAccessibilityAction={(e) => {
+            if (e.nativeEvent.actionName === "activate") onPressRef.current();
+            if (e.nativeEvent.actionName === "complete") completeTask(task.id);
+          }}
+        >
+          <Text style={[s.num, { color: c.faint }]}>{index + 1}.</Text>
 
-        {inDump ? null : (
-          <Pressable
-            onPress={() => completeTask(task.id)}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={t("item.complete")}
-          >
-            <CheckCircleIcon color={c.muted} tickColor={c["on-accent"]} />
-          </Pressable>
-        )}
+          {inDump ? null : (
+            <GestureDetector gesture={complete}>
+              {/* The icon is small, so the reach is widened -- on the View, not
+                the gesture. A gesture's positive hitSlop does nothing on iOS:
+                a recognizer only sees touches that UIKit's hit test already
+                routed to its view, and only a view can widen that test
+                (RNGestureHandler.mm says so beside shouldReceiveTouch). */}
+              <View hitSlop={8}>
+                <CheckCircleIcon color={c.muted} tickColor={c["on-accent"]} />
+              </View>
+            </GestureDetector>
+          )}
 
-        <Text style={[s.text, { color: c.text }]} numberOfLines={2}>
-          {task.text}
-        </Text>
-
-        {task.memo && !inDump ? <MemoIcon color={c.faint} /> : null}
-        {due && !inDump ? (
-          <Text
-            style={[
-              s.due,
-              {
-                color: info?.state === "overdue" ? c.danger : c.muted,
-                borderColor: c.line,
-              },
-            ]}
-          >
-            {due.text}
+          <Text style={[s.text, { color: c.text }]} numberOfLines={2}>
+            {task.text}
           </Text>
-        ) : null}
-      </Pressable>
+
+          {task.memo && !inDump ? <MemoIcon color={c.faint} /> : null}
+          {due && !inDump ? (
+            <Text
+              style={[
+                s.due,
+                {
+                  color: info?.state === "overdue" ? c.danger : c.muted,
+                  borderColor: c.line,
+                },
+              ]}
+            >
+              {due.text}
+            </Text>
+          ) : null}
+        </View>
+      </GestureDetector>
     </ReanimatedSwipeable>
   );
 }

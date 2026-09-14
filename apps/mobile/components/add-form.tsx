@@ -17,8 +17,15 @@
  * Speaking goes through the same field. The microphone writes where typing
  * writes and stops there -- see speech/use-dictation.ts for why it does not
  * add the task itself.
+ *
+ * The widget opens app/quick.tsx, which reuses this rather than growing a
+ * second field: a copy would be the place where the two of them stop agreeing
+ * about composition, about when adding is allowed, and about where a task
+ * lands. That is what `autoFocus`, `autoSpeak` and `onAdded` are for -- the
+ * screen decides how it was entered, and this goes on being the one way text
+ * gets in.
  */
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { INBOX } from "@nekan/shared/core";
 import type { Place } from "@nekan/shared/types";
@@ -28,7 +35,22 @@ import { FS, R, SP, useColors } from "../theme";
 import { addTasks } from "../store/mutations";
 import { useDictation } from "../speech/use-dictation";
 
-export function AddForm({ place = INBOX }: { place?: Place }) {
+interface Props {
+  place?: Place;
+  /** Open the keyboard on mount. */
+  autoFocus?: boolean;
+  /** Start dictating on mount, once the device has been asked whether it can. */
+  autoSpeak?: boolean;
+  /** How many tasks the last press added. The screen decides what to say. */
+  onAdded?: (count: number) => void;
+}
+
+export function AddForm({
+  place = INBOX,
+  autoFocus = false,
+  autoSpeak = false,
+  onAdded,
+}: Props) {
   const c = useColors();
   const [text, setText] = useState("");
   // The dictation hook needs to read the field at the moment the mic is
@@ -55,9 +77,26 @@ export function AddForm({ place = INBOX }: { place?: Place }) {
 
   const submit = () => {
     if (!canAdd) return;
-    addTasks(place, text);
+    onAdded?.(addTasks(place, text));
     setText("");
   };
+
+  // Entered by the microphone door on the widget.
+  //
+  // It waits for the availability probe rather than firing on mount: before
+  // that lands, a device that cannot dictate is indistinguishable from one
+  // that has simply not been asked, and starting anyway turns a button that
+  // would have been disabled into an error message. Once per mount -- the
+  // guard is the ref, not the effect's deps, because `state` moves through
+  // "asking" and "listening" and a dependency on it would restart the
+  // recogniser each time.
+  const started = useRef(false);
+  useEffect(() => {
+    if (!autoSpeak || started.current) return;
+    if (!dictation.checked || dictation.state === "unavailable") return;
+    started.current = true;
+    void dictation.start();
+  }, [autoSpeak, dictation.checked, dictation.state, dictation.start]);
 
   const problem =
     dictation.state === "unavailable"
@@ -75,6 +114,7 @@ export function AddForm({ place = INBOX }: { place?: Place }) {
       ) : null}
       <View style={s.row}>
         <TextInput
+          autoFocus={autoFocus}
           style={[
             s.input,
             {

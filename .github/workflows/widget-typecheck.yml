@@ -1,0 +1,87 @@
+name: Widget typecheck
+
+# The iOS widget is Swift, and nothing else in this repository can read Swift.
+# `npm test` never compiles it, the Windows machine it is written on has no
+# Xcode, and the only other compiler it ever meets is the EAS build -- which
+# costs one of a monthly fifteen and reports a Swift error half an hour in.
+#
+# This asks the Swift compiler about the target's sources against the iOS SDK,
+# without a project, CocoaPods or signing. It is a type check, not a build: it
+# proves the file names real WidgetKit and SwiftUI APIs at the target's
+# deployment version and that they fit together, and it says nothing about
+# linking, the asset catalogue or the provisioning profile. Those are what EAS
+# already got through on the build that failed for another reason.
+on:
+  push:
+    paths:
+      - "apps/mobile/targets/**"
+      - ".github/workflows/widget-typecheck.yml"
+  pull_request:
+    paths:
+      - "apps/mobile/targets/**"
+      - ".github/workflows/widget-typecheck.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: widget-typecheck-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    # Pinned for the reason mac-build.yml pins it: a floating label moved under
+    # this repository once and broke the one job that only runs on release day.
+    runs-on: macos-15
+    timeout-minutes: 15
+    env:
+      # expo-target.config.js says 17.0. Checking against a lower target is what
+      # would catch an API that arrived later than the widget claims to support.
+      DEPLOYMENT_TARGET: "17.0"
+      SOURCES: apps/mobile/targets/quick
+    steps:
+      - uses: actions/checkout@v5
+
+      # EAS builds this with Xcode 26.0. Use the same one when the image has it,
+      # and say plainly when it does not, so a green run is read for what it is.
+      - name: Choose Xcode
+        run: |
+          if [ -d /Applications/Xcode_26.0.app ]; then
+            sudo xcode-select -s /Applications/Xcode_26.0.app
+            echo "Using Xcode 26.0, the version EAS builds with."
+          else
+            echo "::warning::Xcode 26.0 is not on this image; checking with the default instead. EAS builds with 26.0."
+            ls -d /Applications/Xcode*.app
+          fi
+          xcodebuild -version
+          echo "iOS SDK $(xcrun --sdk iphoneos --show-sdk-version)"
+
+      - name: Typecheck the widget
+        run: |
+          # -parse-as-library because the file carries @main and is not called
+          # main.swift. Without it the compiler treats top-level code as a
+          # script and rejects the attribute -- an error about the invocation,
+          # not about the widget.
+          xcrun --sdk iphoneos swiftc -typecheck -parse-as-library \
+            -swift-version 5 \
+            -target "arm64-apple-ios${DEPLOYMENT_TARGET}" \
+            "$SOURCES"/*.swift
+
+      # A check that cannot fail proves nothing. Feed the same command a copy
+      # with one deliberate type error and require it to refuse; if it passes,
+      # the step above was not really looking at the file.
+      - name: Prove the check can fail
+        run: |
+          probe="$RUNNER_TEMP/probe"
+          mkdir -p "$probe"
+          cp "$SOURCES"/*.swift "$probe"/
+          printf '\nprivate let _probe: Int = "not an int"\n' >> "$probe/QuickWidget.swift"
+          if xcrun --sdk iphoneos swiftc -typecheck -parse-as-library \
+              -swift-version 5 \
+              -target "arm64-apple-ios${DEPLOYMENT_TARGET}" \
+              "$probe"/*.swift; then
+            echo "::error::The typecheck accepted a deliberate type error, so a green result above means nothing."
+            exit 1
+          fi
+          echo "The typecheck rejects a broken file, so the green result above is real."
