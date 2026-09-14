@@ -1032,6 +1032,14 @@ Android 상한(약 6MB)에서 **조용히** 깨지고, 동기화가 붙을 때 �
 API 이름과 배포 버전은 잡지만 링크·에셋·서명은 못 본다. EAS가 Xcode 26.0으로 짓으므로
 이미지에 그 버전이 있으면 그걸 고르고, 없으면 경고를 남긴다.
 
+**EAS 빌드를 쓰기 전의 리허설은 `.github/workflows/ios-release-rehearsal.yml`이다.**
+맥 러너(공개 저장소라 무료)에서 EAS preview 빌드가 하는 일을 **서명만 빼고** 한다 —
+Node 22.20으로 `npm ci` → prebuild → `pod install` → **서명 없는 Release `xcodebuild`** →
+만들어진 `.app`을 열어 번들 id·위젯 임베드·위젯 버전 일치·업데이트 URL·런타임 버전·
+스킴·JS 번들을 읽는다. **업데이트 두 값은 `Info.plist`가 아니라 `Expo.plist`에 있다**
+(`@expo/config-plugins/build/ios/Updates.js`) — `Info.plist`에서 읽으면 멀쩡한 빌드를
+실패로 판정한다. 무거워서(대략 한 시간) 네이티브를 정하는 파일이 바뀔 때만 돈다.
+
 **위젯의 언어는 앱 설정이 아니라 시스템 언어다.** 폰을 영어로 쓰면서 Nekan만 한국어로
 둔 사람은 영어 위젯을 본다. 고치려면 고른 언어를 공유 컨테이너에 써서 Swift가 읽어야
 하는데, 라벨 두 개 값이 아니다.

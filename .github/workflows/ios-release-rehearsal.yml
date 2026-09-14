@@ -1,0 +1,143 @@
+name: iOS release rehearsal
+
+# Everything an EAS preview build does, except signing, on a runner that costs
+# nothing -- because an EAS build costs one of a monthly fifteen, and the two
+# spent on 2026-09-14 each died at a stage this app had never reached before.
+#
+# The September dev client was a Debug build. Debug skips the JS bundle and
+# never configures expo-updates, so its success said nothing about either, and
+# those were exactly the two stages that failed. What neither failure got to is
+# still unproven: compiling the app in Release, compiling and embedding the
+# widget extension, and what ends up in the Info.plist files. This does those.
+#
+# It is heavy -- CocoaPods and a Release React Native compile on a macOS runner
+# take the better part of an hour -- so it runs only when something that decides
+# the native build changes, or by hand.
+on:
+  push:
+    paths:
+      - "apps/mobile/app.json"
+      - "apps/mobile/eas.json"
+      - "apps/mobile/package.json"
+      - "apps/mobile/targets/**"
+      - ".github/workflows/ios-release-rehearsal.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-release-rehearsal-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rehearse:
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+      # The workspace install brings the desktop's Electron along. Its binary is
+      # a large download this job never runs.
+      ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v5
+
+      # EAS builds with Xcode 26.0. Same reasoning as widget-typecheck.yml.
+      - name: Choose Xcode
+        run: |
+          if [ -d /Applications/Xcode_26.0.app ]; then
+            sudo xcode-select -s /Applications/Xcode_26.0.app
+            echo "Using Xcode 26.0, the version EAS builds with."
+          else
+            echo "::warning::Xcode 26.0 is not on this image; building with the default instead. EAS builds with 26.0."
+          fi
+          xcodebuild -version
+          pod --version
+
+      # The version eas.json pins, for the reason eas.json pins it: on Node 20
+      # npm skips an optional dependency the JS bundle needs.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22.20.0"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # What EAS runs: prebuild without installing, then pods on their own.
+      - name: Prebuild
+        working-directory: apps/mobile
+        run: node ../../node_modules/expo/bin/cli prebuild --platform ios --no-install --clean
+
+      - name: Install pods
+        working-directory: apps/mobile/ios
+        run: pod install
+
+      - name: Build for release, unsigned
+        working-directory: apps/mobile/ios
+        run: |
+          log="$RUNNER_TEMP/xcodebuild.log"
+          # The full log goes to a file: it is tens of thousands of lines, and
+          # the line that matters on a failure is rarely the last one.
+          if ! xcodebuild \
+              -workspace Nekan.xcworkspace \
+              -scheme Nekan \
+              -configuration Release \
+              -sdk iphoneos \
+              -destination "generic/platform=iOS" \
+              -derivedDataPath "$RUNNER_TEMP/dd" \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGNING_REQUIRED=NO \
+              build > "$log" 2>&1; then
+            echo "::group::every error line"
+            grep -nE "error:|\*\* BUILD FAILED" "$log" | head -n 80
+            echo "::endgroup::"
+            tail -n 120 "$log"
+            exit 1
+          fi
+          grep -nE "warning: .*(quick|QuickWidget)" "$log" | head -n 20 || true
+          tail -n 5 "$log"
+
+      # A green compile is not the whole question. Read what was actually baked
+      # in, because every value below is one that only a new build can change.
+      - name: Inspect what was built
+        run: |
+          app=$(find "$RUNNER_TEMP/dd/Build/Products/Release-iphoneos" -maxdepth 1 -name "*.app" | head -n 1)
+          test -n "$app" || { echo "::error::No .app was produced."; exit 1; }
+          plist() { /usr/libexec/PlistBuddy -c "Print :$2" "$1/Info.plist" 2>/dev/null; }
+          fail=0
+          expect() { # label actual wanted
+            if [ "$2" = "$3" ]; then echo "ok   $1 = $2"; else echo "::error::$1 is '$2', expected '$3'"; fail=1; fi
+          }
+
+          appex="$app/PlugIns/quick.appex"
+          test -d "$appex" || { echo "::error::The widget extension is not embedded ($appex)."; ls "$app/PlugIns" 2>/dev/null; exit 1; }
+
+          expect "app bundle id"        "$(plist "$app" CFBundleIdentifier)"          "com.yoshi.nekan"
+          expect "widget bundle id"     "$(plist "$appex" CFBundleIdentifier)"        "com.yoshi.nekan.quick"
+          # App Store validation refuses an extension whose version differs from
+          # its parent's; an ad hoc install would not have told us.
+          expect "widget version"       "$(plist "$appex" CFBundleShortVersionString)" "$(plist "$app" CFBundleShortVersionString)"
+          expect "widget build"         "$(plist "$appex" CFBundleVersion)"            "$(plist "$app" CFBundleVersion)"
+          expect "widget extension point" "$(plist "$appex" NSExtension:NSExtensionPointIdentifier)" "com.apple.widgetkit-extension"
+          # expo-updates writes these into Expo.plist, not Info.plist
+          # (@expo/config-plugins ios/Updates.js). Reading Info.plist would fail
+          # a correct build. The channel header is not checked: EAS adds it in
+          # its own CONFIGURE_EXPO_UPDATES step, after prebuild.
+          expo="$app/Expo.plist"
+          test -f "$expo" || { echo "::error::Expo.plist is not in the app"; fail=1; }
+          expect "updates url"          "$(/usr/libexec/PlistBuddy -c 'Print :EXUpdatesURL' "$expo" 2>/dev/null)"            "https://u.expo.dev/0cab499c-a177-4212-b600-7bafabeb61bc"
+          expect "runtime version"      "$(/usr/libexec/PlistBuddy -c 'Print :EXUpdatesRuntimeVersion' "$expo" 2>/dev/null)" "0.1.0"
+          # Every scheme, not the first one: Expo registers the bundle id as a
+          # scheme too, and the order is not ours to rely on.
+          if plutil -extract CFBundleURLTypes json -o - "$app/Info.plist" | grep -q '"nekan"'; then
+            echo "ok   url scheme nekan registered"
+          else
+            echo "::error::url scheme nekan is not registered"; fail=1
+          fi
+
+          test -f "$app/main.jsbundle" && echo "ok   JS bundle embedded ($(stat -f%z "$app/main.jsbundle") bytes)" || { echo "::error::main.jsbundle is missing"; fail=1; }
+          find "$appex" -name "Localizable.strings*" -o -name "*.lproj" | head -n 5
+
+          exit $fail
