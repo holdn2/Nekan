@@ -10,14 +10,17 @@
       "channel": "development",
       "ios": {
         "simulator": false
-      }
+      },
+      "node": "22.20.0"
     },
     "preview": {
       "distribution": "internal",
-      "channel": "preview"
+      "channel": "preview",
+      "node": "22.20.0"
     },
     "production": {
-      "channel": "production"
+      "channel": "production",
+      "node": "22.20.0"
     }
   },
   "submit": {

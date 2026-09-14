@@ -1043,6 +1043,22 @@ API 이름과 배포 버전은 잡지만 링크·에셋·서명은 못 본다. E
 Xcode의 `DEVELOPMENT_TEAM`은 이 값에서 온다. **비밀이 아니다** — Apple Developer의
 Membership 화면에 있는 10자짜리 식별자다.
 
+**EAS 빌드의 Node는 `eas.json`에서 22.20.0으로 고정한다** (2026-09-14). 기본 이미지는
+**Node 20.19.4**이고, 이 PC는 22.20이다. lock의 루트 `node_modules/metro-runtime`이
+**0.87.0 · `optional` · `peer` · `engines: node ^22.13`** 인데, npm은 엔진이 안 맞는
+**선택적** 의존성을 경고 없이 건너뛴다(엔진이 안 맞는 일반 의존성은 EBADENGINE 경고를
+남기고 설치한다 — `electron`이 그렇다). 그래서 서버에만 그 폴더가 없고, `@expo/cli`가
+`require.resolve('metro-runtime/package.json')`에서 죽는다:
+`Cannot find module 'metro-runtime/package.json'` → `export:embed … exited with non-zero code: 1`.
+**이 항목은 위젯 이전부터 lock에 있었다**(`984ae8a`·`9d65de3` 둘 다). 9월 dev client
+빌드가 통과한 것은 **Debug라 `SKIP_BUNDLING`으로 JS 번들을 건너뛰었기 때문**이다 —
+**dev client 빌드의 성공은 Release의 JS 번들을 한 줄도 증명하지 않는다.**
+재현법: 루트 `node_modules/metro-runtime`을 잠깐 치우고 `apps/mobile`에서
+`node ../../node_modules/expo/bin/cli export:embed --eager --platform ios --dev false
+--bundle-output <임시>/main.jsbundle --assets-dest <임시>`를 돌리면 같은 오류가 난다.
+**고치는 길로 lock을 재생성하지 말 것** — 위 "커밋된 lock 위에서 설치할 것"과 같은 이유다.
+Node를 맞추면 서버의 설치가 이 PC의 설치와 같아진다.
+
 **`runtimeVersion`은 `appVersion`이다. `fingerprint`로 바꾸지 말 것** (2026-09-14).
 하루 동안 `fingerprint`였고 **그 정책으로 돌린 EAS 빌드 한 번이 쿼터만 쓰고 죽었다**:
 `Runtime version calculated on local machine not equal to runtime version calculated
