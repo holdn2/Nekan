@@ -7,15 +7,17 @@
  * Edits are saved as they are made rather than on a Save button. There is
  * nothing to cancel back to -- the store is the document, every write is
  * already a timestamped row, and a phone that is closed mid-sentence should
- * not lose the sentence. The three fields each stop at their own moment:
- * text and note on blur, the date the instant it is picked.
+ * not lose the sentence. The date is saved the instant it is picked; text and
+ * note a second after typing stops, on blur, when the app goes to the
+ * background, and when the screen goes away however it goes (issue 136).
  *
  * A brain-dump row gets only its text. It has no board yet, and a due date or
  * a note on something not yet classified is a decision made in the wrong
  * order -- the desktop draws those rows the same way.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  AppState,
   Platform,
   Pressable,
   ScrollView,
@@ -26,7 +28,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-import { INBOX, QUADS, dueInfo, formatDue } from "@nekan/shared/core";
+import {
+  DRAFT_SAVE_MS,
+  INBOX,
+  QUADS,
+  dueInfo,
+  formatDue,
+} from "@nekan/shared/core";
 import type { Quadrant } from "@nekan/shared/types";
 import { CloseIcon } from "../../icons";
 import { locale, t } from "../../i18n";
@@ -63,6 +71,42 @@ export default function TaskScreen() {
   const task = findTask(String(id));
   const [text, setText] = useState(task?.text ?? "");
   const [memo, setMemoDraft] = useState(task?.memo ?? "");
+
+  // Blur and the close button were the only moments these were written, and
+  // neither is promised: a swipe back does not blur the field first, and iOS
+  // can end a backgrounded app without saying so. So the fields also write a
+  // second after typing stops, when the app leaves the foreground, and when
+  // this screen unmounts.
+  //
+  // None of those ever writes an empty field. A blank title deletes the task
+  // (editTask), and a pause after clearing it to type a new one is not a
+  // decision to delete. Blur and the close button keep their old meaning --
+  // those are deliberate.
+  const latest = useRef({ text, memo });
+  latest.current = { text, memo };
+  const taskId = task?.id;
+  const flush = useRef(() => {});
+  flush.current = () => {
+    if (!taskId) return;
+    const typed = latest.current;
+    if (typed.text.trim()) editTask(taskId, typed.text);
+    if (typed.memo.trim()) setMemo(taskId, typed.memo);
+  };
+  // Both mutations do nothing when nothing changed, so the first run of this
+  // on mount cannot manufacture an edit.
+  useEffect(() => {
+    const timer = setTimeout(() => flush.current(), DRAFT_SAVE_MS);
+    return () => clearTimeout(timer);
+  }, [text, memo]);
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (next) => {
+      if (next !== "active") flush.current();
+    });
+    return () => {
+      sub.remove();
+      flush.current();
+    };
+  }, []);
 
   // Deleted from under us -- by a swipe on the list behind, or later by sync.
   if (!task) {
