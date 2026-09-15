@@ -35,6 +35,7 @@ import { mountArchive } from "./views/archive.js";
 import { applySession, applySyncStatus, setDevLogin } from "./views/account.js";
 import { mountMemo } from "./views/memo.js";
 import { dropStaleSelection } from "./selection.js";
+import { flushDrafts } from "./drafts.js";
 import { mountSettings } from "./views/settings.js";
 import {
   mountWelcome,
@@ -90,6 +91,11 @@ async function init() {
   // ready-to-show, and a listener attached after this point misses it in
   // silence -- see the note in app/pushes.ts.
   listenForPushes();
+
+  // A note being typed is written on a pause (views/memo.tsx). Closing any way
+  // other than our own button -- Alt+F4, the taskbar, an update restarting the
+  // app -- never passes that button, and this is the last the renderer hears.
+  window.addEventListener("beforeunload", flushDrafts);
 
   const state = await window.api.load();
   setClockOffset(state.clockOffset);

@@ -19,10 +19,11 @@ import { useEffect, useRef, useState } from "react";
 import { Dot } from "../components/dot.js";
 import { GhostButton } from "../components/ghost-button.js";
 import { createRoot } from "react-dom/client";
-import { clampMemo } from "../../shared/core.js";
+import { DRAFT_SAVE_MS, clampMemo } from "../../shared/core.js";
 import { t } from "../i18n.js";
 import { accel } from "../keys.js";
-import { setMemo } from "../store.js";
+import { findTask, setMemo } from "../store.js";
+import { registerDraftFlusher } from "../drafts.js";
 import {
   isMemoEditing,
   selectedTask,
@@ -84,6 +85,63 @@ export function MemoPanel() {
     setValue(memo);
   }
 
+  // What has been typed and not yet written, and which task it belongs to.
+  //
+  // Written on a pause rather than only on Save (issue 136). A note used to live in
+  // this component alone until the button was pressed, so closing the window,
+  // clicking another task or folding to the bar threw it away without a word --
+  // while a task's title, edited in place, was already saved on blur.
+  //
+  // A ref set only by typing, never during render: a switch to another task
+  // resets `value` in that same render, and a draft read from `value` would
+  // already be the next task's note.
+  const draft = useRef<{ id: string; text: string } | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // An IME is mid-syllable, and its half-built text is not worth a write.
+  const composing = useRef(false);
+  // The note as it stood when the editor opened -- what Cancel puts back, now
+  // that what is stored may already be the draft.
+  const openedWith = useRef<string | null>(null);
+
+  const flush = useRef(() => {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+    const pending = draft.current;
+    draft.current = null;
+    if (!pending) return;
+    // An empty field is never written. Deleting a note asks first, and a pause
+    // after clearing the field to start over is not that question answered.
+    const text = clampMemo(pending.text);
+    const target = findTask(pending.id);
+    if (!text || !target || target.memo === text) return;
+    // A task with no note is in the editor *because* it has none. The first
+    // write gives it one, and without saying "still editing" the panel would
+    // flip to reading under the cursor.
+    if (pending.id === selectedTask()?.id && !isMemoEditing()) {
+      setMemoEditing(true);
+    }
+    setMemo(pending.id, text);
+  });
+
+  const schedule = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => flush.current(), DRAFT_SAVE_MS);
+  };
+
+  // What takes the panel away on purpose asks for this first -- the selection
+  // changing, the bar folding, the window closing (see drafts.ts).
+  useEffect(() => registerDraftFlusher(() => flush.current()), []);
+  // What takes it away without asking leaves through here: the task completed
+  // or trashed under it, the other board switched to, the panel unmounting.
+  const taskId = task?.id ?? null;
+  useEffect(() => () => flush.current(), [taskId]);
+  // Only when the editor opens, which is what a new seed means.
+  useEffect(() => {
+    if (editing) openedWith.current = task?.memo ?? null;
+  }, [seed]);
+
   const input = useRef<HTMLTextAreaElement>(null);
   /**
    * Where focus goes when the delete question closes.
@@ -129,21 +187,36 @@ export function MemoPanel() {
 
   if (!task) return null;
 
-  // clampMemo trims the way the save path does, so what the button compares is
-  // what would actually be written.
+  // clampMemo trims the way the save path does. The button no longer waits for
+  // a difference: a pause may already have written this very text, and Save is
+  // then "I am done here", which is still worth a button.
   const trimmed = clampMemo(value);
   const original = task.memo || null;
-  const canSave = Boolean(trimmed) && trimmed !== original;
+  const canSave = Boolean(trimmed);
 
   const save = () => {
     if (!canSave) return;
+    flush.current();
     setMemoEditing(false);
-    setMemo(task.id, trimmed);
+    if (task.memo !== trimmed) setMemo(task.id, trimmed);
   };
 
-  /** Esc / Cancel: back to reading, or close outright if there was nothing yet. */
+  /**
+   * Esc / Cancel: put the note back as it was when the editor opened, then back
+   * to reading -- or close outright if there was nothing yet.
+   *
+   * Putting it back, not just leaving: a pause may have written the draft
+   * already, so walking away no longer throws it away by itself.
+   */
   const cancel = () => {
-    if (!original) {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+    draft.current = null;
+    const before = openedWith.current;
+    if ((task.memo ?? null) !== before) setMemo(task.id, before);
+    if (!before) {
       setSelected(null);
       return;
     }
@@ -253,7 +326,20 @@ export function MemoPanel() {
             !editing && "hidden",
           )}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => {
+            setValue(e.target.value);
+            draft.current = { id: task.id, text: e.target.value };
+            if (!composing.current) schedule();
+          }}
+          onCompositionStart={() => {
+            composing.current = true;
+          }}
+          onCompositionEnd={() => {
+            composing.current = false;
+            if (draft.current) schedule();
+          }}
+          // Clicking away is how most people finish, the same as a title.
+          onBlur={() => flush.current()}
           placeholder={t("memo.placeholder")}
           aria-label={t("memo.field")}
           maxLength={2000}

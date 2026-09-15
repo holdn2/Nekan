@@ -16,6 +16,7 @@ import { INBOX } from "../shared/core.js";
 import type { Task } from "../shared/types.js";
 import { findTask, inSpace } from "./store.js";
 import { notify } from "./render-bus.js";
+import { flushDrafts } from "./drafts.js";
 
 let selectedId: string | null = null;
 /** Whether the textarea is up. A task with no memo yet always starts there. */
@@ -97,6 +98,9 @@ export function selectedTask() {
 
 export function setSelected(id: string | null) {
   if (id === selectedId) return;
+  // Before the id moves: the note being typed belongs to the task that is
+  // still selected, and the panel resets its field the moment this redraws.
+  flushDrafts();
   selectedId = id;
   memoEditing = false;
   notify();
@@ -114,6 +118,8 @@ export function dropStaleSelection() {
 
 /** Forget the selection without drawing: the bar has no panel to show it in. */
 export function clearSelectionSilently() {
+  // Folding to the bar used to be the quietest way to lose a note.
+  flushDrafts();
   selectedId = null;
   memoEditing = false;
 }
