@@ -267,6 +267,26 @@ test("save without typing leaves a note that another device changed alone", asyn
   expect(hidden("#memoInput")).toBe(true);
 });
 
+test.each([
+  ["save", () => find("#memoSave").click()],
+  ["cancel", () => find("#memoCancel").click()],
+])(
+  "%s on a note a sync emptied closes the panel instead of doing nothing",
+  async (_, press) => {
+    // The editor stays up for a note with no words, so "back to reading"
+    // would leave both buttons pressed and nothing changed on screen.
+    const section = host();
+    setTasks([task()]);
+    const { flush } = await mount(<MemoPanel />, section);
+    await edit(flush);
+
+    findTask("t1")!.memo = null;
+    await flush(press);
+    expect(section.classList.contains("hidden")).toBe(true);
+    expect(stored()).toBe(null);
+  },
+);
+
 test("the cancel button does not appear under the cursor on an empty note's first write", async () => {
   vi.useFakeTimers();
   const section = host();

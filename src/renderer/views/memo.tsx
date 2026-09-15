@@ -211,6 +211,13 @@ export function MemoPanel() {
     // typed would put it back over a note a sync has changed since -- and with
     // Save meaning "done", pressing it untouched is the ordinary way out.
     flush.current();
+    // A note with no words cannot be read, so "back to reading" would leave the
+    // editor up and the button would look dead. That happens when a sync
+    // empties the note while the editor sits open and untouched.
+    if (!task.memo) {
+      setSelected(null);
+      return;
+    }
     setMemoEditing(false);
   };
 
@@ -233,7 +240,9 @@ export function MemoPanel() {
       setMemo(task.id, before);
     }
     lastWritten.current = null;
-    if (!before) {
+    // Nothing to go back to -- or nothing left, when a sync emptied the note
+    // while it was open. Either way reading would show an empty panel.
+    if (!before || !task.memo) {
       setSelected(null);
       return;
     }
