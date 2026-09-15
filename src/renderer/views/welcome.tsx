@@ -13,7 +13,7 @@
  * The card is 380px wide and was measured against a 760x520 window, which is
  * why nothing in here grows with the window except the space around it.
  *
- * It is a ui/card now -- header, content, footer -- and the answers inside it
+ * It is a ui/card now -- a header and its content -- and the answers inside it
  * are ui/buttons. Nothing about the question changed; what changed is that
  * the card is a surface rather than a column of text on the page background,
  * which is what the rest of the app already looked like everywhere else.

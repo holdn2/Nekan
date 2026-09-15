@@ -48,7 +48,8 @@ const GENERATED = /\/\* palette:start[\s\S]*?\/\* palette:end \*\//g;
 /**
  * How many literals each file is allowed, and why it has any.
  *
- * Three kinds of reason, and only one of them is temporary.
+ * Two kinds of reason, and neither is temporary: a brand's own values, and
+ * the palette's test writing down the values it checks.
  */
 const ALLOWED = new Map([
   // Brand marks. Google publishes exact values and forbids restating them in

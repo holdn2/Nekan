@@ -101,7 +101,7 @@ test("the close and export buttons are ui/buttons, and neutral ones", async () =
   expect(classCompiled("bg-transparent")).toBe(true);
 });
 
-// The two buttons sit side by side and differ in one word of their handler. A
+// The two buttons sit one above the other and differ in one word of their handler. A
 // swap would still open a browser and still sign someone in -- into the other
 // account, with an empty list. One test each, because a pressed button stays
 // busy until its sign-in answers, and these never answer.
