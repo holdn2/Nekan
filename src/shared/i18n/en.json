@@ -170,7 +170,7 @@
     "sync": "Sign in and the tasks on this computer match your other devices. The app works as usual with no internet, and everything you changed in the meantime goes up on its own once you are connected again.",
     "syncNote": "<b>Signing out does not delete the tasks on this computer.</b> Neither does the server going down — your tasks are always here as well.",
     "syncGear": "Signing in and the sync status are behind <b>the gear (⚙) in the title bar</b>. Reading about it and setting it up are deliberately in different places.",
-    "syncSignIn": "Sign in with Google from <b>Sync across devices in the settings (⚙)</b>. The sign-in page opens in <b>your usual browser</b>, not inside the app. After that there is nothing to keep track of — what you change goes up a few seconds later, and what you changed elsewhere comes down on its own.",
+    "syncSignIn": "Sign in with Google or Apple from <b>Sync across devices in the settings (⚙)</b>. The two share a list only when the email is the same, so pick the one your other devices use. The sign-in page opens in <b>your usual browser</b>, not inside the app. After that there is nothing to keep track of — what you change goes up a few seconds later, and what you changed elsewhere comes down on its own.",
     "syncDot": "<b>A dot on the gear means something has not gone up yet</b>, and it shows in bar mode too. An <b>orange dot</b> means there are changes only this computer has; a <b>red dot</b> means the server could not be reached. Either way the changes are safely stored. Open the settings to see exactly how many are waiting.",
     "syncConflict": "Edit the same task on two devices at almost the same moment and <b>the later edit is the one that stays.</b> If that overwrites something of yours that had not gone up yet, <b>the app tells you it did</b> — nothing disappears quietly.",
     "syncMerge": "Sign in for the first time with tasks already here and <b>the app asks whether to merge them into the account.</b> Say no and they are moved aside rather than deleted — the point is that signing in briefly on someone else's computer should not push their tasks into your account.",
@@ -329,6 +329,7 @@
     "gearOffline": "Settings — could not reach the server. Your changes are saved on this computer.",
     "gearState": "Settings — {{state}}",
     "google": "Sign in with Google",
+    "apple": "Sign in with Apple",
     "adopt_one": "Also merge the <b>{{count}}</b> task on this computer into the account",
     "adopt_other": "Also merge the <b>{{count}}</b> tasks on this computer into the account",
     "adoptHint": "Turn it off and only what is in the account remains. Nothing here is deleted — it is moved to <code>data.before-login.json</code>.",
@@ -356,13 +357,15 @@
     "adoptHintPhone": "Off keeps only what the account already has. The tasks here are not deleted -- they are set aside on this device.",
     "adoptPhone_one": "Also merge the {{count}} task on this device into the account",
     "adoptPhone_other": "Also merge the {{count}} tasks on this device into the account",
-    "appleShareEmail": "Apple and Google share a list only when the email is the same. If you use Google on another device, sign in with Google here too."
+    "appleShareEmail": "Apple and Google share a list only when the email is the same. If you use Google on another device, sign in with Google here too.",
+    "providerHint": "Google and Apple share a list only when the email is the same. Sign in the way your other devices do."
   },
   "welcome": {
     "lede": "Where should your tasks live?",
     "syncTitle": "Sign in with Google and sync",
     "recommended": "Recommended",
     "syncSub": "The same list on every device",
+    "syncAppleSub": "The one to pick if your iPhone signs in with Apple",
     "localTitle": "Keep them on this computer",
     "localSub": "Start right now, no account",
     "adopt_one": "Also merge the <b>{{count}}</b> task on this computer into the account",

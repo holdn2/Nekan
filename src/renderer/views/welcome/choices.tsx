@@ -1,5 +1,5 @@
 /**
- * The two answers, and the one question that hangs off the first of them.
+ * The answers, and the one question that hangs off the sign-ins.
  *
  * Drawn here rather than in the card because they are the part of that markup
  * with a shape of its own: an icon, a title, a line under it, and -- for the
@@ -7,14 +7,14 @@
  * string, or it is a word on screen no catalogue can reach.
  *
  * Nothing is decided here. Whether the local tasks are merged into the account
- * belongs to the card, which owns the checkbox's answer and hands both choices
+ * belongs to the card, which owns the checkbox's answer and hands the choices
  * back as callbacks.
  */
 
 import { t } from "../../i18n.js";
 import { cn } from "../../react/cn.js";
 import { RichText } from "../../react/rich-text.js";
-import { GoogleMark, LaptopIcon } from "../../react/brand-icons.js";
+import { AppleMark, GoogleMark, LaptopIcon } from "../../react/brand-icons.js";
 import { Button } from "../../components/ui/button.js";
 
 const TEXT = "welcome-choice-text flex flex-col gap-hair";
@@ -23,13 +23,13 @@ const TEXT = "welcome-choice-text flex flex-col gap-hair";
 const SUB = "text-xs text-muted";
 
 /**
- * Both answers, drawn exactly alike.
+ * Every answer, drawn exactly alike.
  *
  * ui/button's `outline` variant is the base -- neutral chrome, a `line`
  * hairline, `panel-2` on hover -- and everything here is undoing the fact that
  * ui/button is built for a label on one line:
  *
- *   h-auto           the sizes are all fixed heights; these two are two lines
+ *   h-auto           the sizes are all fixed heights; these are two lines
  *                    of text tall.
  *   w-full           a button shrinks to its label; these fill the card.
  *   justify-start    ui/button centres, and these read as rows.
@@ -57,13 +57,13 @@ const CHOICE = cn(
 );
 
 interface Props {
-  /** A choice is in flight; both buttons are dead until it lands. */
+  /** A choice is in flight; every button is dead until it lands. */
   busy: boolean;
   /** How many tasks this computer already has. Zero hides the question. */
   count: number;
   adopt: boolean;
   onAdopt: (next: boolean) => void;
-  onSync: () => void;
+  onSync: (provider: "google" | "apple") => void;
   onLocal: () => void;
 }
 
@@ -84,16 +84,16 @@ export function WelcomeChoices({
           wordmark colours stay the only colour on it.
 
           This used to carry a stronger hairline and a shadow to say "this
-          one". Both are gone: the two answers are the same shape now, and the
+          one". Both are gone: the answers are the same shape now, and the
           badge is what marks the recommendation. A single button drawn with a
-          heavier edge than the one under it reads as the two being different
+          heavier edge than the ones under it reads as them being different
           kinds of thing rather than as one being suggested. */}
       <Button
         className={cn(CHOICE, "recommended")}
         variant="outline"
         type="button"
         disabled={busy}
-        onClick={onSync}
+        onClick={() => onSync("google")}
       >
         <GoogleMark />
         <span className={TEXT}>
@@ -112,6 +112,37 @@ export function WelcomeChoices({
             </span>
           </b>
           <small className={SUB}>{t("welcome.syncSub")}</small>
+        </span>
+      </Button>
+
+      {/* Not recommended, and its line says who it is for instead of
+          repeating what syncing is. Apple and Google are separate accounts
+          unless the email matches, so the useful thing to say is which one an
+          iPhone already signed into -- picking the other gives an empty list
+          that looks like a sync that did not work.
+
+          Its logo takes the words' colour, which is `text`, not pure black.
+          This is a row among the app's own answers rather than Apple's button,
+          and Apple's rule for a custom button is that the logo and the title
+          are one colour -- which holds in both themes. The settings panel,
+          where it is a stand-alone sign-in button, uses Apple's white one.
+
+          The title is Apple's own wording and not "… and sync" like the row
+          above: a custom Sign in with Apple button may only say "Sign in with
+          Apple", "Sign up with Apple" or "Continue with Apple". The line under
+          it does the rest. Same key as the settings button, so the two cannot
+          drift. */}
+      <Button
+        className={CHOICE}
+        variant="outline"
+        type="button"
+        disabled={busy}
+        onClick={() => onSync("apple")}
+      >
+        <AppleMark />
+        <span className={TEXT}>
+          <b className="text-md font-semibold">{t("account.apple")}</b>
+          <small className={SUB}>{t("welcome.syncAppleSub")}</small>
         </span>
       </Button>
 

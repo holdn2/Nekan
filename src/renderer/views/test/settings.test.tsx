@@ -101,6 +101,35 @@ test("the close and export buttons are ui/buttons, and neutral ones", async () =
   expect(classCompiled("bg-transparent")).toBe(true);
 });
 
+// The two buttons sit one above the other and differ in one word of their handler. A
+// swap would still open a browser and still sign someone in -- into the other
+// account, with an empty list. One test each, because a pressed button stays
+// busy until its sign-in answers, and these never answer.
+test.each([
+  ["google", "Google로 로그인"],
+  ["apple", "Apple로 로그인"],
+])(
+  "the %s button in the account block opens its own provider",
+  async (name, label) => {
+    const calls: string[] = [];
+    const pending = (provider: string) => (mode: string) => {
+      calls.push(`${provider}:${mode}`);
+      return new Promise(() => {});
+    };
+    (window as unknown as { api: unknown }).api = {
+      setLanguage: () => Promise.resolve(),
+      signInWithGoogle: pending("google"),
+      signInWithApple: pending("apple"),
+    };
+    await open();
+
+    const button = find<HTMLButtonElement>(`.${name}-btn`);
+    expect(button.textContent).toBe(label);
+    await flush(() => button.click());
+    expect(calls).toEqual([`${name}:merge`]);
+  },
+);
+
 test("the theme control is deliberately not a ui/button", async () => {
   await open();
 

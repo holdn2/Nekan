@@ -20,7 +20,7 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
                    살아 있는 세션을 api/ 밖으로 내보내지 않으려고 이름을 손으로 적는다
     token-store.ts 세션을 safeStorage로 암호화해 userData/auth.json에 (data.json 아님)
     sync.ts        + sync/  status(밖에 알리는 것·북마크) · transfer(pull·push) · loop(일정)
-    oauth.ts       Google 로그인의 브라우저 쪽 (PKCE + loopback). 세션은 모른다
+    oauth.ts       Google·Apple 로그인의 브라우저 쪽 (PKCE + loopback). 세션은 모른다
     ipc.ts         + ipc/  state · window · settings · shell · auth
                    새 채널을 만들 때 첫 번째로 여는 곳. 배럴이 다섯을 순서대로 부른다
     i18n.ts        메인 쪽 i18next. 렌더러와 따로 산다 (프로세스가 다르다)
@@ -118,7 +118,7 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
                    맞지 않으며(아래 참조), tabs는 탭 줄이 밑줄을 직접 재고,
                    popover는 due-chip이 Radix를 직접 쓴다
     react/         React 쪽 배관 — icons.tsx(아이콘)·window-icons.tsx(창 버튼)·
-                   brand-icons.tsx(구글 마크) · use-store.ts(훅) ·
+                   brand-icons.tsx(구글·애플 마크) · use-store.ts(훅) ·
                    **앞의 둘은 2026-08-26부터 `lucide-react`를 감싼다.** 크기와 굵기는
                    여전히 그 모듈이 정한다 — 이 앱은 10~14px로 그리는데 Lucide 기본은
                    24px/2라, `strokeWidth`를 `원래값 * 24/16`으로 넘겨 무게를 맞춘다
@@ -401,14 +401,19 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
 ## 알아두면 좋은 것
 
 - **비밀번호 로그인은 패키징된 빌드에 존재하지 않는다.** `main/ipc/auth.ts`가 `auth:login`을
-  `!app.isPackaged`일 때만 등록한다. 사용자에게 열린 길은 Google 하나뿐이고, 비밀번호는
+  `!app.isPackaged`일 때만 등록한다. 사용자에게 열린 길은 Google과 Apple 둘이고, 비밀번호는
   **사람이 동의 화면을 누르지 않고도 동기화를 검증하기 위한** 개발용 통로다. 가이드의 개발용
   폼도 `state:load`의 `devLogin`을 보고 그때만 나온다. 이 통로를 없애면 **동기화를 자동으로
   검증할 방법이 사라진다** — 없애기 전에 대체 수단을 먼저 만들 것.
-- **Google 로그인은 시스템 브라우저로 나갔다가 loopback으로 돌아온다** (`main/oauth.ts`).
+- **Google·Apple 로그인은 시스템 브라우저로 나갔다가 loopback으로 돌아온다** (`main/oauth.ts`).
   포트는 `listen(0)`으로 OS가 고른다 — 그래서 Supabase의 Redirect URL 허용목록에
   `http://127.0.0.1:*`가 있어야 한다. 와일드카드를 못 쓰게 되면 고쳐야 할 곳은 그 `listen(0)`
   한 줄이다. 앱 안 webview를 쓰면 **Google이 막는다.**
+  **Apple도 같은 길이다**(`loginWith("apple")`) — 다른 것은 Supabase 쪽뿐이다. 웹 흐름이라
+  **Services ID와 client secret(JWT)** 이 필요하고, 폰의 시스템 시트는 둘 다 필요 없다.
+  **그 secret은 최대 6개월 뒤 만료되고, 만료되면 데스크톱 Apple 로그인만 조용히 죽는다** —
+  폰은 멀쩡하고 Google도 멀쩡해서 아무도 모른다. 갱신 날짜와 절차는 `docs/DECISIONS.md`
+  2026-09-15(데스크톱)에 있다.
 - **콜백 서버는 `/callback/<state>`가 아닌 요청을 전부 404로 흘려보낸다.** 브라우저가 보내는
   favicon 요청 하나에 로그인이 끝나버리면 안 되기 때문이고, 같은 기기의 다른 프로세스가
   `?error=`를 먼저 때려 로그인을 취소시키는 것도 막는다. **`/callback`만 받고 state를 쿼리로
@@ -681,7 +686,7 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   손으로 고치면 다음 빌드가 되돌린다. 고칠 곳은 `theme.ts` 한 곳이고 `npm run build`가
   `tools/build-theme.js`로 둘 다 다시 쓴다(강조색 교체 실측 19초).
   **`node tools/check-colors.js`가 래칫이다**(`npm test`가 부른다): 팔레트 밖 hex는
-  `ALLOWED`에 적힌 넷뿐이고(브랜드 마크 둘·측정된 예외 하나·팔레트 자기 테스트) 늘면 실패한다.
+  `ALLOWED`에 적힌 셋뿐이고(브랜드 마크 둘·팔레트 자기 테스트) 늘면 실패한다.
   **`prettier --check .`는 `npm test`에 없고 CI에만 있다** — 생성물이 걸리면 `--write`가 아니라
   `theme.ts`의 값을 프리티어가 원하는 모양으로 적어야 한다.
   **watch 중에는 생성기를 자식 프로세스로 돌린다** — `out/shared/`가 ESM이라

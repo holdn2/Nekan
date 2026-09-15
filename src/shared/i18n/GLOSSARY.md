@@ -20,7 +20,7 @@
 | 내보내기                          | Export                                          |                                                                                                                                                     |
 | 설정                              | Settings                                        |                                                                                                                                                     |
 | 회원탈퇴                          | Delete account                                  | `Withdraw`·`Unsubscribe`가 아니다                                                                                                                   |
-| 로그인 / 로그아웃                 | Sign in / Sign out                              | `Log in`이 아니다 — Google 버튼 문구와 맞춘다                                                                                                       |
+| 로그인 / 로그아웃                 | Sign in / Sign out                              | `Log in`이 아니다 — Google·Apple 버튼 문구와 맞춘다                                                                                                 |
 | 매트릭스 / 가이드                 | Matrix / Guide                                  | 탭 이름                                                                                                                                             |
 | 공유                              | Shared                                          | 다 꺼내기가 두 매트릭스의 공유 영역이라는 표시                                                                                                      |
 | Do 진행하기 … Delete 제거하기     | Do it now / Plan it / Delegate it / Delete it   | 한국어는 영어 단어 뒤에 뜻을 덧붙이지만 영어에서 그러면 `Do Do`가 된다. **네 개의 D를 그대로 살린다** — 하나만 다른 낱말로 바꾸면 기억장치가 깨진다 |

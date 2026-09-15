@@ -23,7 +23,7 @@ import { activeCount } from "../store.js";
 import { useRenderSignal } from "../react/use-store.js";
 import { cn } from "../react/cn.js";
 import { RichText } from "../react/rich-text.js";
-import { GoogleMark } from "../react/brand-icons.js";
+import { AppleMark, GoogleMark } from "../react/brand-icons.js";
 import { Button } from "../components/ui/button.js";
 
 /** What a sign-in answers with: the session when it worked, a code when not. */
@@ -64,6 +64,18 @@ const HALF = "flex flex-wrap items-center gap-lg";
  * is not the question.
  */
 const HINT = "account-hint m-[0px] mt-[-2px] basis-full text-sm text-muted";
+
+/**
+ * The shell the two brand buttons share: white, a light grey on hover, and the
+ * app's own type. Each adds its edge and its words' colour, which is where the
+ * two guidelines differ.
+ */
+const BRAND_BUTTON = cn(
+  "inline-flex w-full items-center justify-center gap-md rounded-sm border",
+  "bg-[#fff] px-3xl py-md hover:bg-[#f7f8f8]",
+  "font-sans text-md leading-none font-medium",
+  "disabled:cursor-default disabled:opacity-[0.55]",
+);
 
 export function Account() {
   useRenderSignal();
@@ -165,11 +177,16 @@ export function Account() {
       <div className={`account-out ${HALF}${inside ? " hidden" : ""}`}>
         {/* Google asks that its button keep white/grey chrome and the wordmark
             colours, which is why this one does not follow the app's button
-            styling. Those four literals are the only colours in the app that do
-            not come from a token, and they must stay that way: pointing them at
-            the palette would make the button follow the theme, which is the
-            thing the guidelines forbid. If a sweep reports "4 hardcoded
-            colours", this is all of them.
+            styling. Apple asks the same of its white button, with black words
+            and a black edge. Those five literals are the only colours in this
+            file outside a token (brand-icons.tsx holds Google's four), and they
+            must stay that way: pointing them at the palette would make the
+            buttons follow the theme, which is the thing both guidelines forbid.
+
+            Full width, both of them. The panel is 320px and the two wrap onto
+            rows of their own anyway, where their natural widths left Apple's
+            narrower than Google's -- and Apple asks that its button be no
+            smaller than the other sign-in buttons beside it.
 
             The type is ours, so it goes through the tokens and follows the app
             if the family or the scale changes. It was one `font:` shorthand;
@@ -177,18 +194,15 @@ export function Account() {
             emitted after the leading-* utilities and would carry an inherited
             line-height -- so the four parts are asked for by name.
 
-            This is the one button in this file that is NOT a ui/button, and
+            These are the two buttons in this file that are NOT ui/buttons, and
             that is the point: every variant ui/button has sets a background,
-            and this one's background is Google's to decide. Handing it
+            and these backgrounds are Google's and Apple's to decide. Handing it
             `outline` and then overriding four of its utilities back would be
             the same markup with a component in the way of it. */}
         <button
           className={cn(
-            "google-btn inline-flex items-center gap-md rounded-sm border",
-            "border-[#dadce0] bg-[#fff] px-3xl py-md text-[#3c4043]",
-            "hover:bg-[#f7f8f8]",
-            "font-sans text-md leading-none font-medium",
-            "disabled:cursor-default disabled:opacity-[0.55]",
+            BRAND_BUTTON,
+            "google-btn border-[#dadce0] text-[#3c4043]",
           )}
           type="button"
           disabled={busy}
@@ -197,6 +211,23 @@ export function Account() {
           <GoogleMark />
           <span>{t("account.google")}</span>
         </button>
+        {/* `border-current`, so the edge is the words' black rather than a
+            second literal of the same value. */}
+        <button
+          className={cn(BRAND_BUTTON, "apple-btn border-current text-[#000]")}
+          type="button"
+          disabled={busy}
+          onClick={() => finish(window.api.signInWithApple(adoptMode()))}
+        >
+          <AppleMark />
+          <span>{t("account.apple")}</span>
+        </button>
+        {/* Before anyone picks, because after is too late: the other button
+            makes a second account with an empty list whenever the two emails
+            differ. Not the phone's sentence -- that one sits under an Apple
+            button alone and steers towards Google, and here it would sit under
+            both and send an iPhone's Apple user to the empty account. */}
+        <p className={HINT}>{t("account.providerHint")}</p>
 
         {/* The other door into the same decision. Signing in is reachable from
             here as well as the first-run card, so the notice has to be in both

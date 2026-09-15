@@ -15,5 +15,5 @@
 export { SUPABASE_URL, request } from "./api/http";
 export { initAuth, getPublicSession, getAccessToken } from "./api/session";
 export { getClockOffset } from "./api/http";
-export { loginWithGoogle, login, signup } from "./api/sign-in";
+export { loginWithGoogle, loginWithApple, login, signup } from "./api/sign-in";
 export { logout, deleteAccount } from "./api/account";

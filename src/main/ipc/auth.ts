@@ -12,7 +12,13 @@
 
 import { app, ipcMain } from "electron";
 import type { PublicSession } from "../../shared/types";
-import { deleteAccount, login, loginWithGoogle, logout } from "../api-client";
+import {
+  deleteAccount,
+  login,
+  loginWithApple,
+  loginWithGoogle,
+  logout,
+} from "../api-client";
 import { cancelSignIn } from "../oauth";
 import { backupStore, persistNow, setTasks } from "../store";
 import { announceTasks, syncAccount } from "../sync";
@@ -87,6 +93,9 @@ function registerAuthIpc() {
 
   ipcMain.handle("auth:google", async (_e, mode) =>
     afterSignIn(await loginWithGoogle(), mode),
+  );
+  ipcMain.handle("auth:apple", async (_e, mode) =>
+    afterSignIn(await loginWithApple(), mode),
   );
 
   // The browser tab is still open and this process is still holding a port.

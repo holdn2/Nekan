@@ -44,6 +44,7 @@ Apple menu → About This Mac tells you which: `Chip` means Apple Silicon,
 **On the first run the app asks where your tasks should live.**
 
 - **Sign in with Google and sync** — the same list on every device
+- **Sign in with Apple** — the one to pick if your iPhone signs in with Apple
 - **Keep them on this computer** — start right away, no account
 
 It only asks once, and **you can change your mind later in the settings.** If you already have tasks, the same
@@ -75,8 +76,9 @@ Switching takes effect on the spot, with no restart, and exported documents come
 
 ## Sync across devices
 
-**Sign in and every device shows the same list.** A Google account is all it takes, and the sign-in page opens in
-**your usual browser** rather than inside the app (where to press for it is in the [Guide tab](#guide-tab)).
+**Sign in and every device shows the same list.** A Google or Apple account is all it takes, and the sign-in page
+opens in **your usual browser** rather than inside the app (where to press for it is in the [Guide tab](#guide-tab)).
+**Google and Apple share a list only when the email is the same** — sign in the same way your other devices do.
 
 After that there is nothing to think about. What you change goes up a few seconds later, and what you changed
 elsewhere comes down on its own.
@@ -350,7 +352,7 @@ src/                   # what you write (TypeScript)
     api-client.ts      # the one place that talks to Supabase
     token-store.ts     # the session, encrypted into auth.json
     sync.ts            # the pull / push / retry loop
-    oauth.ts           # the browser side of Google sign-in (PKCE + loopback)
+    oauth.ts           # the browser side of Google and Apple sign-in (PKCE + loopback)
     i18n.ts            # strings for the main process
     ipc.ts             # every ipcMain handler
   shared/              # main, renderer and tests. Uses neither Node nor the DOM

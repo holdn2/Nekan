@@ -7,14 +7,14 @@
  *
  * Shown whenever `settings.startupChoice` is null, which means a 1.0.2 file --
  * having no such key -- meets it once as well. That is the point. The choice
- * is not final either; the same two options live in the settings panel.
+ * is not final either; the same options live in the settings panel.
  *
  * welcome.css is down to one rule, and the overlay's own box is in index.html.
  * The card is 380px wide and was measured against a 760x520 window, which is
  * why nothing in here grows with the window except the space around it.
  *
- * It is a ui/card now -- header, content, footer -- and the two answers inside
- * it are ui/buttons. Nothing about the question changed; what changed is that
+ * It is a ui/card now -- a header and its content -- and the answers inside it
+ * are ui/buttons. Nothing about the question changed; what changed is that
  * the card is a surface rather than a column of text on the page background,
  * which is what the rest of the app already looked like everywhere else.
  */
@@ -51,7 +51,7 @@ export function Welcome() {
 
   const [busy, setBusy] = useState(false);
   /**
-   * Whether the Google half already succeeded.
+   * Whether the sign-in half already succeeded, with either provider.
    *
    * Only matters when the sign-in worked but recording the choice did not: the
    * screen stays up so the answer can be retried, and pressing the button again
@@ -81,7 +81,7 @@ export function Welcome() {
    *
    * The order is the point. Hiding first and writing afterwards means a failed
    * write leaves someone who has plainly answered the question being asked it
-   * again on the next launch -- and, if they chose Google, asked it while
+   * again on the next launch -- and, if they chose to sync, asked it while
    * already signed in. Main returns the stored value, so a null is a write that
    * did not land.
    */
@@ -110,22 +110,28 @@ export function Welcome() {
     window.api.cancelSignIn().catch(() => {});
   };
 
-  const chooseSync = async () => {
+  const chooseSync = async (provider: "google" | "apple") => {
     if (busy) return;
     setBusy(true);
     try {
       // Already through the consent screen, and only the write failed. Retry
-      // that alone -- sending someone back to Google would be asking them to
-      // approve something they just approved.
+      // that alone -- sending someone back to Google or Apple would be asking
+      // them to approve something they just approved. Whichever button is
+      // pressed the second time, the session that is there is the answer.
       if (signedIn) {
         await finish("sync");
         return;
       }
 
       say(t("account.finishInBrowser"));
-      const result = await window.api
-        .signInWithGoogle(adoptMode())
-        .catch((err: unknown) => ({ ok: false, error: messageOf(err) }));
+      const start =
+        provider === "apple"
+          ? window.api.signInWithApple
+          : window.api.signInWithGoogle;
+      const result = await start(adoptMode()).catch((err: unknown) => ({
+        ok: false,
+        error: messageOf(err),
+      }));
 
       if (result?.ok) {
         setSignedIn(true);
@@ -170,8 +176,8 @@ export function Welcome() {
     if (busy) return;
     setBusy(true);
     try {
-      // Reachable only through the narrow gap the retry above opened: Google
-      // succeeded, recording the choice did not, and the answer changed to
+      // Reachable only through the narrow gap the retry above opened: the
+      // sign-in succeeded, recording the choice did not, and the answer changed to
       // local on the second try. By then main has stored a session and pointed
       // sync at the account, so leaving it would give someone an app that
       // syncs behind a choice that said not to.
@@ -213,8 +219,8 @@ export function Welcome() {
             text" and "here is the one thing to answer".
 
             The card is the question and nothing else -- the mark, the name,
-            the two answers, and the one checkbox that hangs off the first of
-            them. The status line and the notice that used to sit inside it are
+            the three answers, and the one checkbox that hangs off the two
+            sign-ins. The status line and the notice that used to sit inside it are
             below it now: neither is part of the question, and both made the
             card taller than the thing it was asking.
 

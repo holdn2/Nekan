@@ -48,13 +48,16 @@ const GENERATED = /\/\* palette:start[\s\S]*?\/\* palette:end \*\//g;
 /**
  * How many literals each file is allowed, and why it has any.
  *
- * Three kinds of reason, and only one of them is temporary.
+ * Two kinds of reason, and neither is temporary: a brand's own values, and
+ * the palette's test writing down the values it checks.
  */
 const ALLOWED = new Map([
   // Brand marks. Google publishes exact values and forbids restating them in
-  // another palette, so these must not be tokenised -- ever.
+  // another palette, so these must not be tokenised -- ever. account.tsx has
+  // one more than the mark: Apple's white button asks for black words on
+  // white, and white and its hover are shared with Google's.
   ["src/renderer/react/brand-icons.tsx", 4],
-  ["src/renderer/views/account.tsx", 4],
+  ["src/renderer/views/account.tsx", 5],
 
   // There used to be a third entry here, for one literal in a comment:
   // views/account/delete-account.tsx explained that the delete button's label
