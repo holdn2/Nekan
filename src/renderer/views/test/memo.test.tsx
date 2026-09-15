@@ -253,6 +253,20 @@ test("cancel leaves a note that another device changed alone", async () => {
   expect(stored()).toBe("다른 기기에서 고침");
 });
 
+test("save without typing leaves a note that another device changed alone", async () => {
+  // Save means "done" now, so pressing it untouched is the ordinary way out.
+  // The field still holds the text from when the editor opened.
+  const section = host();
+  setTasks([task()]);
+  const { flush } = await mount(<MemoPanel />, section);
+  await edit(flush);
+
+  findTask("t1")!.memo = "다른 기기에서 고침";
+  await flush(() => find("#memoSave").click());
+  expect(stored()).toBe("다른 기기에서 고침");
+  expect(hidden("#memoInput")).toBe(true);
+});
+
 test("the cancel button does not appear under the cursor on an empty note's first write", async () => {
   vi.useFakeTimers();
   const section = host();

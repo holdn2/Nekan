@@ -35,6 +35,7 @@ import {
   dueInfo,
   formatDue,
 } from "@nekan/shared/core";
+import { isBuried } from "@nekan/shared/sync";
 import type { Quadrant } from "@nekan/shared/types";
 import { CloseIcon } from "../../icons";
 import { locale, t } from "../../i18n";
@@ -88,19 +89,38 @@ export default function TaskScreen() {
   // them; writing an untouched copy back would stamp the old words as the
   // newest and erase the other device's edit everywhere. Blur and the close
   // button always had that gap -- they keep the same rule now.
+  //
+  // A write clears its flag. Once saved, the copy is no newer than the store,
+  // and writing it again on the next unmount or trip to the background would
+  // put it back over whatever a sync brought in meanwhile. A write the blank
+  // guard skipped leaves the flag up, so a deliberate blur or close on a
+  // blanked title still deletes the task as it always did.
   const edited = useRef({ text: false, memo: false });
   const latest = useRef({ text, memo });
   latest.current = { text, memo };
   const taskId = task?.id;
+  // A sync can purge the task while this screen is open. A tombstone holds no
+  // words, so nothing here writes into one.
+  const gone = () => {
+    const row = taskId ? findTask(taskId) : undefined;
+    return !row || isBuried(row);
+  };
   const flush = useRef(() => {});
   flush.current = () => {
-    if (!taskId) return;
+    if (!taskId || gone()) return;
     const typed = latest.current;
-    if (edited.current.text && typed.text.trim()) editTask(taskId, typed.text);
-    if (edited.current.memo && typed.memo.trim()) setMemo(taskId, typed.memo);
+    if (edited.current.text && typed.text.trim()) {
+      editTask(taskId, typed.text);
+      edited.current.text = false;
+    }
+    if (edited.current.memo && typed.memo.trim()) {
+      setMemo(taskId, typed.memo);
+      edited.current.memo = false;
+    }
   };
-  // Both mutations do nothing when nothing changed, so the first run of this
-  // on mount cannot manufacture an edit.
+  // The flags, not the mutations' own "nothing changed" checks, are what keep
+  // the first run of this on mount from writing: a copy gone stale under a
+  // sync is not "nothing changed".
   useEffect(() => {
     const timer = setTimeout(() => flush.current(), DRAFT_SAVE_MS);
     return () => clearTimeout(timer);
@@ -116,17 +136,21 @@ export default function TaskScreen() {
   }, []);
 
   // Deleted from under us -- by a swipe on the list behind, or later by sync.
-  if (!task) {
+  // Purged counts: there is nothing left on a tombstone to edit.
+  if (!task || isBuried(task)) {
     router.back();
     return null;
   }
 
   // Both fields save on blur, and tapping the close button is not guaranteed
-  // to blur one first -- so closing writes them itself. Both are no-ops when
-  // nothing changed, so this cannot manufacture an edit.
+  // to blur one first -- so closing writes them itself. Only a field that was
+  // typed into, and not yet written, for the reason given above.
   const close = () => {
-    if (edited.current.text) editTask(task.id, text);
-    if (edited.current.memo) setMemo(task.id, memo);
+    if (!gone()) {
+      if (edited.current.text) editTask(task.id, text);
+      if (edited.current.memo) setMemo(task.id, memo);
+    }
+    edited.current = { text: false, memo: false };
     router.back();
   };
 
@@ -165,7 +189,9 @@ export default function TaskScreen() {
             setText(next);
           }}
           onBlur={() => {
-            if (edited.current.text) editTask(task.id, text);
+            if (!edited.current.text || gone()) return;
+            editTask(task.id, text);
+            edited.current.text = false;
           }}
           multiline
           accessibilityLabel={t("common.save")}
@@ -223,7 +249,9 @@ export default function TaskScreen() {
                 setMemoDraft(next);
               }}
               onBlur={() => {
-                if (edited.current.memo) setMemo(task.id, memo);
+                if (!edited.current.memo || gone()) return;
+                setMemo(task.id, memo);
+                edited.current.memo = false;
               }}
               placeholder={t("memo.placeholder")}
               placeholderTextColor={c.faint}

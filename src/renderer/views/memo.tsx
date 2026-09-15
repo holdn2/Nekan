@@ -206,9 +206,12 @@ export function MemoPanel() {
 
   const save = () => {
     if (!canSave) return;
+    // Whatever was typed is written by the flush, and that is all. The field is
+    // a copy from when the editor opened: writing it again when nothing was
+    // typed would put it back over a note a sync has changed since -- and with
+    // Save meaning "done", pressing it untouched is the ordinary way out.
     flush.current();
     setMemoEditing(false);
-    if (task.memo !== trimmed) setMemo(task.id, trimmed);
   };
 
   /**
