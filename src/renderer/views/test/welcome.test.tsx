@@ -19,6 +19,7 @@ import { Welcome, showWelcome, wireWelcome } from "../welcome.js";
 function pendingSignIn() {
   const api = {
     signInWithGoogle: vi.fn(() => new Promise(() => {})),
+    signInWithApple: vi.fn(() => new Promise(() => {})),
     cancelSignIn: vi.fn(() => Promise.resolve()),
     setStartupChoice: vi.fn((choice: string) => Promise.resolve(choice)),
     logout: vi.fn(() => Promise.resolve({ ok: true })),
@@ -36,19 +37,35 @@ beforeEach(async () => {
   showWelcome();
 });
 
-test("both answers are disabled while the browser has the sign-in", async () => {
+test("every answer is disabled while the browser has the sign-in", async () => {
   pendingSignIn();
   const { flush } = await mount(<Welcome />);
 
   const choices = () => [
     ...document.querySelectorAll<HTMLButtonElement>(".welcome-choice"),
   ];
-  expect(choices().map((b) => b.disabled)).toEqual([false, false]);
+  expect(choices().map((b) => b.disabled)).toEqual([false, false, false]);
 
   await flush(() =>
     find<HTMLButtonElement>(".welcome-choice.recommended").click(),
   );
-  expect(choices().map((b) => b.disabled)).toEqual([true, true]);
+  expect(choices().map((b) => b.disabled)).toEqual([true, true, true]);
+});
+
+test("each sign-in answer opens its own provider", async () => {
+  // The two share one handler, so the only thing that tells them apart is
+  // which channel it picks. Getting that backwards would still open a browser
+  // and still look like it worked -- into the other account.
+  const api = pendingSignIn();
+  const { flush } = await mount(<Welcome />);
+  const [google, apple] = [
+    ...document.querySelectorAll<HTMLButtonElement>(".welcome-choice"),
+  ];
+
+  await flush(() => apple.click());
+  expect(api.signInWithApple).toHaveBeenCalledWith("merge");
+  expect(api.signInWithGoogle).not.toHaveBeenCalled();
+  expect(google.classList.contains("recommended")).toBe(true);
 });
 
 test("a cancel appears with it, and asks main to give the sign-in up", async () => {
@@ -88,7 +105,7 @@ test("the answer main sends back is what re-enables the buttons", async () => {
   const choices = [
     ...document.querySelectorAll<HTMLButtonElement>(".welcome-choice"),
   ];
-  expect(choices.map((b) => b.disabled)).toEqual([false, false]);
+  expect(choices.map((b) => b.disabled)).toEqual([false, false, false]);
   expect(document.querySelector(".welcome-cancel")).toBe(null);
   // Still up: a cancelled sign-in has not answered the question.
   expect(find(".welcome-msg").textContent).toBe("로그인이 취소되었습니다.");
@@ -128,12 +145,20 @@ test("the card is a ui/card, and the two answers are ui/buttons", async () => {
   const choices = [
     ...document.querySelectorAll<HTMLElement>(".welcome-choice"),
   ];
-  expect(choices.map((b) => b.dataset.slot)).toEqual(["button", "button"]);
+  expect(choices.map((b) => b.dataset.slot)).toEqual([
+    "button",
+    "button",
+    "button",
+  ]);
   // Neutral chrome on both, and never `default`: the recommended one carries
   // the Google mark, and Google asks that the wordmark be the only colour on a
   // button offering its sign-in. `outline` is a border and a panel fill;
   // `default` is the app accent, which is the thing the guidelines forbid.
-  expect(choices.map((b) => b.dataset.variant)).toEqual(["outline", "outline"]);
+  expect(choices.map((b) => b.dataset.variant)).toEqual([
+    "outline",
+    "outline",
+    "outline",
+  ]);
   expect(choices[0].className).not.toContain("bg-accent");
   // Drawn exactly alike, which is the assertion rather than any one class:
   // the recommended one used to carry a heavier border and a shadow, and that
@@ -147,7 +172,7 @@ test("the card is a ui/card, and the two answers are ui/buttons", async () => {
       .sort()
       .join(" "),
   );
-  expect(drawn[0]).toBe(drawn[1]);
+  expect(new Set(drawn).size).toBe(1);
   expect(choices[0].className).not.toContain("shadow-knob");
   // One radius on the screen: the choices take the card's 12px, not their own.
   expect(choices.every((c) => c.className.includes("rounded-lg"))).toBe(true);

@@ -1,7 +1,8 @@
 /**
  * The ways in.
  *
- * Google is the only one the shipped app offers. The password pair below still
+ * Google and Apple are the two the shipped app offers, and they are one path:
+ * the browser, the loopback, the PKCE exchange. The password pair below still
  * exists because sync has to be testable without a person clicking a consent
  * screen, and ipc.ts registers it only outside a packaged build -- removing it
  * would leave no way to verify syncing automatically.
@@ -13,14 +14,20 @@ import { loopbackCode, pkcePair } from "../oauth";
 import { SUPABASE_URL, request, errorCode } from "./http";
 import { remember, logoutEpoch } from "./session";
 
+/** The providers the browser path can open. Supabase's names for them. */
+type Provider = "google" | "apple";
+
 /**
- * Sign in with Google: consent in the real browser, tokens back here.
+ * Sign in through a provider: consent in the real browser, tokens back here.
  *
- * This is the only way in that the shipped app offers. The password pair below
- * still exists because sync has to be testable without a person clicking a
- * consent screen, but ipc.js only registers it outside a packaged build.
+ * Apple goes the same way as Google, and deliberately not the way the phone
+ * does. The phone has a system sheet that hands over an identity token; a
+ * desktop has no such sheet, so this is Apple's web flow -- which is why it
+ * needs a Services ID and a client secret on the Supabase side that the phone
+ * never did. That secret expires (docs/DECISIONS.md, 2026-09-15), and when it
+ * does only this path breaks: the phone keeps signing in.
  */
-async function loginWithGoogle() {
+async function loginWith(provider: Provider) {
   if (!canStore()) return { ok: false, error: "no_secure_storage" };
 
   // A logout that lands while the browser is still open ends this attempt too:
@@ -31,7 +38,7 @@ async function loginWithGoogle() {
   const { verifier, challenge } = pkcePair();
   const back = await loopbackCode(
     (redirect) =>
-      `${SUPABASE_URL}/auth/v1/authorize?provider=google` +
+      `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}` +
       `&redirect_to=${encodeURIComponent(redirect)}` +
       `&code_challenge=${challenge}&code_challenge_method=s256`,
   );
@@ -49,6 +56,9 @@ async function loginWithGoogle() {
   remember(next);
   return { ok: true, session: publicSession(next) };
 }
+
+const loginWithGoogle = () => loginWith("google");
+const loginWithApple = () => loginWith("apple");
 
 async function login(email: string, password: string) {
   // Checked before the request, not after: a successful login we cannot store
@@ -107,4 +117,4 @@ async function signup(email: string, password: string) {
  * this session is on its way out.
  */
 
-export { loginWithGoogle, login, signup };
+export { loginWithGoogle, loginWithApple, login, signup };

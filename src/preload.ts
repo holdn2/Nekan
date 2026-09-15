@@ -89,6 +89,7 @@ const api = {
   // "replace". devLogin only answers in a development run — ipc.js does not
   // register that channel in a packaged build, so it rejects there.
   signInWithGoogle: (mode: string) => ipcRenderer.invoke("auth:google", mode),
+  signInWithApple: (mode: string) => ipcRenderer.invoke("auth:apple", mode),
   cancelSignIn: () => ipcRenderer.invoke("auth:cancel"),
   devLogin: (email: string, password: string, mode: string) =>
     ipcRenderer.invoke("auth:login", email, password, mode),

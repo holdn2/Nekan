@@ -110,22 +110,28 @@ export function Welcome() {
     window.api.cancelSignIn().catch(() => {});
   };
 
-  const chooseSync = async () => {
+  const chooseSync = async (provider: "google" | "apple") => {
     if (busy) return;
     setBusy(true);
     try {
       // Already through the consent screen, and only the write failed. Retry
-      // that alone -- sending someone back to Google would be asking them to
-      // approve something they just approved.
+      // that alone -- sending someone back to Google or Apple would be asking
+      // them to approve something they just approved. Whichever button is
+      // pressed the second time, the session that is there is the answer.
       if (signedIn) {
         await finish("sync");
         return;
       }
 
       say(t("account.finishInBrowser"));
-      const result = await window.api
-        .signInWithGoogle(adoptMode())
-        .catch((err: unknown) => ({ ok: false, error: messageOf(err) }));
+      const start =
+        provider === "apple"
+          ? window.api.signInWithApple
+          : window.api.signInWithGoogle;
+      const result = await start(adoptMode()).catch((err: unknown) => ({
+        ok: false,
+        error: messageOf(err),
+      }));
 
       if (result?.ok) {
         setSignedIn(true);
