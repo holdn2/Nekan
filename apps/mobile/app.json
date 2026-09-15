@@ -37,6 +37,7 @@
           "microphonePermission": "Nekan uses the microphone to hear a new task."
         }
       ],
+      "expo-apple-authentication",
       "@bacons/apple-targets"
     ],
     "experiments": {

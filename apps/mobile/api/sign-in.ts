@@ -1,7 +1,7 @@
 /**
  * The ways in.
  *
- * Google is the only one a shipped app offers. The password pair below exists
+ * Google and Apple are what a shipped app offers. The password pair below exists
  * for the same reason it does on the desktop: sync has to be verifiable
  * without a person clicking a consent screen, and it is only reachable outside
  * a release build. Removing it would leave no way to check syncing
@@ -13,6 +13,7 @@
  * link. Both are the same rule underneath: an app-owned webview is not
  * allowed to see a Google password, and Google blocks it.
  */
+import * as AppleAuthentication from "expo-apple-authentication";
 import * as Crypto from "expo-crypto";
 import * as WebBrowser from "expo-web-browser";
 import { makeRedirectUri } from "expo-auth-session";
@@ -61,11 +62,16 @@ function redirectUri(): string {
  * base64url encoder on an engine whose `btoa` cannot be relied on. The
  * challenge has to be base64url, and that one the digest gives directly.
  */
-async function pkcePair(): Promise<{ verifier: string; challenge: string }> {
+/** 32 random bytes as lowercase hex -- a secret that is safe in any URL or body. */
+async function randomHex(): Promise<string> {
   const bytes = await Crypto.getRandomBytesAsync(32);
-  const verifier = Array.from(bytes)
+  return Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+}
+
+async function pkcePair(): Promise<{ verifier: string; challenge: string }> {
+  const verifier = await randomHex();
   const digest = await Crypto.digestStringAsync(
     Crypto.CryptoDigestAlgorithm.SHA256,
     verifier,
@@ -137,6 +143,68 @@ export async function signInWithGoogle(): Promise<SignInResult> {
   await adoptSession(next);
   return { ok: true, session: publicSession(next) };
 }
+
+/**
+ * Sign in with Apple, through the system sheet rather than a browser.
+ *
+ * Unlike Google there is no redirect at all: the sheet hands back an identity
+ * token signed by Apple, and Supabase turns that into a session
+ * (`grant_type=id_token`). So none of the redirect-allowlist trouble above
+ * applies, and the Supabase provider needs only this app's bundle id as a
+ * client id -- the secret key is for the web flow, which this is not.
+ *
+ * The nonce is sent twice, in two forms, and the forms are not
+ * interchangeable. Apple is given the SHA-256 of it and copies that into the
+ * token; Supabase is given the original, hashes it itself, and refuses a token
+ * whose claim does not match. That is what stops a token lifted from somewhere
+ * else from being replayed here. Sending the same string to both fails every
+ * time, and fails as a "bad nonce" that looks like an Apple outage.
+ *
+ * Only the email scope. A name is offered once, on the very first sign-in, and
+ * this app has nowhere to put it.
+ */
+export async function signInWithApple(): Promise<SignInResult> {
+  const startedAt = sessionEpoch();
+  const raw = await randomHex();
+  // Hex, lowercase: what Supabase computes on its side and compares against.
+  const hashed = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    raw,
+  );
+
+  let token: string | null;
+  try {
+    const credential = await AppleAuthentication.signInAsync({
+      requestedScopes: [AppleAuthentication.AppleAuthenticationScope.EMAIL],
+      nonce: hashed,
+    });
+    token = credential.identityToken;
+  } catch (err) {
+    // Closing the sheet is an answer, not a failure worth a sentence.
+    const code = (err as { code?: unknown } | null)?.code;
+    if (code === "ERR_REQUEST_CANCELED")
+      return { ok: false, error: "cancelled" };
+    return { ok: false, error: "apple_failed" };
+  }
+  if (!token) return { ok: false, error: "bad_response" };
+
+  const res = await request("/auth/v1/token?grant_type=id_token", {
+    method: "POST",
+    body: { provider: "apple", id_token: token, nonce: raw },
+  });
+  if (!res.ok) return { ok: false, error: errorCode(res) };
+
+  const next = sessionFromToken(res.body, Date.now());
+  if (!next) return { ok: false, error: "bad_response" };
+  // Same rule as Google: a sign-out that landed while the sheet was up wins.
+  if (sessionEpoch() !== startedAt) return { ok: false, error: "cancelled" };
+  await adoptSession(next);
+  return { ok: true, session: publicSession(next) };
+}
+
+/** Whether this device can show the Apple sheet at all. iOS 13 and later. */
+export const appleSignInAvailable = (): Promise<boolean> =>
+  AppleAuthentication.isAvailableAsync().catch(() => false);
 
 /**
  * Password sign-in. Development only -- see the note at the top of this file.

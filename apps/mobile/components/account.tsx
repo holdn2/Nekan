@@ -2,7 +2,8 @@
  * The account block, which is the only part of settings that talks to a
  * server.
  *
- * Signed out it offers Google and, outside a release build, a password form.
+ * Signed out it offers Apple where the device can show its sheet, Google
+ * everywhere, and, outside a release build, a password form.
  * That pair is the desktop's arrangement and exists for the same reason:
  * syncing has to be verifiable without a person clicking a consent screen.
  * `__DEV__` is this app's `app.isPackaged`.
@@ -17,6 +18,7 @@
  * as its code, visible rather than swallowed.
  */
 import { useEffect, useState } from "react";
+import * as AppleAuthentication from "expo-apple-authentication";
 import {
   ActivityIndicator,
   Pressable,
@@ -27,7 +29,7 @@ import {
   View,
 } from "react-native";
 import { t } from "../i18n";
-import { FS, FW, R, SP, useColors } from "../theme";
+import { FS, FW, R, SP, useColors, useThemeName } from "../theme";
 import {
   adoptLocalTasks,
   allTasks,
@@ -35,7 +37,12 @@ import {
   setAuth,
 } from "../store/state";
 import { useStore } from "../store/use-store";
-import { signInWithGoogle, signInWithPassword } from "../api/sign-in";
+import {
+  appleSignInAvailable,
+  signInWithApple,
+  signInWithGoogle,
+  signInWithPassword,
+} from "../api/sign-in";
 import { signOut } from "../api/account";
 import { currentSession } from "../api/session";
 import {
@@ -55,6 +62,7 @@ const ERROR_KEY: Record<string, string> = {
   invalid_credentials: "account.error.invalidCredentials",
   bad_response: "account.error.badResponse",
   no_code: "account.error.badResponse",
+  apple_failed: "account.error.appleFailed",
 };
 
 const sentence = (code: string) =>
@@ -62,8 +70,22 @@ const sentence = (code: string) =>
 
 export function AccountBlock() {
   const c = useColors();
+  const theme = useThemeName();
   useStore();
   const auth = currentAuth();
+  // Asked once. The answer is the device's and does not change while the
+  // screen is up; until it arrives the button is simply not drawn, which is
+  // also the right answer on a device that says no.
+  const [apple, setApple] = useState(false);
+  useEffect(() => {
+    let live = true;
+    void appleSignInAvailable().then((ok) => {
+      if (live) setApple(ok);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [email, setEmail] = useState("");
@@ -173,6 +195,37 @@ export function AccountBlock() {
               </View>
               <Text style={[s.adoptHint, { color: c.faint }]}>
                 {t("account.adoptHintPhone")}
+              </Text>
+            </View>
+          ) : null}
+
+          {apple ? (
+            // Apple's own button, not ours. Its look, wording and language are
+            // Apple's to set -- the same exception the desktop makes for the
+            // Google mark -- and review expects this one. `pointerEvents`
+            // stands in for `disabled`, which the native button does not take.
+            <View
+              style={[s.appleBlock, busy ? s.off : null]}
+              pointerEvents={busy ? "none" : "auto"}
+            >
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={
+                  AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
+                }
+                buttonStyle={
+                  theme === "dark"
+                    ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+                    : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                }
+                cornerRadius={R.panel}
+                style={s.apple}
+                onPress={() => run(() => signInWithApple(), mode)}
+              />
+              {/* #51. Hiding the address makes a separate account, and lists
+                  that have split cannot be merged afterwards -- so this is said
+                  before the choice, beside the button that leads to it. */}
+              <Text style={[s.adoptHint, { color: c.faint }]}>
+                {t("account.appleShareEmail")}
               </Text>
             </View>
           ) : null}
@@ -300,6 +353,9 @@ const s = StyleSheet.create({
   },
   centre: { justifyContent: "center" },
   off: { opacity: 0.4 },
+  appleBlock: { gap: SP.sm },
+  // Apple asks for at least 44pt.
+  apple: { width: "100%", height: 48 },
   who: { flexShrink: 1, gap: SP["2xs"] },
   email: { fontSize: FS.md, fontWeight: FW.medium },
   state: { fontSize: FS.xs },

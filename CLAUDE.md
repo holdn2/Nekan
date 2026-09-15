@@ -956,7 +956,12 @@ apps/mobile/
                   데스크톱 `main/api/`의 짝이다. **토큰은 `data.json`이 아니라
                   `expo-secure-store`에 있다**(`tokens.ts`, 키 `nekan.session`) —
                   보드는 사람이 복사해 다닐 문서이고 자격증명은 아니다.
-                  갱신 세 규칙(먼저 저장 · 단일 비행 · `stillOurs()`)은 데스크톱과 같다
+                  갱신 세 규칙(먼저 저장 · 단일 비행 · `stillOurs()`)은 데스크톱과 같다.
+                  **로그인은 Google과 Apple 둘이다.** Apple은 브라우저가 아니라 시스템
+                  시트이고 리디렉트가 없다 — 시트가 준 identity token을
+                  `grant_type=id_token`으로 바꾼다. **nonce는 두 번, 다른 모양으로 간다**:
+                  Apple에는 SHA-256(소문자 hex), Supabase에는 원본. 바꿔 보내면 매번
+                  실패하고 Apple 장애처럼 읽힌다 — `api/test/sign-in.test.ts`가 지킨다
   sync/           transfer(pull·push) · loop(일정) + test/
                   **`npm test`가 덮는 폰 코드는 지금 여기뿐이다.** 이 앱에서
                   데이터를 잃을 수 있는 경로라서 먼저 붙였다 — 반쪽만 보낸 push가
@@ -1167,8 +1172,13 @@ import 경로가 틀려도 `tsc`는 통과하고 Metro만 죽는다.
 대상으로 만들어졌다**(그 뒤 56·57로 SDK 번호에 맞춘 버전 체계로 갈아탔으므로 `latest`를
 쓰면 두 SDK 앞선다). SDK를 올리는 날 이 패키지도 손으로 맞춰야 한다.
 
-**빌드를 쓰기 전에 `expo config --type prebuild`로 플러그인을 검증할 수 있다.** 모든 mod를
-평가하므로 권한 문구가 Info.plist 자리에 들어갔는지까지 보이고 **쿼터를 쓰지 않는다.**
+**빌드를 쓰기 전에 설정을 검증할 수 있고 쿼터를 쓰지 않는다. 다만 무엇을 보려는지에 따라
+타입이 다르다.** `expo config --type prebuild`는 **`app.json`에 적힌 값**(권한 문구 같은
+`infoPlist`)과 등록된 mod 목록을 보여줄 뿐 **mod를 실행하지 않는다** — 플러그인이
+`withEntitlementsPlist`로 넣는 **권한(entitlements)은 거기 안 나온다.** 그걸 보려면
+`--type introspect`다(2026-09-15 실측: `expo-apple-authentication`의
+`com.apple.developer.applesignin`이 prebuild 출력에는 없고 introspect에만 있었다).
+**한때 여기 "모든 mod를 평가하므로"라고 적혀 있었는데 틀린 문장이었다.**
 `expo prebuild --platform ios`는 **Windows에서 돌지 않는다**(macOS/Linux가 필요하다) —
 그쪽으로 검증하려다 시간을 쓰지 말 것.
 

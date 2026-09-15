@@ -309,7 +309,7 @@
       "offline": "You are not connected to the internet.",
       "timeout": "That timed out. Please try again.",
       "cancelled": "Sign-in was cancelled.",
-      "providerDisabled": "Google sign-in is not available yet.",
+      "providerDisabled": "This way of signing in isn't available yet.",
       "validationFailed": "Sign-in has not been fully set up yet.",
       "expired": "That sign-in expired. Please try again.",
       "noBrowser": "Could not open a browser.",
@@ -317,7 +317,8 @@
       "noSecureStorage": "This computer cannot store sign-in details securely, so signing in is disabled.",
       "invalidCredentials": "That email or password does not match.",
       "badResponse": "The server sent something this app could not read.",
-      "noSession": "Your sign-in has lapsed. Sign in again and retry."
+      "noSession": "Your sign-in has lapsed. Sign in again and retry.",
+      "appleFailed": "Couldn't finish signing in with Apple. Try again."
     },
     "state": {
       "syncing": "Syncing",
@@ -354,7 +355,8 @@
     },
     "adoptHintPhone": "Off keeps only what the account already has. The tasks here are not deleted -- they are set aside on this device.",
     "adoptPhone_one": "Also merge the {{count}} task on this device into the account",
-    "adoptPhone_other": "Also merge the {{count}} tasks on this device into the account"
+    "adoptPhone_other": "Also merge the {{count}} tasks on this device into the account",
+    "appleShareEmail": "Apple and Google share a list only when the email is the same. If you use Google on another device, sign in with Google here too."
   },
   "welcome": {
     "lede": "Where should your tasks live?",
