@@ -34,6 +34,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import * as Updates from "expo-updates";
 import { INBOX } from "@nekan/shared/core";
 import type { Place } from "@nekan/shared/types";
 import { MicIcon, PlusIcon, StopIcon } from "../icons";
@@ -51,6 +52,16 @@ interface Props {
   /** How many tasks the last press added. The screen decides what to say. */
   onAdded?: (count: number) => void;
 }
+
+/** How long the widget's second attempt at dictating waits after the first. */
+const RETRY_MS = 600;
+
+/**
+ * Whether to put the recogniser's error code next to "try again". Only the
+ * preview build, which only its developer has: the code is what tells a
+ * launch race from a real refusal, and nobody else can do anything with it.
+ */
+const DIAGNOSE = Updates.channel === "preview";
 
 /**
  * Whether the app is not yet, or no longer, in front. "unknown" is not
@@ -107,12 +118,14 @@ export function AddForm({
   // "asking" and "listening" and a dependency on it would restart the
   // recogniser each time.
   //
-  // It also waits for the app to be in front. From the lock screen the route
-  // mounts while the app is still "inactive" -- Face ID is still unlocking --
-  // and iOS will not open a recording session for an app that is not active,
-  // so starting there failed with the generic "try again" every time. The
-  // home-screen door never showed it: that launch is active almost at once,
-  // before the probe above has even answered.
+  // It also waits for the app to be in front, and tries a second time once.
+  // Both doors failed on a device with the generic "try again" while pressing
+  // the microphone on the same screen a moment later worked -- so what fails
+  // is the timing of a start made during launch, not the recogniser. iOS will
+  // not open a recording session for an app that is not active, and the
+  // route mounts while it is still "inactive" (behind Face ID on the lock
+  // screen, mid-animation from the home screen). Which of the two it was is
+  // not known yet, which is why the preview build names the error.
   const [foreground, setForeground] = useState(
     () => !isBehind(AppState.currentState),
   );
@@ -124,17 +137,46 @@ export function AddForm({
     return () => sub.remove();
   }, [autoSpeak]);
 
-  const started = useRef(false);
+  const tries = useRef(0);
+  const [retrying, setRetrying] = useState(false);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (retryTimer.current) clearTimeout(retryTimer.current);
+    },
+    [],
+  );
   useEffect(() => {
-    if (!autoSpeak || started.current || !foreground) return;
+    if (!autoSpeak || !foreground) return;
     if (!dictation.checked || dictation.state === "unavailable") return;
-    started.current = true;
-    void dictation.start();
+    if (tries.current === 0) {
+      tries.current = 1;
+      void dictation.start();
+      return;
+    }
+    // Once it has listened the start worked, and a later failure belongs to
+    // the person speaking -- a second automatic start would reopen the
+    // microphone on them.
+    if (dictation.state === "listening") tries.current = 2;
+    // A refusal of permission is an answer, not a race, and is not retried.
+    const failed =
+      dictation.state === "off" &&
+      dictation.problem !== null &&
+      dictation.problem !== "not-allowed";
+    if (tries.current === 1 && failed) {
+      tries.current = 2;
+      setRetrying(true);
+      retryTimer.current = setTimeout(() => {
+        setRetrying(false);
+        void dictation.start();
+      }, RETRY_MS);
+    }
   }, [
     autoSpeak,
     foreground,
     dictation.checked,
     dictation.state,
+    dictation.problem,
     dictation.start,
   ]);
 
@@ -143,8 +185,8 @@ export function AddForm({
       ? t("speech.unavailable")
       : dictation.problem === "not-allowed"
         ? t("speech.denied")
-        : dictation.problem
-          ? t("speech.failed")
+        : dictation.problem && !retrying
+          ? t("speech.failed") + (DIAGNOSE ? ` (${dictation.problem})` : "")
           : null;
 
   return (
