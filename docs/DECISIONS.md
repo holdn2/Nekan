@@ -1433,8 +1433,9 @@ _"데스크톱앱에서도 애플 로그인이 가능하게 해야해."_
 같은 `.p8`·Key ID·Team ID·Services ID로 JWT를 새로 만들어 **클립보드에만** 넣는다(화면에 찍지
 않는다 — 자격증명이다). 그것을 Supabase → Authentication → Providers → Apple의 Secret Key에
 붙인다. 출력 끝에 만료일이 나온다. `.p8`를 잃으면 키를 새로
-만들면 된다(키는 Apple Developer에서 폐기·재발급할 수 있다). **첫 발급일과 만료일은 발급하는
-날 여기에 적는다** — 미정.
+만들면 된다(키는 Apple Developer에서 폐기·재발급할 수 있다). **첫 발급 2026-09-15,
+만료 2027-03-15** (키 ID `Y3ACF8D65H`, Services ID `com.yoshi.nekan.signin`). `.p8`는 저장소
+밖, 사용자의 메모 폴더에 있다. **2027-03 초에 갱신할 것.**
 
 **Services ID를 primary App ID `com.yoshi.nekan`에 묶는 이유** Apple은 같은 primary App ID로
 묶인 앱에 **같은 사용자 식별자**를 준다. 그러면 이메일을 가렸든 공유했든 **폰의 Apple 계정과
