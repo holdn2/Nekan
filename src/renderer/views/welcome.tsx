@@ -51,7 +51,7 @@ export function Welcome() {
 
   const [busy, setBusy] = useState(false);
   /**
-   * Whether the Google half already succeeded.
+   * Whether the sign-in half already succeeded, with either provider.
    *
    * Only matters when the sign-in worked but recording the choice did not: the
    * screen stays up so the answer can be retried, and pressing the button again
@@ -81,7 +81,7 @@ export function Welcome() {
    *
    * The order is the point. Hiding first and writing afterwards means a failed
    * write leaves someone who has plainly answered the question being asked it
-   * again on the next launch -- and, if they chose Google, asked it while
+   * again on the next launch -- and, if they chose to sync, asked it while
    * already signed in. Main returns the stored value, so a null is a write that
    * did not land.
    */
@@ -176,8 +176,8 @@ export function Welcome() {
     if (busy) return;
     setBusy(true);
     try {
-      // Reachable only through the narrow gap the retry above opened: Google
-      // succeeded, recording the choice did not, and the answer changed to
+      // Reachable only through the narrow gap the retry above opened: the
+      // sign-in succeeded, recording the choice did not, and the answer changed to
       // local on the second try. By then main has stored a session and pointed
       // sync at the account, so leaving it would give someone an app that
       // syncs behind a choice that said not to.

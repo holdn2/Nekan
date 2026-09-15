@@ -339,7 +339,7 @@ src/                   # 쓰는 곳 (TypeScript)
     api-client.ts      # Supabase와 말하는 유일한 곳
     token-store.ts     # 세션을 암호화해 auth.json에 보관
     sync.ts            # 당기고 밀고 다시 시도하는 루프
-    oauth.ts           # Google 로그인의 브라우저 쪽 (PKCE + loopback)
+    oauth.ts           # Google·Apple 로그인의 브라우저 쪽 (PKCE + loopback)
     i18n.ts            # 메인 프로세스의 문자열
     ipc.ts             # ipcMain 핸들러 전부
   shared/              # 메인·렌더러·테스트 공용. Node도 DOM도 쓰지 않는다

@@ -20,7 +20,7 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
                    살아 있는 세션을 api/ 밖으로 내보내지 않으려고 이름을 손으로 적는다
     token-store.ts 세션을 safeStorage로 암호화해 userData/auth.json에 (data.json 아님)
     sync.ts        + sync/  status(밖에 알리는 것·북마크) · transfer(pull·push) · loop(일정)
-    oauth.ts       Google 로그인의 브라우저 쪽 (PKCE + loopback). 세션은 모른다
+    oauth.ts       Google·Apple 로그인의 브라우저 쪽 (PKCE + loopback). 세션은 모른다
     ipc.ts         + ipc/  state · window · settings · shell · auth
                    새 채널을 만들 때 첫 번째로 여는 곳. 배럴이 다섯을 순서대로 부른다
     i18n.ts        메인 쪽 i18next. 렌더러와 따로 산다 (프로세스가 다르다)
@@ -405,7 +405,7 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   **사람이 동의 화면을 누르지 않고도 동기화를 검증하기 위한** 개발용 통로다. 가이드의 개발용
   폼도 `state:load`의 `devLogin`을 보고 그때만 나온다. 이 통로를 없애면 **동기화를 자동으로
   검증할 방법이 사라진다** — 없애기 전에 대체 수단을 먼저 만들 것.
-- **Google 로그인은 시스템 브라우저로 나갔다가 loopback으로 돌아온다** (`main/oauth.ts`).
+- **Google·Apple 로그인은 시스템 브라우저로 나갔다가 loopback으로 돌아온다** (`main/oauth.ts`).
   포트는 `listen(0)`으로 OS가 고른다 — 그래서 Supabase의 Redirect URL 허용목록에
   `http://127.0.0.1:*`가 있어야 한다. 와일드카드를 못 쓰게 되면 고쳐야 할 곳은 그 `listen(0)`
   한 줄이다. 앱 안 webview를 쓰면 **Google이 막는다.**

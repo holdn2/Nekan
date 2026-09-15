@@ -352,7 +352,7 @@ src/                   # what you write (TypeScript)
     api-client.ts      # the one place that talks to Supabase
     token-store.ts     # the session, encrypted into auth.json
     sync.ts            # the pull / push / retry loop
-    oauth.ts           # the browser side of Google sign-in (PKCE + loopback)
+    oauth.ts           # the browser side of Google and Apple sign-in (PKCE + loopback)
     i18n.ts            # strings for the main process
     ipc.ts             # every ipcMain handler
   shared/              # main, renderer and tests. Uses neither Node nor the DOM

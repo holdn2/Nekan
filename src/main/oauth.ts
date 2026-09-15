@@ -1,7 +1,8 @@
 /**
- * The browser half of signing in with Google.
+ * The browser half of signing in with Google or Apple.
  *
- * Google refuses OAuth inside an app's own webview, so the consent screen has
+ * Google refuses OAuth inside an app's own webview, and Apple's web flow is the
+ * only one a desktop has, so the consent screen has
  * to open in the real browser and the answer has to come back somehow. The way
  * back is a loopback server: a throwaway HTTP listener on 127.0.0.1 that exists
  * for the length of one sign-in.
