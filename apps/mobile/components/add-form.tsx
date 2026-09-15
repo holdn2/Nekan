@@ -26,7 +26,14 @@
  * gets in.
  */
 import { useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  AppState,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { INBOX } from "@nekan/shared/core";
 import type { Place } from "@nekan/shared/types";
 import { MicIcon, PlusIcon, StopIcon } from "../icons";
@@ -43,6 +50,15 @@ interface Props {
   autoSpeak?: boolean;
   /** How many tasks the last press added. The screen decides what to say. */
   onAdded?: (count: number) => void;
+}
+
+/**
+ * Whether the app is not yet, or no longer, in front. "unknown" is not
+ * behind: iOS always reports a real state, and waiting on a value that never
+ * changes would leave the microphone door doing nothing at all.
+ */
+function isBehind(state: string): boolean {
+  return state === "inactive" || state === "background";
 }
 
 export function AddForm({
@@ -90,13 +106,37 @@ export function AddForm({
   // guard is the ref, not the effect's deps, because `state` moves through
   // "asking" and "listening" and a dependency on it would restart the
   // recogniser each time.
+  //
+  // It also waits for the app to be in front. From the lock screen the route
+  // mounts while the app is still "inactive" -- Face ID is still unlocking --
+  // and iOS will not open a recording session for an app that is not active,
+  // so starting there failed with the generic "try again" every time. The
+  // home-screen door never showed it: that launch is active almost at once,
+  // before the probe above has even answered.
+  const [foreground, setForeground] = useState(
+    () => !isBehind(AppState.currentState),
+  );
+  useEffect(() => {
+    if (!autoSpeak) return;
+    const sub = AppState.addEventListener("change", (next) =>
+      setForeground(!isBehind(next)),
+    );
+    return () => sub.remove();
+  }, [autoSpeak]);
+
   const started = useRef(false);
   useEffect(() => {
-    if (!autoSpeak || started.current) return;
+    if (!autoSpeak || started.current || !foreground) return;
     if (!dictation.checked || dictation.state === "unavailable") return;
     started.current = true;
     void dictation.start();
-  }, [autoSpeak, dictation.checked, dictation.state, dictation.start]);
+  }, [
+    autoSpeak,
+    foreground,
+    dictation.checked,
+    dictation.state,
+    dictation.start,
+  ]);
 
   const problem =
     dictation.state === "unavailable"
