@@ -19,6 +19,7 @@ import { SyncNow } from "./sync-now.js";
 import { isSettingsOpen, toggleSettings } from "../../panels.js";
 import { applyInboxOpen } from "../../views/inbox.js";
 import { useRenderSignal } from "../../react/use-store.js";
+import { flushDrafts } from "../../drafts.js";
 import {
   QuitIcon,
   CogIcon,
@@ -272,7 +273,12 @@ function TitleBar() {
           type="button"
           title={t("titlebar.close")}
           aria-label={t("titlebar.close")}
-          onClick={() => window.api.close()}
+          // Main quits the moment it hears this, so a note typed less than a
+          // pause ago has to be on its way first. IPC keeps the order.
+          onClick={() => {
+            flushDrafts();
+            window.api.close();
+          }}
         >
           <QuitIcon />
         </button>

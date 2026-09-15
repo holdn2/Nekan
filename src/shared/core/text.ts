@@ -9,6 +9,18 @@ export const MAX_TEXT = 200;
 /** Memos are free-form and multi-line, so they get a much looser cap. */
 export const MAX_MEMO = 2000;
 
+/**
+ * How long typing has to stop before a half-written note or title is saved.
+ *
+ * Shared so the desktop and the phone cannot drift. It only bounds two things:
+ * how much a crash or a force-quit can take, and how often a write happens --
+ * every deliberate way of leaving a field saves at once without waiting. The
+ * writes it causes are already coalesced downstream (main writes the file at
+ * most every 200ms, sync pushes 3s after an edit), so a short value costs next
+ * to nothing. Reasoned rather than measured; see docs/DECISIONS.md (issue 136).
+ */
+export const DRAFT_SAVE_MS = 1000;
+
 /* ------------------------------------------------------------------ tasks */
 
 /** Trim and cut to the shared length cap; inline editing has no maxlength. */
