@@ -686,7 +686,7 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   손으로 고치면 다음 빌드가 되돌린다. 고칠 곳은 `theme.ts` 한 곳이고 `npm run build`가
   `tools/build-theme.js`로 둘 다 다시 쓴다(강조색 교체 실측 19초).
   **`node tools/check-colors.js`가 래칫이다**(`npm test`가 부른다): 팔레트 밖 hex는
-  `ALLOWED`에 적힌 넷뿐이고(브랜드 마크 둘·측정된 예외 하나·팔레트 자기 테스트) 늘면 실패한다.
+  `ALLOWED`에 적힌 셋뿐이고(브랜드 마크 둘·팔레트 자기 테스트) 늘면 실패한다.
   **`prettier --check .`는 `npm test`에 없고 CI에만 있다** — 생성물이 걸리면 `--write`가 아니라
   `theme.ts`의 값을 프리티어가 원하는 모양으로 적어야 한다.
   **watch 중에는 생성기를 자식 프로세스로 돌린다** — `out/shared/`가 ESM이라

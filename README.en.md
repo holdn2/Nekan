@@ -44,7 +44,7 @@ Apple menu → About This Mac tells you which: `Chip` means Apple Silicon,
 **On the first run the app asks where your tasks should live.**
 
 - **Sign in with Google and sync** — the same list on every device
-- **Sign in with Apple and sync** — the one to pick if your iPhone signs in with Apple
+- **Sign in with Apple** — the one to pick if your iPhone signs in with Apple
 - **Keep them on this computer** — start right away, no account
 
 It only asks once, and **you can change your mind later in the settings.** If you already have tasks, the same

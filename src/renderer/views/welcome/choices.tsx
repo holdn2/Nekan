@@ -125,7 +125,13 @@ export function WelcomeChoices({
           This is a row among the app's own answers rather than Apple's button,
           and Apple's rule for a custom button is that the logo and the title
           are one colour -- which holds in both themes. The settings panel,
-          where it is a stand-alone sign-in button, uses Apple's white one. */}
+          where it is a stand-alone sign-in button, uses Apple's white one.
+
+          The title is Apple's own wording and not "… and sync" like the row
+          above: a custom Sign in with Apple button may only say "Sign in with
+          Apple", "Sign up with Apple" or "Continue with Apple". The line under
+          it does the rest. Same key as the settings button, so the two cannot
+          drift. */}
       <Button
         className={CHOICE}
         variant="outline"
@@ -135,7 +141,7 @@ export function WelcomeChoices({
       >
         <AppleMark />
         <span className={TEXT}>
-          <b className="text-md font-semibold">{t("welcome.syncAppleTitle")}</b>
+          <b className="text-md font-semibold">{t("account.apple")}</b>
           <small className={SUB}>{t("welcome.syncAppleSub")}</small>
         </span>
       </Button>
