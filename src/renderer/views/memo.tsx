@@ -19,7 +19,8 @@ import { useEffect, useRef, useState } from "react";
 import { Dot } from "../components/dot.js";
 import { GhostButton } from "../components/ghost-button.js";
 import { createRoot } from "react-dom/client";
-import { DRAFT_SAVE_MS, clampMemo } from "../../shared/core.js";
+import { DRAFT_SAVE_MS, INBOX, clampMemo } from "../../shared/core.js";
+import { isBuried } from "../../shared/sync/rows.js";
 import { t } from "../i18n.js";
 import { accel } from "../keys.js";
 import { findTask, setMemo } from "../store.js";
@@ -80,9 +81,20 @@ export function MemoPanel() {
   // and Trigger would need `asChild` to lend its behaviour to one -- which the
   // port dropped, because the umbrella package's Slot is not a dependency.
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // The note as it stood when the editor opened -- what Cancel puts back, now
+  // that what is stored may already be the draft. State rather than a ref,
+  // because whether the Cancel button shows is drawn from it.
+  const [opened, setOpened] = useState<string | null>(memo || null);
+  // The last text a pause wrote from this editor. Cancel only undoes that: a
+  // stored note that is anything else was changed by something other than this
+  // editor -- a sync from another device -- and writing the old text back
+  // would erase that edit on every device.
+  const lastWritten = useRef<string | null>(null);
   if (seenSeed !== seed) {
     setSeenSeed(seed);
     setValue(memo);
+    setOpened(memo || null);
+    lastWritten.current = null;
   }
 
   // What has been typed and not yet written, and which task it belongs to.
@@ -99,9 +111,6 @@ export function MemoPanel() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // An IME is mid-syllable, and its half-built text is not worth a write.
   const composing = useRef(false);
-  // The note as it stood when the editor opened -- what Cancel puts back, now
-  // that what is stored may already be the draft.
-  const openedWith = useRef<string | null>(null);
 
   const flush = useRef(() => {
     if (timer.current) {
@@ -116,11 +125,16 @@ export function MemoPanel() {
     const text = clampMemo(pending.text);
     const target = findTask(pending.id);
     if (!text || !target || target.memo === text) return;
+    // A pull can bury the row or move it to the brain dump while it is being
+    // typed into. A tombstone holds no words and a dump row holds no note --
+    // main would drop the first on save, but the renderer would keep both.
+    if (isBuried(target) || target.quadrant === INBOX) return;
     // A task with no note is in the editor *because* it has none. The first
     // write gives it one, and without saying "still editing" the panel would
     // flip to reading under the cursor.
-    if (pending.id === selectedTask()?.id && !isMemoEditing()) {
-      setMemoEditing(true);
+    if (pending.id === selectedTask()?.id) {
+      if (!isMemoEditing()) setMemoEditing(true);
+      lastWritten.current = text;
     }
     setMemo(pending.id, text);
   });
@@ -137,10 +151,6 @@ export function MemoPanel() {
   // or trashed under it, the other board switched to, the panel unmounting.
   const taskId = task?.id ?? null;
   useEffect(() => () => flush.current(), [taskId]);
-  // Only when the editor opens, which is what a new seed means.
-  useEffect(() => {
-    if (editing) openedWith.current = task?.memo ?? null;
-  }, [seed]);
 
   const input = useRef<HTMLTextAreaElement>(null);
   /**
@@ -214,8 +224,12 @@ export function MemoPanel() {
       timer.current = null;
     }
     draft.current = null;
-    const before = openedWith.current;
-    if ((task.memo ?? null) !== before) setMemo(task.id, before);
+    const before = opened;
+    // Only what this editor wrote is undone -- see `lastWritten`.
+    if (lastWritten.current !== null && task.memo === lastWritten.current) {
+      setMemo(task.id, before);
+    }
+    lastWritten.current = null;
     if (!before) {
       setSelected(null);
       return;
@@ -333,6 +347,13 @@ export function MemoPanel() {
           }}
           onCompositionStart={() => {
             composing.current = true;
+            // Korean ends one syllable and starts the next back to back. The
+            // pause timer the last syllable started would otherwise fire in
+            // the middle of this one and write "한ㄱ".
+            if (timer.current) {
+              clearTimeout(timer.current);
+              timer.current = null;
+            }
           }}
           onCompositionEnd={() => {
             composing.current = false;
@@ -378,7 +399,10 @@ export function MemoPanel() {
           {t("common.delete")}
         </GhostButton>
         <GhostButton
-          className={cn(FOOT_BTN, (!editing || !original) && "hidden")}
+          // Whether there is anything to go back to is a question about when
+          // the editor opened. A pause that gives an empty note its first words
+          // would otherwise make this button appear under the cursor.
+          className={cn(FOOT_BTN, (!editing || !opened) && "hidden")}
           id="memoCancel"
           onClick={cancel}
         >

@@ -211,6 +211,62 @@ test("half a syllable is not written while an IME is composing", async () => {
   expect(stored()).toBe("한");
 });
 
+test("a timer from the last syllable does not write the next one half-built", async () => {
+  // Korean ends a syllable and starts the next back to back, so a pause timer
+  // started by the first is still running when the second begins composing.
+  vi.useFakeTimers();
+  const section = host();
+  setTasks([task()]);
+  const { flush } = await mount(<MemoPanel />, section);
+  await edit(flush);
+
+  const input = find<HTMLTextAreaElement>("#memoInput");
+  const compose = (kind: string) =>
+    flush(() => input.dispatchEvent(new Event(kind, { bubbles: true })));
+  await compose("compositionstart");
+  await flush(() => type(input, "한"));
+  await compose("compositionend");
+  await compose("compositionstart");
+  await flush(() => type(input, "한ㄱ"));
+  await flush(() => vi.advanceTimersByTime(DRAFT_SAVE_MS * 2));
+  expect(stored()).toBe("원래 메모");
+});
+
+test("cancel leaves a note that another device changed alone", async () => {
+  // The editor was opened and nothing was typed; meanwhile a sync brought
+  // another device's edit. Cancel must not write the old text back over it.
+  const section = host();
+  setTasks([task()]);
+  const { flush } = await mount(<MemoPanel />, section);
+  await edit(flush);
+
+  findTask("t1")!.memo = "다른 기기에서 고침";
+  await flush(() =>
+    find<HTMLTextAreaElement>("#memoInput").dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      }),
+    ),
+  );
+  expect(stored()).toBe("다른 기기에서 고침");
+});
+
+test("the cancel button does not appear under the cursor on an empty note's first write", async () => {
+  vi.useFakeTimers();
+  const section = host();
+  setTasks([task({ memo: null })]);
+  const { flush } = await mount(<MemoPanel />, section);
+  await flush(() => setSelected("t1"));
+  expect(hidden("#memoCancel")).toBe(true);
+
+  await flush(() => type(find<HTMLTextAreaElement>("#memoInput"), "첫 메모"));
+  await flush(() => vi.advanceTimersByTime(DRAFT_SAVE_MS));
+  expect(stored()).toBe("첫 메모");
+  expect(hidden("#memoCancel")).toBe(true);
+});
+
 test("an emptied field is never written, by a pause or by leaving", async () => {
   // Deleting a note asks first. Clearing the field to start over and stopping
   // to think is not that question answered.

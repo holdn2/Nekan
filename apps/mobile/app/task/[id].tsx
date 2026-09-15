@@ -80,8 +80,15 @@ export default function TaskScreen() {
   //
   // None of those ever writes an empty field. A blank title deletes the task
   // (editTask), and a pause after clearing it to type a new one is not a
-  // decision to delete. Blur and the close button keep their old meaning --
-  // those are deliberate.
+  // decision to delete. Blur and the close button keep that meaning -- those
+  // are deliberate.
+  //
+  // And nothing writes a field nobody typed into. The two fields are copies
+  // taken when the screen opened, and a sync can change the task underneath
+  // them; writing an untouched copy back would stamp the old words as the
+  // newest and erase the other device's edit everywhere. Blur and the close
+  // button always had that gap -- they keep the same rule now.
+  const edited = useRef({ text: false, memo: false });
   const latest = useRef({ text, memo });
   latest.current = { text, memo };
   const taskId = task?.id;
@@ -89,8 +96,8 @@ export default function TaskScreen() {
   flush.current = () => {
     if (!taskId) return;
     const typed = latest.current;
-    if (typed.text.trim()) editTask(taskId, typed.text);
-    if (typed.memo.trim()) setMemo(taskId, typed.memo);
+    if (edited.current.text && typed.text.trim()) editTask(taskId, typed.text);
+    if (edited.current.memo && typed.memo.trim()) setMemo(taskId, typed.memo);
   };
   // Both mutations do nothing when nothing changed, so the first run of this
   // on mount cannot manufacture an edit.
@@ -118,8 +125,8 @@ export default function TaskScreen() {
   // to blur one first -- so closing writes them itself. Both are no-ops when
   // nothing changed, so this cannot manufacture an edit.
   const close = () => {
-    editTask(task.id, text);
-    setMemo(task.id, memo);
+    if (edited.current.text) editTask(task.id, text);
+    if (edited.current.memo) setMemo(task.id, memo);
     router.back();
   };
 
@@ -153,8 +160,13 @@ export default function TaskScreen() {
             { backgroundColor: c.panel, borderColor: c.line, color: c.text },
           ]}
           value={text}
-          onChangeText={setText}
-          onBlur={() => editTask(task.id, text)}
+          onChangeText={(next) => {
+            edited.current.text = true;
+            setText(next);
+          }}
+          onBlur={() => {
+            if (edited.current.text) editTask(task.id, text);
+          }}
           multiline
           accessibilityLabel={t("common.save")}
         />
@@ -206,8 +218,13 @@ export default function TaskScreen() {
                 },
               ]}
               value={memo}
-              onChangeText={setMemoDraft}
-              onBlur={() => setMemo(task.id, memo)}
+              onChangeText={(next) => {
+                edited.current.memo = true;
+                setMemoDraft(next);
+              }}
+              onBlur={() => {
+                if (edited.current.memo) setMemo(task.id, memo);
+              }}
               placeholder={t("memo.placeholder")}
               placeholderTextColor={c.faint}
               multiline
