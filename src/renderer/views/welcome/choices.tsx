@@ -84,9 +84,9 @@ export function WelcomeChoices({
           wordmark colours stay the only colour on it.
 
           This used to carry a stronger hairline and a shadow to say "this
-          one". Both are gone: the two answers are the same shape now, and the
+          one". Both are gone: the answers are the same shape now, and the
           badge is what marks the recommendation. A single button drawn with a
-          heavier edge than the one under it reads as the two being different
+          heavier edge than the ones under it reads as them being different
           kinds of thing rather than as one being suggested. */}
       <Button
         className={cn(CHOICE, "recommended")}

@@ -1,11 +1,11 @@
 /**
  * The first-run card, and the one state it can get stuck in.
  *
- * A sign-in that is in flight disables both answers, which is right: the
+ * A sign-in that is in flight disables every answer, which is right: the
  * question is being answered somewhere else. What made it wrong is that the
  * somewhere else is a browser window this app does not own -- close it and the
  * loopback server here hears nothing, so the promise stays unresolved and the
- * card sits with two dead buttons and no third option.
+ * card sits with dead buttons and no way out.
  */
 
 import { beforeEach, expect, test, vi } from "vitest";
@@ -124,8 +124,8 @@ test("the card is a ui/card, and the answers are ui/buttons", async () => {
   // this card does not have -- it was measured against a 760x520 window.
   expect(card.dataset.size).toBe("sm");
   // The card holds the question and nothing else: the mark and the name, and
-  // the two answers with the checkbox that hangs off the first of them. There
-  // is no footer any more.
+  // the answers with the checkbox that hangs off the sign-ins. There is no
+  // footer any more.
   expect(
     [...card.children].map((c) => (c as HTMLElement).dataset.slot),
   ).toEqual(["card-header", "card-content"]);
@@ -150,7 +150,7 @@ test("the card is a ui/card, and the answers are ui/buttons", async () => {
     "button",
     "button",
   ]);
-  // Neutral chrome on both, and never `default`: the recommended one carries
+  // Neutral chrome on every answer, and never `default`: the recommended one carries
   // the Google mark, and Google asks that the wordmark be the only colour on a
   // button offering its sign-in. `outline` is a border and a panel fill;
   // `default` is the app accent, which is the thing the guidelines forbid.

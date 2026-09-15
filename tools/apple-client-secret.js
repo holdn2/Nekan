@@ -9,8 +9,10 @@
  * desktop entry) is where the dates are written down.
  *
  * The secret is copied to the clipboard and never printed: it is a credential,
- * and terminal scrollback is a place it would stay. `--print` exists for a
- * machine without a clipboard command, and says so.
+ * and terminal scrollback is a place it would stay. The clipboard is not a
+ * vault either -- Windows keeps a history (Win+V) and can sync it -- so clear
+ * the entry after pasting it into Supabase. `--print` exists for a machine
+ * without a clipboard command, and says so.
  *
  *   node tools/apple-client-secret.js --p8 <path> --key-id <10 chars>
  *        [--team-id 3PW3FZG3GR] [--client-id com.yoshi.nekan.signin]
