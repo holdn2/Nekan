@@ -27,11 +27,21 @@ function args(argv) {
   const out = { teamId: "3PW3FZG3GR", clientId: "com.yoshi.nekan.signin" };
   for (let i = 0; i < argv.length; i++) {
     const key = argv[i];
+    // A flag followed by another flag has no value. Taking the next word
+    // anyway turned `--p8 --key-id X` into a path called "--key-id" and an
+    // ENOENT far from the typo.
+    const value = () => {
+      const next = argv[++i];
+      if (next === undefined || next.startsWith("--")) {
+        throw new Error(`${key} needs a value`);
+      }
+      return next;
+    };
     if (key === "--print") out.print = true;
-    else if (key === "--p8") out.p8 = argv[++i];
-    else if (key === "--key-id") out.keyId = argv[++i];
-    else if (key === "--team-id") out.teamId = argv[++i];
-    else if (key === "--client-id") out.clientId = argv[++i];
+    else if (key === "--p8") out.p8 = value();
+    else if (key === "--key-id") out.keyId = value();
+    else if (key === "--team-id") out.teamId = value();
+    else if (key === "--client-id") out.clientId = value();
     else throw new Error(`unknown argument: ${key}`);
   }
   if (!out.p8 || !out.keyId) {
@@ -98,4 +108,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { clientSecret, LIFETIME_S };
+module.exports = { args, clientSecret, LIFETIME_S };

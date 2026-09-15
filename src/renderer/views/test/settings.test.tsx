@@ -101,6 +101,27 @@ test("the close and export buttons are ui/buttons, and neutral ones", async () =
   expect(classCompiled("bg-transparent")).toBe(true);
 });
 
+test("each sign-in button in the account block opens its own provider", async () => {
+  // The two buttons sit side by side and differ in one word of their handler.
+  // A swap would still open a browser and still sign someone in -- into the
+  // other account, with an empty list.
+  const calls: string[] = [];
+  const pending = (name: string) => (mode: string) => {
+    calls.push(`${name}:${mode}`);
+    return new Promise(() => {});
+  };
+  (window as unknown as { api: unknown }).api = {
+    setLanguage: () => Promise.resolve(),
+    signInWithGoogle: pending("google"),
+    signInWithApple: pending("apple"),
+  };
+  await open();
+
+  await flush(() => find<HTMLButtonElement>(".apple-btn").click());
+  expect(calls).toEqual(["apple:merge"]);
+  expect(find(".apple-btn").textContent).toBe("Apple로 로그인");
+});
+
 test("the theme control is deliberately not a ui/button", async () => {
   await open();
 

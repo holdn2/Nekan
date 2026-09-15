@@ -119,7 +119,13 @@ export function WelcomeChoices({
           repeating what syncing is. Apple and Google are separate accounts
           unless the email matches, so the useful thing to say is which one an
           iPhone already signed into -- picking the other gives an empty list
-          that looks like a sync that did not work. */}
+          that looks like a sync that did not work.
+
+          Its logo takes the words' colour, which is `text`, not pure black.
+          This is a row among the app's own answers rather than Apple's button,
+          and Apple's rule for a custom button is that the logo and the title
+          are one colour -- which holds in both themes. The settings panel,
+          where it is a stand-alone sign-in button, uses Apple's white one. */}
       <Button
         className={CHOICE}
         variant="outline"

@@ -357,7 +357,8 @@
     "adoptHintPhone": "Off keeps only what the account already has. The tasks here are not deleted -- they are set aside on this device.",
     "adoptPhone_one": "Also merge the {{count}} task on this device into the account",
     "adoptPhone_other": "Also merge the {{count}} tasks on this device into the account",
-    "appleShareEmail": "Apple and Google share a list only when the email is the same. If you use Google on another device, sign in with Google here too."
+    "appleShareEmail": "Apple and Google share a list only when the email is the same. If you use Google on another device, sign in with Google here too.",
+    "providerHint": "Google and Apple share a list only when the email is the same. Sign in the way your other devices do."
   },
   "welcome": {
     "lede": "Where should your tasks live?",

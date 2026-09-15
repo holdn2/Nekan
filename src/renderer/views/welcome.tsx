@@ -7,14 +7,14 @@
  *
  * Shown whenever `settings.startupChoice` is null, which means a 1.0.2 file --
  * having no such key -- meets it once as well. That is the point. The choice
- * is not final either; the same two options live in the settings panel.
+ * is not final either; the same options live in the settings panel.
  *
  * welcome.css is down to one rule, and the overlay's own box is in index.html.
  * The card is 380px wide and was measured against a 760x520 window, which is
  * why nothing in here grows with the window except the space around it.
  *
- * It is a ui/card now -- header, content, footer -- and the two answers inside
- * it are ui/buttons. Nothing about the question changed; what changed is that
+ * It is a ui/card now -- header, content, footer -- and the answers inside it
+ * are ui/buttons. Nothing about the question changed; what changed is that
  * the card is a surface rather than a column of text on the page background,
  * which is what the rest of the app already looked like everywhere else.
  */
@@ -219,8 +219,8 @@ export function Welcome() {
             text" and "here is the one thing to answer".
 
             The card is the question and nothing else -- the mark, the name,
-            the two answers, and the one checkbox that hangs off the first of
-            them. The status line and the notice that used to sit inside it are
+            the three answers, and the one checkbox that hangs off the two
+            sign-ins. The status line and the notice that used to sit inside it are
             below it now: neither is part of the question, and both made the
             card taller than the thing it was asking.
 

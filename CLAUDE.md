@@ -118,7 +118,7 @@ src/               쓰는 곳. TypeScript다 — 도는 것은 out/이다 (아�
                    맞지 않으며(아래 참조), tabs는 탭 줄이 밑줄을 직접 재고,
                    popover는 due-chip이 Radix를 직접 쓴다
     react/         React 쪽 배관 — icons.tsx(아이콘)·window-icons.tsx(창 버튼)·
-                   brand-icons.tsx(구글 마크) · use-store.ts(훅) ·
+                   brand-icons.tsx(구글·애플 마크) · use-store.ts(훅) ·
                    **앞의 둘은 2026-08-26부터 `lucide-react`를 감싼다.** 크기와 굵기는
                    여전히 그 모듈이 정한다 — 이 앱은 10~14px로 그리는데 Lucide 기본은
                    24px/2라, `strokeWidth`를 `원래값 * 24/16`으로 넘겨 무게를 맞춘다

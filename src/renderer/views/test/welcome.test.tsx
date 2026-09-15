@@ -114,7 +114,7 @@ test("the answer main sends back is what re-enables the buttons", async () => {
   );
 });
 
-test("the card is a ui/card, and the two answers are ui/buttons", async () => {
+test("the card is a ui/card, and the answers are ui/buttons", async () => {
   pendingSignIn();
   await mount(<Welcome />);
 

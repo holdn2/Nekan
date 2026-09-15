@@ -71,7 +71,7 @@ const HINT = "account-hint m-[0px] mt-[-2px] basis-full text-sm text-muted";
  * two guidelines differ.
  */
 const BRAND_BUTTON = cn(
-  "inline-flex items-center gap-md rounded-sm border",
+  "inline-flex w-full items-center justify-center gap-md rounded-sm border",
   "bg-[#fff] px-3xl py-md hover:bg-[#f7f8f8]",
   "font-sans text-md leading-none font-medium",
   "disabled:cursor-default disabled:opacity-[0.55]",
@@ -178,11 +178,15 @@ export function Account() {
         {/* Google asks that its button keep white/grey chrome and the wordmark
             colours, which is why this one does not follow the app's button
             styling. Apple asks the same of its white button, with black words
-            and a black edge. Those five literals are the only colours in the
-            app outside a token, and they must stay that way: pointing them at
-            the palette would make the buttons follow the theme, which is the
-            thing both guidelines forbid. If a sweep reports "5 hardcoded
-            colours", this is all of them.
+            and a black edge. Those five literals are the only colours in this
+            file outside a token (brand-icons.tsx holds Google's four), and they
+            must stay that way: pointing them at the palette would make the
+            buttons follow the theme, which is the thing both guidelines forbid.
+
+            Full width, both of them. The panel is 320px and the two wrap onto
+            rows of their own anyway, where their natural widths left Apple's
+            narrower than Google's -- and Apple asks that its button be no
+            smaller than the other sign-in buttons beside it.
 
             The type is ours, so it goes through the tokens and follows the app
             if the family or the scale changes. It was one `font:` shorthand;
@@ -220,8 +224,10 @@ export function Account() {
         </button>
         {/* Before anyone picks, because after is too late: the other button
             makes a second account with an empty list whenever the two emails
-            differ. The same sentence the phone shows under its Apple button. */}
-        <p className={HINT}>{t("account.appleShareEmail")}</p>
+            differ. Not the phone's sentence -- that one sits under an Apple
+            button alone and steers towards Google, and here it would sit under
+            both and send an iPhone's Apple user to the empty account. */}
+        <p className={HINT}>{t("account.providerHint")}</p>
 
         {/* The other door into the same decision. Signing in is reachable from
             here as well as the first-run card, so the notice has to be in both
