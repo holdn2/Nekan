@@ -401,7 +401,7 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
 ## 알아두면 좋은 것
 
 - **비밀번호 로그인은 패키징된 빌드에 존재하지 않는다.** `main/ipc/auth.ts`가 `auth:login`을
-  `!app.isPackaged`일 때만 등록한다. 사용자에게 열린 길은 Google 하나뿐이고, 비밀번호는
+  `!app.isPackaged`일 때만 등록한다. 사용자에게 열린 길은 Google과 Apple 둘이고, 비밀번호는
   **사람이 동의 화면을 누르지 않고도 동기화를 검증하기 위한** 개발용 통로다. 가이드의 개발용
   폼도 `state:load`의 `devLogin`을 보고 그때만 나온다. 이 통로를 없애면 **동기화를 자동으로
   검증할 방법이 사라진다** — 없애기 전에 대체 수단을 먼저 만들 것.
@@ -409,6 +409,11 @@ import하지 않는다. 화면을 다시 그려야 하는 쪽(store의 `commit()
   포트는 `listen(0)`으로 OS가 고른다 — 그래서 Supabase의 Redirect URL 허용목록에
   `http://127.0.0.1:*`가 있어야 한다. 와일드카드를 못 쓰게 되면 고쳐야 할 곳은 그 `listen(0)`
   한 줄이다. 앱 안 webview를 쓰면 **Google이 막는다.**
+  **Apple도 같은 길이다**(`loginWith("apple")`) — 다른 것은 Supabase 쪽뿐이다. 웹 흐름이라
+  **Services ID와 client secret(JWT)** 이 필요하고, 폰의 시스템 시트는 둘 다 필요 없다.
+  **그 secret은 최대 6개월 뒤 만료되고, 만료되면 데스크톱 Apple 로그인만 조용히 죽는다** —
+  폰은 멀쩡하고 Google도 멀쩡해서 아무도 모른다. 갱신 날짜와 절차는 `docs/DECISIONS.md`
+  2026-09-15(데스크톱)에 있다.
 - **콜백 서버는 `/callback/<state>`가 아닌 요청을 전부 404로 흘려보낸다.** 브라우저가 보내는
   favicon 요청 하나에 로그인이 끝나버리면 안 되기 때문이고, 같은 기기의 다른 프로세스가
   `?error=`를 먼저 때려 로그인을 취소시키는 것도 막는다. **`/callback`만 받고 state를 쿼리로
