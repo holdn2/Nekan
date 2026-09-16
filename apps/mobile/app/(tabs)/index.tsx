@@ -16,6 +16,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -116,6 +118,38 @@ export default function MatrixScreen() {
     [],
   );
 
+  // The same views, kept by hand so they can be asked again later.
+  //
+  // onLayout answers when a card moves *within its parent*, and the keyboard
+  // never does that: it shrinks the panel above, so each card slides up the
+  // window while its own frame stays exactly where it was. A rectangle a
+  // keyboard's height out of date is not a missed drop -- it is a row filed
+  // into the quadrant above the one it was let go over.
+  const nodes = useRef<Partial<Record<Place, View>>>({});
+  const keep = useCallback(
+    (place: Place) => (node: View | null) => {
+      if (node) nodes.current[place] = node;
+      else delete nodes.current[place];
+    },
+    [],
+  );
+  useEffect(() => {
+    const again = () => {
+      for (const [place, node] of Object.entries(nodes.current)) {
+        node?.measureInWindow((x, y, width, height) => {
+          cards.current[place as Place] = { x, y, width, height };
+        });
+      }
+    };
+    // Did, not Will: the frames are only true once the animation has landed.
+    const shown = Keyboard.addListener("keyboardDidShow", again);
+    const hidden = Keyboard.addListener("keyboardDidHide", again);
+    return () => {
+      shown.remove();
+      hidden.remove();
+    };
+  }, []);
+
   // The strip below only exists while a quadrant is open, and a rectangle left
   // behind would go on claiming that part of the screen.
   useEffect(() => {
@@ -124,7 +158,15 @@ export default function MatrixScreen() {
 
   return (
     <View style={[s.window, { backgroundColor: c.bg }]}>
-      <View style={s.root}>
+      {/* The field sits under the list, so on a short phone the keyboard
+          lands on top of it -- the same way it did on the quick-capture
+          screen, which is where this was first reported. Padding rather than
+          height: the panel is the one thing here that flexes, so it gives up
+          the room and the grid keeps its size. */}
+      <KeyboardAvoidingView
+        style={s.root}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
         {/* Anything that is not the field puts the keyboard away. This catches
           the bare parts -- the bar, the gaps, the panel's own background --
           and the controls that sit on top of it say so themselves, because a
@@ -146,6 +188,7 @@ export default function MatrixScreen() {
           on the way. */}
           {open ? (
             <Pressable
+              ref={keep(INBOX)}
               onLayout={measureCard(INBOX)}
               // Tapping it is closing the quadrant: the box *is* the dump, and
               // what is behind a collapsed thing is the thing opened.
@@ -250,6 +293,7 @@ export default function MatrixScreen() {
               return (
                 <Pressable
                   key={q}
+                  ref={keep(q)}
                   onLayout={measureCard(q)}
                   onPress={() => toggle(q)}
                   style={[
@@ -289,7 +333,7 @@ export default function MatrixScreen() {
             })}
           </View>
         </Pressable>
-      </View>
+      </KeyboardAvoidingView>
 
       {/* Outside the safe area on purpose: the gesture reports window
           coordinates, and a container that starts below the notch would put
