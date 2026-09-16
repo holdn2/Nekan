@@ -51,6 +51,15 @@ import {
  * than adding a second padding and hoping the right one wins.
  */
 const FOOT_BTN = "px-xl py-xs text-sm";
+/**
+ * How long the footer says "saved" for.
+ *
+ * Long enough to catch out of the corner of an eye, short enough that it is
+ * gone before the next pause -- a panel that says it forever says nothing.
+ */
+export const SAID_MS = 2000;
+/** Nothing owed · a pause is owed · one just wrote. */
+type Status = "idle" | "saving" | "saved";
 /** The quadrant colours, spelled out so Tailwind's source scan can see them. */
 const QUAD_RULE: Record<string, string> = {
   q1: "border-t-q1",
@@ -90,11 +99,36 @@ export function MemoPanel() {
   // editor -- a sync from another device -- and writing the old text back
   // would erase that edit on every device.
   const lastWritten = useRef<string | null>(null);
+  // What the footer says about what has been typed: nothing, "saving" while a
+  // pause is still owed, "saved" for a moment after one wrote.
+  //
+  // The write itself is instant -- the second of waiting *is* the pause -- so
+  // "saving" is the honest word for the one state a person can act on: what is
+  // on screen is not in the file yet, and closing the lid now would lose it.
+  const [status, setStatus] = useState<Status>("idle");
+  const linger = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const say = useRef((next: Status) => {
+    if (linger.current) {
+      clearTimeout(linger.current);
+      linger.current = null;
+    }
+    setStatus(next);
+    if (next === "saved")
+      linger.current = setTimeout(() => setStatus("idle"), SAID_MS);
+  });
+  useEffect(
+    () => () => {
+      if (linger.current) clearTimeout(linger.current);
+    },
+    [],
+  );
   if (seenSeed !== seed) {
     setSeenSeed(seed);
     setValue(memo);
     setOpened(memo || null);
     lastWritten.current = null;
+    // Another task's receipt is not this one's.
+    setStatus("idle");
   }
 
   // What has been typed and not yet written, and which task it belongs to.
@@ -124,11 +158,20 @@ export function MemoPanel() {
     // after clearing the field to start over is not that question answered.
     const text = clampMemo(pending.text);
     const target = findTask(pending.id);
-    if (!text || !target || target.memo === text) return;
+    if (!text || !target || target.memo === text) {
+      // Nothing to write -- an empty field, or the very words already stored.
+      // Saying "saving" about it would be a promise of a write that is not
+      // coming.
+      say.current("idle");
+      return;
+    }
     // A pull can bury the row or move it to the brain dump while it is being
     // typed into. A tombstone holds no words and a dump row holds no note --
     // main would drop the first on save, but the renderer would keep both.
-    if (isBuried(target) || target.quadrant === INBOX) return;
+    if (isBuried(target) || target.quadrant === INBOX) {
+      say.current("idle");
+      return;
+    }
     // A task with no note is in the editor *because* it has none. The first
     // write gives it one, and without saying "still editing" the panel would
     // flip to reading under the cursor.
@@ -137,6 +180,7 @@ export function MemoPanel() {
       lastWritten.current = text;
     }
     setMemo(pending.id, text);
+    say.current("saved");
   });
 
   const schedule = () => {
@@ -240,6 +284,8 @@ export function MemoPanel() {
       setMemo(task.id, before);
     }
     lastWritten.current = null;
+    // Undone, so there is nothing owed and nothing to show a receipt for.
+    say.current("idle");
     // Nothing to go back to -- or nothing left, when a sync emptied the note
     // while it was open. Either way reading would show an empty panel.
     if (!before || !task.memo) {
@@ -355,6 +401,7 @@ export function MemoPanel() {
           onChange={(e) => {
             setValue(e.target.value);
             draft.current = { id: task.id, text: e.target.value };
+            say.current("saving");
             if (!composing.current) schedule();
           }}
           onCompositionStart={() => {
@@ -401,6 +448,27 @@ export function MemoPanel() {
           buttons to the right. `memo.edit` survives as the title on the body
           above -- that one is a tooltip, not a line of prose on screen. */}
       <footer className="memo-foot flex items-center justify-end gap-sm px-lg pb-md">
+        {/* Left of the buttons, and absent when there is nothing to say. A live
+            region rather than plain text, so a screen reader hears the receipt
+            where it is instead of being sent to find it. */}
+        <span
+          className={cn(
+            "mr-auto text-xs text-faint",
+            status === "idle" && "hidden",
+          )}
+          id="memoStatus"
+          role="status"
+        >
+          {status === "idle"
+            ? // Emptied rather than unmounted: a live region that comes and
+              // goes is announced unreliably, and one left holding "saved"
+              // while the next sentence is typed is holding it about that
+              // sentence.
+              ""
+            : status === "saving"
+              ? t("common.saving")
+              : t("common.saved")}
+        </span>
         <GhostButton
           danger
           className={cn(FOOT_BTN, (editing || !original) && "hidden")}

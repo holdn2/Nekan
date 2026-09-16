@@ -12,7 +12,7 @@ import { clearSelectionSilently, setSelected } from "../../selection.js";
 import { setLanguage } from "../../i18n.js";
 import { find, hidden, mount } from "../../react/testing.js";
 import { classCompiled } from "../../components/ui/test/compiled-css.js";
-import { MemoPanel } from "../memo.js";
+import { MemoPanel, SAID_MS } from "../memo.js";
 
 const task = (over: Partial<Task> = {}): Task => ({
   id: "t1",
@@ -495,4 +495,49 @@ test("cancelling the delete question puts focus back on the button that asked", 
   await flush(() => find<HTMLButtonElement>("#memoDeleteNo").click());
   expect(document.querySelector("#memoDeleteConfirm")).toBeNull();
   expect(document.activeElement).toBe(remove);
+});
+
+test("the footer says it is saving, then that it saved, then stops", async () => {
+  vi.useFakeTimers();
+  const section = host();
+  setTasks([task()]);
+  const { flush } = await mount(<MemoPanel />, section);
+  await edit(flush);
+  expect(hidden("#memoStatus")).toBe(true);
+
+  await flush(() => type(find<HTMLTextAreaElement>("#memoInput"), "쓰는 중"));
+  expect(hidden("#memoStatus")).toBe(false);
+  expect(find("#memoStatus").textContent).toBe("Saving…");
+
+  await flush(() => vi.advanceTimersByTime(DRAFT_SAVE_MS));
+  expect(find("#memoStatus").textContent).toBe("Saved");
+
+  // A receipt is news for a moment and then it is not. A panel that goes on
+  // saying "saved" while the next sentence is typed is saying it about that
+  // sentence, which has not been saved at all.
+  await flush(() => vi.advanceTimersByTime(SAID_MS));
+  expect(hidden("#memoStatus")).toBe(true);
+});
+
+test("a pause that writes nothing does not claim it saved", async () => {
+  // A trailing space, which the save path trims away: something was typed, so
+  // the bar says so, and then the pause finds the note already says exactly
+  // this and writes nothing. There is no receipt for a write that did not
+  // happen -- and leaving "saving" up would promise one that is not coming.
+  vi.useFakeTimers();
+  const section = host();
+  setTasks([task()]);
+  const { flush } = await mount(<MemoPanel />, section);
+  await edit(flush);
+
+  await flush(() =>
+    type(find<HTMLTextAreaElement>("#memoInput"), "원래 메모 "),
+  );
+  expect(find("#memoStatus").textContent).toBe("Saving…");
+
+  await flush(() => vi.advanceTimersByTime(DRAFT_SAVE_MS));
+  expect(hidden("#memoStatus")).toBe(true);
+  // Hidden and empty: the words are what a screen reader would announce.
+  expect(find("#memoStatus").textContent).toBe("");
+  expect(stored()).toBe("원래 메모");
 });

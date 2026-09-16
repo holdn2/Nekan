@@ -65,6 +65,15 @@ function isoIn(days: number): string {
   ).padStart(2, "0")}`;
 }
 
+/**
+ * How long the bar says "saved" for. The desktop's note panel waits the same
+ * amount for the same reason -- long enough to catch, short enough to be gone
+ * before the next pause.
+ */
+const SAID_MS = 2000;
+/** Nothing owed · a pause is owed · one just wrote. */
+type Status = "idle" | "saving" | "saved";
+
 export default function TaskScreen() {
   const c = useColors();
   useStore();
@@ -96,6 +105,27 @@ export default function TaskScreen() {
   // guard skipped leaves the flag up, so a deliberate blur or close on a
   // blanked title still deletes the task as it always did.
   const edited = useRef({ text: false, memo: false });
+  // What the bar says about what has been typed -- the same two words the
+  // desktop's note panel shows, for a sharper reason here: this screen can go
+  // away by a swipe from the edge, and "saved" is how someone knows the swipe
+  // was safe. The write is instant; the second of waiting is the pause itself.
+  const [status, setStatus] = useState<Status>("idle");
+  const linger = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const say = useRef((next: Status) => {
+    if (linger.current) {
+      clearTimeout(linger.current);
+      linger.current = null;
+    }
+    setStatus(next);
+    if (next === "saved")
+      linger.current = setTimeout(() => setStatus("idle"), SAID_MS);
+  });
+  useEffect(
+    () => () => {
+      if (linger.current) clearTimeout(linger.current);
+    },
+    [],
+  );
   const latest = useRef({ text, memo });
   latest.current = { text, memo };
   const taskId = task?.id;
@@ -109,14 +139,20 @@ export default function TaskScreen() {
   flush.current = () => {
     if (!taskId || gone()) return;
     const typed = latest.current;
+    let wrote = false;
     if (edited.current.text && typed.text.trim()) {
       editTask(taskId, typed.text);
       edited.current.text = false;
+      wrote = true;
     }
     if (edited.current.memo && typed.memo.trim()) {
       setMemo(taskId, typed.memo);
       edited.current.memo = false;
+      wrote = true;
     }
+    // Nothing written means nothing is owed either: the field is blank, and
+    // the blank guard is not going to write it however long the bar waits.
+    say.current(wrote ? "saved" : "idle");
   };
   // The flags, not the mutations' own "nothing changed" checks, are what keep
   // the first run of this on mount from writing: a copy gone stale under a
@@ -163,6 +199,13 @@ export default function TaskScreen() {
         <Text style={[s.title, { color: c.muted }]} numberOfLines={1}>
           {inDump ? t("inbox.title") : t(`quad.${task.quadrant}.action`)}
         </Text>
+        {/* Beside the close button, because that is where the eye already is
+            when someone is deciding whether it is safe to leave. */}
+        {status === "idle" ? null : (
+          <Text style={[s.status, { color: c.faint }]}>
+            {status === "saving" ? t("common.saving") : t("common.saved")}
+          </Text>
+        )}
         <Pressable
           onPress={close}
           hitSlop={10}
@@ -177,6 +220,11 @@ export default function TaskScreen() {
         contentContainerStyle={s.body}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
+        // The note is the last field on a screen that scrolls, so the keyboard
+        // covered it on a short phone. iOS gives a scroll view the inset for
+        // free; the alternative is wrapping this in a KeyboardAvoidingView,
+        // which fights the scrolling this screen already does.
+        automaticallyAdjustKeyboardInsets
       >
         <TextInput
           style={[
@@ -186,12 +234,14 @@ export default function TaskScreen() {
           value={text}
           onChangeText={(next) => {
             edited.current.text = true;
+            say.current("saving");
             setText(next);
           }}
           onBlur={() => {
             if (!edited.current.text || gone()) return;
             editTask(task.id, text);
             edited.current.text = false;
+            say.current("saved");
           }}
           multiline
           accessibilityLabel={t("common.save")}
@@ -246,12 +296,14 @@ export default function TaskScreen() {
               value={memo}
               onChangeText={(next) => {
                 edited.current.memo = true;
+                say.current("saving");
                 setMemoDraft(next);
               }}
               onBlur={() => {
                 if (!edited.current.memo || gone()) return;
                 setMemo(task.id, memo);
                 edited.current.memo = false;
+                say.current("saved");
               }}
               placeholder={t("memo.placeholder")}
               placeholderTextColor={c.faint}
@@ -312,7 +364,10 @@ const s = StyleSheet.create({
     paddingVertical: SP.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  title: { fontSize: FS.md, fontWeight: FW.semibold, flexShrink: 1 },
+  // Takes the slack, so the status and the close button stay at the right
+  // edge rather than being spaced out across the bar.
+  title: { fontSize: FS.md, fontWeight: FW.semibold, flex: 1 },
+  status: { fontSize: FS.xs },
   body: { padding: SP["4xl"], gap: SP.xl, paddingBottom: SP["7xl"] },
   text: {
     minHeight: 64,

@@ -1257,6 +1257,15 @@ Google이 보는 리디렉트는 언제나 Supabase의 `/auth/v1/callback`이고
 하고, 레이아웃이 끝난 뒤(`onContentSizeChange`)에 스크롤한다 — 이펙트에서 하면 새 행의 높이가
 정해지기 전이라 옛 끝으로 간다.
 
+**입력칸이 있는 화면은 키보드를 피한다. 그런데 매트릭스에서는 그것이 드롭 목표를 낡게 만든다**
+(2026-09-16). 매트릭스는 `KeyboardAvoidingView`(`padding`), 상세·설정은 ScrollView의
+`automaticallyAdjustKeyboardInsets`, 빠른 입력은 전부터 KAV다. 히스토리 검색칸은 맨 위라 그대로 둔다.
+**`onLayout`은 카드가 "부모 안에서" 움직일 때만 답한다** — 키보드는 위의 패널을 줄일 뿐이라 카드의
+프레임은 그대로이고 **창 기준 좌표만 틀어진다.** 그래서 `measureInWindow`로 잡아 둔 사각형이 낡고,
+그 상태로 놓으면 **한 칸 위 분면으로 들어간다.** `keyboardDidShow`·`keyboardDidHide`에서 다시 잰다
+(`Will`이 아니라 `Did` — 애니메이션이 끝나야 프레임이 참이다). 드롭 목표를 쓰는 화면에 무언가가
+높이를 바꾸는 것을 새로 더할 때마다 같은 질문을 할 것.
+
 **`LayoutAnimation`은 New Architecture에서 no-op이다.** 덜 되는 것이 아니라 아무 일도 안 한다 —
 애니메이션은 Reanimated로 쓴다. 그리고 **RN의 점선은 dash 길이를 border width에서 계산한다**:
 hairline이면 점이 선처럼 보인다.
