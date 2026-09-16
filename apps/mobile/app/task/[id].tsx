@@ -38,6 +38,7 @@ import {
 import { isBuried } from "@nekan/shared/sync";
 import type { Quadrant } from "@nekan/shared/types";
 import { CloseIcon } from "../../icons";
+import { DueCalendar } from "../../components/due-calendar";
 import { locale, t } from "../../i18n";
 import { FS, FW, LH, R, SP, useColors } from "../../theme";
 import { findTask } from "../../store/state";
@@ -81,6 +82,10 @@ export default function TaskScreen() {
   const task = findTask(String(id));
   const [text, setText] = useState(task?.text ?? "");
   const [memo, setMemoDraft] = useState(task?.memo ?? "");
+  // Whether the month is open. Closed by default: three chips answer most due
+  // dates in one tap, and a calendar that is always up would push the note off
+  // a short screen to serve the rarer half.
+  const [picking, setPicking] = useState(false);
 
   // Blur and the close button were the only moments these were written, and
   // neither is promised: a swipe back does not blur the field first, and iOS
@@ -183,7 +188,10 @@ export default function TaskScreen() {
   // typed into, and not yet written, for the reason given above.
   const close = () => {
     if (!gone()) {
-      if (edited.current.text) editTask(task.id, text);
+      // Blank is not a deletion -- see the title's blur handler. The note is
+      // different: emptying it and closing is how a note is taken off a task,
+      // and nothing is lost that the task itself was not.
+      if (edited.current.text && text.trim()) editTask(task.id, text);
       if (edited.current.memo) setMemo(task.id, memo);
     }
     edited.current = { text: false, memo: false };
@@ -218,7 +226,12 @@ export default function TaskScreen() {
 
       <ScrollView
         contentContainerStyle={s.body}
-        keyboardDismissMode="on-drag"
+        // Not "on-drag" any more: with the keyboard up, scrolling down to
+        // reach the delete button took the keyboard away with it, and the
+        // scroll went with the keyboard. It goes when something that is not a
+        // field is tapped instead -- which is what "handled" means here: a tap
+        // a child takes (a chip, the delete button) leaves the keyboard alone,
+        // and a tap on anything else puts it away.
         keyboardShouldPersistTaps="handled"
         // The note is the last field on a screen that scrolls, so the keyboard
         // covered it on a short phone. iOS gives a scroll view the inset for
@@ -239,6 +252,18 @@ export default function TaskScreen() {
           }}
           onBlur={() => {
             if (!edited.current.text || gone()) return;
+            // A blank title is never written, by any road. Writing one deletes
+            // the task (editTask), and clearing the field is how someone
+            // starts rewriting a title -- not how they ask for the task to go.
+            // Reported from a device: the pause already refused to write it,
+            // but leaving the field still did. Deleting is the button at the
+            // bottom of this screen, and the swipe on the list behind it.
+            if (!text.trim()) {
+              setText(task.text);
+              edited.current.text = false;
+              say.current("idle");
+              return;
+            }
             editTask(task.id, text);
             edited.current.text = false;
             say.current("saved");
@@ -265,6 +290,29 @@ export default function TaskScreen() {
                   <Text style={[s.chipText, { color: c.text }]}>{t(key)}</Text>
                 </Pressable>
               ))}
+              {/* Any other day. The three above are shortcuts through this,
+                  not the whole of what a due date can be. */}
+              <Pressable
+                onPress={() => setPicking((up) => !up)}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: picking }}
+                style={[
+                  s.chip,
+                  {
+                    backgroundColor: picking ? c.accent : c.panel,
+                    borderColor: picking ? c.accent : c.line,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    s.chipText,
+                    { color: picking ? c["on-accent"] : c.text },
+                  ]}
+                >
+                  {t("due.pickDate")}
+                </Text>
+              </Pressable>
               {task.dueDate ? (
                 <Pressable
                   onPress={() => setDue(task.id, null)}
@@ -279,6 +327,19 @@ export default function TaskScreen() {
                 </Pressable>
               ) : null}
             </View>
+            {picking ? (
+              <DueCalendar
+                value={task.dueDate}
+                // Picking is one decision, so the month closes behind it. The
+                // chip stays to open it again, and what was picked is written
+                // the instant it is tapped -- a date has no half-typed state
+                // to protect, which is why it never waited for a pause.
+                onPick={(iso) => {
+                  setDue(task.id, iso);
+                  setPicking(false);
+                }}
+              />
+            ) : null}
             {due ? (
               <Text style={[s.note, { color: c.muted }]}>{due.text}</Text>
             ) : null}

@@ -231,7 +231,10 @@
     "tomorrow": "내일",
     "overdue_other": "{{count}}일 지남",
     "remaining_other": "{{count}}일 남음",
-    "nextWeek": "다음 주"
+    "nextWeek": "다음 주",
+    "prevMonth": "이전 달",
+    "nextMonth": "다음 달",
+    "pickDate": "날짜 고르기"
   },
   "memo": {
     "panel": "메모",
