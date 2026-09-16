@@ -59,6 +59,16 @@ export default function MatrixScreen() {
   const c = useColors();
   useStore();
   const [open, setOpen] = useState<Quadrant | null>(null);
+  // How much of this screen sits below the field: the grid of four, plus the
+  // panel's own bottom margin.
+  //
+  // Lifting the whole screen by the keyboard's height puts the *bottom* of it
+  // on the keyboard, and the bottom is the grid -- so the field came to rest a
+  // grid's height above the keyboard, which is what a device reported as "it
+  // goes up too far". Told to lift by that much less, the grid goes behind the
+  // keyboard and the field lands on it. Measured rather than counted from the
+  // style, because the number is the one thing here nobody can keep in step.
+  const [belowPanel, setBelowPanel] = useState(0);
   // Where the four cards are in window coordinates, so a dragged row can be
   // asked which one it is over. Measured on layout and kept in a ref: it is
   // read during a gesture, and setting state there would redraw mid-drag.
@@ -166,6 +176,7 @@ export default function MatrixScreen() {
       <KeyboardAvoidingView
         style={s.root}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={-belowPanel}
       >
         {/* Anything that is not the field puts the keyboard away. This catches
           the bare parts -- the bar, the gaps, the panel's own background --
@@ -287,7 +298,10 @@ export default function MatrixScreen() {
             <AddForm place={open ?? INBOX} onAdded={() => setReveal(true)} />
           </View>
 
-          <View style={s.grid}>
+          <View
+            style={s.grid}
+            onLayout={(e) => setBelowPanel(e.nativeEvent.layout.height + SP.md)}
+          >
             {quadrants().map((q) => {
               const selected = q === open;
               return (
