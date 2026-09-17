@@ -7,15 +7,17 @@
  * Edits are saved as they are made rather than on a Save button. There is
  * nothing to cancel back to -- the store is the document, every write is
  * already a timestamped row, and a phone that is closed mid-sentence should
- * not lose the sentence. The three fields each stop at their own moment:
- * text and note on blur, the date the instant it is picked.
+ * not lose the sentence. The date is saved the instant it is picked; text and
+ * note a second after typing stops, on blur, when the app goes to the
+ * background, and when the screen goes away however it goes (issue 136).
  *
  * A brain-dump row gets only its text. It has no board yet, and a due date or
  * a note on something not yet classified is a decision made in the wrong
  * order -- the desktop draws those rows the same way.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  AppState,
   Platform,
   Pressable,
   ScrollView,
@@ -26,7 +28,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-import { INBOX, QUADS, dueInfo, formatDue } from "@nekan/shared/core";
+import {
+  DRAFT_SAVE_MS,
+  INBOX,
+  QUADS,
+  dueInfo,
+  formatDue,
+} from "@nekan/shared/core";
+import { isBuried } from "@nekan/shared/sync";
 import type { Quadrant } from "@nekan/shared/types";
 import { CloseIcon } from "../../icons";
 import { locale, t } from "../../i18n";
@@ -64,18 +73,84 @@ export default function TaskScreen() {
   const [text, setText] = useState(task?.text ?? "");
   const [memo, setMemoDraft] = useState(task?.memo ?? "");
 
+  // Blur and the close button were the only moments these were written, and
+  // neither is promised: a swipe back does not blur the field first, and iOS
+  // can end a backgrounded app without saying so. So the fields also write a
+  // second after typing stops, when the app leaves the foreground, and when
+  // this screen unmounts.
+  //
+  // None of those ever writes an empty field. A blank title deletes the task
+  // (editTask), and a pause after clearing it to type a new one is not a
+  // decision to delete. Blur and the close button keep that meaning -- those
+  // are deliberate.
+  //
+  // And nothing writes a field nobody typed into. The two fields are copies
+  // taken when the screen opened, and a sync can change the task underneath
+  // them; writing an untouched copy back would stamp the old words as the
+  // newest and erase the other device's edit everywhere. Blur and the close
+  // button always had that gap -- they keep the same rule now.
+  //
+  // A write clears its flag. Once saved, the copy is no newer than the store,
+  // and writing it again on the next unmount or trip to the background would
+  // put it back over whatever a sync brought in meanwhile. A write the blank
+  // guard skipped leaves the flag up, so a deliberate blur or close on a
+  // blanked title still deletes the task as it always did.
+  const edited = useRef({ text: false, memo: false });
+  const latest = useRef({ text, memo });
+  latest.current = { text, memo };
+  const taskId = task?.id;
+  // A sync can purge the task while this screen is open. A tombstone holds no
+  // words, so nothing here writes into one.
+  const gone = () => {
+    const row = taskId ? findTask(taskId) : undefined;
+    return !row || isBuried(row);
+  };
+  const flush = useRef(() => {});
+  flush.current = () => {
+    if (!taskId || gone()) return;
+    const typed = latest.current;
+    if (edited.current.text && typed.text.trim()) {
+      editTask(taskId, typed.text);
+      edited.current.text = false;
+    }
+    if (edited.current.memo && typed.memo.trim()) {
+      setMemo(taskId, typed.memo);
+      edited.current.memo = false;
+    }
+  };
+  // The flags, not the mutations' own "nothing changed" checks, are what keep
+  // the first run of this on mount from writing: a copy gone stale under a
+  // sync is not "nothing changed".
+  useEffect(() => {
+    const timer = setTimeout(() => flush.current(), DRAFT_SAVE_MS);
+    return () => clearTimeout(timer);
+  }, [text, memo]);
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (next) => {
+      if (next !== "active") flush.current();
+    });
+    return () => {
+      sub.remove();
+      flush.current();
+    };
+  }, []);
+
   // Deleted from under us -- by a swipe on the list behind, or later by sync.
-  if (!task) {
+  // Purged counts: there is nothing left on a tombstone to edit.
+  if (!task || isBuried(task)) {
     router.back();
     return null;
   }
 
   // Both fields save on blur, and tapping the close button is not guaranteed
-  // to blur one first -- so closing writes them itself. Both are no-ops when
-  // nothing changed, so this cannot manufacture an edit.
+  // to blur one first -- so closing writes them itself. Only a field that was
+  // typed into, and not yet written, for the reason given above.
   const close = () => {
-    editTask(task.id, text);
-    setMemo(task.id, memo);
+    if (!gone()) {
+      if (edited.current.text) editTask(task.id, text);
+      if (edited.current.memo) setMemo(task.id, memo);
+    }
+    edited.current = { text: false, memo: false };
     router.back();
   };
 
@@ -109,8 +184,15 @@ export default function TaskScreen() {
             { backgroundColor: c.panel, borderColor: c.line, color: c.text },
           ]}
           value={text}
-          onChangeText={setText}
-          onBlur={() => editTask(task.id, text)}
+          onChangeText={(next) => {
+            edited.current.text = true;
+            setText(next);
+          }}
+          onBlur={() => {
+            if (!edited.current.text || gone()) return;
+            editTask(task.id, text);
+            edited.current.text = false;
+          }}
           multiline
           accessibilityLabel={t("common.save")}
         />
@@ -162,8 +244,15 @@ export default function TaskScreen() {
                 },
               ]}
               value={memo}
-              onChangeText={setMemoDraft}
-              onBlur={() => setMemo(task.id, memo)}
+              onChangeText={(next) => {
+                edited.current.memo = true;
+                setMemoDraft(next);
+              }}
+              onBlur={() => {
+                if (!edited.current.memo || gone()) return;
+                setMemo(task.id, memo);
+                edited.current.memo = false;
+              }}
               placeholder={t("memo.placeholder")}
               placeholderTextColor={c.faint}
               multiline
