@@ -106,7 +106,11 @@ export default function SettingsScreen() {
 
   return (
     <View style={[s.root, { backgroundColor: c.bg }]}>
-      <ScrollView contentContainerStyle={s.body}>
+      {/* The development sign-in fields are at the bottom of this list. */}
+      <ScrollView
+        contentContainerStyle={s.body}
+        automaticallyAdjustKeyboardInsets
+      >
         <Text style={[s.title, { color: c.text }]}>{t("settings.title")}</Text>
 
         <AccountBlock />

@@ -38,6 +38,7 @@ import {
 import { isBuried } from "@nekan/shared/sync";
 import type { Quadrant } from "@nekan/shared/types";
 import { CloseIcon } from "../../icons";
+import { DueCalendar } from "../../components/due-calendar";
 import { locale, t } from "../../i18n";
 import { FS, FW, LH, R, SP, useColors } from "../../theme";
 import { findTask } from "../../store/state";
@@ -50,7 +51,7 @@ import {
   setMemo,
 } from "../../store/mutations";
 
-/** Today, tomorrow, a week out -- and clearing it. No calendar yet. */
+/** Today, tomorrow, a week out -- the shortcuts. Any other day is picked from the month (DueCalendar). */
 const OFFSETS = [
   [0, "due.today"],
   [1, "due.tomorrow"],
@@ -65,6 +66,15 @@ function isoIn(days: number): string {
   ).padStart(2, "0")}`;
 }
 
+/**
+ * How long the bar says "saved" for. The desktop's note panel waits the same
+ * amount for the same reason -- long enough to catch, short enough to be gone
+ * before the next pause.
+ */
+const SAID_MS = 2000;
+/** Nothing owed · a pause is owed · one just wrote. */
+type Status = "idle" | "saving" | "saved";
+
 export default function TaskScreen() {
   const c = useColors();
   useStore();
@@ -72,6 +82,10 @@ export default function TaskScreen() {
   const task = findTask(String(id));
   const [text, setText] = useState(task?.text ?? "");
   const [memo, setMemoDraft] = useState(task?.memo ?? "");
+  // Whether the month is open. Closed by default: three chips answer most due
+  // dates in one tap, and a calendar that is always up would push the note off
+  // a short screen to serve the rarer half.
+  const [picking, setPicking] = useState(false);
 
   // Blur and the close button were the only moments these were written, and
   // neither is promised: a swipe back does not blur the field first, and iOS
@@ -81,8 +95,10 @@ export default function TaskScreen() {
   //
   // None of those ever writes an empty field. A blank title deletes the task
   // (editTask), and a pause after clearing it to type a new one is not a
-  // decision to delete. Blur and the close button keep that meaning -- those
-  // are deliberate.
+  // decision to delete. Blur and the close button no longer write a blank
+  // title either -- a device showed that clearing one and leaving deleted the
+  // task, so leaving puts the stored title back. They do still write a blank
+  // note: emptying it and closing is how a note comes off a task.
   //
   // And nothing writes a field nobody typed into. The two fields are copies
   // taken when the screen opened, and a sync can change the task underneath
@@ -93,9 +109,31 @@ export default function TaskScreen() {
   // A write clears its flag. Once saved, the copy is no newer than the store,
   // and writing it again on the next unmount or trip to the background would
   // put it back over whatever a sync brought in meanwhile. A write the blank
-  // guard skipped leaves the flag up, so a deliberate blur or close on a
-  // blanked title still deletes the task as it always did.
+  // guard skipped leaves the flag up, and that is harmless: no road writes a
+  // blank title, and a blank note is only written by a deliberate blur or
+  // close.
   const edited = useRef({ text: false, memo: false });
+  // What the bar says about what has been typed -- the same two words the
+  // desktop's note panel shows, for a sharper reason here: this screen can go
+  // away by a swipe from the edge, and "saved" is how someone knows the swipe
+  // was safe. The write is instant; the second of waiting is the pause itself.
+  const [status, setStatus] = useState<Status>("idle");
+  const linger = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const say = useRef((next: Status) => {
+    if (linger.current) {
+      clearTimeout(linger.current);
+      linger.current = null;
+    }
+    setStatus(next);
+    if (next === "saved")
+      linger.current = setTimeout(() => setStatus("idle"), SAID_MS);
+  });
+  useEffect(
+    () => () => {
+      if (linger.current) clearTimeout(linger.current);
+    },
+    [],
+  );
   const latest = useRef({ text, memo });
   latest.current = { text, memo };
   const taskId = task?.id;
@@ -108,15 +146,27 @@ export default function TaskScreen() {
   const flush = useRef(() => {});
   flush.current = () => {
     if (!taskId || gone()) return;
+    // Nothing owed, nothing to say. A leave writes and says "saved", and the
+    // pause timer typing started is still running after it -- a blur does not
+    // change the text -- so without this that timer, or a trip to the
+    // background, came along a moment later and wiped the receipt to idle.
+    if (!edited.current.text && !edited.current.memo) return;
     const typed = latest.current;
+    let wrote = false;
+    // The write is called first, then `wrote` -- the other order would skip
+    // the second field once the first had written.
     if (edited.current.text && typed.text.trim()) {
-      editTask(taskId, typed.text);
+      wrote = editTask(taskId, typed.text) || wrote;
       edited.current.text = false;
     }
     if (edited.current.memo && typed.memo.trim()) {
-      setMemo(taskId, typed.memo);
+      wrote = setMemo(taskId, typed.memo) || wrote;
       edited.current.memo = false;
     }
+    // "Saved" only for a write that happened. Nothing written means nothing
+    // is owed either: the field is blank, or it says exactly what is stored
+    // (typed and then typed back), and a receipt for either would be a lie.
+    say.current(wrote ? "saved" : "idle");
   };
   // The flags, not the mutations' own "nothing changed" checks, are what keep
   // the first run of this on mount from writing: a copy gone stale under a
@@ -147,7 +197,10 @@ export default function TaskScreen() {
   // typed into, and not yet written, for the reason given above.
   const close = () => {
     if (!gone()) {
-      if (edited.current.text) editTask(task.id, text);
+      // Blank is not a deletion -- see the title's blur handler. The note is
+      // different: emptying it and closing is how a note is taken off a task,
+      // and nothing is lost that the task itself was not.
+      if (edited.current.text && text.trim()) editTask(task.id, text);
       if (edited.current.memo) setMemo(task.id, memo);
     }
     edited.current = { text: false, memo: false };
@@ -163,6 +216,13 @@ export default function TaskScreen() {
         <Text style={[s.title, { color: c.muted }]} numberOfLines={1}>
           {inDump ? t("inbox.title") : t(`quad.${task.quadrant}.action`)}
         </Text>
+        {/* Beside the close button, because that is where the eye already is
+            when someone is deciding whether it is safe to leave. */}
+        {status === "idle" ? null : (
+          <Text style={[s.status, { color: c.faint }]}>
+            {status === "saving" ? t("common.saving") : t("common.saved")}
+          </Text>
+        )}
         <Pressable
           onPress={close}
           hitSlop={10}
@@ -175,8 +235,18 @@ export default function TaskScreen() {
 
       <ScrollView
         contentContainerStyle={s.body}
-        keyboardDismissMode="on-drag"
+        // Not "on-drag" any more: with the keyboard up, scrolling down to
+        // reach the delete button took the keyboard away with it, and the
+        // scroll went with the keyboard. It goes when something that is not a
+        // field is tapped instead -- which is what "handled" means here: a tap
+        // a child takes (a chip, the delete button) leaves the keyboard alone,
+        // and a tap on anything else puts it away.
         keyboardShouldPersistTaps="handled"
+        // The note is the last field on a screen that scrolls, so the keyboard
+        // covered it on a short phone. iOS gives a scroll view the inset for
+        // free; the alternative is wrapping this in a KeyboardAvoidingView,
+        // which fights the scrolling this screen already does.
+        automaticallyAdjustKeyboardInsets
       >
         <TextInput
           style={[
@@ -186,12 +256,26 @@ export default function TaskScreen() {
           value={text}
           onChangeText={(next) => {
             edited.current.text = true;
+            say.current("saving");
             setText(next);
           }}
           onBlur={() => {
             if (!edited.current.text || gone()) return;
-            editTask(task.id, text);
+            // A blank title is never written, by any road. Writing one deletes
+            // the task (editTask), and clearing the field is how someone
+            // starts rewriting a title -- not how they ask for the task to go.
+            // Reported from a device: the pause already refused to write it,
+            // but leaving the field still did. Deleting is the button at the
+            // bottom of this screen, and the swipe on the list behind it.
+            if (!text.trim()) {
+              setText(task.text);
+              edited.current.text = false;
+              say.current("idle");
+              return;
+            }
+            const changed = editTask(task.id, text);
             edited.current.text = false;
+            say.current(changed ? "saved" : "idle");
           }}
           multiline
           accessibilityLabel={t("common.save")}
@@ -215,6 +299,29 @@ export default function TaskScreen() {
                   <Text style={[s.chipText, { color: c.text }]}>{t(key)}</Text>
                 </Pressable>
               ))}
+              {/* Any other day. The three above are shortcuts through this,
+                  not the whole of what a due date can be. */}
+              <Pressable
+                onPress={() => setPicking((up) => !up)}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: picking }}
+                style={[
+                  s.chip,
+                  {
+                    backgroundColor: picking ? c.accent : c.panel,
+                    borderColor: picking ? c.accent : c.line,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    s.chipText,
+                    { color: picking ? c["on-accent"] : c.text },
+                  ]}
+                >
+                  {t("due.pickDate")}
+                </Text>
+              </Pressable>
               {task.dueDate ? (
                 <Pressable
                   onPress={() => setDue(task.id, null)}
@@ -229,6 +336,19 @@ export default function TaskScreen() {
                 </Pressable>
               ) : null}
             </View>
+            {picking ? (
+              <DueCalendar
+                value={task.dueDate}
+                // Picking is one decision, so the month closes behind it. The
+                // chip stays to open it again, and what was picked is written
+                // the instant it is tapped -- a date has no half-typed state
+                // to protect, which is why it never waited for a pause.
+                onPick={(iso) => {
+                  setDue(task.id, iso);
+                  setPicking(false);
+                }}
+              />
+            ) : null}
             {due ? (
               <Text style={[s.note, { color: c.muted }]}>{due.text}</Text>
             ) : null}
@@ -246,12 +366,14 @@ export default function TaskScreen() {
               value={memo}
               onChangeText={(next) => {
                 edited.current.memo = true;
+                say.current("saving");
                 setMemoDraft(next);
               }}
               onBlur={() => {
                 if (!edited.current.memo || gone()) return;
-                setMemo(task.id, memo);
+                const changed = setMemo(task.id, memo);
                 edited.current.memo = false;
+                say.current(changed ? "saved" : "idle");
               }}
               placeholder={t("memo.placeholder")}
               placeholderTextColor={c.faint}
@@ -312,7 +434,10 @@ const s = StyleSheet.create({
     paddingVertical: SP.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  title: { fontSize: FS.md, fontWeight: FW.semibold, flexShrink: 1 },
+  // Takes the slack, so the status and the close button stay at the right
+  // edge rather than being spaced out across the bar.
+  title: { fontSize: FS.md, fontWeight: FW.semibold, flex: 1 },
+  status: { fontSize: FS.xs },
   body: { padding: SP["4xl"], gap: SP.xl, paddingBottom: SP["7xl"] },
   text: {
     minHeight: 64,

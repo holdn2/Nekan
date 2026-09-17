@@ -4,6 +4,8 @@
     "cancel": "Cancel",
     "close": "Close",
     "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved",
     "delete": "Delete",
     "clear": "Clear"
   },
@@ -231,7 +233,10 @@
     "overdue_other": "{{count}} days overdue",
     "remaining_one": "{{count}} day left",
     "remaining_other": "{{count}} days left",
-    "nextWeek": "Next week"
+    "nextWeek": "Next week",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "pickDate": "Pick a date"
   },
   "memo": {
     "panel": "Note",

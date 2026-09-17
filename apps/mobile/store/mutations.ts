@@ -81,23 +81,34 @@ export function addTasks(quadrant: Place, text: string): number {
 }
 
 /** Empty text deletes rather than storing a blank row -- same as the desktop. */
-export function editTask(id: string, text: string): void {
+// Both answer whether anything was written. The detail screen says "saved" on
+// that answer rather than on having called: text typed and then typed back, or
+// a title with a space added, reaches here and changes nothing -- and a
+// receipt for a write that did not happen makes every later one worth
+// ignoring. The desktop's note panel keeps the same rule.
+
+export function editTask(id: string, text: string): boolean {
   const task = findTask(id);
-  if (!task) return;
+  if (!task) return false;
   const next = text.trim();
-  if (!next) return deleteTask(id);
-  if (next === task.text) return;
+  if (!next) {
+    deleteTask(id);
+    return true;
+  }
+  if (next === task.text) return false;
   task.text = next;
   commit(task);
+  return true;
 }
 
-export function setMemo(id: string, memo: string | null): void {
+export function setMemo(id: string, memo: string | null): boolean {
   const task = findTask(id);
-  if (!task) return;
+  if (!task) return false;
   const next = memo && memo.trim() ? memo : null;
-  if (next === task.memo) return;
+  if (next === task.memo) return false;
   task.memo = next;
   commit(task);
+  return true;
 }
 
 export function setDue(id: string, value: string | null): void {

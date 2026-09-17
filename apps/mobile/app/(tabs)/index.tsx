@@ -16,10 +16,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Keyboard,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
+  type KeyboardEvent,
   type LayoutChangeEvent,
 } from "react-native";
 import Animated, {
@@ -53,10 +55,55 @@ import { useStore } from "../../store/use-store";
 const OPENING = FadeInDown.duration(220);
 const CLOSING = FadeInUp.duration(220);
 
+// Air between the field and the keyboard. Flush read as cramped on a device;
+// 12px, once the lift was measured, read as too much -- this is the halfway
+// point the user asked for.
+const KEYBOARD_GAP = SP.sm;
+
 export default function MatrixScreen() {
   const c = useColors();
   useStore();
   const [open, setOpen] = useState<Quadrant | null>(null);
+  // How far the screen is lifted while the keyboard is up, as bottom padding.
+  //
+  // Measured, not derived. KeyboardAvoidingView lifted the whole screen and
+  // this screen's field is not at its bottom -- the grid is -- so it had to be
+  // told an offset, and that offset never matched the phone: read against its
+  // source it was short by the header's height, while on the device the field
+  // looked flush -- and whether 8px more ever reached the phone before it was
+  // looked at is not known. Rather than guess which arithmetic the phone was
+  // doing, the field's own bottom and the keyboard's
+  // top are both asked for in window coordinates, and the lift is the
+  // difference plus the gap. The grid goes behind the keyboard.
+  const [lift, setLift] = useState(0);
+  const lifted = useRef(0);
+  lifted.current = lift;
+  const form = useRef<View>(null);
+  useEffect(() => {
+    const show = (e: KeyboardEvent) => {
+      const keyboardTop = e.endCoordinates.screenY;
+      form.current?.measureInWindow((_x, y, _width, height) => {
+        // Measured with any current lift applied, so add it back to get where
+        // the field rests -- a second event while the keyboard is up (a
+        // taller keyboard, another language) must not stack on the first.
+        const rest = y + height + lifted.current;
+        setLift(Math.max(0, rest - keyboardTop + KEYBOARD_GAP));
+      });
+    };
+    const hide = () => setLift(0);
+    // Will on iOS, so the lift lands with the keyboard rather than after it.
+    // Android sends only the Did pair.
+    const ios = Platform.OS === "ios";
+    const subs = [
+      Keyboard.addListener(ios ? "keyboardWillShow" : "keyboardDidShow", show),
+      Keyboard.addListener(
+        ios ? "keyboardWillChangeFrame" : "keyboardDidShow",
+        show,
+      ),
+      Keyboard.addListener(ios ? "keyboardWillHide" : "keyboardDidHide", hide),
+    ];
+    return () => subs.forEach((sub) => sub.remove());
+  }, []);
   // Where the four cards are in window coordinates, so a dragged row can be
   // asked which one it is over. Measured on layout and kept in a ref: it is
   // read during a gesture, and setting state there would redraw mid-drag.
@@ -116,6 +163,31 @@ export default function MatrixScreen() {
     [],
   );
 
+  // The same views, kept by hand so they can be asked again later.
+  //
+  // onLayout answers when a card moves *within its parent*, and the keyboard
+  // never does that: it shrinks the panel above, so each card slides up the
+  // window while its own frame stays exactly where it was. A rectangle a
+  // keyboard's height out of date is not a missed drop -- it is a row filed
+  // into the quadrant above the one it was let go over.
+  const nodes = useRef<Partial<Record<Place, View>>>({});
+  const keep = useCallback(
+    (place: Place) => (node: View | null) => {
+      if (node) nodes.current[place] = node;
+      else delete nodes.current[place];
+    },
+    [],
+  );
+  // Asked again whenever the lift changes, after the layout it causes has
+  // been committed -- which is exactly when the cards have moved.
+  useEffect(() => {
+    for (const [place, node] of Object.entries(nodes.current)) {
+      node?.measureInWindow((x, y, width, height) => {
+        cards.current[place as Place] = { x, y, width, height };
+      });
+    }
+  }, [lift]);
+
   // The strip below only exists while a quadrant is open, and a rectangle left
   // behind would go on claiming that part of the screen.
   useEffect(() => {
@@ -124,7 +196,11 @@ export default function MatrixScreen() {
 
   return (
     <View style={[s.window, { backgroundColor: c.bg }]}>
-      <View style={s.root}>
+      {/* The field sits under the list, so on a short phone the keyboard
+          lands on top of it. Padding rather than moving anything: the panel
+          is the one thing here that flexes, so it gives up the room and the
+          grid keeps its size. */}
+      <View style={[s.root, { paddingBottom: lift }]}>
         {/* Anything that is not the field puts the keyboard away. This catches
           the bare parts -- the bar, the gaps, the panel's own background --
           and the controls that sit on top of it say so themselves, because a
@@ -146,6 +222,7 @@ export default function MatrixScreen() {
           on the way. */}
           {open ? (
             <Pressable
+              ref={keep(INBOX)}
               onLayout={measureCard(INBOX)}
               // Tapping it is closing the quadrant: the box *is* the dump, and
               // what is behind a collapsed thing is the thing opened.
@@ -241,7 +318,12 @@ export default function MatrixScreen() {
               written into directly -- the desktop gives every quadrant its own
               field for the same reason. What is typed into the dump still
               belongs to neither board until it is filed. */}
-            <AddForm place={open ?? INBOX} onAdded={() => setReveal(true)} />
+            {/* Wrapped only to be measured: this is the edge the keyboard
+                has to clear. collapsable, or the platform may flatten the
+                wrapper away and leave nothing to ask. */}
+            <View ref={form} collapsable={false}>
+              <AddForm place={open ?? INBOX} onAdded={() => setReveal(true)} />
+            </View>
           </View>
 
           <View style={s.grid}>
@@ -250,6 +332,7 @@ export default function MatrixScreen() {
               return (
                 <Pressable
                   key={q}
+                  ref={keep(q)}
                   onLayout={measureCard(q)}
                   onPress={() => toggle(q)}
                   style={[

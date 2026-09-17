@@ -4,6 +4,8 @@
     "cancel": "취소",
     "close": "닫기",
     "save": "저장",
+    "saving": "저장 중…",
+    "saved": "저장됨",
     "delete": "삭제",
     "clear": "지우기"
   },
@@ -229,7 +231,10 @@
     "tomorrow": "내일",
     "overdue_other": "{{count}}일 지남",
     "remaining_other": "{{count}}일 남음",
-    "nextWeek": "다음 주"
+    "nextWeek": "다음 주",
+    "prevMonth": "이전 달",
+    "nextMonth": "다음 달",
+    "pickDate": "날짜 고르기"
   },
   "memo": {
     "panel": "메모",
