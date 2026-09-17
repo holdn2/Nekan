@@ -146,6 +146,11 @@ export default function TaskScreen() {
   const flush = useRef(() => {});
   flush.current = () => {
     if (!taskId || gone()) return;
+    // Nothing owed, nothing to say. A leave writes and says "saved", and the
+    // pause timer typing started is still running after it -- a blur does not
+    // change the text -- so without this that timer, or a trip to the
+    // background, came along a moment later and wiped the receipt to idle.
+    if (!edited.current.text && !edited.current.memo) return;
     const typed = latest.current;
     let wrote = false;
     // The write is called first, then `wrote` -- the other order would skip
