@@ -148,18 +148,19 @@ export default function TaskScreen() {
     if (!taskId || gone()) return;
     const typed = latest.current;
     let wrote = false;
+    // The write is called first, then `wrote` -- the other order would skip
+    // the second field once the first had written.
     if (edited.current.text && typed.text.trim()) {
-      editTask(taskId, typed.text);
+      wrote = editTask(taskId, typed.text) || wrote;
       edited.current.text = false;
-      wrote = true;
     }
     if (edited.current.memo && typed.memo.trim()) {
-      setMemo(taskId, typed.memo);
+      wrote = setMemo(taskId, typed.memo) || wrote;
       edited.current.memo = false;
-      wrote = true;
     }
-    // Nothing written means nothing is owed either: the field is blank, and
-    // the blank guard is not going to write it however long the bar waits.
+    // "Saved" only for a write that happened. Nothing written means nothing
+    // is owed either: the field is blank, or it says exactly what is stored
+    // (typed and then typed back), and a receipt for either would be a lie.
     say.current(wrote ? "saved" : "idle");
   };
   // The flags, not the mutations' own "nothing changed" checks, are what keep
@@ -267,9 +268,9 @@ export default function TaskScreen() {
               say.current("idle");
               return;
             }
-            editTask(task.id, text);
+            const changed = editTask(task.id, text);
             edited.current.text = false;
-            say.current("saved");
+            say.current(changed ? "saved" : "idle");
           }}
           multiline
           accessibilityLabel={t("common.save")}
@@ -365,9 +366,9 @@ export default function TaskScreen() {
               }}
               onBlur={() => {
                 if (!edited.current.memo || gone()) return;
-                setMemo(task.id, memo);
+                const changed = setMemo(task.id, memo);
                 edited.current.memo = false;
-                say.current("saved");
+                say.current(changed ? "saved" : "idle");
               }}
               placeholder={t("memo.placeholder")}
               placeholderTextColor={c.faint}
