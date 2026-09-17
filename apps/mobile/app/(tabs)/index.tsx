@@ -55,10 +55,10 @@ import { useStore } from "../../store/use-store";
 const OPENING = FadeInDown.duration(220);
 const CLOSING = FadeInUp.duration(220);
 
-// Air between the field and the keyboard. Asked for on a device, twice: flush
-// read as cramped, and 8px on top of KeyboardAvoidingView's arithmetic still
-// read as no gap at all.
-const KEYBOARD_GAP = SP.xl;
+// Air between the field and the keyboard. Flush read as cramped on a device;
+// 12px, once the lift was measured, read as too much -- this is the halfway
+// point the user asked for.
+const KEYBOARD_GAP = SP.sm;
 
 export default function MatrixScreen() {
   const c = useColors();
@@ -70,8 +70,9 @@ export default function MatrixScreen() {
   // this screen's field is not at its bottom -- the grid is -- so it had to be
   // told an offset, and that offset never matched the phone: read against its
   // source it was short by the header's height, while on the device the field
-  // looked flush, and adding 8px still showed no gap. Rather than guess which
-  // arithmetic the phone was doing, the field's own bottom and the keyboard's
+  // looked flush -- and whether 8px more ever reached the phone before it was
+  // looked at is not known. Rather than guess which arithmetic the phone was
+  // doing, the field's own bottom and the keyboard's
   // top are both asked for in window coordinates, and the lift is the
   // difference plus the gap. The grid goes behind the keyboard.
   const [lift, setLift] = useState(0);
