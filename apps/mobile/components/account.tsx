@@ -190,6 +190,16 @@ export function AccountBlock() {
     <View style={s.block}>
       <Text style={[s.label, { color: c.muted }]}>{t("settings.sync")}</Text>
 
+      {/* What just happened, at the top of the block rather than the bottom.
+          Signing out and deleting the account both swap the one card for the
+          sign-in buttons, so a message drawn below those lands a screen's
+          worth under where the eye was -- a device reported "Account deleted"
+          never appearing, with everything else having worked. */}
+      {busy ? <ActivityIndicator color={c.muted} /> : null}
+      {problem ? (
+        <Text style={[s.problem, { color: c.muted }]}>{problem}</Text>
+      ) : null}
+
       {auth ? (
         <>
           <View
@@ -382,11 +392,6 @@ export function AccountBlock() {
             {t("account.overwritten", { count: sync.overwritten })}
           </Text>
         </Pressable>
-      ) : null}
-
-      {busy ? <ActivityIndicator color={c.muted} /> : null}
-      {problem ? (
-        <Text style={[s.problem, { color: c.muted }]}>{problem}</Text>
       ) : null}
     </View>
   );
