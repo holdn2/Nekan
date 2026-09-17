@@ -16,12 +16,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Keyboard,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
+  type KeyboardEvent,
   type LayoutChangeEvent,
 } from "react-native";
 import Animated, {
@@ -55,24 +55,54 @@ import { useStore } from "../../store/use-store";
 const OPENING = FadeInDown.duration(220);
 const CLOSING = FadeInUp.duration(220);
 
-// Air between the field and the keyboard. Flush against it read as cramped on
-// a device -- the same step the panel keeps from the grid below it.
-const KEYBOARD_GAP = SP.md;
+// Air between the field and the keyboard. Asked for on a device, twice: flush
+// read as cramped, and 8px on top of KeyboardAvoidingView's arithmetic still
+// read as no gap at all.
+const KEYBOARD_GAP = SP.xl;
 
 export default function MatrixScreen() {
   const c = useColors();
   useStore();
   const [open, setOpen] = useState<Quadrant | null>(null);
-  // How much of this screen sits below the field: the grid of four, plus the
-  // panel's own bottom margin.
+  // How far the screen is lifted while the keyboard is up, as bottom padding.
   //
-  // Lifting the whole screen by the keyboard's height puts the *bottom* of it
-  // on the keyboard, and the bottom is the grid -- so the field came to rest a
-  // grid's height above the keyboard, which is what a device reported as "it
-  // goes up too far". Told to lift by that much less, the grid goes behind the
-  // keyboard and the field lands on it. Measured rather than counted from the
-  // style, because the number is the one thing here nobody can keep in step.
-  const [belowPanel, setBelowPanel] = useState(0);
+  // Measured, not derived. KeyboardAvoidingView lifted the whole screen and
+  // this screen's field is not at its bottom -- the grid is -- so it had to be
+  // told an offset, and that offset never matched the phone: read against its
+  // source it was short by the header's height, while on the device the field
+  // looked flush, and adding 8px still showed no gap. Rather than guess which
+  // arithmetic the phone was doing, the field's own bottom and the keyboard's
+  // top are both asked for in window coordinates, and the lift is the
+  // difference plus the gap. The grid goes behind the keyboard.
+  const [lift, setLift] = useState(0);
+  const lifted = useRef(0);
+  lifted.current = lift;
+  const form = useRef<View>(null);
+  useEffect(() => {
+    const show = (e: KeyboardEvent) => {
+      const keyboardTop = e.endCoordinates.screenY;
+      form.current?.measureInWindow((_x, y, _width, height) => {
+        // Measured with any current lift applied, so add it back to get where
+        // the field rests -- a second event while the keyboard is up (a
+        // taller keyboard, another language) must not stack on the first.
+        const rest = y + height + lifted.current;
+        setLift(Math.max(0, rest - keyboardTop + KEYBOARD_GAP));
+      });
+    };
+    const hide = () => setLift(0);
+    // Will on iOS, so the lift lands with the keyboard rather than after it.
+    // Android sends only the Did pair.
+    const ios = Platform.OS === "ios";
+    const subs = [
+      Keyboard.addListener(ios ? "keyboardWillShow" : "keyboardDidShow", show),
+      Keyboard.addListener(
+        ios ? "keyboardWillChangeFrame" : "keyboardDidShow",
+        show,
+      ),
+      Keyboard.addListener(ios ? "keyboardWillHide" : "keyboardDidHide", hide),
+    ];
+    return () => subs.forEach((sub) => sub.remove());
+  }, []);
   // Where the four cards are in window coordinates, so a dragged row can be
   // asked which one it is over. Measured on layout and kept in a ref: it is
   // read during a gesture, and setting state there would redraw mid-drag.
@@ -147,22 +177,15 @@ export default function MatrixScreen() {
     },
     [],
   );
+  // Asked again whenever the lift changes, after the layout it causes has
+  // been committed -- which is exactly when the cards have moved.
   useEffect(() => {
-    const again = () => {
-      for (const [place, node] of Object.entries(nodes.current)) {
-        node?.measureInWindow((x, y, width, height) => {
-          cards.current[place as Place] = { x, y, width, height };
-        });
-      }
-    };
-    // Did, not Will: the frames are only true once the animation has landed.
-    const shown = Keyboard.addListener("keyboardDidShow", again);
-    const hidden = Keyboard.addListener("keyboardDidHide", again);
-    return () => {
-      shown.remove();
-      hidden.remove();
-    };
-  }, []);
+    for (const [place, node] of Object.entries(nodes.current)) {
+      node?.measureInWindow((x, y, width, height) => {
+        cards.current[place as Place] = { x, y, width, height };
+      });
+    }
+  }, [lift]);
 
   // The strip below only exists while a quadrant is open, and a rectangle left
   // behind would go on claiming that part of the screen.
@@ -173,22 +196,10 @@ export default function MatrixScreen() {
   return (
     <View style={[s.window, { backgroundColor: c.bg }]}>
       {/* The field sits under the list, so on a short phone the keyboard
-          lands on top of it -- the same way it did on the quick-capture
-          screen, which is where this was first reported. Padding rather than
-          height: the panel is the one thing here that flexes, so it gives up
-          the room and the grid keeps its size. */}
-      <KeyboardAvoidingView
-        style={s.root}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        // Tuned on a device, not derived. Read against KeyboardAvoidingView's
-        // source this looks short by the header's height -- it measures its
-        // own frame relative to its parent and compares that to the
-        // keyboard's window position -- and a review said so. On the phone it
-        // is the other way: with this value the field sits on the keyboard,
-        // and adding the header's height would float it off again. Nobody has
-        // explained the difference yet; do not "fix" it without looking.
-        keyboardVerticalOffset={KEYBOARD_GAP - belowPanel}
-      >
+          lands on top of it. Padding rather than moving anything: the panel
+          is the one thing here that flexes, so it gives up the room and the
+          grid keeps its size. */}
+      <View style={[s.root, { paddingBottom: lift }]}>
         {/* Anything that is not the field puts the keyboard away. This catches
           the bare parts -- the bar, the gaps, the panel's own background --
           and the controls that sit on top of it say so themselves, because a
@@ -306,13 +317,15 @@ export default function MatrixScreen() {
               written into directly -- the desktop gives every quadrant its own
               field for the same reason. What is typed into the dump still
               belongs to neither board until it is filed. */}
-            <AddForm place={open ?? INBOX} onAdded={() => setReveal(true)} />
+            {/* Wrapped only to be measured: this is the edge the keyboard
+                has to clear. collapsable, or the platform may flatten the
+                wrapper away and leave nothing to ask. */}
+            <View ref={form} collapsable={false}>
+              <AddForm place={open ?? INBOX} onAdded={() => setReveal(true)} />
+            </View>
           </View>
 
-          <View
-            style={s.grid}
-            onLayout={(e) => setBelowPanel(e.nativeEvent.layout.height + SP.md)}
-          >
+          <View style={s.grid}>
             {quadrants().map((q) => {
               const selected = q === open;
               return (
@@ -358,7 +371,7 @@ export default function MatrixScreen() {
             })}
           </View>
         </Pressable>
-      </KeyboardAvoidingView>
+      </View>
 
       {/* Outside the safe area on purpose: the gesture reports window
           coordinates, and a container that starts below the notch would put
