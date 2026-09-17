@@ -357,7 +357,9 @@
     "overwritten_one": "{{count}} task was overwritten by changes from another device.",
     "overwritten_other": "{{count}} tasks were overwritten by changes from another device.",
     "phone": {
-      "signedOut": "Signed out. The tasks on this device are still here."
+      "signedOut": "Signed out. The tasks on this device are still here.",
+      "confirmKeep": "<b>The tasks on this phone stay.</b> You can go on using the app without an account.",
+      "deleted": "Account deleted. The tasks on this phone are untouched."
     },
     "adoptHintPhone": "Off keeps only what the account already has. The tasks here are not deleted -- they are set aside on this device.",
     "adoptPhone_one": "Also merge the {{count}} task on this device into the account",
