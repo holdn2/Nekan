@@ -55,6 +55,10 @@ import { useStore } from "../../store/use-store";
 const OPENING = FadeInDown.duration(220);
 const CLOSING = FadeInUp.duration(220);
 
+// Air between the field and the keyboard. Flush against it read as cramped on
+// a device -- the same step the panel keeps from the grid below it.
+const KEYBOARD_GAP = SP.md;
+
 export default function MatrixScreen() {
   const c = useColors();
   useStore();
@@ -176,7 +180,14 @@ export default function MatrixScreen() {
       <KeyboardAvoidingView
         style={s.root}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={-belowPanel}
+        // Tuned on a device, not derived. Read against KeyboardAvoidingView's
+        // source this looks short by the header's height -- it measures its
+        // own frame relative to its parent and compares that to the
+        // keyboard's window position -- and a review said so. On the phone it
+        // is the other way: with this value the field sits on the keyboard,
+        // and adding the header's height would float it off again. Nobody has
+        // explained the difference yet; do not "fix" it without looking.
+        keyboardVerticalOffset={KEYBOARD_GAP - belowPanel}
       >
         {/* Anything that is not the field puts the keyboard away. This catches
           the bare parts -- the bar, the gaps, the panel's own background --

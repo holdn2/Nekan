@@ -1265,6 +1265,9 @@ Google이 보는 리디렉트는 언제나 Supabase의 `/auth/v1/callback`이고
 그 상태로 놓으면 **한 칸 위 분면으로 들어간다.** `keyboardDidShow`·`keyboardDidHide`에서 다시 잰다
 (`Will`이 아니라 `Did` — 애니메이션이 끝나야 프레임이 참이다). 드롭 목표를 쓰는 화면에 무언가가
 높이를 바꾸는 것을 새로 더할 때마다 같은 질문을 할 것.
+**그 오프셋(`KEYBOARD_GAP - belowPanel`)은 기기에서 맞춘 값이다.** `KeyboardAvoidingView` 소스를 읽으면
+헤더 높이가 빠진 것처럼 보이고 리뷰도 그렇게 짚었지만, 기기에서는 이 값으로 칸이 키보드에 붙고 헤더 높이를
+더하면 도로 뜬다(2026-09-17, 이유 미해명). **소스만 보고 고치지 말 것** — `docs/DECISIONS.md` 2026-09-16.
 
 **`LayoutAnimation`은 New Architecture에서 no-op이다.** 덜 되는 것이 아니라 아무 일도 안 한다 —
 애니메이션은 Reanimated로 쓴다. 그리고 **RN의 점선은 dash 길이를 border width에서 계산한다**:
