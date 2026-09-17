@@ -95,8 +95,10 @@ export default function TaskScreen() {
   //
   // None of those ever writes an empty field. A blank title deletes the task
   // (editTask), and a pause after clearing it to type a new one is not a
-  // decision to delete. Blur and the close button keep that meaning -- those
-  // are deliberate.
+  // decision to delete. Blur and the close button no longer write a blank
+  // title either -- a device showed that clearing one and leaving deleted the
+  // task, so leaving puts the stored title back. They do still write a blank
+  // note: emptying it and closing is how a note comes off a task.
   //
   // And nothing writes a field nobody typed into. The two fields are copies
   // taken when the screen opened, and a sync can change the task underneath
@@ -107,8 +109,9 @@ export default function TaskScreen() {
   // A write clears its flag. Once saved, the copy is no newer than the store,
   // and writing it again on the next unmount or trip to the background would
   // put it back over whatever a sync brought in meanwhile. A write the blank
-  // guard skipped leaves the flag up, so a deliberate blur or close on a
-  // blanked title still deletes the task as it always did.
+  // guard skipped leaves the flag up, and that is harmless: no road writes a
+  // blank title, and a blank note is only written by a deliberate blur or
+  // close.
   const edited = useRef({ text: false, memo: false });
   // What the bar says about what has been typed -- the same two words the
   // desktop's note panel shows, for a sharper reason here: this screen can go
