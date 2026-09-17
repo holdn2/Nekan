@@ -8,9 +8,11 @@
  * syncing has to be verifiable without a person clicking a consent screen.
  * `__DEV__` is this app's `app.isPackaged`.
  *
- * Signed in it shows the address and one way out. Deleting an account is not
- * here yet -- it needs the same confirmation the desktop gives it, and a
- * button that permanent should not arrive before the sentence explaining it.
+ * Signed in it shows the address, a way out, and -- quieter, below -- a way to
+ * delete the account. App Store review asks for that last one in any app that
+ * can make an account, and it follows the desktop's flow: the server deletes
+ * first, the session goes only after it has said yes, and the tasks on the
+ * phone stay.
  *
  * Errors are shown as the catalogue's sentences rather than the server's
  * words. Supabase answers in English and changes its wording; the codes do
@@ -21,6 +23,7 @@ import { useEffect, useState } from "react";
 import * as AppleAuthentication from "expo-apple-authentication";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   Switch,
   StyleSheet,
@@ -28,7 +31,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { t } from "../i18n";
+import { plain, t } from "../i18n";
 import { FS, FW, R, SP, useColors, useThemeName } from "../theme";
 import {
   adoptLocalTasks,
@@ -43,7 +46,7 @@ import {
   signInWithGoogle,
   signInWithPassword,
 } from "../api/sign-in";
-import { signOut } from "../api/account";
+import { deleteAccount, signOut } from "../api/account";
 import { currentSession } from "../api/session";
 import {
   clearOverwritten,
@@ -63,6 +66,7 @@ const ERROR_KEY: Record<string, string> = {
   bad_response: "account.error.badResponse",
   no_code: "account.error.badResponse",
   apple_failed: "account.error.appleFailed",
+  no_session: "account.error.noSession",
 };
 
 const sentence = (code: string) =>
@@ -137,42 +141,117 @@ export function AccountBlock() {
     }
   };
 
+  /**
+   * Deleting the account, in two steps.
+   *
+   * The first press is not the decision. The platform's own alert is: it says
+   * what goes and what stays before the destructive button, it cannot be
+   * dismissed by a stray tap, and it reads to a screen reader before its
+   * buttons -- everything the desktop needed an alert dialog for.
+   */
+  const leave = () => {
+    if (busy) return;
+    Alert.alert(
+      t("account.leave"),
+      `${plain("account.confirmLede")}\n\n${plain("account.phone.confirmKeep")}`,
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("account.confirmGo"),
+          style: "destructive",
+          onPress: () =>
+            void run(async () => {
+              setProblem(t("account.deleting"));
+              const res = await deleteAccount();
+              if (!res.ok) {
+                // Unlike signing out this is the server's to do, so a failure
+                // means the account is still there -- and saying nothing would
+                // leave a block that looks signed in with no explanation.
+                setProblem(
+                  ERROR_KEY[res.error]
+                    ? t(ERROR_KEY[res.error])
+                    : t("account.deleteFailed", { code: res.error }),
+                );
+              } else if (res.signedOut) {
+                setProblem(t("account.phone.deleted"));
+              } else {
+                // Deleted, but a different session arrived while the request
+                // was out. "Account deleted" would be said to the wrong person.
+                setProblem(null);
+              }
+              return { ok: true };
+            }),
+        },
+      ],
+    );
+  };
+
   return (
     <View style={s.block}>
       <Text style={[s.label, { color: c.muted }]}>{t("settings.sync")}</Text>
 
+      {/* What just happened, at the top of the block rather than the bottom.
+          Signing out and deleting the account both swap the one card for the
+          sign-in buttons, so a message drawn below those lands a screen's
+          worth under where the eye was -- a device reported "Account deleted"
+          never appearing, with everything else having worked. */}
+      {busy ? <ActivityIndicator color={c.muted} /> : null}
+      {problem ? (
+        <Text style={[s.problem, { color: c.muted }]}>{problem}</Text>
+      ) : null}
+
       {auth ? (
-        <View
-          style={[s.card, { borderColor: c.line, backgroundColor: c.panel }]}
-        >
-          <View style={s.who}>
-            <Text style={[s.email, { color: c.text }]} numberOfLines={1}>
-              {auth.email ?? ""}
-            </Text>
-            {sync && sync.phase !== "off" ? (
-              <Text style={[s.state, { color: c.faint }]}>
-                {sync.unsent > 0
-                  ? t("account.state.pending", { count: sync.unsent })
-                  : t(`account.state.${sync.phase}`)}
+        <>
+          <View
+            style={[s.card, { borderColor: c.line, backgroundColor: c.panel }]}
+          >
+            <View style={s.who}>
+              {/* Whole and selectable. "Hide My Email" gives a relay address
+                about 35 characters long, and the deletion request page tells
+                people to find their address here -- one truncated line would
+                hand them half of it. */}
+              <Text style={[s.email, { color: c.text }]} selectable>
+                {auth.email ?? ""}
               </Text>
-            ) : null}
+              {sync && sync.phase !== "off" ? (
+                <Text style={[s.state, { color: c.faint }]}>
+                  {sync.unsent > 0
+                    ? t("account.state.pending", { count: sync.unsent })
+                    : t(`account.state.${sync.phase}`)}
+                </Text>
+              ) : null}
+            </View>
+            <Pressable
+              onPress={() =>
+                run(async () => {
+                  await signOut();
+                  setProblem(t("account.phone.signedOut"));
+                  return { ok: true };
+                })
+              }
+              disabled={busy}
+              hitSlop={6}
+            >
+              <Text style={[s.action, { color: c.danger }]}>
+                {t("account.signOut")}
+              </Text>
+            </Pressable>
           </View>
+          {/* The quietest thing in the block, where the desktop puts it too:
+            findable -- an account you cannot leave is the complaint this
+            answers -- without sitting beside sign-out as an equal choice. */}
           <Pressable
-            onPress={() =>
-              run(async () => {
-                await signOut();
-                setProblem(t("account.phone.signedOut"));
-                return { ok: true };
-              })
-            }
+            onPress={leave}
             disabled={busy}
             hitSlop={6}
+            accessibilityRole="button"
+            style={s.leave}
           >
-            <Text style={[s.action, { color: c.danger }]}>
-              {t("account.signOut")}
+            <Text style={[s.leaveText, { color: c.muted }]}>
+              {t("account.leave")}
             </Text>
           </Pressable>
-        </View>
+        </>
       ) : (
         <>
           {/* Only when there is something to decide about. An empty board has
@@ -314,11 +393,6 @@ export function AccountBlock() {
           </Text>
         </Pressable>
       ) : null}
-
-      {busy ? <ActivityIndicator color={c.muted} /> : null}
-      {problem ? (
-        <Text style={[s.problem, { color: c.muted }]}>{problem}</Text>
-      ) : null}
     </View>
   );
 }
@@ -360,6 +434,8 @@ const s = StyleSheet.create({
   email: { fontSize: FS.md, fontWeight: FW.medium },
   state: { fontSize: FS.xs },
   action: { fontSize: FS.sm, fontWeight: FW.semibold },
+  leave: { alignSelf: "flex-start" },
+  leaveText: { fontSize: FS.sm, textDecorationLine: "underline" },
   dev: { gap: SP.md },
   field: {
     minHeight: 38,
