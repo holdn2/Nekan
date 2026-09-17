@@ -116,8 +116,7 @@ function InboxRow({ task, index }: { task: Task; index: number }) {
         }}
         onCommit={(text) => {
           editTask(task.id, text);
-          // editTask saves without redrawing, and an emptied row is a deleted
-          // one -- the list has to hear about both.
+          // editTask saves without redrawing, so the list has to be told.
           notify();
         }}
       />

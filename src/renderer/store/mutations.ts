@@ -151,9 +151,12 @@ export function purgeTask(id: string) {
 }
 
 /**
- * Rename. Emptying the text deletes the task instead, which is how inline
- * editing doubles as "clear this row". Does not redraw: the editor that called
- * it renders once when it closes.
+ * Rename. An empty text deletes the task instead -- but nothing on screen
+ * sends one any more: the inline editor keeps the old title when the field is
+ * left blank, the same as the phone, because clearing a title is how someone
+ * starts rewriting it. The branch stays so a blank that reaches here some
+ * other way is not stored as a task with no name. Does not redraw: the editor
+ * that called it renders once when it closes.
  */
 export function editTask(id: string, text: string) {
   const task = findTask(id);

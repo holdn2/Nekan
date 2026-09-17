@@ -19,7 +19,7 @@ import { useEffect, useRef, useState } from "react";
 interface Props {
   /** What the store holds. Shown whenever an edit is not open. */
   value: string;
-  /** Called with the new text on commit. An empty one deletes the task. */
+  /** Called with the new text on commit. Never with a blank one -- see `finish`. */
   onCommit: (text: string) => void;
   /** Dragging is switched off while editing -- see below. */
   setDraggable?: (on: boolean) => void;
@@ -70,7 +70,12 @@ export function EditableText({
     // Put the stored text back before React sees the node again, so a cancel
     // does not leave the abandoned typing on screen for a frame.
     node.textContent = value;
-    if (commit && typed !== value) onCommit(typed);
+    // A blank title is not a commit. It used to be -- and a blank title
+    // deletes the task (editTask) -- but clearing the text is how someone
+    // starts rewriting a title, not how they ask for the task to go, and the
+    // phone found that out first. The stored title simply stays; deleting is
+    // the row's own button. The two apps keep one rule for this.
+    if (commit && typed.trim() && typed !== value) onCommit(typed);
   };
 
   return (

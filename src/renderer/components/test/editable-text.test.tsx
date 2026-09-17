@@ -107,3 +107,35 @@ test("text that did not change is not written back", async () => {
   await flush(() => key("Enter"));
   expect(onCommit).not.toHaveBeenCalled();
 });
+
+test("a title emptied and confirmed is not written, and the old one stays", async () => {
+  // Writing a blank title deletes the task. Clearing the text is how someone
+  // starts over, so neither Enter nor a blur may turn it into a deletion.
+  const onCommit = vi.fn();
+  const { flush } = await mount(
+    <EditableText value="원래" onCommit={onCommit} />,
+  );
+  await flush(dbl);
+  find(".text").textContent = "";
+  await flush(() => key("Enter"));
+  expect(onCommit).not.toHaveBeenCalled();
+  expect(find(".text").isContentEditable).toBe(false);
+  expect(find(".text").textContent).toBe("원래");
+
+  await flush(dbl);
+  find(".text").textContent = "";
+  await flush(() => find(".text").blur());
+  expect(onCommit).not.toHaveBeenCalled();
+  expect(find(".text").textContent).toBe("원래");
+});
+
+test("a title of nothing but spaces counts as blank", async () => {
+  const onCommit = vi.fn();
+  const { flush } = await mount(
+    <EditableText value="원래" onCommit={onCommit} />,
+  );
+  await flush(dbl);
+  find(".text").textContent = "   ";
+  await flush(() => key("Enter"));
+  expect(onCommit).not.toHaveBeenCalled();
+});
