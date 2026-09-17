@@ -51,7 +51,7 @@ import {
   setMemo,
 } from "../../store/mutations";
 
-/** Today, tomorrow, a week out -- and clearing it. No calendar yet. */
+/** Today, tomorrow, a week out -- the shortcuts. Any other day is picked from the month (DueCalendar). */
 const OFFSETS = [
   [0, "due.today"],
   [1, "due.tomorrow"],
