@@ -59,6 +59,11 @@ const renderer = mergeConfig(
  * from picking up each other's files even though both are under this root.
  */
 const mobile = defineConfig({
+  // React Native defines this everywhere; Node does not, so a file with a dev
+  // log in it throws `__DEV__ is not defined` the first time a test reaches
+  // that line -- which is a failure about the harness wearing the shape of a
+  // failure about the code. False, because what ships is the release build.
+  define: { __DEV__: "false" },
   test: {
     name: "mobile",
     root: resolve(root, "apps/mobile"),
@@ -69,9 +74,30 @@ const mobile = defineConfig({
   },
 });
 
+/**
+ * The Edge Function, in Node.
+ *
+ * A third project rather than a third invocation, for the reason the phone is
+ * the second one: another line in `npm test` is a line somebody eventually
+ * runs without. It does not run in Deno, and does not need to -- what is
+ * tested is `apple.ts`, which is WebCrypto and `fetch` and nothing else, and
+ * Node has had both since 18. The Deno half is index.ts, which this never
+ * imports.
+ */
+const functions = defineConfig({
+  test: {
+    name: "functions",
+    root: resolve(root, "supabase/functions"),
+    include: ["**/test/*.test.ts"],
+    environment: "node",
+    restoreMocks: true,
+    unstubGlobals: true,
+  },
+});
+
 export default defineConfig({
   test: {
-    projects: [renderer, mobile],
+    projects: [renderer, mobile, functions],
     // Runs once, in Node, before any test file -- and, unlike a
     // setupFile, outside the Vite root and outside tsconfig.renderer.json's
     // node-less project. That is deliberate: it is the one place allowed

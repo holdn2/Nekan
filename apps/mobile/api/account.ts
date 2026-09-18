@@ -21,6 +21,7 @@ import {
   sessionEpoch,
 } from "./session";
 import { errorCode, request } from "./http";
+import { revokeApple } from "./apple-revoke";
 
 export async function signOut(): Promise<void> {
   const marker = sessionEpoch();
@@ -40,7 +41,13 @@ export async function signOut(): Promise<void> {
 }
 
 export type DeleteResult =
-  { ok: true; signedOut: boolean } | { ok: false; error: string };
+  | {
+      ok: true;
+      signedOut: boolean;
+      /** The account signed in with Apple and the unlink did not happen. */
+      appleKept: boolean;
+    }
+  | { ok: false; error: string };
 
 /**
  * Delete the account on the server, then sign out here.
@@ -55,6 +62,11 @@ export type DeleteResult =
  * way to name another account, and the rows go with the user through the
  * foreign key. No /auth/v1/logout after it: the user is gone and every session
  * on it with them.
+ *
+ * Apple first, and that order is not arbitrary. Revoked but not deleted leaves
+ * an account the next Apple sign-in walks straight back into; deleted but not
+ * revoked leaves an Apple connection with nothing behind it, and no screen in
+ * this app can reach it afterwards. One of those is recoverable.
  *
  * The tasks on this phone stay, the same as signing out. They were the
  * person's before there was an account to put them in.
@@ -71,8 +83,17 @@ export async function deleteAccount(): Promise<DeleteResult> {
 
   // Signing out and back in while this is in flight leaves a different
   // session behind. The delete happened either way, but dropping *that*
-  // session would sign somebody out of an account nobody deleted.
+  // session would sign somebody out of an account nobody deleted. Taken
+  // before the Apple sheet, which is the longest a person can stand in the
+  // middle of this.
   const marker = sessionEpoch();
+
+  const apple = await revokeApple(token);
+  // Closing the sheet is the one answer that stops this. Everything after it
+  // is irreversible, so a person who said no to a dialog gets nothing done to
+  // them -- and this reads as a cancel to the screen, not as a failure.
+  if (apple === "cancelled") return { ok: false, error: "cancelled" };
+
   const res = await request("/rest/v1/rpc/delete_account", {
     method: "POST",
     token,
@@ -82,5 +103,5 @@ export async function deleteAccount(): Promise<DeleteResult> {
 
   const stillOurs = sessionEpoch() === marker;
   if (stillOurs) await dropSession();
-  return { ok: true, signedOut: stillOurs };
+  return { ok: true, signedOut: stillOurs, appleKept: apple === "failed" };
 }

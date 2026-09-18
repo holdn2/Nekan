@@ -163,7 +163,12 @@ export function AccountBlock() {
             void run(async () => {
               setProblem(t("account.deleting"));
               const res = await deleteAccount();
-              if (!res.ok) {
+              if (!res.ok && res.error === "cancelled") {
+                // The Apple sheet was closed. Nothing was done, so there is
+                // nothing to report -- a message here would read as an error
+                // for a button the person deliberately did not press.
+                setProblem(null);
+              } else if (!res.ok) {
                 // Unlike signing out this is the server's to do, so a failure
                 // means the account is still there -- and saying nothing would
                 // leave a block that looks signed in with no explanation.
@@ -173,7 +178,16 @@ export function AccountBlock() {
                     : t("account.deleteFailed", { code: res.error }),
                 );
               } else if (res.signedOut) {
-                setProblem(t("account.phone.deleted"));
+                // The account is gone either way. When the Apple side is still
+                // standing the person is told, because the only place left to
+                // clear it is the system settings app.
+                setProblem(
+                  t(
+                    res.appleKept
+                      ? "account.phone.deletedAppleKept"
+                      : "account.phone.deleted",
+                  ),
+                );
               } else {
                 // Deleted, but a different session arrived while the request
                 // was out. "Account deleted" would be said to the wrong person.

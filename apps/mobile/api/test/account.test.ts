@@ -6,6 +6,10 @@
  * account that still exists, with nothing to retry from -- and never when a
  * different session arrived while the request was out, because that one
  * belongs to an account nobody deleted.
+ *
+ * Apple's revoke is mocked rather than exercised -- it has its own file -- but
+ * its three answers are pinned here, because what they mean is "stop", "say so
+ * afterwards" and "nothing to say", and only this file can see the difference.
  */
 
 import { beforeEach, expect, test, vi } from "vitest";
@@ -29,12 +33,17 @@ const session = vi.hoisted(() => {
   };
 });
 
+const apple = vi.hoisted(() => ({
+  revokeApple: vi.fn(async (_token: string): Promise<string> => "skipped"),
+}));
+
 vi.mock("../http", () => ({
   request: http.request,
   errorCode: (res: { status: number }) =>
     res.status === 0 ? "offline" : `http_${res.status}`,
 }));
 vi.mock("../session", () => session);
+vi.mock("../apple-revoke", () => ({ revokeApple: apple.revokeApple }));
 
 const { deleteAccount } = await import("../account");
 
@@ -43,6 +52,7 @@ beforeEach(() => {
   session.reset();
   session.accessToken.mockResolvedValue("token");
   session.currentSession.mockReturnValue({ userId: "u1" });
+  apple.revokeApple.mockResolvedValue("skipped");
 });
 
 test("asks the server first, and drops the session once it has said yes", async () => {
@@ -55,7 +65,7 @@ test("asks the server first, and drops the session once it has said yes", async 
     expect.objectContaining({ method: "POST", token: "token" }),
   );
   expect(session.dropSession).toHaveBeenCalledTimes(1);
-  expect(res).toEqual({ ok: true, signedOut: true });
+  expect(res).toEqual({ ok: true, signedOut: true, appleKept: false });
 });
 
 test("keeps the session when the server refuses", async () => {
@@ -93,5 +103,44 @@ test("leaves alone a session that arrived while the request was out", async () =
   const res = await deleteAccount();
 
   expect(session.dropSession).not.toHaveBeenCalled();
-  expect(res).toEqual({ ok: true, signedOut: false });
+  expect(res).toEqual({ ok: true, signedOut: false, appleKept: false });
+});
+
+test("does not delete anything when the Apple sheet was closed", async () => {
+  apple.revokeApple.mockResolvedValue("cancelled");
+  http.request.mockResolvedValue({ ok: true, status: 204, body: null });
+
+  const res = await deleteAccount();
+
+  // The account is still standing. That is the whole point of the answer.
+  expect(http.request).not.toHaveBeenCalled();
+  expect(session.dropSession).not.toHaveBeenCalled();
+  expect(res).toEqual({ ok: false, error: "cancelled" });
+});
+
+test("deletes anyway when the revoke failed, and says the link is still there", async () => {
+  apple.revokeApple.mockResolvedValue("failed");
+  http.request.mockResolvedValue({ ok: true, status: 204, body: null });
+
+  const res = await deleteAccount();
+
+  // A revoke we cannot perform must never become an account nobody can leave.
+  expect(res).toEqual({ ok: true, signedOut: true, appleKept: true });
+});
+
+test("revokes before it deletes, with the same token", async () => {
+  const order: string[] = [];
+  apple.revokeApple.mockImplementation(async (token: string) => {
+    order.push(`revoke:${token}`);
+    return "done";
+  });
+  http.request.mockImplementation(async () => {
+    order.push("delete");
+    return { ok: true, status: 204, body: null };
+  });
+
+  const res = await deleteAccount();
+
+  expect(order).toEqual(["revoke:token", "delete"]);
+  expect(res).toEqual({ ok: true, signedOut: true, appleKept: false });
 });
