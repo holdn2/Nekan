@@ -72,14 +72,13 @@ export type DeleteResult =
  * person's before there was an account to put them in.
  */
 export async function deleteAccount(): Promise<DeleteResult> {
-  const token = await accessToken();
-  if (!token) {
-    // Two different states come here. A renewal that failed on the network
-    // keeps the session, so the person is still signed in and the true answer
-    // is "offline"; only a refused renewal drops it, and that one has no
-    // account left to delete from here.
+  // Asked here only to fail before a sheet goes up; the token that gets spent
+  // is fetched again below. Two different states come here: a renewal that
+  // failed on the network keeps the session, so the person is still signed in
+  // and the true answer is "offline"; only a refused renewal drops it, and
+  // that one has no account left to delete from here.
+  if (!(await accessToken()))
     return { ok: false, error: currentSession() ? "offline" : "no_session" };
-  }
 
   // Signing out and back in while this is in flight leaves a different
   // session behind. The delete happened either way, but dropping *that*
@@ -88,15 +87,22 @@ export async function deleteAccount(): Promise<DeleteResult> {
   // middle of this.
   const marker = sessionEpoch();
 
-  const apple = await revokeApple(token);
+  const apple = await revokeApple();
   // Closing the sheet is the one answer that stops this. Everything after it
   // is irreversible, so a person who said no to a dialog gets nothing done to
   // them -- and this reads as a cancel to the screen, not as a failure.
   if (apple === "cancelled") return { ok: false, error: "cancelled" };
 
+  // Asked again, because the sheet has no time limit and the token above
+  // renews only inside the last minute of its hour. Spending the old one here
+  // would 401 after a slow confirmation and leave the account standing.
+  const fresh = await accessToken();
+  if (!fresh)
+    return { ok: false, error: currentSession() ? "offline" : "no_session" };
+
   const res = await request("/rest/v1/rpc/delete_account", {
     method: "POST",
-    token,
+    token: fresh,
     body: {},
   });
   if (!res.ok) return { ok: false, error: errorCode(res) };

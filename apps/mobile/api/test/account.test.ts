@@ -34,7 +34,7 @@ const session = vi.hoisted(() => {
 });
 
 const apple = vi.hoisted(() => ({
-  revokeApple: vi.fn(async (_token: string): Promise<string> => "skipped"),
+  revokeApple: vi.fn(async (): Promise<string> => "skipped"),
 }));
 
 vi.mock("../http", () => ({
@@ -128,10 +128,10 @@ test("deletes anyway when the revoke failed, and says the link is still there", 
   expect(res).toEqual({ ok: true, signedOut: true, appleKept: true });
 });
 
-test("revokes before it deletes, with the same token", async () => {
+test("revokes before it deletes", async () => {
   const order: string[] = [];
-  apple.revokeApple.mockImplementation(async (token: string) => {
-    order.push(`revoke:${token}`);
+  apple.revokeApple.mockImplementation(async () => {
+    order.push("revoke");
     return "done";
   });
   http.request.mockImplementation(async () => {
@@ -141,6 +141,32 @@ test("revokes before it deletes, with the same token", async () => {
 
   const res = await deleteAccount();
 
-  expect(order).toEqual(["revoke:token", "delete"]);
+  // The recoverable order. The other way round leaves an Apple link with no
+  // account behind it, and no screen in this app can reach that.
+  expect(order).toEqual(["revoke", "delete"]);
   expect(res).toEqual({ ok: true, signedOut: true, appleKept: false });
+});
+
+test("spends a token fetched after the sheet, not the one from before it", async () => {
+  session.accessToken
+    .mockResolvedValueOnce("old")
+    .mockResolvedValueOnce("renewed");
+  http.request.mockResolvedValue({ ok: true, status: 204, body: null });
+
+  await deleteAccount();
+
+  expect(http.request).toHaveBeenCalledWith(
+    "/rest/v1/rpc/delete_account",
+    expect.objectContaining({ token: "renewed" }),
+  );
+});
+
+test("does not delete with a token that died while the sheet was up", async () => {
+  session.accessToken.mockResolvedValueOnce("old").mockResolvedValueOnce(null);
+  http.request.mockResolvedValue({ ok: true, status: 204, body: null });
+
+  const res = await deleteAccount();
+
+  expect(http.request).not.toHaveBeenCalled();
+  expect(res).toEqual({ ok: false, error: "offline" });
 });

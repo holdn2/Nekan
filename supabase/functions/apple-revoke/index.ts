@@ -19,70 +19,14 @@
  * not revoked leaves an Apple connection with nothing behind it, which nobody
  * can clear from inside the app.
  *
+ * This file is one line on purpose. Everything a test would want to reach is
+ * in handler.ts, because `Deno.serve` cannot be imported outside Deno and a
+ * file that cannot be imported cannot be checked.
+ *
  * Deploy: supabase functions deploy apple-revoke
  * Secrets: APPLE_CLIENT_ID, APPLE_TEAM_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY
  */
 
-import { revokeWithCode } from "./apple.ts";
+import { handle } from "./handler.ts";
 
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-/**
- * Is the caller a signed-in user of this project?
- *
- * The platform already refuses unsigned callers when a function is deployed
- * with JWT verification on, which is the default. This asks anyway, because
- * the flag is a deploy-time decision made elsewhere and the cost of being
- * wrong about it is an endpoint that lets anyone spend our client secret
- * against Apple. It asks with the anon key, never the service role.
- */
-async function callerIsSignedIn(bearer: string): Promise<boolean> {
-  const url = Deno.env.get("SUPABASE_URL");
-  const anon = Deno.env.get("SUPABASE_ANON_KEY");
-  if (!url || !anon) return false;
-  const res = await fetch(`${url}/auth/v1/user`, {
-    headers: { apikey: anon, Authorization: bearer },
-  });
-  return res.ok;
-}
-
-/** The four secrets, or null naming nothing -- the log must not hold them. */
-function appleKey() {
-  const privateKey = Deno.env.get("APPLE_PRIVATE_KEY");
-  const keyId = Deno.env.get("APPLE_KEY_ID");
-  const teamId = Deno.env.get("APPLE_TEAM_ID");
-  const clientId = Deno.env.get("APPLE_CLIENT_ID");
-  if (!privateKey || !keyId || !teamId || !clientId) return null;
-  return { privateKey, keyId, teamId, clientId };
-}
-
-Deno.serve(async (req: Request) => {
-  if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
-
-  const bearer = req.headers.get("Authorization");
-  if (!bearer || !(await callerIsSignedIn(bearer)))
-    return json({ error: "not_signed_in" }, 401);
-
-  let code: unknown = null;
-  try {
-    code = ((await req.json()) as { code?: unknown } | null)?.code ?? null;
-  } catch {
-    code = null;
-  }
-  if (typeof code !== "string" || !code) return json({ error: "no_code" }, 400);
-
-  const key = appleKey();
-  // A missing secret is ours to fix, and the app is told so plainly: it has
-  // to tell the difference between "try again" and "this will never work",
-  // because it is about to delete the account either way.
-  if (!key) return json({ error: "not_configured" }, 500);
-
-  const result = await revokeWithCode(key, code);
-  if (!result.ok) return json({ error: result.error }, 502);
-  return json({ ok: true });
-});
+Deno.serve(handle);

@@ -1454,7 +1454,7 @@ hairline이면 점이 선처럼 보인다.
 
 **`npm test`는 검사 넷 + 러너 둘이다** — 빌드 → `check-styles.js` → `check-colors.js` →
 `check-scale.js` → `check-native-versions.js` → `node --test` → `vitest run`. **`prettier --check .`는 여기 없다**(CI 관문이라 커밋 전에 따로
-돌릴 것). `node --test`가 `out/test/`의 237개로 `src/shared/`의 순수
+돌릴 것). `node --test`가 `out/test/`의 266개로 `src/shared/`의 순수
 함수를 덮고 — 데이터가 날아가는 규칙(정규화 기본값, quadrant 유효성, temp+rename 저장, 손상
 파일 폴백)이 거기 있으니 그 파일들을 건드렸으면 반드시 돌린다 — 이어서 `vitest run`이
 **프로젝트 셋**을 돈다 — `renderer`가 React로 옮긴 조각들을, `mobile`이 폰의 동기화를,

@@ -17,18 +17,27 @@
  * Nothing here touches the session. The identity token the sheet also returns
  * is dropped on the floor -- this is not a sign-in, and the account being
  * deleted is the one already signed in.
+ *
+ * The access token is fetched twice rather than passed in, and that is the
+ * point: a person can stand in front of that sheet for as long as they like,
+ * and `accessToken()` only renews inside the last minute of an hour. A token
+ * taken before the sheet can be dead by the time the sheet is answered.
  */
 import * as AppleAuthentication from "expo-apple-authentication";
 import { errorCode, request } from "./http";
+import { accessToken } from "./session";
 
 /**
  * What happened, in the only terms the screen needs.
  *
- * `skipped` covers two cases on purpose: the account is not an Apple one, and
- * we could not find out. Saying "we could not unlink Apple" to somebody who
- * signed in with Google would be worse than saying nothing, and the case where
- * we cannot ask is the case where the delete that follows is about to fail on
- * its own.
+ * `skipped` covers three cases: the account is not an Apple one, this device
+ * cannot show the sheet, and we could not find out which. The last one is
+ * lumped in here deliberately -- telling somebody who signed in with Google
+ * that we could not unlink Apple would be worse than saying nothing, and from
+ * here the two are indistinguishable. It is not free: a `/auth/v1/user` that
+ * fails on its own while the delete succeeds leaves an Apple link standing and
+ * nobody told. GoTrue and PostgREST are separate services, so that window is
+ * real rather than impossible.
  */
 export type RevokeOutcome = "done" | "skipped" | "cancelled" | "failed";
 
@@ -60,9 +69,17 @@ async function usesApple(token: string): Promise<boolean | null> {
  * are unable to perform must not become an account nobody can leave, which is
  * the very rule this whole path exists to satisfy.
  */
-export async function revokeApple(token: string): Promise<RevokeOutcome> {
-  const apple = await usesApple(token);
-  if (apple !== true) return "skipped";
+export async function revokeApple(): Promise<RevokeOutcome> {
+  const token = await accessToken();
+  if (!token) return "skipped";
+
+  // Android, and iOS before 13. The sheet would reject with an availability
+  // error, which is not a cancel, so without this the person would be told to
+  // go and clear an Apple link in a Settings app they do not have.
+  if (!(await AppleAuthentication.isAvailableAsync().catch(() => false)))
+    return "skipped";
+
+  if ((await usesApple(token)) !== true) return "skipped";
 
   let code: string | null;
   try {
@@ -76,15 +93,20 @@ export async function revokeApple(token: string): Promise<RevokeOutcome> {
   }
   if (!code) return "failed";
 
+  // Asked again, after the sheet. See the note at the top of the file.
+  const fresh = await accessToken();
+  if (!fresh) return "failed";
+
   const res = await request("/functions/v1/apple-revoke", {
     method: "POST",
-    token,
+    token: fresh,
     body: { code },
   });
   if (!res.ok) {
-    // The reason never reaches the screen -- "not_configured" and
-    // "invalid_grant" are both "it did not happen" to the person holding the
-    // phone -- but it is the only clue a dev run would get.
+    // The reason goes nowhere else. "not_configured" and "invalid_grant" are
+    // both "it did not happen" to the person holding the phone, and the app
+    // does nothing differently for either -- this line is for whoever is
+    // reading a dev run, and for them only.
     if (__DEV__) console.log("apple revoke failed:", errorCode(res));
     return "failed";
   }
