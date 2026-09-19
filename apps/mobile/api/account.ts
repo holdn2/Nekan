@@ -44,8 +44,12 @@ export type DeleteResult =
   | {
       ok: true;
       signedOut: boolean;
-      /** The account signed in with Apple and the unlink did not happen. */
-      appleKept: boolean;
+      /**
+       * What may be left on Apple's side. `kept`: an Apple account whose
+       * unlink failed. `unknown`: we could not find out whether it was an
+       * Apple account at all. Null: nothing left, or nothing to leave.
+       */
+      apple: "kept" | "unknown" | null;
     }
   | { ok: false; error: string };
 
@@ -109,5 +113,7 @@ export async function deleteAccount(): Promise<DeleteResult> {
 
   const stillOurs = sessionEpoch() === marker;
   if (stillOurs) await dropSession();
-  return { ok: true, signedOut: stillOurs, appleKept: apple === "failed" };
+  const left =
+    apple === "failed" ? "kept" : apple === "unknown" ? "unknown" : null;
+  return { ok: true, signedOut: stillOurs, apple: left };
 }

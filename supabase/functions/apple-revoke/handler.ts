@@ -10,7 +10,7 @@
  * so a Node test can stand one up. Nothing else in here is Deno's.
  */
 
-import { revokeWithCode } from "./apple.ts";
+import { CALL_TIMEOUT_MS, revokeWithCode } from "./apple.ts";
 
 type Env = { env: { get(name: string): string | undefined } };
 
@@ -40,7 +40,7 @@ function hasApple(user: unknown): boolean {
   return fields.app_metadata?.provider === "apple";
 }
 
-type Caller = "anonymous" | "no_apple" | "apple";
+type Caller = "anonymous" | "no_apple" | "apple" | "unreachable";
 
 /**
  * Who is asking.
@@ -70,9 +70,18 @@ async function callerOf(bearer: string): Promise<Caller> {
   const url = env("SUPABASE_URL");
   const anon = env("SUPABASE_ANON_KEY");
   if (!url || !anon) return "anonymous";
-  const res = await fetch(`${url}/auth/v1/user`, {
-    headers: { apikey: anon, Authorization: bearer },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${url}/auth/v1/user`, {
+      headers: { apikey: anon, Authorization: bearer },
+      signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
+    });
+  } catch {
+    // Timed out or never connected. Still a refusal -- a caller nobody could
+    // check is not let through -- but named for what it is, so the log does
+    // not read "not signed in" about somebody who was.
+    return "unreachable";
+  }
   if (!res.ok) return "anonymous";
   return hasApple(await res.json().catch(() => null)) ? "apple" : "no_apple";
 }
@@ -94,6 +103,7 @@ export async function handle(req: Request): Promise<Response> {
   const caller = bearer ? await callerOf(bearer) : "anonymous";
   if (caller === "anonymous") return json({ error: "not_signed_in" }, 401);
   if (caller === "no_apple") return json({ error: "not_apple" }, 403);
+  if (caller === "unreachable") return json({ error: "auth_unreachable" }, 502);
 
   let code: unknown = null;
   try {

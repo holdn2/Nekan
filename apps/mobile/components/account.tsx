@@ -178,14 +178,17 @@ export function AccountBlock() {
                     : t("account.deleteFailed", { code: res.error }),
                 );
               } else if (res.signedOut) {
-                // The account is gone either way. When the Apple side is still
-                // standing the person is told, because the only place left to
-                // clear it is the system settings app.
+                // The account is gone either way. When the Apple side may still
+                // be standing the person is told, because the only place left
+                // to clear it is the system settings app -- plainly when we
+                // know, conditionally when we could not find out.
                 setProblem(
                   t(
-                    res.appleKept
+                    res.apple === "kept"
                       ? "account.phone.deletedAppleKept"
-                      : "account.phone.deleted",
+                      : res.apple === "unknown"
+                        ? "account.phone.deletedAppleMaybe"
+                        : "account.phone.deleted",
                   ),
                 );
               } else {

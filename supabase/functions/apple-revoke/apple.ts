@@ -31,6 +31,19 @@ const APPLE = "https://appleid.apple.com";
 /** How long a client secret is good for. Apple's ceiling is six months. */
 const SECRET_LIFETIME_S = 300;
 
+/**
+ * How long any one outside call may take.
+ *
+ * Set by the phone, not by taste. The phone gives up on this function after
+ * 15 seconds (`apps/mobile/api/http.ts`), and one request here can make three
+ * calls in a row -- the caller check, the exchange, the revoke. Four seconds
+ * each keeps the worst case at twelve, so the function always answers before
+ * the phone stops listening. Without a limit a hung Apple would hold the
+ * function until the platform killed it, and the phone would report a
+ * failure for a revoke that might still go through afterwards.
+ */
+export const CALL_TIMEOUT_MS = 4_000;
+
 /** base64url of bytes or of a string's UTF-8, unpadded -- what JOSE wants. */
 function base64url(input: string | Uint8Array): string {
   const bytes =
@@ -102,6 +115,7 @@ async function post(path: string, form: Record<string, string>) {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams(form).toString(),
+    signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
   });
   // A revoke answers 200 with an empty body, so this has to survive one.
   const text = await res.text();

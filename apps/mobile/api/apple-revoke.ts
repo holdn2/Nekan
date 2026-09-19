@@ -30,16 +30,19 @@ import { accessToken } from "./session";
 /**
  * What happened, in the only terms the screen needs.
  *
- * `skipped` covers three cases: the account is not an Apple one, this device
- * cannot show the sheet, and we could not find out which. The last one is
- * lumped in here deliberately -- telling somebody who signed in with Google
- * that we could not unlink Apple would be worse than saying nothing, and from
- * here the two are indistinguishable. It is not free: a `/auth/v1/user` that
- * fails on its own while the delete succeeds leaves an Apple link standing and
- * nobody told. GoTrue and PostgREST are separate services, so that window is
- * real rather than impossible.
+ * `skipped` is "there was nothing to revoke": not an Apple account, or a
+ * device with no Sign in with Apple at all.
+ *
+ * `unknown` is "we could not find out", and it is kept apart from `skipped` on
+ * purpose. The deletion still goes ahead -- nothing here may stop it -- but a
+ * `/auth/v1/user` that fails on its own while the delete succeeds is an
+ * ordinary thing (GoTrue and PostgREST are separate services), and folding it
+ * into `skipped` would mean an Apple link left standing with nobody told. This
+ * repo shows what it may have lost; the screen says so conditionally, because
+ * from here a Google account and an Apple one look the same.
  */
-export type RevokeOutcome = "done" | "skipped" | "cancelled" | "failed";
+export type RevokeOutcome =
+  "done" | "skipped" | "unknown" | "cancelled" | "failed";
 
 /** Does this account sign in with Apple? Null when the question failed. */
 async function usesApple(token: string): Promise<boolean | null> {
@@ -79,7 +82,9 @@ export async function revokeApple(): Promise<RevokeOutcome> {
   if (!(await AppleAuthentication.isAvailableAsync().catch(() => false)))
     return "skipped";
 
-  if ((await usesApple(token)) !== true) return "skipped";
+  const apple = await usesApple(token);
+  if (apple === null) return "unknown";
+  if (!apple) return "skipped";
 
   let code: string | null;
   try {

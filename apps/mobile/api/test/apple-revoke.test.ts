@@ -103,12 +103,13 @@ test("does not show the sheet to an account that has no Apple in it", async () =
   expect(http.request).toHaveBeenCalledTimes(1);
 });
 
-test("does not show the sheet when it could not find out", async () => {
-  // Offline. The delete that follows is about to fail on its own, and a
-  // prompt nobody can act on would be the only thing the person saw.
-  http.request.mockResolvedValue({ ok: false, status: 0, body: null });
+test("does not show the sheet when it could not find out, and says so", async () => {
+  // Face ID for somebody who may have signed in with Google would be alarming,
+  // so no sheet. But "unknown" is not "skipped": the screen has to be able to
+  // say an Apple link may be left, or that case vanishes without a word.
+  http.request.mockResolvedValue({ ok: false, status: 503, body: null });
 
-  expect(await revokeApple()).toBe("skipped");
+  expect(await revokeApple()).toBe("unknown");
   expect(sheet.signInAsync).not.toHaveBeenCalled();
 });
 

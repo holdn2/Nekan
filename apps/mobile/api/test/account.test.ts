@@ -65,7 +65,7 @@ test("asks the server first, and drops the session once it has said yes", async 
     expect.objectContaining({ method: "POST", token: "token" }),
   );
   expect(session.dropSession).toHaveBeenCalledTimes(1);
-  expect(res).toEqual({ ok: true, signedOut: true, appleKept: false });
+  expect(res).toEqual({ ok: true, signedOut: true, apple: null });
 });
 
 test("keeps the session when the server refuses", async () => {
@@ -103,7 +103,7 @@ test("leaves alone a session that arrived while the request was out", async () =
   const res = await deleteAccount();
 
   expect(session.dropSession).not.toHaveBeenCalled();
-  expect(res).toEqual({ ok: true, signedOut: false, appleKept: false });
+  expect(res).toEqual({ ok: true, signedOut: false, apple: null });
 });
 
 test("does not delete anything when the Apple sheet was closed", async () => {
@@ -125,7 +125,22 @@ test("deletes anyway when the revoke failed, and says the link is still there", 
   const res = await deleteAccount();
 
   // A revoke we cannot perform must never become an account nobody can leave.
-  expect(res).toEqual({ ok: true, signedOut: true, appleKept: true });
+  expect(res).toEqual({ ok: true, signedOut: true, apple: "kept" });
+});
+
+test("deletes anyway when it could not find out, and says so conditionally", async () => {
+  // Could not ask whether this was an Apple account. The delete goes ahead
+  // like every other failure, but the screen gets to say "if you used Apple"
+  // instead of nothing -- folding this into "nothing to revoke" would leave an
+  // Apple link standing with nobody told.
+  apple.revokeApple.mockResolvedValue("unknown");
+  http.request.mockResolvedValue({ ok: true, status: 204, body: null });
+
+  expect(await deleteAccount()).toEqual({
+    ok: true,
+    signedOut: true,
+    apple: "unknown",
+  });
 });
 
 test("revokes before it deletes", async () => {
@@ -144,7 +159,7 @@ test("revokes before it deletes", async () => {
   // The recoverable order. The other way round leaves an Apple link with no
   // account behind it, and no screen in this app can reach that.
   expect(order).toEqual(["revoke", "delete"]);
-  expect(res).toEqual({ ok: true, signedOut: true, appleKept: false });
+  expect(res).toEqual({ ok: true, signedOut: true, apple: null });
 });
 
 test("spends a token fetched after the sheet, not the one from before it", async () => {

@@ -233,3 +233,34 @@ test("carries the caller's own bearer to the project, with the anon key", async 
     Authorization: "Bearer caller",
   });
 });
+
+test("refuses, by name, when the caller could not be checked in time", async () => {
+  // A hung auth server must not become a plain-text 500 escaping the handler,
+  // nor a "not signed in" about somebody who was.
+  const fetched = vi.fn(async () => {
+    throw new DOMException("The operation timed out.", "TimeoutError");
+  });
+  vi.stubGlobal("fetch", fetched);
+
+  const res = await handle(ask());
+
+  expect(res.status).toBe(502);
+  await expect(res.json()).resolves.toEqual({ error: "auth_unreachable" });
+  expect(fetched).toHaveBeenCalledTimes(1);
+});
+
+test("puts a time limit on every outside call it makes", async () => {
+  const fetched = appleSaysYes(appleUser);
+  vi.stubGlobal("fetch", fetched);
+
+  await expect(handle(ask())).resolves.toMatchObject({ status: 200 });
+
+  // The caller check, the exchange and the revoke: three calls, each bounded,
+  // so the worst case stays inside the fifteen seconds the phone will wait.
+  expect(fetched).toHaveBeenCalledTimes(3);
+  for (const [, init] of fetched.mock.calls as unknown as [
+    string,
+    RequestInit,
+  ][])
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+});

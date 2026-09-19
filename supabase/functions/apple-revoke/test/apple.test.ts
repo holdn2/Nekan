@@ -14,7 +14,12 @@
  */
 
 import { expect, test, vi } from "vitest";
-import { clientSecret, revokeWithCode, type AppleKey } from "../apple.ts";
+import {
+  CALL_TIMEOUT_MS,
+  clientSecret,
+  revokeWithCode,
+  type AppleKey,
+} from "../apple.ts";
 
 /** A throwaway P-256 pair, as a .p8-shaped PEM plus the public half. */
 async function freshKey(): Promise<{ pem: string; publicKey: CryptoKey }> {
@@ -189,4 +194,9 @@ test("says where a wordless failure came from", async () => {
     ok: false,
     error: "apple_503",
   });
+});
+
+test("keeps three calls in a row inside what the phone will wait", () => {
+  // The phone gives up after 15 seconds; a request here can make three calls.
+  expect(CALL_TIMEOUT_MS * 3).toBeLessThan(15_000);
 });
