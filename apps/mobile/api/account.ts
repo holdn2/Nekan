@@ -21,6 +21,7 @@ import {
   sessionEpoch,
 } from "./session";
 import { errorCode, request } from "./http";
+import { revokeApple } from "./apple-revoke";
 
 export async function signOut(): Promise<void> {
   const marker = sessionEpoch();
@@ -40,7 +41,17 @@ export async function signOut(): Promise<void> {
 }
 
 export type DeleteResult =
-  { ok: true; signedOut: boolean } | { ok: false; error: string };
+  | {
+      ok: true;
+      signedOut: boolean;
+      /**
+       * What may be left on Apple's side. `kept`: an Apple account whose
+       * unlink failed. `unknown`: we could not find out whether it was an
+       * Apple account at all. Null: nothing left, or nothing to leave.
+       */
+      apple: "kept" | "unknown" | null;
+    }
+  | { ok: false; error: string };
 
 /**
  * Delete the account on the server, then sign out here.
@@ -56,31 +67,53 @@ export type DeleteResult =
  * foreign key. No /auth/v1/logout after it: the user is gone and every session
  * on it with them.
  *
+ * Apple first, and that order is not arbitrary. Revoked but not deleted leaves
+ * an account the next Apple sign-in walks straight back into; deleted but not
+ * revoked leaves an Apple connection with nothing behind it, and no screen in
+ * this app can reach it afterwards. One of those is recoverable.
+ *
  * The tasks on this phone stay, the same as signing out. They were the
  * person's before there was an account to put them in.
  */
 export async function deleteAccount(): Promise<DeleteResult> {
-  const token = await accessToken();
-  if (!token) {
-    // Two different states come here. A renewal that failed on the network
-    // keeps the session, so the person is still signed in and the true answer
-    // is "offline"; only a refused renewal drops it, and that one has no
-    // account left to delete from here.
+  // Asked here only to fail before a sheet goes up; the token that gets spent
+  // is fetched again below. Two different states come here: a renewal that
+  // failed on the network keeps the session, so the person is still signed in
+  // and the true answer is "offline"; only a refused renewal drops it, and
+  // that one has no account left to delete from here.
+  if (!(await accessToken()))
     return { ok: false, error: currentSession() ? "offline" : "no_session" };
-  }
 
   // Signing out and back in while this is in flight leaves a different
   // session behind. The delete happened either way, but dropping *that*
-  // session would sign somebody out of an account nobody deleted.
+  // session would sign somebody out of an account nobody deleted. Taken
+  // before the Apple sheet, which is the longest a person can stand in the
+  // middle of this.
   const marker = sessionEpoch();
+
+  const apple = await revokeApple();
+  // Closing the sheet is the one answer that stops this. Everything after it
+  // is irreversible, so a person who said no to a dialog gets nothing done to
+  // them -- and this reads as a cancel to the screen, not as a failure.
+  if (apple === "cancelled") return { ok: false, error: "cancelled" };
+
+  // Asked again, because the sheet has no time limit and the token above
+  // renews only inside the last minute of its hour. Spending the old one here
+  // would 401 after a slow confirmation and leave the account standing.
+  const fresh = await accessToken();
+  if (!fresh)
+    return { ok: false, error: currentSession() ? "offline" : "no_session" };
+
   const res = await request("/rest/v1/rpc/delete_account", {
     method: "POST",
-    token,
+    token: fresh,
     body: {},
   });
   if (!res.ok) return { ok: false, error: errorCode(res) };
 
   const stillOurs = sessionEpoch() === marker;
   if (stillOurs) await dropSession();
-  return { ok: true, signedOut: stillOurs };
+  const left =
+    apple === "failed" ? "kept" : apple === "unknown" ? "unknown" : null;
+  return { ok: true, signedOut: stillOurs, apple: left };
 }

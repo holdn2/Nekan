@@ -1228,6 +1228,32 @@ Google이 보는 리디렉트는 언제나 Supabase의 `/auth/v1/callback`이고
 단계다. 개발 실행은 `oauth redirect: …`를 찍어 준다(데스크톱이 loopback URL을 찍는 것과
 같은 이유다: 소스만 봐서는 알 수 없는 값이다). **`exp://**`는 스토어에 내기 전에 뺀다.**
 
+**회원탈퇴는 Apple 토큰을 먼저 폐기하고 그다음 계정을 지운다** (2026-09-18, #135).
+`apps/mobile/api/apple-revoke.ts`가 **Apple로 로그인한 계정일 때만** 시스템 시트를 한 번 더 띄워
+`authorizationCode`를 새로 받고, Edge Function `supabase/functions/apple-revoke`가 그것을 토큰으로 바꿔
+폐기한다. 아무것도 저장하지 않는다 — 코드는 1회용 5분짜리라 옛 로그인의 것은 이미 없다.
+**순서를 뒤집지 말 것**: 지운 뒤 폐기에 실패하면 계정은 없는데 Apple 연결만 남고, 그때는 앱의 어느 화면도
+거기 닿지 못한다. 반대 순서는 다음 Apple 로그인이 도로 이어 준다.
+**시트를 닫은 것과 폐기가 실패한 것은 다르다**(`ERR_REQUEST_CANCELED`): 닫은 것은 사람이 "아니오"라고
+답한 것이라 **탈퇴 자체를 멈추고**, 실패는 그냥 지나간다 — 폐기가 안 된다고 계정을 못 지우게 하면
+이 기능이 지키려는 심사 기준(5.1.1(v))을 그 자리에서 어긴다. 지운 뒤에 사실대로 말한다.
+**Google 계정에는 시트를 띄우지 않고, 물어보지 못했을 때도 띄우지 않는다** — 탈퇴 도중의 이유 없는
+Face ID가 그 자체로 놀랄 일이다. **다만 못 물어본 것(`unknown`)을 "폐기할 것 없음"(`skipped`)에 섞지 말
+것**: 지운 뒤 "Apple로 로그인하셨다면 남아 있을 수 있다"고 조건을 달아 말한다. 한때 섞었는데, "그 경우는
+삭제도 실패한다"는 이유가 짐작이었다 — GoTrue와 PostgREST는 따로 실패한다.
+**함수는 `service_role`을 쓰지 않는다** — 계정 행은 여전히 호출자 JWT로 도는 `delete_account()`가 지운다.
+그래서 호출이 둘로 남아 있고, 하나로 합치려면 남의 계정을 지울 권한을 함수에 줘야 한다.
+**비밀 넷은 Supabase에 있다**: `APPLE_CLIENT_ID`(= `com.yoshi.nekan`) · `APPLE_TEAM_ID` ·
+`APPLE_KEY_ID` · `APPLE_PRIVATE_KEY`(`.p8` 내용). client secret은 **호출마다 서명**하므로 만료가 없다 —
+미리 만든 JWT를 두면 6개월 뒤 **폐기만 조용히 멈춘다**(로그인도 동기화도 멀쩡하다).
+**배포와 비밀은 사용자가 한다** — `.p8`는 내가 읽지도 옮기지도 않는다. 명령은 이렇고,
+**이 PC에 Supabase CLI가 없어서 실행해 본 적은 없다**(`--project-ref`를 주면 `link` 없이 되는 형태다):
+`npx supabase secrets set --project-ref <ref> APPLE_CLIENT_ID=… APPLE_TEAM_ID=… APPLE_KEY_ID=…` ·
+`npx supabase secrets set --project-ref <ref> APPLE_PRIVATE_KEY="$(cat AuthKey_XXXXXXXXXX.p8)"` ·
+`npx supabase functions deploy apple-revoke --project-ref <ref>`.
+**JWT 검증은 켠 채로 둔다**(기본값) — 함수가 호출자를 한 번 더 확인하기는 하지만, 그건 `--no-verify-jwt`로
+배포됐을 때를 위한 안전망이지 대체가 아니다.
+
 **타입 라우트는 개발 서버만 다시 쓴다.** `apps/mobile/.expo/types/router.d.ts`는
 `expo start`가 만들고 **`expo export`는 건드리지 않는다.** 새 라우트를 만든 뒤
 `mobile:typecheck`가 `"/guide"를 모른다`고 하면 코드가 아니라 **그 파일이 낡은 것**이다 —
@@ -1260,6 +1286,11 @@ Google이 보는 리디렉트는 언제나 Supabase의 `/auth/v1/callback`이고
 **입력칸이 있는 화면은 키보드를 피한다. 매트릭스만은 `KeyboardAvoidingView`가 아니라 직접 잰다**
 (2026-09-16·17). 상세·설정은 ScrollView의 `automaticallyAdjustKeyboardInsets`, 빠른 입력은 KAV,
 히스토리 검색칸은 맨 위라 그대로 둔다.
+**키보드를 내리는 것은 상세 화면에서 `keyboardShouldPersistTaps="handled"`가 겸한다** — 자식이
+받는 탭(칩·삭제 버튼)은 키보드를 그대로 두고, 그 밖을 누르면 내려간다. 사용자가 못 박은 것이
+_"키보드가 올라온 상태에서 스크롤을 해도 키보드가 내려가지 않고 삭제 버튼까지 보이게. 대신 입력창
+외부를 클릭하면 내려가도록"_ 이라, **`keyboardDismissMode="on-drag"`로 되돌리지 말 것** — 그러면
+삭제 버튼까지 스크롤하는 동작이 키보드를 데려가고 스크롤이 그것을 따라간다.
 **매트릭스에서 KAV를 버린 이유**: 입력칸이 화면 바닥이 아니라 분면 격자 **위**에 있어서 KAV에 오프셋을
 줘야 했는데, 그 값이 기기와 한 번도 맞지 않았다. 소스를 읽으면 헤더 높이가 빠진 것처럼 보였고(리뷰가
 그렇게 짚었다), 기기에서는 칸이 키보드에 붙어 보였고, 8px을 더해도 _"아예 여백이 없어보여"_ 였다.
@@ -1425,11 +1456,12 @@ hairline이면 점이 선처럼 보인다.
 
 **`npm test`는 검사 넷 + 러너 둘이다** — 빌드 → `check-styles.js` → `check-colors.js` →
 `check-scale.js` → `check-native-versions.js` → `node --test` → `vitest run`. **`prettier --check .`는 여기 없다**(CI 관문이라 커밋 전에 따로
-돌릴 것). `node --test`가 `out/test/`의 237개로 `src/shared/`의 순수
+돌릴 것). `node --test`가 `out/test/`의 266개로 `src/shared/`의 순수
 함수를 덮고 — 데이터가 날아가는 규칙(정규화 기본값, quadrant 유효성, temp+rename 저장, 손상
 파일 폴백)이 거기 있으니 그 파일들을 건드렸으면 반드시 돌린다 — 이어서 `vitest run`이
-**프로젝트 둘**을 돈다 — `renderer`가 React로 옮긴 조각들을, `mobile`이 폰의 동기화를.
-합쳐 163개(파일 28)다. **이 숫자는 자주 바뀐다** — 믿지 말고 `npm test`의 마지막 줄을 볼 것.
+**프로젝트 셋**을 돈다 — `renderer`가 React로 옮긴 조각들을, `mobile`이 폰의 동기화를,
+`functions`가 Edge Function의 Apple 쪽을.
+합쳐 251개(파일 39)다. **이 숫자는 자주 바뀐다** — 믿지 말고 `npm test`의 마지막 줄을 볼 것.
 **한 프로젝트만 돌리려면 `npx vitest run --project mobile`.**
 
 **러너가 둘인 이유**: 번들러가 생기면서 렌더러가 **Node가 require할 수 있는 파일로 존재하지
@@ -1445,6 +1477,15 @@ require할 수 없다(`@nekan/shared/*`가 소스를 가리킨다). 셋째 invoc
 렌더러 프로젝트가 집어가서 happy-dom에서 돈다.
 **폰 쪽에서 유일하게 목으로 바꾸는 것은 `store/persist`다** — 기기에 닿는 모듈이 그거
 하나이고, 스토어·병합·정규화는 실제로 나가는 코드를 그대로 돌린다.
+**그리고 폰 프로젝트는 `define: { __DEV__: "false" }`를 든다** — React Native가 어디서나 주는 전역인데
+Node에는 없어서, 개발용 로그 한 줄이 있는 파일은 테스트가 그 줄에 닿는 순간 `__DEV__ is not defined`로
+죽는다. **코드의 실패처럼 보이는 하니스의 실패**라 원인을 엉뚱한 데서 찾게 된다.
+
+**셋째 프로젝트 `functions`는 `supabase/functions/`를 덮는다**(2026-09-18). 같은 이유로 셋째
+invocation이 아니다. **Deno에서 돌리지 않는다** — 테스트가 읽는 `apple-revoke/apple.ts`는 WebCrypto와
+`fetch`뿐이고 Node 22가 둘 다 갖는다. Deno에 묶인 절반은 `index.ts`(`Deno.serve`·`Deno.env`)이고
+테스트가 그쪽을 import하지 않는 것이 그 파일을 가른 이유다. **`supabase/`는 어느 tsconfig에도 없어서
+타입검사를 받지 않는다** — `verify.js`와 같은 처지이고, 그래서 그 폴더의 안전망은 이 테스트뿐이다.
 
 **테스트는 자기가 덮는 코드 옆, 그 폴더의 `test/`에 둔다** — 렌더러도(`views/test/` ·
 `components/test/`) 폰도(`apps/mobile/sync/test/`) 나머지도(`shared/core/test/` ·

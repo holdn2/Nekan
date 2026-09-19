@@ -359,7 +359,9 @@
     "phone": {
       "signedOut": "Signed out. The tasks on this device are still here.",
       "confirmKeep": "<b>The tasks on this phone stay.</b> You can go on using the app without an account.",
-      "deleted": "Account deleted. The tasks on this phone are untouched."
+      "deleted": "Account deleted. The tasks on this phone are untouched.",
+      "deletedAppleKept": "Account deleted. The Apple connection could not be released -- you can remove it under Sign in with Apple in the Settings app. The tasks on this phone are still here.",
+      "deletedAppleMaybe": "Account deleted. If you signed in with Apple, the Apple connection may still be there -- check under Sign in with Apple in the Settings app. The tasks on this phone are still here."
     },
     "adoptHintPhone": "Off keeps only what the account already has. The tasks here are not deleted -- they are set aside on this device.",
     "adoptPhone_one": "Also merge the {{count}} task on this device into the account",
