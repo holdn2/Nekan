@@ -1246,6 +1246,15 @@ Face ID가 그 자체로 놀랄 일이다. **다만 못 물어본 것(`unknown`)
 **비밀 넷은 Supabase에 있다**: `APPLE_CLIENT_ID`(= `com.yoshi.nekan`) · `APPLE_TEAM_ID` ·
 `APPLE_KEY_ID` · `APPLE_PRIVATE_KEY`(`.p8` 내용). client secret은 **호출마다 서명**하므로 만료가 없다 —
 미리 만든 JWT를 두면 6개월 뒤 **폐기만 조용히 멈춘다**(로그인도 동기화도 멀쩡하다).
+**`.p8`가 둘이고 이름으로 구별되지 않는다.** 사용자 메모 폴더에 `AuthKey_4G9V8XPXQ4.p8`(공증용
+App Store Connect API 키)와 `AuthKey_Y3ACF8D65H.p8`(**Sign in with Apple 키, 이쪽이다**)이 함께 있다.
+2026-09-20에 앞의 것을 넣고 `invalid_client`로 죽었다 — 키 ID는 결정 기록 2026-09-15에 적혀 있었다.
+**쓰기 전에 키 ID를 기록과 대조할 것.**
+**그리고 잘못된 키인지 Apple에게 미리 물어볼 수 없다**: `/auth/token`에 가짜 code를 보내면 키가
+무엇이든 `invalid_grant`(code를 먼저 본다), `/auth/revoke`에 엉터리 토큰을 보내면 키가 무엇이든 `200`이다.
+둘 다 실측으로 확인했다. **진짜 code가 있어야만 갈리고, 그건 기기에서만 나온다.**
+그래서 함수가 실패 이유를 `console.error`로 남긴다 — 없으면 502만 보이고 원인은 어디에도 없다.
+대시보드의 **Logs** 탭에서 `refused at <단계>: <이름>`을 찾을 것(Invocations 탭은 상태 코드만 준다).
 **배포와 비밀은 사용자가 한다** — `.p8`는 내가 읽지도 옮기지도 않는다. 명령은 이렇고,
 **이 PC에 Supabase CLI가 없어서 실행해 본 적은 없다**(`--project-ref`를 주면 `link` 없이 되는 형태다):
 `npx supabase secrets set --project-ref <ref> APPLE_CLIENT_ID=… APPLE_TEAM_ID=… APPLE_KEY_ID=…` ·
