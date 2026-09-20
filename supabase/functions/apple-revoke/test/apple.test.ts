@@ -162,6 +162,7 @@ test("gives back Apple's own words when the exchange is refused", async () => {
   await expect(revokeWithCode(apple, "spent")).resolves.toEqual({
     ok: false,
     error: "invalid_grant",
+    stage: "exchange",
   });
 });
 
@@ -175,6 +176,7 @@ test("does not call revoke when the exchange gave nothing to revoke", async () =
   await expect(revokeWithCode(apple, "code-1")).resolves.toEqual({
     ok: false,
     error: "no_token",
+    stage: "exchange",
   });
   expect(fetched).toHaveBeenCalledTimes(1);
 });
@@ -190,9 +192,12 @@ test("says where a wordless failure came from", async () => {
     ),
   );
 
+  // The same word means different things at the two endpoints, so the stage
+  // travels with it.
   await expect(revokeWithCode(apple, "code-1")).resolves.toEqual({
     ok: false,
     error: "apple_503",
+    stage: "revoke",
   });
 });
 

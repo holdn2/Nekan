@@ -121,12 +121,21 @@ export async function handle(req: Request): Promise<Response> {
 
   try {
     const result = await revokeWithCode(key, code);
-    if (!result.ok) return json({ error: result.error }, 502);
+    if (!result.ok) {
+      // The one place a failure is written down. The app cannot show this --
+      // it is Apple's vocabulary, not a person's -- and the phone only has it
+      // in a dev build, so without this line a revoke that stops working is
+      // invisible to everybody. The name and the stage are all that goes in:
+      // no code, no token, no key.
+      console.error(`apple-revoke refused at ${result.stage}: ${result.error}`);
+      return json({ error: result.error }, 502);
+    }
     return json({ ok: true });
-  } catch {
+  } catch (err) {
     // A network throw, or a .p8 that is not a key. Nothing thrown here
     // carries key material, but letting it escape would answer plain-text 500
     // where every other path answers JSON.
+    console.error("apple-revoke threw:", (err as Error)?.message ?? err);
     return json({ error: "revoke_threw" }, 502);
   }
 }

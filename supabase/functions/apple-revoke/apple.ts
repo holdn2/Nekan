@@ -134,7 +134,15 @@ function reason(result: { status: number; body: unknown }): string {
   return typeof named === "string" && named ? named : `apple_${result.status}`;
 }
 
-export type Revoked = { ok: true } | { ok: false; error: string };
+export type Revoked =
+  | { ok: true }
+  /**
+   * `stage` says which of Apple's two endpoints refused. Without it the same
+   * word means two different faults -- `invalid_grant` from the exchange is a
+   * spent or expired code, and from the revoke it is a token Apple no longer
+   * holds -- and nothing else in the answer tells them apart.
+   */
+  | { ok: false; error: string; stage: "exchange" | "revoke" };
 
 /**
  * Turn an authorization code into tokens and revoke them, in one go.
@@ -160,7 +168,8 @@ export async function revokeWithCode(
     code,
     grant_type: "authorization_code",
   });
-  if (!exchanged.ok) return { ok: false, error: reason(exchanged) };
+  if (!exchanged.ok)
+    return { ok: false, error: reason(exchanged), stage: "exchange" };
 
   const tokens = (exchanged.body ?? {}) as {
     refresh_token?: unknown;
@@ -171,7 +180,7 @@ export async function revokeWithCode(
   const access =
     typeof tokens.access_token === "string" ? tokens.access_token : null;
   const token = refresh ?? access;
-  if (!token) return { ok: false, error: "no_token" };
+  if (!token) return { ok: false, error: "no_token", stage: "exchange" };
 
   const revoked = await post("/auth/revoke", {
     client_id: key.clientId,
@@ -179,6 +188,7 @@ export async function revokeWithCode(
     token,
     token_type_hint: refresh ? "refresh_token" : "access_token",
   });
-  if (!revoked.ok) return { ok: false, error: reason(revoked) };
+  if (!revoked.ok)
+    return { ok: false, error: reason(revoked), stage: "revoke" };
   return { ok: true };
 }
