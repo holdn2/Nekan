@@ -25,3 +25,7 @@ dist*/
 # route types it regenerates from the app/ directory. Both follow the machine,
 # not the repository.
 apps/*/.expo/
+
+# The Supabase CLI writes this when it talks to the project. Machine state,
+# not the repo: it names the linked project and caches a version check.
+supabase/.temp/
