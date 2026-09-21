@@ -417,6 +417,10 @@ export default function TaskScreen() {
  * round. The same row now serves a task sitting in the dump, which previously
  * had no move chips at all.
  *
+ * The chips name themselves as buttons. This row is here for the person who
+ * cannot drag, and a screen reader is how a good part of that population
+ * reads it -- a Pressable with no role is announced as plain text.
+ *
  * The dump chip carries no dot. The dot says *which quadrant*, and the dump is
  * not one -- it is the area both boards share, which is why a task landing
  * there loses its `space` (`spaceFor`). Nothing else is cleared: a due date or
@@ -433,6 +437,7 @@ function MoveRow({ taskId, from }: { taskId: string; from: Place }) {
           <Pressable
             key={q}
             onPress={() => moveToTop(taskId, q)}
+            accessibilityRole="button"
             style={[s.chip, { backgroundColor: c.panel, borderColor: c.line }]}
           >
             <View style={[s.dot, { backgroundColor: c[q] }]} />
@@ -444,6 +449,7 @@ function MoveRow({ taskId, from }: { taskId: string; from: Place }) {
         {from === INBOX ? null : (
           <Pressable
             onPress={() => unfileTask(taskId)}
+            accessibilityRole="button"
             style={[s.chip, { backgroundColor: c.panel, borderColor: c.line }]}
           >
             <Text style={[s.chipText, { color: c.text }]}>

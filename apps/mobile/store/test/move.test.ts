@@ -37,7 +37,7 @@ function task(over: Partial<Task> = {}): Task {
     orderKey: "V",
     createdAt: 1,
     updatedAt: 1,
-    stateAt: null,
+    stateAt: 1,
     completedAt: null,
     deletedAt: null,
     purgedAt: null,
