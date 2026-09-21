@@ -36,7 +36,7 @@ import {
   formatDue,
 } from "@nekan/shared/core";
 import { isBuried } from "@nekan/shared/sync";
-import type { Quadrant } from "@nekan/shared/types";
+import type { Place, Quadrant } from "@nekan/shared/types";
 import { CloseIcon } from "../../icons";
 import { DueCalendar } from "../../components/due-calendar";
 import { locale, t } from "../../i18n";
@@ -49,6 +49,7 @@ import {
   moveToTop,
   setDue,
   setMemo,
+  unfileTask,
 } from "../../store/mutations";
 
 /** Today, tomorrow, a week out -- the shortcuts. Any other day is picked from the month (DueCalendar). */
@@ -282,7 +283,12 @@ export default function TaskScreen() {
         />
 
         {inDump ? (
-          <Text style={[s.note, { color: c.faint }]}>{t("inbox.shared")}</Text>
+          <>
+            <Text style={[s.note, { color: c.faint }]}>
+              {t("inbox.shared")}
+            </Text>
+            <MoveRow taskId={task.id} from={INBOX} />
+          </>
         ) : (
           <>
             <Text style={[s.label, { color: c.muted }]}>{t("due.field")}</Text>
@@ -381,28 +387,7 @@ export default function TaskScreen() {
               textAlignVertical="top"
             />
 
-            <Text style={[s.label, { color: c.muted }]}>
-              {t("matrix.move")}
-            </Text>
-            <View style={s.chips}>
-              {QUADS.filter((q: Quadrant) => q !== task.quadrant).map(
-                (q: Quadrant) => (
-                  <Pressable
-                    key={q}
-                    onPress={() => moveToTop(task.id, q)}
-                    style={[
-                      s.chip,
-                      { backgroundColor: c.panel, borderColor: c.line },
-                    ]}
-                  >
-                    <View style={[s.dot, { backgroundColor: c[q] }]} />
-                    <Text style={[s.chipText, { color: c.text }]}>
-                      {t(`quad.${q}.action`)}
-                    </Text>
-                  </Pressable>
-                ),
-              )}
-            </View>
+            <MoveRow taskId={task.id} from={task.quadrant} />
           </>
         )}
 
@@ -420,6 +405,54 @@ export default function TaskScreen() {
         </Pressable>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/**
+ * Where this task can go, as chips. Both directions, dump included.
+ *
+ * Dragging used to be the only way out of a quadrant, so a person who cannot
+ * drag could file a task and never unfile it -- and the dump is where things
+ * live while they are still undecided, which makes "no way back" the wrong way
+ * round. The same row now serves a task sitting in the dump, which previously
+ * had no move chips at all.
+ *
+ * The dump chip carries no dot. The dot says *which quadrant*, and the dump is
+ * not one -- it is the area both boards share, which is why a task landing
+ * there loses its `space` (`spaceFor`). Nothing else is cleared: a due date or
+ * a note stays on the row, hidden while it is in the dump and back when it
+ * leaves, exactly as dragging has always left it.
+ */
+function MoveRow({ taskId, from }: { taskId: string; from: Place }) {
+  const c = useColors();
+  return (
+    <>
+      <Text style={[s.label, { color: c.muted }]}>{t("matrix.move")}</Text>
+      <View style={s.chips}>
+        {QUADS.filter((q: Quadrant) => q !== from).map((q: Quadrant) => (
+          <Pressable
+            key={q}
+            onPress={() => moveToTop(taskId, q)}
+            style={[s.chip, { backgroundColor: c.panel, borderColor: c.line }]}
+          >
+            <View style={[s.dot, { backgroundColor: c[q] }]} />
+            <Text style={[s.chipText, { color: c.text }]}>
+              {t(`quad.${q}.action`)}
+            </Text>
+          </Pressable>
+        ))}
+        {from === INBOX ? null : (
+          <Pressable
+            onPress={() => unfileTask(taskId)}
+            style={[s.chip, { backgroundColor: c.panel, borderColor: c.line }]}
+          >
+            <Text style={[s.chipText, { color: c.text }]}>
+              {t("inbox.title")}
+            </Text>
+          </Pressable>
+        )}
+      </View>
+    </>
   );
 }
 
