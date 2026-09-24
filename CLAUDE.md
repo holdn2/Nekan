@@ -1093,6 +1093,10 @@ Swift에 hex를 옮겨 적으면 아무 검사도 안 보는 세 번째 자리�
 **앱이 열려 있을 때만 새로워진다.** 다른 기기에서 바꾼 것은 이 폰에서 앱을 열어야 위젯에 온다 —
 위젯이 스스로 받으려면 세션을 공유 키체인에 두고 동기화 클라이언트를 하나 더 둬야 한다.
 **잠금화면에는 안 둔다**: 할 일 글자가 폰을 풀지 않고도 읽힌다.
+**왼쪽 위의 Nekan 아이콘이 "앱 열기"다**(`Link`). 버튼이 아닌 곳은 전부 앱을 열지만(`widgetURL`) 그걸 알려 주는
+것이 없었다. 그림은 `expo-target.config.js`의 `images`가 prebuild 때 `targets/quick/Assets.xcassets`에 쓰고(git 무시),
+원본은 `assets/widget-mark.png`(96px — 1024px 아이콘을 20pt에 그리면 위젯 메모리만 쓴다). **이름이 어긋나면 빌드는
+성공하고 빈 칸만 남으므로** 리허설이 컴파일된 에셋 목록에서 `NekanMark`를 찾는다.
 
 **`ios.appleTeamId`가 `app.json`에 있어야 한다.** 없으면 플러그인이 경고만 하고 넘어가는데
 (`iOS builds may fail until this is corrected`), 그 경고는 `expo config --type prebuild`

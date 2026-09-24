@@ -155,6 +155,14 @@ jobs:
           else
             echo "::error::$group is not on both the app and the widget (found in: ${with:-none})"; fail=1
           fi
+          # The Nekan mark the board widget draws. A name that does not match
+          # builds fine and leaves an empty square on the home screen, so ask
+          # the compiled asset catalogue whether the image is really in it.
+          if [ -f "$appex/Assets.car" ] && xcrun assetutil --info "$appex/Assets.car" | grep -q '"NekanMark"'; then
+            echo "ok   widget carries the NekanMark image"
+          else
+            echo "::error::NekanMark is not in the widget's asset catalogue"; fail=1
+          fi
           # Every scheme, not the first one: Expo registers the bundle id as a
           # scheme too, and the order is not ours to rely on.
           if plutil -extract CFBundleURLTypes json -o - "$app/Info.plist" | grep -q '"nekan"'; then

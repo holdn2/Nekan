@@ -41,5 +41,14 @@ module.exports = {
   entitlements: {
     "com.apple.security.application-groups": ["group.com.yoshi.nekan"],
   },
+  // The Nekan mark on the board widget, which is also its visible door into
+  // the app. The plugin writes it into this folder's Assets.xcassets at
+  // prebuild (git ignores the result). A 96px copy of assets/icon.png rather
+  // than the 1024px original: the widget draws it at about 20pt, and a widget
+  // has a small memory budget to decode images into. Resolved against
+  // apps/mobile, not this folder.
+  images: {
+    NekanMark: "./assets/widget-mark.png",
+  },
   deploymentTarget: "17.0",
 };

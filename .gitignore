@@ -29,3 +29,8 @@ apps/*/.expo/
 # The Supabase CLI writes this when it talks to the project. Machine state,
 # not the repo: it names the linked project and caches a version check.
 supabase/.temp/
+
+# Written by @bacons/apple-targets at prebuild from expo-target.config.js
+# (`images`). Generated, like ios/ itself.
+apps/mobile/targets/*/Assets.xcassets/
+apps/mobile/targets/*/gen-image/

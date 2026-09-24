@@ -288,6 +288,7 @@ private struct BoardWidgetView: View {
 
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 0) {
+                appDoor
                 quadrantDots(feed, choice.quad)
                 Spacer(minLength: 8)
                 boardSwitch(feed, choice.space)
@@ -341,6 +342,26 @@ private struct BoardWidgetView: View {
                     .lineLimit(1)
             }
         }
+    }
+
+    /// The Nekan mark, and the one door into the app you can see.
+    ///
+    /// Everything that is not a button already opens the app (`widgetURL`),
+    /// but nothing said so -- a tap on a row opening the whole app was a thing
+    /// to discover. The mark is where people look for "open this", and it goes
+    /// to the same place the rest of the widget does: this board, this
+    /// quadrant's list open. A `Link` rather than leaning on `widgetURL`, so the
+    /// mark stays a door even if the background's destination changes later.
+    private var appDoor: some View {
+        Link(destination: link) {
+            Image("NekanMark")
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 20, height: 20)
+                .frame(width: 28, height: 24, alignment: .leading)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel(Text(verbatim: "Nekan"))
     }
 
     /// Four dots, one per quadrant. The shown one is filled.
