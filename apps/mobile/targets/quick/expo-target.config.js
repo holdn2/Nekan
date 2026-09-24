@@ -13,9 +13,14 @@
  * availability branch around the background, and a branch that only runs on
  * hardware nobody here has is a branch nobody can check.
  *
- * No App Group, and no entitlements object. This widget holds no data -- it is
- * two doors into the app -- so it has nothing to share with the app and asking
- * for a shared container would be asking for a capability to hold nothing.
+ * An App Group, since 2026-09-24 (issue 144). Until then this target had none,
+ * on the grounds that two doors into the app hold no data. The board widget
+ * beside them shows tasks, and the only way a widget can read what the app
+ * knows is a container both of them are entitled to. The same group is on the
+ * app in app.json; widget/publish.ts writes to it and BoardWidget.swift reads.
+ * Spelled out here although the plugin would copy the app's groups across on
+ * its own -- a capability that decides whether the widget can see anything
+ * should not depend on a default nobody wrote down.
  *
  * ESM and TypeScript are not supported in this file by the plugin.
  *
@@ -30,6 +35,11 @@ module.exports = {
   // are two widgets, at which point both want the same identifier and the
   // collision shows up as a signing failure rather than as a name clash.
   bundleIdentifier: ".quick",
-  frameworks: ["SwiftUI", "WidgetKit"],
+  // AppIntents for the board widget's buttons: switching board, quadrant and
+  // page happens in the widget's own process, without opening the app.
+  frameworks: ["SwiftUI", "WidgetKit", "AppIntents"],
+  entitlements: {
+    "com.apple.security.application-groups": ["group.com.yoshi.nekan"],
+  },
   deploymentTarget: "17.0",
 };

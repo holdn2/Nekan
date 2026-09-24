@@ -441,6 +441,8 @@
   },
   "widget": {
     "description": "Write a task straight from the lock screen or the home screen.",
-    "write": "Type a task"
+    "write": "Type a task",
+    "boardDescription": "See one quadrant's tasks, and switch board or quadrant right on the widget.",
+    "openApp": "Open Nekan once and your tasks will show up here."
   }
 }

@@ -1007,14 +1007,20 @@ apps/mobile/
   targets/quick/  iOS 위젯. **JS가 한 줄도 없는 네이티브 타깃이다** —
                   @bacons/apple-targets가 이 폴더를 Xcode에 synchronized root
                   group으로 달아서, **확장자만 보고 분류한다**(그래서
-                  Localizable.xcstrings에 배선이 필요 없다). 문 두 개가 전부이고
-                  보드를 보여주지 않는다. 크기는 **잠금화면 `accessoryRectangular`
+                  Localizable.xcstrings에 배선이 필요 없다). **위젯이 둘이다**
+                  (`@main`은 둘을 묶는 `NekanWidgets` 번들이다): 문 두 개인
+                  `QuickWidget`과, 2026-09-24부터 할 일을 보여주는 `BoardWidget`
+                  (홈 화면 중간·큰 크기만 — 아래 "보드 위젯"). 문 쪽 크기는
+                  **잠금화면 `accessoryRectangular`
                   와 홈 화면 `systemMedium` 둘**이다 — 사용자가 못 박은 우선순위는
                   잠금화면이고, 그 칸이 잠금화면에서 가장 큰 자리다. 나머지 크기가
                   없는 것은 제약이다: **`systemSmall`과 `accessoryCircular`에서는
                   iOS가 `Link`를 무시하고** 위젯 전체를 URL 하나로 보낸다.
                   잠금화면 크기는 홈 화면 갤러리가 아니라 **잠금화면 편집**에서만
                   보인다 — "위젯이 안 뜬다"는 신고는 어느 쪽에서 찾았는지부터 물을 것
+  widget/         feed(순수 — 위젯에 넘길 스냅샷) · publish(App Group에 쓰기) + test/
+  app/board.tsx   위젯이 여는 주소(`nekan://board?space=&quad=`). 그 보드·분면을
+                  펼쳐 매트릭스로 넘긴다. **Swift와의 계약이라 옮기면 빌드도 함께다**
   metro.config.js watchFolders + `.js`→`.ts` resolver (아래)
 ```
 
@@ -1066,9 +1072,27 @@ Node 22.20으로 `npm ci` → prebuild → `pod install` → **서명 없는 Rel
 (`@expo/config-plugins/build/ios/Updates.js`) — `Info.plist`에서 읽으면 멀쩡한 빌드를
 실패로 판정한다. 무거워서(대략 한 시간) 네이티브를 정하는 파일이 바뀔 때만 돈다.
 
-**위젯의 언어는 앱 설정이 아니라 시스템 언어다.** 폰을 영어로 쓰면서 Nekan만 한국어로
-둔 사람은 영어 위젯을 본다. 고치려면 고른 언어를 공유 컨테이너에 써서 Swift가 읽어야
-하는데, 라벨 두 개 값이 아니다.
+**위젯의 언어는 앱에서 고른 언어다** (2026-09-24부터 — 그전에는 시스템 언어였다). 앱이 App Group에
+`app.lang`을 써 두고, Swift의 `appText()`가 xcstrings가 컴파일된 `.lproj` 중 그 언어의 것을 연다.
+오래 "라벨 두 개 값이 아니다"로 미뤄 뒀는데, 보드 위젯이 공유 공간을 어차피 필요로 해서 같은 빌드에
+실었다. **여전히 시스템 언어인 것 둘**: 위젯 갤러리의 설명과 "앱을 한 번 열어 주세요" — 둘 다 앱이
+언어를 한 번도 쓰기 전에 보이는 글자라 따를 것이 없다.
+
+**보드 위젯은 앱이 써 둔 스냅샷을 그릴 뿐이다** (2026-09-24, #144). `widget/feed.ts`가 **두 보드·네 분면을
+다** 만들어 App Group의 `board.feed`에 JSON으로 쓰고(`publish.ts`, 스토어가 바뀐 뒤 1초 · 앱이 백그라운드로
+갈 때), 위젯은 어느 조각을 그릴지만 고른다. 그래서 위젯 안의 보드·분면·페이지 전환은 **앱을 깨우지
+않는다** — AppIntent가 위젯 프로세스에서 선택을 같은 공간(`board.space`·`board.quad`·`board.first`)에
+적고 WidgetKit이 다시 그린다.
+**글자와 분면 색도 스냅샷에 실려 간다**: 글자는 앱 언어를 따라야 하고, 색은 `theme.ts`가 유일한 집이라
+Swift에 hex를 옮겨 적으면 아무 검사도 안 보는 세 번째 자리가 된다.
+**마감일은 두 번 간다**: 읽을 글자(`dueText`)와 비교할 날짜(`due`). 스냅샷은 쓴 다음 날에도 읽히므로
+"지났는지"는 위젯이 자기 시계로 따지고, 자정에 한 번 다시 그린다.
+**스크롤·스와이프가 없는 것은 iOS 제약이다** — 위젯은 탭만 받는다. 그래서 페이지 넘김 버튼과 분면 점
+네 개다. 위치는 페이지 번호가 아니라 **첫 행 번호**로 적는다: 중간·큰 위젯이 한 화면에 같이 있으면
+상태를 나눠 쓰는데(키가 하나다) 페이지 번호는 둘에게 다른 행을 뜻한다.
+**앱이 열려 있을 때만 새로워진다.** 다른 기기에서 바꾼 것은 이 폰에서 앱을 열어야 위젯에 온다 —
+위젯이 스스로 받으려면 세션을 공유 키체인에 두고 동기화 클라이언트를 하나 더 둬야 한다.
+**잠금화면에는 안 둔다**: 할 일 글자가 폰을 풀지 않고도 읽힌다.
 
 **`ios.appleTeamId`가 `app.json`에 있어야 한다.** 없으면 플러그인이 경고만 하고 넘어가는데
 (`iOS builds may fail until this is corrected`), 그 경고는 `expo config --type prebuild`

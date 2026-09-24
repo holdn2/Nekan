@@ -18,12 +18,16 @@
  * the in-app microphone uses, because they are the same act. Giving the widget
  * its own copy is how the glossary gets quietly overruled.
  *
- * One honest limitation: a widget is localised by the *system* language, and
- * this app has a language setting of its own. Someone running the phone in
- * English with Nekan set to Korean will see an English widget. There is no
- * mechanism to fix that short of writing the chosen language into a shared
- * container and reading it in Swift, which is a lot of moving parts for two
- * labels nobody reads twice.
+ * The widget follows the app's language, not the phone's (since 2026-09-24).
+ * Xcode compiles this catalogue into one .lproj per language, and `appText` in
+ * BoardWidget.swift opens the folder for the language the app wrote into the
+ * shared container. Until then this was listed here as a limitation: a phone
+ * in English with Nekan set to Korean showed an English widget. It became
+ * cheap to fix when the board widget needed that container anyway.
+ *
+ * What still follows the system: the gallery's description, and the line
+ * asking to open the app once. Both are shown before the app has ever written
+ * a language, so there is nothing else to follow.
  */
 
 const fs = require("fs");
@@ -57,6 +61,8 @@ const KEYS = {
   // Deliberately the in-app microphone's words. See the header.
   "widget.speak": "speech.start",
   "widget.write": "widget.write",
+  "widget.boardDescription": "widget.boardDescription",
+  "widget.openApp": "widget.openApp",
 };
 
 function catalogue(lang) {
