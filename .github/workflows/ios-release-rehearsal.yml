@@ -146,7 +146,8 @@ jobs:
           # Each side by name: counting files across both would pass with two
           # app-side files and none on the widget.
           group="group.com.yoshi.nekan"
-          for side in "app:$GITHUB_WORKSPACE/apps/mobile/ios/Nekan/Nekan.entitlements"                       "widget:$GITHUB_WORKSPACE/apps/mobile/targets/quick/generated.entitlements"; do
+          mobile="$GITHUB_WORKSPACE/apps/mobile"
+          for side in "app:$mobile/ios/Nekan/Nekan.entitlements" "widget:$mobile/targets/quick/generated.entitlements"; do
             name="${side%%:*}"; file="${side#*:}"
             if [ -f "$file" ] && grep -q "$group" "$file"; then
               echo "ok   app group on the $name ($file)"
