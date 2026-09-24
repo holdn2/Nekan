@@ -244,8 +244,11 @@ private struct BoardWidgetView: View {
     @Environment(\.widgetFamily) private var family
     @Environment(\.colorScheme) private var scheme
 
-    /// Rows per page. Measured against the two families' heights with the two
-    /// control lines above them; a third line of rows does not fit the medium.
+    /// Rows per page. Worked out from the families' heights (medium 158pt,
+    /// large 354pt), the 16pt margins, the two control lines and a footnote
+    /// row of about 22pt -- not measured on a device. Three fill the medium
+    /// and a fourth would not; the large could take about eleven, so eight
+    /// leaves it partly empty (issue 144).
     private var perPage: Int { family == .systemLarge ? 8 : 3 }
 
     var body: some View {
