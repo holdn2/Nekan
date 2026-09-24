@@ -133,7 +133,28 @@ jobs:
           expo="$app/Expo.plist"
           test -f "$expo" || { echo "::error::Expo.plist is not in the app"; fail=1; }
           expect "updates url"          "$(/usr/libexec/PlistBuddy -c 'Print :EXUpdatesURL' "$expo" 2>/dev/null)"            "https://u.expo.dev/0cab499c-a177-4212-b600-7bafabeb61bc"
-          expect "runtime version"      "$(/usr/libexec/PlistBuddy -c 'Print :EXUpdatesRuntimeVersion' "$expo" 2>/dev/null)" "0.1.0"
+          # The policy is appVersion, so the answer is app.json's version --
+          # read from there rather than written here, or every deliberate bump
+          # fails this check (0.1.0 was written here until 2026-09-24).
+          want_runtime=$(node -p "require('$GITHUB_WORKSPACE/apps/mobile/app.json').expo.version")
+          expect "runtime version"      "$(/usr/libexec/PlistBuddy -c 'Print :EXUpdatesRuntimeVersion' "$expo" 2>/dev/null)" "$want_runtime"
+          # The App Group, on both sides. The board widget reads what the app
+          # writes into it, and a group on one side only builds, signs and
+          # installs cleanly -- the widget just says "open the app once"
+          # forever. This build is unsigned, so the entitlements are not in the
+          # binary; the files prebuild generated are what signing will use.
+          group="group.com.yoshi.nekan"
+          # `|| true` on both: the step runs under `bash -e`, and an assignment
+          # whose substitution fails would end the step before the error below
+          # could say what was missing.
+          ents=$(find "$GITHUB_WORKSPACE/apps/mobile/ios" "$GITHUB_WORKSPACE/apps/mobile/targets" -name "*.entitlements" 2>/dev/null || true)
+          with=$(for f in $ents; do grep -l "$group" "$f" || true; done)
+          echo "entitlements files:"; echo "$ents" | sed 's/^/  /'
+          if [ "$(echo "$with" | grep -c .)" -ge 2 ]; then
+            echo "ok   app group on app and widget:"; echo "$with" | sed 's/^/  /'
+          else
+            echo "::error::$group is not on both the app and the widget (found in: ${with:-none})"; fail=1
+          fi
           # Every scheme, not the first one: Expo registers the bundle id as a
           # scheme too, and the order is not ours to rely on.
           if plutil -extract CFBundleURLTypes json -o - "$app/Info.plist" | grep -q '"nekan"'; then
