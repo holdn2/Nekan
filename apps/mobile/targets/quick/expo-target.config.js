@@ -45,10 +45,13 @@ module.exports = {
   // the app. The plugin writes it into this folder's Assets.xcassets at
   // prebuild (git ignores the result). A 96px copy of assets/icon.png rather
   // than the 1024px original: the widget draws it at about 20pt, and a widget
-  // has a small memory budget to decode images into. Resolved against
-  // apps/mobile, not this folder.
+  // has a small memory budget to decode images into.
+  // Resolved against THIS folder, not apps/mobile. Written the other way round
+  // first, and the plugin does not fail on a missing file -- it logs "Skipping
+  // image generation" and prebuild carries on, so the build would have shipped
+  // an empty square. The release rehearsal's NekanMark check is what caught it.
   images: {
-    NekanMark: "./assets/widget-mark.png",
+    NekanMark: "../../assets/widget-mark.png",
   },
   deploymentTarget: "17.0",
 };
