@@ -114,15 +114,42 @@ export default function MatrixScreen() {
   const dragX = useSharedValue(0);
   const dragY = useSharedValue(0);
   const dragWidth = useSharedValue(0);
+  // Where this screen starts, in the same window coordinates the finger comes
+  // in. The screen is not at the top of the window: the app header sits above
+  // it, so a copy placed at the finger's window position lands one header
+  // lower -- which is what a device showed, the drop line tracking the finger
+  // and the copy trailing well below it. The line was right because it
+  // compares window positions with window positions; only the copy mixed the
+  // two. Measured again whenever a drag starts, not only on layout, because
+  // onLayout answers only when this view moves inside its parent, and a header
+  // that grows moves the whole screen without moving anything inside it.
+  const screen = useRef<View>(null);
+  const originX = useSharedValue(0);
+  const originY = useSharedValue(0);
   const [carried, setCarried] = useState<{ task: Task; index: number } | null>(
     null,
   );
   const drag = useMemo(
-    () => ({ x: dragX, y: dragY, width: dragWidth, show: setCarried }),
-    [dragX, dragY, dragWidth],
+    () => ({
+      x: dragX,
+      y: dragY,
+      width: dragWidth,
+      show: (row: { task: Task; index: number } | null) => {
+        if (row)
+          screen.current?.measureInWindow((x, y) => {
+            originX.value = x;
+            originY.value = y;
+          });
+        setCarried(row);
+      },
+    }),
+    [dragX, dragY, dragWidth, originX, originY],
   );
   const ghost = useAnimatedStyle(() => ({
-    transform: [{ translateX: dragX.value }, { translateY: dragY.value }],
+    transform: [
+      { translateX: dragX.value - originX.value },
+      { translateY: dragY.value - originY.value },
+    ],
     width: dragWidth.value,
   }));
   const space = currentSpace();
@@ -195,7 +222,19 @@ export default function MatrixScreen() {
   }, [open]);
 
   return (
-    <View style={[s.window, { backgroundColor: c.bg }]}>
+    <View
+      ref={screen}
+      collapsable={false}
+      // Once up front as well, so the very first drag does not draw its first
+      // frame from a zero origin before the measurement at drag start lands.
+      onLayout={() =>
+        screen.current?.measureInWindow((x, y) => {
+          originX.value = x;
+          originY.value = y;
+        })
+      }
+      style={[s.window, { backgroundColor: c.bg }]}
+    >
       {/* The field sits under the list, so on a short phone the keyboard
           lands on top of it. Padding rather than moving anything: the panel
           is the one thing here that flexes, so it gives up the room and the
@@ -374,10 +413,11 @@ export default function MatrixScreen() {
         </Pressable>
       </View>
 
-      {/* Outside the safe area on purpose: the gesture reports window
-          coordinates, and a container that starts below the notch would put
-          the copy that far off. Nothing here takes touches -- the finger is
-          still talking to the row underneath. */}
+      {/* Outside the panel so nothing clips it. The gesture reports window
+          coordinates and this screen starts below the app header, so the
+          copy is placed relative to where the screen actually begins (see
+          originY above). Nothing here takes touches -- the finger is still
+          talking to the row underneath. */}
       {carried ? (
         <Animated.View pointerEvents="none" style={[s.ghost, ghost]}>
           <View
