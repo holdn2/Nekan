@@ -143,18 +143,17 @@ jobs:
           # installs cleanly -- the widget just says "open the app once"
           # forever. This build is unsigned, so the entitlements are not in the
           # binary; the files prebuild generated are what signing will use.
+          # Each side by name: counting files across both would pass with two
+          # app-side files and none on the widget.
           group="group.com.yoshi.nekan"
-          # `|| true` on both: the step runs under `bash -e`, and an assignment
-          # whose substitution fails would end the step before the error below
-          # could say what was missing.
-          ents=$(find "$GITHUB_WORKSPACE/apps/mobile/ios" "$GITHUB_WORKSPACE/apps/mobile/targets" -name "*.entitlements" 2>/dev/null || true)
-          with=$(for f in $ents; do grep -l "$group" "$f" || true; done)
-          echo "entitlements files:"; echo "$ents" | sed 's/^/  /'
-          if [ "$(echo "$with" | grep -c .)" -ge 2 ]; then
-            echo "ok   app group on app and widget:"; echo "$with" | sed 's/^/  /'
-          else
-            echo "::error::$group is not on both the app and the widget (found in: ${with:-none})"; fail=1
-          fi
+          for side in "app:$GITHUB_WORKSPACE/apps/mobile/ios/Nekan/Nekan.entitlements"                       "widget:$GITHUB_WORKSPACE/apps/mobile/targets/quick/generated.entitlements"; do
+            name="${side%%:*}"; file="${side#*:}"
+            if [ -f "$file" ] && grep -q "$group" "$file"; then
+              echo "ok   app group on the $name ($file)"
+            else
+              echo "::error::$group is not on the $name ($file)"; fail=1
+            fi
+          done
           # The Nekan mark the board widget draws. A name that does not match
           # builds fine and leaves an empty square on the home screen, so ask
           # the compiled asset catalogue whether the image is really in it.

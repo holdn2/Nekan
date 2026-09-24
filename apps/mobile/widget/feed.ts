@@ -28,7 +28,15 @@ import { isBuried } from "@nekan/shared/sync";
 import { PALETTE } from "@nekan/shared/theme";
 import type { Quadrant, Space, Task } from "@nekan/shared/types";
 
-/** Bumped when the shape changes in a way an older widget would misread. */
+/**
+ * Bumped when the shape changes in a way an older widget would misread.
+ *
+ * The widget reads exactly this number (`supportedVersion` in
+ * BoardWidget.swift) and shows "open the app" for anything else. The app moves
+ * by OTA and the widget only by a build, so **bumping this without a build
+ * blanks every widget already installed** -- change it in the same release as
+ * the Swift that reads the new shape.
+ */
 export const FEED_VERSION = 1;
 
 /**

@@ -87,11 +87,18 @@ private struct Feed: Decodable {
     let colors: [String: [String: String]]
     let boards: [String: [String: Quadrant]]
 
+    /// The one shape this widget was built to read. widget/feed.ts writes
+    /// `FEED_VERSION`, and the app can move ahead of the widget over the air;
+    /// a feed from the future is shown as "open the app" rather than misread.
+    static let supportedVersion = 1
+
     static func load() -> Feed? {
         guard let text = shared?.string(forKey: feedKey),
-              let data = text.data(using: .utf8)
+              let data = text.data(using: .utf8),
+              let feed = try? JSONDecoder().decode(Feed.self, from: data),
+              feed.v == supportedVersion
         else { return nil }
-        return try? JSONDecoder().decode(Feed.self, from: data)
+        return feed
     }
 
     func quadrant(_ space: String, _ quad: String) -> Quadrant {
@@ -228,15 +235,22 @@ private extension Color {
     }
 }
 
-/// Is `YYYY-MM-DD` before today, by this device's calendar?
+/// Is `YYYY-MM-DD` before today, in this device's time zone?
+///
+/// Gregorian on purpose, not `Calendar.current`. The date is written in the
+/// Gregorian calendar, and a phone set to the Buddhist or Japanese calendar
+/// would read year 2026 as a different year -- every due date overdue, or
+/// none. The time zone stays the device's, because "today" is.
 private func isOverdue(_ due: String?) -> Bool {
     guard let due else { return false }
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = .current
     let parts = due.split(separator: "-").compactMap { Int($0) }
     guard parts.count == 3,
-          let date = Calendar.current.date(
+          let date = calendar.date(
               from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
     else { return false }
-    return date < Calendar.current.startOfDay(for: Date())
+    return date < calendar.startOfDay(for: Date())
 }
 
 private struct BoardWidgetView: View {
