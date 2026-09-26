@@ -17,7 +17,14 @@
  * should not be able to remove anything, and because "undo" on a phone is a
  * thing you have to remember exists.
  */
-import { useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { StyleSheet, Text, View } from "react-native";
 import {
   Gesture,
@@ -74,12 +81,83 @@ function DeleteAction({
 
 const ACTION_WIDTH = 88;
 
+/**
+ * How long a finger has to stay on a row before the row lights up.
+ *
+ * Lit on touch-down, every finger that lands on a row to scroll the list
+ * flashed it -- the list moves a few points later, not at contact. iOS's own
+ * lists wait the same way before highlighting a cell.
+ */
+const PRESS_DELAY_MS = 120;
+
+type ScrollListener = () => void;
+
+/** A one-way signal from the list to its rows: "a scroll just started". */
+export function makeScrollSignal() {
+  const listeners = new Set<ScrollListener>();
+  return {
+    on(fn: ScrollListener) {
+      listeners.add(fn);
+      return () => void listeners.delete(fn);
+    },
+    fire() {
+      for (const fn of listeners) fn();
+    },
+  };
+}
+
+/**
+ * Provided by TaskList. A context holding a stable object rather than a
+ * counter, on purpose: a counter would re-render every row on every scroll,
+ * and a re-render rebuilds each row's drag gesture mid-scroll -- a
+ * re-attachment worth not adding while touches are in flight.
+ */
+export const ScrollSignal = createContext<ReturnType<
+  typeof makeScrollSignal
+> | null>(null);
+
 export function TaskRow({ task, index, onPress }: Props) {
   const c = useColors();
   const inDump = task.quadrant === INBOX;
   const info = dueInfo(task.dueDate, new Date());
   const due = formatDue(info, t, locale());
   const [pressed, setPressed] = useState(false);
+
+  // The pressed look is switched on late and switched off by any of four
+  // things, because one was not enough. It used to be on at touch-down and off
+  // only in `onFinalize`, and a device showed two rows lit at once while
+  // nothing touched the screen -- one finger cannot press two rows, so both
+  // had missed their end. The library dispatches FAILED and CANCELLED to
+  // `onFinalize` correctly, so the event itself did not arrive for these rows.
+  // Which native path loses it was not pinned down -- that takes a device and
+  // a way to watch the handler states. Rather than trust that one signal, the
+  // look now also ends when the finger lifts, when
+  // the touch is cancelled, and when the list starts scrolling -- no row can
+  // truthfully look pressed while its list is moving.
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { hold, release } = useMemo(() => {
+    const release = () => {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = null;
+      setPressed(false);
+    };
+    const hold = () => {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => {
+        timer.current = null;
+        setPressed(true);
+      }, PRESS_DELAY_MS);
+    };
+    return { hold, release };
+  }, []);
+  const scrolls = useContext(ScrollSignal);
+  useEffect(() => scrolls?.on(release), [scrolls, release]);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
 
   // The row and its completion circle answer taps with gestures this file
   // owns, not with Pressable, and that is the fix for a row that would not
@@ -118,12 +196,14 @@ export function TaskRow({ task, index, onPress }: Props) {
         // The circle sits inside the row. Without this a tap on it would
         // complete the task and open it in the same motion.
         .requireExternalGestureToFail(complete)
-        .onBegin(() => setPressed(true))
-        .onFinalize(() => setPressed(false))
+        .onBegin(hold)
+        .onFinalize(release)
+        .onTouchesUp(release)
+        .onTouchesCancelled(release)
         .onEnd((_e, success) => {
           if (success) onPressRef.current();
         }),
-    [complete],
+    [complete, hold, release],
   );
   const alongside = useMemo(() => [open, complete], [open, complete]);
 

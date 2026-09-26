@@ -18,7 +18,7 @@
  * going down and nothing else. Waiting was not enough to keep the scroll,
  * though -- see the ScrollView import for what was.
  */
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { StyleSheet, View, type LayoutChangeEvent } from "react-native";
 // The gesture-handler ScrollView, not React Native's. Every row carries three
 // gesture-handler gestures -- the long-press drag, the swipe to Delete and the
@@ -41,7 +41,7 @@ import {
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import type { Place, Task } from "@nekan/shared/types";
-import { TaskRow } from "./task-row";
+import { ScrollSignal, TaskRow, makeScrollSignal } from "./task-row";
 import { moveTask, moveToTop } from "../store/mutations";
 import { R, SP, useColors } from "../theme";
 
@@ -110,6 +110,9 @@ export function TaskList({
     Record<string, { y: number; height: number; width: number }>
   >({});
   const [heldId, setHeldId] = useState<string | null>(null);
+  // Tells every row the moment the list starts scrolling, so none is left
+  // looking pressed under a moving list (see task-row.tsx).
+  const scrolls = useMemo(makeScrollSignal, []);
   const [target, setTarget] = useState<{
     card: Place | null;
     before: string | null;
@@ -204,30 +207,35 @@ export function TaskList({
       // opening a task while typing would take two.
       keyboardDismissMode="on-drag"
       keyboardShouldPersistTaps="handled"
+      onScrollBeginDrag={scrolls.fire}
     >
-      {tasks.map((task, i) => (
-        <DraggableRow
-          key={task.id}
-          task={task}
-          index={i}
-          markAbove={
-            heldId !== null && target.card === null && target.before === task.id
-          }
-          markBelow={
-            heldId !== null &&
-            target.card === null &&
-            target.before === null &&
-            i === tasks.length - 1
-          }
-          held={heldId === task.id}
-          drag={drag}
-          onLayout={(e) => measure(task.id, e)}
-          onBegin={() => begin(task, i)}
-          onAim={(x, y, ly) => aim(task.id, x, y, ly)}
-          onDrop={(moved) => drop(task.id, task.quadrant, moved)}
-          onPress={() => onOpen(task)}
-        />
-      ))}
+      <ScrollSignal.Provider value={scrolls}>
+        {tasks.map((task, i) => (
+          <DraggableRow
+            key={task.id}
+            task={task}
+            index={i}
+            markAbove={
+              heldId !== null &&
+              target.card === null &&
+              target.before === task.id
+            }
+            markBelow={
+              heldId !== null &&
+              target.card === null &&
+              target.before === null &&
+              i === tasks.length - 1
+            }
+            held={heldId === task.id}
+            drag={drag}
+            onLayout={(e) => measure(task.id, e)}
+            onBegin={() => begin(task, i)}
+            onAim={(x, y, ly) => aim(task.id, x, y, ly)}
+            onDrop={(moved) => drop(task.id, task.quadrant, moved)}
+            onPress={() => onOpen(task)}
+          />
+        ))}
+      </ScrollSignal.Provider>
     </ScrollView>
   );
 }
