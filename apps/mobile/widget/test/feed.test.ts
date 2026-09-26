@@ -11,7 +11,7 @@
 import { expect, test } from "vitest";
 import { PALETTE } from "@nekan/shared/theme";
 import type { Task } from "@nekan/shared/types";
-import { FEED_ROWS, FEED_VERSION, buildFeed } from "../feed";
+import { FEED_ROWS, FEED_VERSION, WIDGET_ROLES, buildFeed } from "../feed";
 
 function task(over: Partial<Task> = {}): Task {
   return {
@@ -164,4 +164,31 @@ test("each row's circle is named in the app's words", () => {
 
   expect(feed.boards.work.q1.rows[0].doneLabel).toBe("<item.completeLabel>");
   expect(feed.labels.undo).toBe("<archive.restore>");
+});
+
+test("every colour the widget draws with is sent, in a shape Swift can read", () => {
+  const feed = build([]);
+  for (const theme of ["light", "dark"] as const) {
+    for (const role of WIDGET_ROLES) {
+      // Color(hex:) in BoardWidget.swift takes #rrggbb and nothing else; a
+      // role with alpha would silently draw as the fallback grey.
+      expect(feed.colors[theme][role], `${theme}.${role}`).toMatch(
+        /^#[0-9a-f]{6}$/i,
+      );
+      expect(feed.colors[theme][role]).toBe(PALETTE[theme][role]);
+    }
+  }
+});
+
+test("carries the app's theme choice, or null to follow the phone", () => {
+  expect(build([]).theme).toBe(null);
+  const dark = buildFeed([], {
+    space: "work",
+    lang: "ko",
+    t,
+    now: new Date(2026, 8, 24),
+    stamp: 123,
+    theme: "dark",
+  });
+  expect(dark.theme).toBe("dark");
 });

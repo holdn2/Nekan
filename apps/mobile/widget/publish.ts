@@ -22,7 +22,13 @@ import { AppState, Platform } from "react-native";
 import { ExtensionStorage } from "@bacons/apple-targets";
 import { locale, t } from "../i18n";
 import { completeFromWidget } from "../store/mutations";
-import { allTasks, currentSpace, now, subscribe } from "../store/state";
+import {
+  allTasks,
+  currentSpace,
+  now,
+  subscribe,
+  themeChoice,
+} from "../store/state";
 import { buildFeed } from "./feed";
 
 /** Shared with the widget's Swift (BoardWidget.swift), which reads the same names. */
@@ -56,6 +62,7 @@ export function publishNow(): void {
       t,
       now: new Date(),
       stamp: now(),
+      theme: themeChoice(),
     });
     const storage = new ExtensionStorage(APP_GROUP);
     storage.set(FEED_KEY, JSON.stringify(feed));

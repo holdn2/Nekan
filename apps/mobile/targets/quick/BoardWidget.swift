@@ -99,6 +99,9 @@ private struct Feed: Decodable {
     /// The app's clock minus this phone's, in ms. Optional so that a feed
     /// without it still draws; a check then stamps the phone's own time.
     let offset: Double?
+    /// The theme chosen in the app; nil follows the phone.
+    let theme: String?
+    /// Palette roles by theme, from theme.ts (widget/feed.ts WIDGET_ROLES).
     let colors: [String: [String: String]]
     let boards: [String: [String: Quadrant]]
 
@@ -325,22 +328,50 @@ private func isOverdue(_ due: String?) -> Bool {
     return date < calendar.startOfDay(for: Date())
 }
 
+/// The app's scale (theme.ts SPACING / FONT_SIZE), in the steps the widget uses.
+/// Written out rather than sent: they are sizes, not colours, and the layout
+/// arithmetic below needs them before any feed has been read.
+private enum Scale {
+    static let gap: CGFloat = 6        // SPACING.sm, between the three bands
+    static let rowGap: CGFloat = 4     // SPACING.xs, the least between rows
+    static let headerHeight: CGFloat = 22
+    static let titleHeight: CGFloat = 20
+    static let rowHeight: CGFloat = 20
+    static let xs: CGFloat = 11        // FONT_SIZE.xs
+    static let md: CGFloat = 13        // FONT_SIZE.md
+    static let lg: CGFloat = 14        // FONT_SIZE.lg
+}
+
+/// How many rows fit, and how far apart they sit so the last one ends at the
+/// bottom edge. Worked out from the space the widget is given rather than a
+/// count per size: the same size is a different height on every phone, and a
+/// fixed count either leaves a band empty at the bottom or pushes the header
+/// off the top.
+private struct RowFit: Equatable {
+    let count: Int
+    let spacing: CGFloat
+
+    static func of(height: CGFloat, shown available: Int) -> RowFit {
+        let room = height - Scale.headerHeight - Scale.titleHeight - Scale.gap * 2
+        let count = max(1, Int((room + Scale.rowGap) / (Scale.rowHeight + Scale.rowGap)))
+        // Spread what is left over the gaps only on a full page. A short last
+        // page keeps its rows together at the top, as a list does.
+        guard available >= count, count > 1 else {
+            return RowFit(count: count, spacing: Scale.rowGap)
+        }
+        let used = CGFloat(count) * Scale.rowHeight + CGFloat(count - 1) * Scale.rowGap
+        return RowFit(count: count, spacing: Scale.rowGap + max(0, room - used) / CGFloat(count - 1))
+    }
+}
+
 private struct BoardWidgetView: View {
     let entry: BoardEntry
-    @Environment(\.widgetFamily) private var family
     @Environment(\.colorScheme) private var scheme
-
-    /// Rows per page. Worked out from the families' heights (medium 158pt,
-    /// large 354pt), the 16pt margins, the two control lines and a footnote
-    /// row of about 22pt -- not measured on a device. Three fill the medium
-    /// and a fourth would not; the large could take about eleven, so eight
-    /// leaves it partly empty (issue 144).
-    private var perPage: Int { family == .systemLarge ? 8 : 3 }
 
     var body: some View {
         Group {
             if let feed = entry.feed {
-                board(feed)
+                GeometryReader { geo in board(feed, height: geo.size.height) }
             } else {
                 Text("widget.openApp")
                     .font(.footnote)
@@ -349,7 +380,13 @@ private struct BoardWidgetView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .containerBackground(.fill.tertiary, for: .widget)
+        .containerBackground(for: .widget) {
+            if let feed = entry.feed {
+                paint(feed, "panel")
+            } else {
+                Color.clear.background(.fill.tertiary)
+            }
+        }
         .widgetURL(link)
     }
 
@@ -358,89 +395,110 @@ private struct BoardWidgetView: View {
         URL(string: "nekan://board?space=\(entry.choice.space)&quad=\(entry.choice.quad)")!
     }
 
-    private func color(_ feed: Feed, _ quad: String) -> Color {
-        let theme = scheme == .dark ? "dark" : "light"
-        return feed.colors[theme]?[quad].flatMap { Color(hex: $0) } ?? .secondary
+    /// A palette role in the theme the app is showing. The app's own choice
+    /// wins over the phone's, as it does on the app's screens.
+    private func paint(_ feed: Feed, _ role: String) -> Color {
+        let theme = feed.theme ?? (scheme == .dark ? "dark" : "light")
+        return feed.colors[theme]?[role].flatMap { Color(hex: $0) } ?? .secondary
     }
 
     @ViewBuilder
-    private func board(_ feed: Feed) -> some View {
+    private func board(_ feed: Feed, height: CGFloat) -> some View {
         let choice = entry.choice
         let list = feed.quadrant(choice.space, choice.quad)
         // A stored position past the end -- the list shrank since -- shows the
         // last page rather than nothing.
         let first = min(choice.first, max(0, list.rows.count - 1))
-        let rows = Array(list.rows.dropFirst(first).prefix(perPage))
+        let fit = RowFit.of(height: height, shown: list.rows.count - first)
+        let rows = Array(list.rows.dropFirst(first).prefix(fit.count))
 
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Scale.gap) {
             HStack(spacing: 0) {
                 appDoor
-                quadrantDots(feed, choice.quad)
+                quadrantDots(feed, choice)
                 Spacer(minLength: 8)
                 boardSwitch(feed, choice.space)
             }
+            .frame(height: Scale.headerHeight)
 
             HStack(spacing: 6) {
                 Circle()
-                    .fill(color(feed, choice.quad))
+                    .fill(paint(feed, choice.quad))
                     .frame(width: 8, height: 8)
                 Text(verbatim: feed.labels.quads[choice.quad] ?? choice.quad)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.system(size: Scale.lg, weight: .semibold))
+                    .foregroundStyle(paint(feed, "text"))
                     .lineLimit(1)
                 Text(verbatim: "\(list.count)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: Scale.md).monospacedDigit())
+                    .foregroundStyle(paint(feed, "faint"))
                 Spacer(minLength: 4)
-                pageButton("chevron.up", feed.labels.previous, by: -perPage, enabled: first > 0)
+                pageButton(feed, "chevron.up", feed.labels.previous, by: -fit.count, enabled: first > 0)
                 pageButton(
-                    "chevron.down", feed.labels.next, by: perPage,
-                    enabled: first + perPage < list.rows.count
+                    feed, "chevron.down", feed.labels.next, by: fit.count,
+                    enabled: first + fit.count < list.rows.count
                 )
             }
+            .frame(height: Scale.titleHeight)
 
             if rows.isEmpty {
                 Text(verbatim: feed.labels.empty)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: Scale.xs))
+                    .foregroundStyle(paint(feed, "faint"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(rows, id: \.id) { row in taskLine(row, feed, choice.quad) }
+                VStack(alignment: .leading, spacing: fit.spacing) {
+                    ForEach(Array(rows.enumerated()), id: \.element.id) { offset, row in
+                        taskLine(row, number: first + offset + 1, feed, choice.quad)
+                    }
                 }
-                Spacer(minLength: 0)
+                .frame(maxHeight: .infinity, alignment: .top)
             }
         }
     }
 
-    private func taskLine(_ row: Feed.Row, _ feed: Feed, _ quad: String) -> some View {
+    /// One row, drawn the way the app's list draws it: the number, the circle,
+    /// the text in the light weight, the due date as an outlined pill.
+    private func taskLine(_ row: Feed.Row, number: Int, _ feed: Feed, _ quad: String) -> some View {
         let checked = entry.checked.contains(row.id)
-        return HStack(spacing: 4) {
-            // The row's height is the target, not the glyph's: it is the
-            // smallest thing on the widget anyone has to hit.
+        return HStack(spacing: 8) {
+            Text(verbatim: "\(number).")
+                .font(.system(size: Scale.xs).monospacedDigit())
+                .foregroundStyle(paint(feed, "faint"))
+                .frame(minWidth: 15, alignment: .trailing)
+            // The whole row's height is the target, not the circle's: it is
+            // the smallest thing on the widget anyone has to hit.
             Button(intent: ToggleDoneIntent(id: row.id)) {
-                Image(systemName: checked ? "checkmark.circle.fill" : "circle")
-                    .font(.caption)
-                    .foregroundStyle(checked ? color(feed, quad) : Color.secondary)
-                    .frame(width: 22, height: 22)
-                    .contentShape(Rectangle())
+                CheckCircle(
+                    checked: checked,
+                    stroke: paint(feed, "muted"),
+                    fill: paint(feed, "\(quad)-fill"),
+                    tick: paint(feed, "on-quad")
+                )
+                .frame(width: 20, height: Scale.rowHeight)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(Text(verbatim: checked
                 ? (feed.labels.undo ?? row.text)
                 : (row.doneLabel ?? row.text)))
             Text(verbatim: row.text)
-                .font(.footnote)
-                .lineLimit(1)
+                .font(.system(size: Scale.md, weight: .light))
+                .foregroundStyle(paint(feed, checked ? "muted" : "text"))
                 .strikethrough(checked)
-                .foregroundStyle(checked ? Color.secondary : Color.primary)
+                .lineLimit(1)
             Spacer(minLength: 4)
             if let due = row.dueText {
                 Text(verbatim: due)
-                    .font(.caption2)
-                    .foregroundStyle(isOverdue(row.due) ? Color.red : Color.secondary)
+                    .font(.system(size: Scale.xs))
+                    .foregroundStyle(paint(feed, isOverdue(row.due) ? "danger" : "muted"))
                     .lineLimit(1)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .overlay(Capsule().strokeBorder(paint(feed, "line"), lineWidth: 0.5))
             }
         }
+        .frame(height: Scale.rowHeight)
     }
 
     /// The Nekan mark, and the one door into the app you can see.
@@ -457,68 +515,110 @@ private struct BoardWidgetView: View {
                 .resizable()
                 .interpolation(.high)
                 .frame(width: 20, height: 20)
-                .frame(width: 28, height: 24, alignment: .leading)
+                .frame(width: 26, height: Scale.headerHeight, alignment: .leading)
                 .contentShape(Rectangle())
         }
         .accessibilityLabel(Text(verbatim: "Nekan"))
     }
 
-    /// Four dots, one per quadrant. The shown one is filled.
-    private func quadrantDots(_ feed: Feed, _ shown: String) -> some View {
+    /// Four dots, one per quadrant, each with its count beside it in its own
+    /// colour -- small, because the list below is the content. The shown one
+    /// is filled.
+    private func quadrantDots(_ feed: Feed, _ choice: Choice) -> some View {
         HStack(spacing: 2) {
             ForEach(quads, id: \.self) { quad in
+                let count = feed.quadrant(choice.space, quad).count
                 Button(intent: ShowQuadrantIntent(quad: quad)) {
-                    Circle()
-                        .strokeBorder(color(feed, quad), lineWidth: 2)
-                        .background(Circle().fill(quad == shown ? color(feed, quad) : .clear))
-                        .frame(width: 14, height: 14)
-                        .frame(width: 26, height: 22)
-                        .contentShape(Rectangle())
+                    HStack(spacing: 3) {
+                        Circle()
+                            .strokeBorder(paint(feed, quad), lineWidth: 2)
+                            .background(Circle().fill(quad == choice.quad ? paint(feed, quad) : .clear))
+                            .frame(width: 12, height: 12)
+                        Text(verbatim: "\(count)")
+                            .font(.system(size: Scale.xs, weight: .medium).monospacedDigit())
+                            .foregroundStyle(paint(feed, quad))
+                    }
+                    .padding(.horizontal, 3)
+                    .frame(height: Scale.headerHeight)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(Text(verbatim: feed.labels.quads[quad] ?? quad))
+                .accessibilityLabel(Text(verbatim: "\(feed.labels.quads[quad] ?? quad) \(count)"))
             }
         }
     }
 
-    /// 업무 | 일상, drawn the way the app's switch is: the shown one in ink.
+    /// 업무 | 일상, drawn as the app's header draws it: panel-2 behind, the
+    /// shown one in the accent. Smaller than the app's, since a widget line is.
     private func boardSwitch(_ feed: Feed, _ shown: String) -> some View {
         HStack(spacing: 0) {
             ForEach(spaces, id: \.self) { space in
                 Button(intent: ShowBoardIntent(space: space)) {
                     Text(verbatim: feed.labels.spaces[space] ?? space)
-                        .font(.caption.weight(.semibold))
+                        .font(.system(size: Scale.xs, weight: .semibold))
                         .lineLimit(1)
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 3)
-                        .foregroundStyle(space == shown ? Color(.systemBackground) : Color.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .foregroundStyle(paint(feed, space == shown ? "on-accent" : "muted"))
                         .background(
-                            Capsule().fill(space == shown ? Color.primary : Color.clear)
+                            Capsule().fill(space == shown ? paint(feed, "accent") : Color.clear)
                         )
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(2)
-        .background(Capsule().fill(.fill.secondary))
+        .background(Capsule().fill(paint(feed, "panel-2")))
+        .overlay(Capsule().strokeBorder(paint(feed, "line"), lineWidth: 0.5))
     }
 
     @ViewBuilder
-    private func pageButton(_ symbol: String, _ label: String, by: Int, enabled: Bool) -> some View {
+    private func pageButton(
+        _ feed: Feed, _ symbol: String, _ label: String, by: Int, enabled: Bool
+    ) -> some View {
         let face = Image(systemName: symbol)
-            .font(.caption.weight(.semibold))
-            .frame(width: 26, height: 20)
+            .font(.system(size: 12, weight: .semibold))
+            .frame(width: 26, height: Scale.titleHeight)
             .contentShape(Rectangle())
         if enabled {
-            Button(intent: TurnPageIntent(by: by)) { face }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text(verbatim: label))
+            Button(intent: TurnPageIntent(by: by)) {
+                face.foregroundStyle(paint(feed, "muted"))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text(verbatim: label))
         } else {
             // Not a button at the ends: a control that does nothing when
             // pressed is worse than one that is plainly not there to press.
-            face.foregroundStyle(.tertiary)
+            face.foregroundStyle(paint(feed, "disabled"))
                 .accessibilityHidden(true)
         }
+    }
+}
+
+/// The app's check circle (icons.tsx CheckCircleIcon): a ring, or the same
+/// ring filled with a tick. Drawn rather than an SF Symbol so its weight and
+/// size match the app's list.
+private struct CheckCircle: View {
+    let checked: Bool
+    let stroke: Color
+    let fill: Color
+    let tick: Color
+
+    var body: some View {
+        ZStack {
+            if checked {
+                Circle().fill(fill)
+                Path { p in
+                    p.move(to: CGPoint(x: 4.5, y: 7.6))
+                    p.addLine(to: CGPoint(x: 6.6, y: 9.7))
+                    p.addLine(to: CGPoint(x: 10, y: 5.5))
+                }
+                .stroke(tick, style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
+            } else {
+                Circle().strokeBorder(stroke, lineWidth: 1.4)
+            }
+        }
+        .frame(width: 15, height: 15)
     }
 }
 

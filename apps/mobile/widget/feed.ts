@@ -42,9 +42,10 @@ export const FEED_VERSION = 1;
 /**
  * How many rows of one quadrant are sent.
  *
- * The widget pages through them eight at a time at most, so this is a dozen
- * pages of the large size. The count sent beside the rows is the real one, so
- * a longer list still says how long it is.
+ * The widget shows as many as its height holds -- about twelve at most, on
+ * the largest phone's large size -- so this is five pages of that. The count
+ * sent beside the rows is the real one, so a longer list still says how long
+ * it is.
  */
 export const FEED_ROWS = 60;
 
@@ -89,9 +90,46 @@ export interface Feed {
     /** For a circle that is already checked: pressing it takes the check back. */
     undo: string;
   };
-  colors: Record<"light" | "dark", Record<Quadrant, string>>;
+  /**
+   * The theme chosen in the app, or null to follow the phone -- the same rule
+   * the app's own screens use, so the widget is never the one light square on
+   * a board somebody set dark.
+   */
+  theme: "light" | "dark" | null;
+  /** The palette roles the widget draws with, both themes. See WIDGET_ROLES. */
+  colors: Record<"light" | "dark", Record<WidgetRole, string>>;
   boards: Record<Space, Record<Quadrant, FeedQuadrant>>;
 }
+
+/**
+ * Every colour the widget uses, by the name the app's screens use for it.
+ *
+ * The widget is drawn with the app's design system rather than iOS's system
+ * colours: its background is the list panel, its switch is the header's, its
+ * due chip is the row's. Sending the roles rather than hex written into Swift
+ * keeps theme.ts the one place a colour is decided.
+ */
+export const WIDGET_ROLES = [
+  ...QUADS,
+  // A checked circle is filled with these and ticked in on-quad: the plain
+  // quadrant colour is too light under white in the dark theme.
+  "q1-fill",
+  "q2-fill",
+  "q3-fill",
+  "q4-fill",
+  "panel",
+  "panel-2",
+  "line",
+  "text",
+  "muted",
+  "faint",
+  "disabled",
+  "accent",
+  "on-accent",
+  "danger",
+  "on-quad",
+] as const;
+export type WidgetRole = (typeof WIDGET_ROLES)[number];
 
 type Translate = (key: string, vars?: Record<string, unknown>) => string;
 
@@ -123,6 +161,7 @@ export function buildFeed(
     t,
     now,
     stamp,
+    theme = null,
   }: {
     space: Space;
     lang: string;
@@ -131,6 +170,8 @@ export function buildFeed(
     now: Date;
     /** The store's `now()`, so the written time agrees with every other stamp. */
     stamp: number;
+    /** The app's theme choice; null follows the phone. */
+    theme?: "light" | "dark" | null;
   },
 ): Feed {
   const boards = {} as Feed["boards"];
@@ -151,11 +192,10 @@ export function buildFeed(
     boards[board] = quads;
   }
 
-  const pick = (theme: "light" | "dark") =>
-    Object.fromEntries(QUADS.map((q) => [q, PALETTE[theme][q]])) as Record<
-      Quadrant,
-      string
-    >;
+  const pick = (name: "light" | "dark") =>
+    Object.fromEntries(
+      WIDGET_ROLES.map((role) => [role, PALETTE[name][role]]),
+    ) as Record<WidgetRole, string>;
 
   return {
     v: FEED_VERSION,
@@ -163,6 +203,7 @@ export function buildFeed(
     offset: stamp - now.getTime(),
     lang,
     space,
+    theme,
     labels: {
       spaces: { work: t("space.work"), life: t("space.life") },
       quads: Object.fromEntries(
