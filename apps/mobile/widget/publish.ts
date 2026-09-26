@@ -26,6 +26,7 @@ import {
   allTasks,
   currentSpace,
   now,
+  persist,
   subscribe,
   themeChoice,
 } from "../store/state";
@@ -85,7 +86,7 @@ export function publishNow(): void {
  * nothing changed the store does not announce, so the widget is told directly
  * to redraw without the checks.
  */
-export function takeWidgetChecks(): void {
+export async function takeWidgetChecks(): Promise<void> {
   if (Platform.OS !== "ios") return;
   try {
     const storage = new ExtensionStorage(APP_GROUP);
@@ -101,6 +102,10 @@ export function takeWidgetChecks(): void {
       marks && typeof marks === "object" && !Array.isArray(marks)
         ? completeFromWidget(marks as Record<string, unknown>)
         : 0;
+    // The record goes only once the completions are on disk. Removed first,
+    // an app closed in the moment between would lose both: the widget's note
+    // and the completion it stood for.
+    if (done) await persist();
     storage.remove(DONE_KEY);
     if (!done) ExtensionStorage.reloadWidget();
   } catch (err) {
@@ -123,7 +128,7 @@ export function startPublishing(ready: () => boolean): () => void {
     if (!ready()) return;
     if (!taken) {
       taken = true;
-      takeWidgetChecks();
+      void takeWidgetChecks();
     }
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
@@ -133,7 +138,7 @@ export function startPublishing(ready: () => boolean): () => void {
   };
   const unsubscribe = subscribe(soon);
   const appState = AppState.addEventListener("change", (next) => {
-    if (next === "active" && ready()) takeWidgetChecks();
+    if (next === "active" && ready()) void takeWidgetChecks();
     if (next !== "background" || !ready()) return;
     if (timer) clearTimeout(timer);
     timer = null;

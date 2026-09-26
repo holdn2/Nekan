@@ -89,6 +89,21 @@ test("a sync that read the watermark before the check cannot save it back", () =
   expect(syncState().pushedAt).toBe(9600);
 });
 
+test("a sync that picked its rows before a newer check cannot skip it", () => {
+  setTasks([task()]);
+  // Stored watermark 3000: a check at 5000 would be sent -- by the next sync.
+  saveSyncState({ cursor: 0, pushedAt: 3000, account: "u1" });
+  // But this one is already out, its rows chosen without t1, and it will
+  // report having sent up to 9000 (another device's row, say).
+  const inFlight = syncState();
+
+  completeFromWidget({ t1: 5000 });
+  saveSyncState({ ...inFlight, pushedAt: 9000 });
+
+  const pending = unsentChanges(allTasks() as Task[], syncState().pushedAt);
+  expect(pending.map((t) => t.id)).toEqual(["t1"]);
+});
+
 test("a check does not move a watermark that already lets it through", () => {
   setTasks([task()]);
   saveSyncState({ cursor: 0, pushedAt: 3000, account: "u1" });

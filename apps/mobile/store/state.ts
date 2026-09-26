@@ -169,10 +169,15 @@ let rewoundTo: number | null = null;
  * back. There is only ever one run at a time (sync/loop.ts `running`).
  */
 export function rewindPushed(at: number): void {
+  const to = at - 1;
+  // The cap goes on whether or not the stored watermark needs moving: a sync
+  // may have picked its rows before this completion existed, and then save a
+  // watermark later than `at` -- a newer stamp than the stored one is no
+  // protection against that. When no sync was running, the next one pays one
+  // row sent twice.
+  rewoundTo = rewoundTo === null ? to : Math.min(rewoundTo, to);
   const state = syncState();
   if (!(at <= state.pushedAt)) return;
-  const to = at - 1;
-  rewoundTo = rewoundTo === null ? to : Math.min(rewoundTo, to);
   settings = { ...settings, sync: { ...state, pushedAt: to } };
   void persist();
 }
