@@ -3,7 +3,7 @@
     "name": "Nekan",
     "slug": "nekan",
     "scheme": "nekan",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -16,8 +16,11 @@
         "NSMicrophoneUsageDescription": "Nekan uses the microphone to hear a new task.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "3",
-      "appleTeamId": "3PW3FZG3GR"
+      "buildNumber": "5",
+      "appleTeamId": "3PW3FZG3GR",
+      "entitlements": {
+        "com.apple.security.application-groups": ["group.com.yoshi.nekan"]
+      }
     },
     "android": {
       "package": "com.yoshi.nekan",

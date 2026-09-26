@@ -51,6 +51,40 @@
           }
         }
       }
+    },
+    "widget.boardDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See one quadrant's tasks, and switch board or quadrant right on the widget."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "한 분면의 할 일을 봅니다. 업무·일상과 분면을 위젯에서 바로 바꿉니다"
+          }
+        }
+      }
+    },
+    "widget.openApp": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Nekan once and your tasks will show up here."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nekan을 한 번 열면 할 일이 여기 나타납니다"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -427,6 +427,9 @@
   },
   "widget": {
     "description": "잠금화면이나 홈 화면에서 바로 할 일을 적습니다",
-    "write": "직접 적기"
+    "write": "직접 적기",
+    "boardDescription": "한 분면의 할 일을 봅니다. 업무·일상과 분면을 위젯에서 바로 바꿉니다",
+    "openApp": "Nekan을 한 번 열면 할 일이 여기 나타납니다",
+    "openInApp": "앱에서 열기"
   }
 }

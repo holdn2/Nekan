@@ -133,7 +133,36 @@ jobs:
           expo="$app/Expo.plist"
           test -f "$expo" || { echo "::error::Expo.plist is not in the app"; fail=1; }
           expect "updates url"          "$(/usr/libexec/PlistBuddy -c 'Print :EXUpdatesURL' "$expo" 2>/dev/null)"            "https://u.expo.dev/0cab499c-a177-4212-b600-7bafabeb61bc"
-          expect "runtime version"      "$(/usr/libexec/PlistBuddy -c 'Print :EXUpdatesRuntimeVersion' "$expo" 2>/dev/null)" "0.1.0"
+          # The policy is appVersion, so the answer is app.json's version --
+          # read from there rather than written here, or every deliberate bump
+          # fails this check (0.1.0 was written here until 2026-09-24).
+          want_runtime=$(node -p "require('$GITHUB_WORKSPACE/apps/mobile/app.json').expo.version")
+          expect "runtime version"      "$(/usr/libexec/PlistBuddy -c 'Print :EXUpdatesRuntimeVersion' "$expo" 2>/dev/null)" "$want_runtime"
+          # The App Group, on both sides. The board widget reads what the app
+          # writes into it, and a group on one side only builds, signs and
+          # installs cleanly -- the widget just says "open the app once"
+          # forever. This build is unsigned, so the entitlements are not in the
+          # binary; the files prebuild generated are what signing will use.
+          # Each side by name: counting files across both would pass with two
+          # app-side files and none on the widget.
+          group="group.com.yoshi.nekan"
+          mobile="$GITHUB_WORKSPACE/apps/mobile"
+          for side in "app:$mobile/ios/Nekan/Nekan.entitlements" "widget:$mobile/targets/quick/generated.entitlements"; do
+            name="${side%%:*}"; file="${side#*:}"
+            if [ -f "$file" ] && grep -q "$group" "$file"; then
+              echo "ok   app group on the $name ($file)"
+            else
+              echo "::error::$group is not on the $name ($file)"; fail=1
+            fi
+          done
+          # The Nekan mark the board widget draws. A name that does not match
+          # builds fine and leaves an empty square on the home screen, so ask
+          # the compiled asset catalogue whether the image is really in it.
+          if [ -f "$appex/Assets.car" ] && xcrun assetutil --info "$appex/Assets.car" | grep -q '"NekanMark"'; then
+            echo "ok   widget carries the NekanMark image"
+          else
+            echo "::error::NekanMark is not in the widget's asset catalogue"; fail=1
+          fi
           # Every scheme, not the first one: Expo registers the bundle id as a
           # scheme too, and the order is not ours to rely on.
           if plutil -extract CFBundleURLTypes json -o - "$app/Info.plist" | grep -q '"nekan"'; then

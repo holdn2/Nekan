@@ -13,9 +13,14 @@
  * availability branch around the background, and a branch that only runs on
  * hardware nobody here has is a branch nobody can check.
  *
- * No App Group, and no entitlements object. This widget holds no data -- it is
- * two doors into the app -- so it has nothing to share with the app and asking
- * for a shared container would be asking for a capability to hold nothing.
+ * An App Group, since 2026-09-24 (issue 144). Until then this target had none,
+ * on the grounds that two doors into the app hold no data. The board widget
+ * beside them shows tasks, and the only way a widget can read what the app
+ * knows is a container both of them are entitled to. The same group is on the
+ * app in app.json; widget/publish.ts writes to it and BoardWidget.swift reads.
+ * Spelled out here although the plugin would copy the app's groups across on
+ * its own -- a capability that decides whether the widget can see anything
+ * should not depend on a default nobody wrote down.
  *
  * ESM and TypeScript are not supported in this file by the plugin.
  *
@@ -30,6 +35,23 @@ module.exports = {
   // are two widgets, at which point both want the same identifier and the
   // collision shows up as a signing failure rather than as a name clash.
   bundleIdentifier: ".quick",
-  frameworks: ["SwiftUI", "WidgetKit"],
+  // AppIntents for the board widget's buttons: switching board, quadrant and
+  // page happens in the widget's own process, without opening the app.
+  frameworks: ["SwiftUI", "WidgetKit", "AppIntents"],
+  entitlements: {
+    "com.apple.security.application-groups": ["group.com.yoshi.nekan"],
+  },
+  // The Nekan mark on the board widget, which is also its visible door into
+  // the app. The plugin writes it into this folder's Assets.xcassets at
+  // prebuild (git ignores the result). A 96px copy of assets/icon.png rather
+  // than the 1024px original: the widget draws it at about 20pt, and a widget
+  // has a small memory budget to decode images into.
+  // Resolved against THIS folder, not apps/mobile. Written the other way round
+  // first, and the plugin does not fail on a missing file -- it logs "Skipping
+  // image generation" and prebuild carries on, so the build would have shipped
+  // an empty square. The release rehearsal's NekanMark check is what caught it.
+  images: {
+    NekanMark: "../../assets/widget-mark.png",
+  },
   deploymentTarget: "17.0",
 };
