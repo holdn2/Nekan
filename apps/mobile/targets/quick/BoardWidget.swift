@@ -332,8 +332,12 @@ private func isOverdue(_ due: String?) -> Bool {
 /// Written out rather than sent: they are sizes, not colours, and the layout
 /// arithmetic below needs them before any feed has been read.
 private enum Scale {
-    static let gap: CGFloat = 6        // SPACING.sm, between the three bands
-    static let rowGap: CGFloat = 4     // SPACING.xs, the least between rows
+    static let gap: CGFloat = 6        // SPACING.sm, header to title
+    /// Title to the first row. More than `gap`: the list is its own band.
+    static let listGap: CGFloat = 10   // SPACING.lg
+    /// The least between rows. Rows closer than this were easy to mis-tap
+    /// with a thumb (2026-09-26); any height left over is added on top.
+    static let rowGap: CGFloat = 8     // SPACING.md
     static let headerHeight: CGFloat = 22
     static let titleHeight: CGFloat = 20
     /// The title dot starts this far in, so its centre falls on the same
@@ -341,7 +345,11 @@ private enum Scale {
     /// the 20pt image) and the row numbers -- about 10pt in. At the edge it
     /// stuck out past both.
     static let titleInset: CGFloat = 6     // SPACING.sm
-    static let rowHeight: CGFloat = 20
+    static let rowHeight: CGFloat = 22
+    /// The check circle, and the target around it: the row's height, and a
+    /// little wider than the circle so the right edge is easy to hit.
+    static let circle: CGFloat = 17
+    static let circleTarget: CGFloat = 26
     static let xs: CGFloat = 11        // FONT_SIZE.xs
     static let md: CGFloat = 13        // FONT_SIZE.md
     static let lg: CGFloat = 14        // FONT_SIZE.lg
@@ -349,30 +357,36 @@ private enum Scale {
     /// made smaller than the app header's, and 11pt read too big inside it.
     static let switchText: CGFloat = 10
     /// The due pill: 10pt in a 17pt capsule, so the date has air above and
-    /// below it inside a 20pt row. Under the scale for the same reason.
+    /// below it inside the row. Under the scale for the same reason.
     static let dueText: CGFloat = 10
     static let dueHeight: CGFloat = 17
 }
 
-/// How many rows fit, and how far apart they sit so the last one ends at the
-/// bottom edge. Worked out from the space the widget is given rather than a
-/// count per size: the same size is a different height on every phone, and a
-/// fixed count either leaves a band empty at the bottom or pushes the header
-/// off the top.
+/// How many rows fit, and where they sit so the last one ends at the bottom
+/// edge. Worked out from the space the widget is given rather than a count per
+/// size: the same size is a different height on every phone, and a fixed count
+/// either leaves a band empty at the bottom or pushes the header off the top.
 private struct RowFit: Equatable {
     let count: Int
+    /// Between rows.
     let spacing: CGFloat
+    /// Added to `listGap` above the first row.
+    let lead: CGFloat
 
     static func of(height: CGFloat, shown available: Int) -> RowFit {
-        let room = height - Scale.headerHeight - Scale.titleHeight - Scale.gap * 2
+        let room = height - Scale.headerHeight - Scale.gap - Scale.titleHeight - Scale.listGap
         let count = max(1, Int((room + Scale.rowGap) / (Scale.rowHeight + Scale.rowGap)))
-        // Spread what is left over the gaps only on a full page. A short last
-        // page keeps its rows together at the top, as a list does.
-        guard available >= count, count > 1 else {
-            return RowFit(count: count, spacing: Scale.rowGap)
+        // Spread what is left only on a full page. A short last page keeps its
+        // rows together at the top, as a list does.
+        guard available >= count else {
+            return RowFit(count: count, spacing: Scale.rowGap, lead: 0)
         }
         let used = CGFloat(count) * Scale.rowHeight + CGFloat(count - 1) * Scale.rowGap
-        return RowFit(count: count, spacing: Scale.rowGap + max(0, room - used) / CGFloat(count - 1))
+        // Over every gap in the list, the one under the title included: with
+        // two rows on a medium widget, putting it all between them alone split
+        // the list in half.
+        let share = max(0, room - used) / CGFloat(count)
+        return RowFit(count: count, spacing: Scale.rowGap + share, lead: share)
     }
 }
 
@@ -465,13 +479,17 @@ private struct BoardWidgetView: View {
                         taskLine(row, number: first + offset + 1, feed, choice.quad)
                     }
                 }
+                // The stack puts `gap` above this; the list wants listGap, plus
+                // its share of whatever height is left over.
+                .padding(.top, Scale.listGap - Scale.gap + fit.lead)
                 .frame(maxHeight: .infinity, alignment: .top)
             }
         }
     }
 
-    /// One row, drawn the way the app's list draws it: the number, the circle,
-    /// the text in the light weight, the due date as an outlined pill.
+    /// One row, drawn the way the app's list draws it: the number, the text in
+    /// the light weight, the due date as an outlined pill -- and the circle
+    /// last, at the right edge, under the thumb of the hand holding the phone.
     private func taskLine(_ row: Feed.Row, number: Int, _ feed: Feed, _ quad: String) -> some View {
         let checked = entry.checked.contains(row.id)
         return HStack(spacing: 8) {
@@ -479,28 +497,12 @@ private struct BoardWidgetView: View {
                 .font(.system(size: Scale.xs).monospacedDigit())
                 .foregroundStyle(paint(feed, "faint"))
                 .frame(minWidth: 15, alignment: .trailing)
-            // The whole row's height is the target, not the circle's: it is
-            // the smallest thing on the widget anyone has to hit.
-            Button(intent: ToggleDoneIntent(id: row.id)) {
-                CheckCircle(
-                    checked: checked,
-                    stroke: paint(feed, "muted"),
-                    fill: paint(feed, "\(quad)-fill"),
-                    tick: paint(feed, "on-quad")
-                )
-                .frame(width: 20, height: Scale.rowHeight)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text(verbatim: checked
-                ? (feed.labels.undo ?? row.text)
-                : (row.doneLabel ?? row.text)))
             Text(verbatim: row.text)
-                .font(.system(size: Scale.md, weight: .light))
+                .font(.system(size: Scale.lg, weight: .light))
                 .foregroundStyle(paint(feed, checked ? "muted" : "text"))
                 .strikethrough(checked)
                 .lineLimit(1)
-            Spacer(minLength: 4)
+            Spacer(minLength: 0)
             if let due = row.dueText {
                 Text(verbatim: due)
                     .font(.system(size: Scale.dueText))
@@ -510,6 +512,22 @@ private struct BoardWidgetView: View {
                     .frame(height: Scale.dueHeight)
                     .overlay(Capsule().strokeBorder(paint(feed, "line"), lineWidth: 0.5))
             }
+            // The whole row's height is the target, and the circle sits at the
+            // trailing edge of it, so the edge of the widget is part of the aim.
+            Button(intent: ToggleDoneIntent(id: row.id)) {
+                CheckCircle(
+                    checked: checked,
+                    stroke: paint(feed, "muted"),
+                    fill: paint(feed, "\(quad)-fill"),
+                    tick: paint(feed, "on-quad")
+                )
+                .frame(width: Scale.circleTarget, height: Scale.rowHeight, alignment: .trailing)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text(verbatim: checked
+                ? (feed.labels.undo ?? row.text)
+                : (row.doneLabel ?? row.text)))
         }
         .frame(height: Scale.rowHeight)
     }
@@ -618,20 +636,22 @@ private struct CheckCircle: View {
     let tick: Color
 
     var body: some View {
+        // The tick is drawn on a 15pt grid and scaled to the circle.
+        let k = Scale.circle / 15
         ZStack {
             if checked {
                 Circle().fill(fill)
                 Path { p in
-                    p.move(to: CGPoint(x: 4.5, y: 7.6))
-                    p.addLine(to: CGPoint(x: 6.6, y: 9.7))
-                    p.addLine(to: CGPoint(x: 10, y: 5.5))
+                    p.move(to: CGPoint(x: 4.5 * k, y: 7.6 * k))
+                    p.addLine(to: CGPoint(x: 6.6 * k, y: 9.7 * k))
+                    p.addLine(to: CGPoint(x: 10 * k, y: 5.5 * k))
                 }
-                .stroke(tick, style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
+                .stroke(tick, style: StrokeStyle(lineWidth: 1.7, lineCap: .round, lineJoin: .round))
             } else {
-                Circle().strokeBorder(stroke, lineWidth: 1.4)
+                Circle().strokeBorder(stroke, lineWidth: 1.5)
             }
         }
-        .frame(width: 15, height: 15)
+        .frame(width: Scale.circle, height: Scale.circle)
     }
 }
 
