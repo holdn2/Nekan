@@ -164,6 +164,8 @@ test("each row's circle is named in the app's words", () => {
 
   expect(feed.boards.work.q1.rows[0].doneLabel).toBe("<item.completeLabel>");
   expect(feed.labels.undo).toBe("<archive.restore>");
+  // The one way into the app, named in the app's words.
+  expect(feed.labels.openInApp).toBe("<widget.openInApp>");
 });
 
 test("every colour the widget draws with is sent, in a shape Swift can read", () => {

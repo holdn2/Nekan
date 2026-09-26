@@ -89,6 +89,8 @@ export interface Feed {
     next: string;
     /** For a circle that is already checked: pressing it takes the check back. */
     undo: string;
+    /** The one button that opens the app, read by VoiceOver. */
+    openInApp: string;
   };
   /**
    * The theme chosen in the app, or null to follow the phone -- the same rule
@@ -215,6 +217,7 @@ export function buildFeed(
       next: t("archive.pageNext"),
       // The history's word for taking a completion back.
       undo: t("archive.restore"),
+      openInApp: t("widget.openInApp"),
     },
     colors: { light: pick("light"), dark: pick("dark") },
     boards,

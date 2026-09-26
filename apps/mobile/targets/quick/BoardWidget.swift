@@ -5,8 +5,9 @@
 //  and this only chooses which slice to draw. Switching board, quadrant and
 //  page are buttons backed by AppIntents: they run here, in the widget's own
 //  process, write the choice back into the same container and let WidgetKit
-//  redraw -- the app is never opened for them. Tapping anywhere else opens the
-//  app on the same board with that quadrant's list open (app/board.tsx).
+//  redraw -- the app is never opened for them. The app opens from one place
+//  only, the button right of the switch, on the same board with that
+//  quadrant's list open (app/board.tsx). Anywhere else does nothing.
 //
 //  The circle beside a task checks it off, also without opening the app. The
 //  widget cannot write to the board -- it only reads a copy -- so a check is a
@@ -91,6 +92,7 @@ private struct Feed: Decodable {
         let previous: String
         let next: String
         let undo: String?
+        let openInApp: String?
     }
 
     let v: Int
@@ -226,6 +228,19 @@ struct ShowQuadrantIntent: AppIntent {
     }
 }
 
+/// Nothing. The button laid under the whole widget performs this, so a tap
+/// that misses every control stays in the widget instead of opening the app.
+struct NothingIntent: AppIntent {
+    static let title: LocalizedStringResource = "Nothing"
+    static let isDiscoverable = false
+
+    init() {}
+
+    func perform() async throws -> some IntentResult {
+        .result()
+    }
+}
+
 /// Move the list by one page.
 ///
 /// The step is the page size of the widget that was tapped, passed in, because
@@ -333,11 +348,6 @@ private func isOverdue(_ due: String?) -> Bool {
 /// arithmetic below needs them before any feed has been read.
 private enum Scale {
     static let gap: CGFloat = 6        // SPACING.sm, header to title
-    /// Title to the first row. More than `gap`: the list is its own band.
-    static let listGap: CGFloat = 10   // SPACING.lg
-    /// The least between rows. Rows closer than this were easy to mis-tap
-    /// with a thumb (2026-09-26); any height left over is added on top.
-    static let rowGap: CGFloat = 8     // SPACING.md
     static let headerHeight: CGFloat = 22
     static let titleHeight: CGFloat = 20
     /// The title dot starts this far in, so its centre falls on the same
@@ -345,7 +355,8 @@ private enum Scale {
     /// the 20pt image) and the row numbers -- about 10pt in. At the edge it
     /// stuck out past both.
     static let titleInset: CGFloat = 6     // SPACING.sm
-    static let rowHeight: CGFloat = 22
+    /// The open-in-app glyph, bare -- no plate behind it, a size up for that.
+    static let opener: CGFloat = 16
     /// The check circle, and the target around it: the row's height, and a
     /// little wider than the circle so the right edge is easy to hit.
     static let circle: CGFloat = 17
@@ -370,34 +381,66 @@ private struct RowFit: Equatable {
     let count: Int
     /// Between rows.
     let spacing: CGFloat
-    /// Added to `listGap` above the first row.
+    /// Added to the list's own gap above the first row.
     let lead: CGFloat
 
-    static func of(height: CGFloat, shown available: Int) -> RowFit {
-        let room = height - Scale.headerHeight - Scale.gap - Scale.titleHeight - Scale.listGap
-        let count = max(1, Int((room + Scale.rowGap) / (Scale.rowHeight + Scale.rowGap)))
+    static func of(height: CGFloat, shown available: Int, _ rows: Rows) -> RowFit {
+        let room = height - Scale.headerHeight - Scale.gap - Scale.titleHeight - rows.listGap
+        let count = max(1, Int((room + rows.gap) / (rows.height + rows.gap)))
         // Spread what is left only on a full page. A short last page keeps its
         // rows together at the top, as a list does.
         guard available >= count else {
-            return RowFit(count: count, spacing: Scale.rowGap, lead: 0)
+            return RowFit(count: count, spacing: rows.gap, lead: 0)
         }
-        let used = CGFloat(count) * Scale.rowHeight + CGFloat(count - 1) * Scale.rowGap
+        let used = CGFloat(count) * rows.height + CGFloat(count - 1) * rows.gap
         // Over every gap in the list, the one under the title included: with
-        // two rows on a medium widget, putting it all between them alone split
-        // the list in half.
+        // few rows, putting it all between them alone split the list in half.
         let share = max(0, room - used) / CGFloat(count)
-        return RowFit(count: count, spacing: Scale.rowGap + share, lead: share)
+        return RowFit(count: count, spacing: rows.gap + share, lead: share)
     }
+}
+
+/// How the list is spaced, per size. The medium keeps three rows on every
+/// phone -- it is for a glance at the top of a quadrant -- so it keeps the
+/// tight spacing; the large, which is for paging through, gets the room
+/// (asked for 2026-09-26: rows close enough to mis-tap with a thumb).
+private struct Rows: Equatable {
+    let height: CGFloat
+    /// The least between rows; any height left over is added on top.
+    let gap: CGFloat
+    /// Title to the first row.
+    let listGap: CGFloat
+
+    static let medium = Rows(height: 20, gap: 4, listGap: 6)      // SPACING.xs, .sm
+    static let large = Rows(height: 22, gap: 8, listGap: 10)      // SPACING.md, .lg
 }
 
 private struct BoardWidgetView: View {
     let entry: BoardEntry
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.widgetFamily) private var family
+
+    private var spacing: Rows { family == .systemLarge ? .large : .medium }
 
     var body: some View {
         Group {
             if let feed = entry.feed {
-                GeometryReader { geo in board(feed, height: geo.size.height) }
+                ZStack {
+                    // A tap anywhere that is not a control does nothing. A
+                    // widget opens its app on any tap by default, and with a
+                    // circle on every row a near miss opened the app; the one
+                    // way in is now the button beside the switch. A button
+                    // under everything is how a widget says "nothing here":
+                    // buttons run their intent in the widget and never launch
+                    // the app. Before the first feed there is nothing to do in
+                    // the widget, so there the default -- open the app -- stays.
+                    Button(intent: NothingIntent()) {
+                        Color.clear.contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHidden(true)
+                    GeometryReader { geo in board(feed, height: geo.size.height) }
+                }
             } else {
                 Text("widget.openApp")
                     .font(.footnote)
@@ -413,7 +456,6 @@ private struct BoardWidgetView: View {
                 Color.clear.background(.fill.tertiary)
             }
         }
-        .widgetURL(link)
     }
 
     /// The same slice, opened in the app. The route is app/board.tsx.
@@ -435,15 +477,16 @@ private struct BoardWidgetView: View {
         // A stored position past the end -- the list shrank since -- shows the
         // last page rather than nothing.
         let first = min(choice.first, max(0, list.rows.count - 1))
-        let fit = RowFit.of(height: height, shown: list.rows.count - first)
+        let fit = RowFit.of(height: height, shown: list.rows.count - first, spacing)
         let rows = Array(list.rows.dropFirst(first).prefix(fit.count))
 
         VStack(alignment: .leading, spacing: Scale.gap) {
             HStack(spacing: 0) {
-                appDoor
+                brand
                 quadrantDots(feed, choice)
                 Spacer(minLength: 8)
                 boardSwitch(feed, choice.space)
+                opener(feed)
             }
             .frame(height: Scale.headerHeight)
 
@@ -479,9 +522,9 @@ private struct BoardWidgetView: View {
                         taskLine(row, number: first + offset + 1, feed, choice.quad)
                     }
                 }
-                // The stack puts `gap` above this; the list wants listGap, plus
-                // its share of whatever height is left over.
-                .padding(.top, Scale.listGap - Scale.gap + fit.lead)
+                // The stack puts `gap` above this; the list wants its own
+                // listGap, plus its share of whatever height is left over.
+                .padding(.top, spacing.listGap - Scale.gap + fit.lead)
                 .frame(maxHeight: .infinity, alignment: .top)
             }
         }
@@ -521,7 +564,7 @@ private struct BoardWidgetView: View {
                     fill: paint(feed, "\(quad)-fill"),
                     tick: paint(feed, "on-quad")
                 )
-                .frame(width: Scale.circleTarget, height: Scale.rowHeight, alignment: .trailing)
+                .frame(width: Scale.circleTarget, height: spacing.height, alignment: .trailing)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -529,27 +572,33 @@ private struct BoardWidgetView: View {
                 ? (feed.labels.undo ?? row.text)
                 : (row.doneLabel ?? row.text)))
         }
-        .frame(height: Scale.rowHeight)
+        .frame(height: spacing.height)
     }
 
-    /// The Nekan mark, and the one door into the app you can see.
-    ///
-    /// Everything that is not a button already opens the app (`widgetURL`),
-    /// but nothing said so -- a tap on a row opening the whole app was a thing
-    /// to discover. The mark is where people look for "open this", and it goes
-    /// to the same place the rest of the widget does: this board, this
-    /// quadrant's list open. A `Link` rather than leaning on `widgetURL`, so the
-    /// mark stays a door even if the background's destination changes later.
-    private var appDoor: some View {
+    /// The Nekan mark: whose widget this is, and nothing more. It used to open
+    /// the app, but a logo does not look like something to press, and two ways
+    /// in blurred the one that does (2026-09-26).
+    private var brand: some View {
+        Image("NekanMark")
+            .resizable()
+            .interpolation(.high)
+            .frame(width: 20, height: 20)
+            .frame(width: 26, height: Scale.headerHeight, alignment: .leading)
+            .accessibilityLabel(Text(verbatim: "Nekan"))
+    }
+
+    /// The one way into the app: this board, this quadrant's list open. At the
+    /// top right, under the thumb, and drawn as a control -- iOS's own "open in
+    /// app" symbol, bare, rather than a logo nobody knows to press.
+    private func opener(_ feed: Feed) -> some View {
         Link(destination: link) {
-            Image("NekanMark")
-                .resizable()
-                .interpolation(.high)
-                .frame(width: 20, height: 20)
-                .frame(width: 26, height: Scale.headerHeight, alignment: .leading)
+            Image(systemName: "arrow.up.forward.app")
+                .font(.system(size: Scale.opener))
+                .foregroundStyle(paint(feed, "muted"))
+                .frame(width: 26, height: Scale.headerHeight, alignment: .trailing)
                 .contentShape(Rectangle())
         }
-        .accessibilityLabel(Text(verbatim: "Nekan"))
+        .accessibilityLabel(Text(verbatim: feed.labels.openInApp ?? "Nekan"))
     }
 
     /// Four dots, one per quadrant, each with its count beside it in its own
