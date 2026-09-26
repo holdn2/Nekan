@@ -336,6 +336,11 @@ private enum Scale {
     static let rowGap: CGFloat = 4     // SPACING.xs, the least between rows
     static let headerHeight: CGFloat = 22
     static let titleHeight: CGFloat = 20
+    /// The title dot starts this far in, so its centre falls on the same
+    /// vertical line as the mark's coloured tile (its ink starts 2.7pt into
+    /// the 20pt image) and the row numbers -- about 10pt in. At the edge it
+    /// stuck out past both.
+    static let titleInset: CGFloat = 6     // SPACING.sm
     static let rowHeight: CGFloat = 20
     static let xs: CGFloat = 11        // FONT_SIZE.xs
     static let md: CGFloat = 13        // FONT_SIZE.md
@@ -446,6 +451,7 @@ private struct BoardWidgetView: View {
                     enabled: first + fit.count < list.rows.count
                 )
             }
+            .padding(.leading, Scale.titleInset)
             .frame(height: Scale.titleHeight)
 
             if rows.isEmpty {
