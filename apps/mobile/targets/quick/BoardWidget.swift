@@ -8,6 +8,14 @@
 //  redraw -- the app is never opened for them. Tapping anywhere else opens the
 //  app on the same board with that quadrant's list open (app/board.tsx).
 //
+//  The circle beside a task checks it off, also without opening the app. The
+//  widget cannot write to the board -- it only reads a copy -- so a check is a
+//  note in the same container, id to the moment it was pressed, and the app
+//  completes those tasks the next time it comes to the front
+//  (widget/publish.ts `takeWidgetChecks`). Until then the row stays, drawn
+//  checked, and pressing again takes the note back: the circle is small, and a
+//  row that vanished on a mis-tap could not be recovered from here.
+//
 //  What the widget cannot do, and why the controls look the way they do: a
 //  widget is a still picture that answers taps and nothing else. There is no
 //  scrolling and no swiping, so a longer list is paged with two buttons, and
@@ -30,10 +38,12 @@ import SwiftUI
 import WidgetKit
 
 // The contract with the app. widget/publish.ts writes `feedKey` and `langKey`
-// into this group; the three state keys belong to the widget alone.
+// into this group, and reads and clears `doneKey`; the three state keys
+// belong to the widget alone.
 private let appGroup = "group.com.yoshi.nekan"
 private let feedKey = "board.feed"
 private let langKey = "app.lang"
+private let doneKey = "board.done"
 private let spaceKey = "board.space"
 private let quadKey = "board.quad"
 private let firstKey = "board.first"
@@ -66,6 +76,7 @@ private struct Feed: Decodable {
         let text: String
         let due: String?
         let dueText: String?
+        let doneLabel: String?
     }
 
     struct Quadrant: Decodable {
@@ -79,11 +90,15 @@ private struct Feed: Decodable {
         let empty: String
         let previous: String
         let next: String
+        let undo: String?
     }
 
     let v: Int
     let space: String
     let labels: Labels
+    /// The app's clock minus this phone's, in ms. Optional so that a feed
+    /// without it still draws; a check then stamps the phone's own time.
+    let offset: Double?
     let colors: [String: [String: String]]
     let boards: [String: [String: Quadrant]]
 
@@ -125,7 +140,56 @@ private struct Choice {
     }
 }
 
+/// The widget's checks: task id to when the circle was pressed, in ms on the
+/// app's clock. Kept as a JSON string, the one shape both sides read the same.
+private enum Checks {
+    static func load() -> [String: Double] {
+        guard let text = shared?.string(forKey: doneKey),
+              let data = text.data(using: .utf8),
+              let marks = try? JSONDecoder().decode([String: Double].self, from: data)
+        else { return [:] }
+        return marks
+    }
+
+    static func save(_ marks: [String: Double]) {
+        guard !marks.isEmpty,
+              let data = try? JSONEncoder().encode(marks),
+              let text = String(data: data, encoding: .utf8)
+        else {
+            shared?.removeObject(forKey: doneKey)
+            return
+        }
+        shared?.set(text, forKey: doneKey)
+    }
+}
+
 // MARK: - The buttons
+
+/// Check a task off, or take the check back.
+///
+/// Stamped with the moment of the tap, on the app's clock: the app completes
+/// the task as of then, so an edit made on another device in between is
+/// ordered correctly against it.
+struct ToggleDoneIntent: AppIntent {
+    static let title: LocalizedStringResource = "Check off task"
+
+    @Parameter(title: "Task") var id: String
+
+    init() {}
+    init(id: String) { self.id = id }
+
+    func perform() async throws -> some IntentResult {
+        var marks = Checks.load()
+        if marks[id] != nil {
+            marks[id] = nil
+        } else {
+            let offset = Feed.load()?.offset ?? 0
+            marks[id] = (Date().timeIntervalSince1970 * 1000 + offset).rounded()
+        }
+        Checks.save(marks)
+        return .result()
+    }
+}
 
 /// Show one board. Starts its list from the top.
 struct ShowBoardIntent: AppIntent {
@@ -190,11 +254,16 @@ private struct BoardEntry: TimelineEntry {
     let date: Date
     let feed: Feed?
     let choice: Choice
+    /// Checked in the widget and not yet taken in by the app.
+    let checked: Set<String>
 }
 
 private struct BoardProvider: TimelineProvider {
     func placeholder(in context: Context) -> BoardEntry {
-        BoardEntry(date: Date(), feed: nil, choice: Choice(space: "work", quad: "q1", first: 0))
+        BoardEntry(
+            date: Date(), feed: nil, choice: Choice(space: "work", quad: "q1", first: 0),
+            checked: []
+        )
     }
 
     func getSnapshot(in context: Context, completion: @escaping (BoardEntry) -> Void) {
@@ -214,7 +283,10 @@ private struct BoardProvider: TimelineProvider {
 
     private func entry() -> BoardEntry {
         let feed = Feed.load()
-        return BoardEntry(date: Date(), feed: feed, choice: Choice.current(feed))
+        return BoardEntry(
+            date: Date(), feed: feed, choice: Choice.current(feed),
+            checked: Set(Checks.load().keys)
+        )
     }
 }
 
@@ -333,21 +405,34 @@ private struct BoardWidgetView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 VStack(alignment: .leading, spacing: 4) {
-                    ForEach(rows, id: \.id) { row in taskLine(row) }
+                    ForEach(rows, id: \.id) { row in taskLine(row, feed, choice.quad) }
                 }
                 Spacer(minLength: 0)
             }
         }
     }
 
-    private func taskLine(_ row: Feed.Row) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "circle")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+    private func taskLine(_ row: Feed.Row, _ feed: Feed, _ quad: String) -> some View {
+        let checked = entry.checked.contains(row.id)
+        return HStack(spacing: 4) {
+            // The row's height is the target, not the glyph's: it is the
+            // smallest thing on the widget anyone has to hit.
+            Button(intent: ToggleDoneIntent(id: row.id)) {
+                Image(systemName: checked ? "checkmark.circle.fill" : "circle")
+                    .font(.caption)
+                    .foregroundStyle(checked ? color(feed, quad) : Color.secondary)
+                    .frame(width: 22, height: 22)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text(verbatim: checked
+                ? (feed.labels.undo ?? row.text)
+                : (row.doneLabel ?? row.text)))
             Text(verbatim: row.text)
                 .font(.footnote)
                 .lineLimit(1)
+                .strikethrough(checked)
+                .foregroundStyle(checked ? Color.secondary : Color.primary)
             Spacer(minLength: 4)
             if let due = row.dueText {
                 Text(verbatim: due)

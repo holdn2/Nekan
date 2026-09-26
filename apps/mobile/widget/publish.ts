@@ -21,6 +21,7 @@
 import { AppState, Platform } from "react-native";
 import { ExtensionStorage } from "@bacons/apple-targets";
 import { locale, t } from "../i18n";
+import { completeFromWidget } from "../store/mutations";
 import { allTasks, currentSpace, now, subscribe } from "../store/state";
 import { buildFeed } from "./feed";
 
@@ -33,6 +34,12 @@ export const FEED_KEY = "board.feed";
  * decoding the whole board for that would be the wrong way round.
  */
 export const LANG_KEY = "app.lang";
+/**
+ * The other direction: what was checked in the widget, as JSON of id to the
+ * time it was pressed. The widget writes it (and unwrites it, when a check is
+ * pressed again); the app reads it when it comes to the front and clears it.
+ */
+export const DONE_KEY = "board.done";
 
 /** A pause long enough that typing a title is one write, not twenty. */
 const QUIET_MS = 1000;
@@ -63,6 +70,38 @@ export function publishNow(): void {
 }
 
 /**
+ * Complete what was checked in the widget, then forget the record.
+ *
+ * Cleared whether or not anything came of it: a mark for a task that has since
+ * been finished elsewhere is not waiting for anything, and left in place it
+ * would keep drawing a check over a row the widget has already lost. When
+ * nothing changed the store does not announce, so the widget is told directly
+ * to redraw without the checks.
+ */
+export function takeWidgetChecks(): void {
+  if (Platform.OS !== "ios") return;
+  try {
+    const storage = new ExtensionStorage(APP_GROUP);
+    const raw = storage.get(DONE_KEY);
+    if (!raw) return;
+    let marks: unknown = null;
+    try {
+      marks = JSON.parse(raw);
+    } catch {
+      marks = null;
+    }
+    const done =
+      marks && typeof marks === "object" && !Array.isArray(marks)
+        ? completeFromWidget(marks as Record<string, unknown>)
+        : 0;
+    storage.remove(DONE_KEY);
+    if (!done) ExtensionStorage.reloadWidget();
+  } catch (err) {
+    if (__DEV__) console.log("widget checks failed:", err);
+  }
+}
+
+/**
  * Start listening. Returns the way to stop, for the root layout's effect.
  *
  * Nothing is written until the store has loaded -- an empty board written in
@@ -70,8 +109,15 @@ export function publishNow(): void {
  */
 export function startPublishing(ready: () => boolean): () => void {
   let timer: ReturnType<typeof setTimeout> | null = null;
+  // The widget's checks are taken once the board has loaded -- before that
+  // there is nothing to complete -- and each time the app comes back.
+  let taken = false;
   const soon = () => {
     if (!ready()) return;
+    if (!taken) {
+      taken = true;
+      takeWidgetChecks();
+    }
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
       timer = null;
@@ -80,6 +126,7 @@ export function startPublishing(ready: () => boolean): () => void {
   };
   const unsubscribe = subscribe(soon);
   const appState = AppState.addEventListener("change", (next) => {
+    if (next === "active" && ready()) takeWidgetChecks();
     if (next !== "background" || !ready()) return;
     if (timer) clearTimeout(timer);
     timer = null;

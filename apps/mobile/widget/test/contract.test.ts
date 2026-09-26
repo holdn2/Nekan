@@ -48,3 +48,8 @@ test("the widget reads the feed version the app writes", () => {
   expect(supported).toBeDefined();
   expect(Number(supported)).toBe(FEED_VERSION);
 });
+
+test("both sides use the same key for the widget's checks", () => {
+  expect(tsString("DONE_KEY")).toBeTruthy();
+  expect(swiftString("doneKey")).toBe(tsString("DONE_KEY"));
+});

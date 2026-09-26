@@ -142,7 +142,38 @@ export function syncState(): SyncState {
 }
 
 export function saveSyncState(next: SyncState): void {
+  if (rewoundTo !== null) {
+    next = { ...next, pushedAt: Math.min(next.pushedAt, rewoundTo) };
+    rewoundTo = null;
+  }
   settings = { ...settings, sync: next };
+  void persist();
+}
+
+/** A rewind not yet seen by a save; see rewindPushed. */
+let rewoundTo: number | null = null;
+
+/**
+ * Make sure a change stamped `at` is sent, even though it is older than the
+ * watermark.
+ *
+ * The push sends only what changed after `pushedAt`, which is right for every
+ * write made in the app -- they are stamped now. A check made in the widget is
+ * stamped when it was tapped, which can be long before the app opened and
+ * before pulls and pushes moved the watermark on; left alone, that completion
+ * would stay on this phone for good. Moving the watermark back re-sends a few
+ * rows, and the merge is last-write-wins, so that costs nothing else.
+ *
+ * A sync already running read the watermark before this and will save it
+ * after: its own save is capped once, here, so it cannot write the old one
+ * back. There is only ever one run at a time (sync/loop.ts `running`).
+ */
+export function rewindPushed(at: number): void {
+  const state = syncState();
+  if (!(at <= state.pushedAt)) return;
+  const to = at - 1;
+  rewoundTo = rewoundTo === null ? to : Math.min(rewoundTo, to);
+  settings = { ...settings, sync: { ...state, pushedAt: to } };
   void persist();
 }
 

@@ -17,6 +17,7 @@
  * rewriting a list, and two keys from different quadrants are not comparable.
  */
 import { INBOX, orderKeyBetween, spaceFor } from "@nekan/shared/core";
+import { isBuried, stateStamp } from "@nekan/shared/sync";
 import type { Place, Task } from "@nekan/shared/types";
 import { activeOf } from "./selectors";
 import {
@@ -26,6 +27,7 @@ import {
   findTask,
   insertTask,
   now,
+  rewindPushed,
   uid,
 } from "./state";
 
@@ -123,6 +125,44 @@ export function completeTask(id: string): void {
   if (!task || task.completedAt) return;
   task.completedAt = now();
   commitState(task);
+}
+
+/**
+ * Complete what was checked in the home-screen widget, as of when it was.
+ *
+ * `marks` is the widget's record, id to the time the circle was pressed. The
+ * stamp is that time rather than now: between the tap and opening the app,
+ * another device may have changed the same task, and the merge can only tell
+ * which came last if each carries its own moment. For the same reason a mark
+ * loses to a state change made after it -- restored on the desktop an hour
+ * after the tap, it stays restored -- and a task already finished, trashed or
+ * gone is left alone. Those marks are dropped without a word: the widget
+ * showed a check, and the board it now shows is the true one.
+ *
+ * Returns how many were completed.
+ */
+export function completeFromWidget(marks: Record<string, unknown>): number {
+  const done: Task[] = [];
+  let oldest = Infinity;
+  for (const [id, raw] of Object.entries(marks)) {
+    const task = findTask(id);
+    // Not later than now: a phone clock ahead of the tap's own would otherwise
+    // hand this completion a win over edits that have not happened yet.
+    const at = Math.min(Number(raw), now());
+    if (!task || !Number.isFinite(at) || at <= 0) continue;
+    if (isBuried(task) || task.deletedAt != null || task.completedAt != null)
+      continue;
+    if (at < stateStamp(task)) continue;
+    task.completedAt = at;
+    task.stateAt = at;
+    done.push(task);
+    oldest = Math.min(oldest, at);
+  }
+  if (!done.length) return 0;
+  rewindPushed(oldest);
+  // Not commitState: that would stamp them now.
+  commit();
+  return done.length;
 }
 
 export function restoreTask(id: string): void {

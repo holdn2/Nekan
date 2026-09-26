@@ -1093,6 +1093,11 @@ Swift에 hex를 옮겨 적으면 아무 검사도 안 보는 세 번째 자리�
 **앱이 열려 있을 때만 새로워진다.** 다른 기기에서 바꾼 것은 이 폰에서 앱을 열어야 위젯에 온다 —
 위젯이 스스로 받으려면 세션을 공유 키체인에 두고 동기화 클라이언트를 하나 더 둬야 한다.
 **잠금화면에는 안 둔다**: 할 일 글자가 폰을 풀지 않고도 읽힌다.
+**체크는 반대 방향으로 흐르는 유일한 것이다** (2026-09-26). ○를 누르면 위젯이 `board.done`에 "id → 누른 시각"을
+적고(다시 누르면 지운다) 앱이 앞으로 올 때 `takeWidgetChecks()`가 완료로 바꾼 뒤 지운다. **완료 시각이 과거라서
+푸시 워터마크를 되감아야 한다**(`rewindPushed`) — 안 그러면 그 완료는 서버에 영영 안 올라가고 아무 오류도 없다.
+그 위의 규칙과 이유는 `docs/DECISIONS.md` 2026-09-24 항목이다. 계약 값(App Group·키 셋·피드 버전)은
+TypeScript와 Swift에 두 번 적혀 있고 `widget/test/contract.test.ts`가 대조한다.
 **왼쪽 위의 Nekan 아이콘이 "앱 열기"다**(`Link`). 버튼이 아닌 곳은 전부 앱을 열지만(`widgetURL`) 그걸 알려 주는
 것이 없었다. 그림은 `expo-target.config.js`의 `images`가 prebuild 때 `targets/quick/Assets.xcassets`에 쓰고(git 무시),
 원본은 `assets/widget-mark.png`(96px — 1024px 아이콘을 20pt에 그리면 위젯 메모리만 쓴다). **이름이 어긋나면 빌드는

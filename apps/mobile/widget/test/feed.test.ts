@@ -144,3 +144,24 @@ test("every quadrant of both boards is present, even when empty", () => {
   expect(feed.v).toBe(FEED_VERSION);
   expect(feed.space).toBe("work");
 });
+
+test("carries the app's clock offset, for the widget's checks", () => {
+  const phone = new Date(2026, 8, 24, 9, 0, 0);
+  const feed = buildFeed([], {
+    space: "work",
+    lang: "ko",
+    t,
+    now: phone,
+    // The app's clock runs ten minutes ahead of the phone's.
+    stamp: phone.getTime() + 600_000,
+  });
+
+  expect(feed.offset).toBe(600_000);
+});
+
+test("each row's circle is named in the app's words", () => {
+  const feed = build([task({ id: "a", text: "우유 사기" })]);
+
+  expect(feed.boards.work.q1.rows[0].doneLabel).toBe("<item.completeLabel>");
+  expect(feed.labels.undo).toBe("<archive.restore>");
+});

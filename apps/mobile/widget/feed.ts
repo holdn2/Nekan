@@ -55,6 +55,8 @@ export interface FeedRow {
   due: string | null;
   /** The chip's words, in the app's language, fixed when written. */
   dueText: string | null;
+  /** What VoiceOver reads on the row's circle -- the app's words for it. */
+  doneLabel: string;
 }
 
 export interface FeedQuadrant {
@@ -66,6 +68,13 @@ export interface Feed {
   v: number;
   /** When this was written, in the app's clock. For diagnosis only. */
   at: number;
+  /**
+   * The app's clock minus the phone's, in ms. A check made in the widget is
+   * stamped with the time it was tapped, and that stamp meets every other
+   * device's in the merge -- so it has to be on the same clock they are, which
+   * is the server's (store/state.ts `now()`), not the phone's own.
+   */
+  offset: number;
   lang: string;
   /** The board the app is showing, which the widget starts on. */
   space: Space;
@@ -77,6 +86,8 @@ export interface Feed {
     /** For the page buttons and the quadrant dots, read by VoiceOver. */
     previous: string;
     next: string;
+    /** For a circle that is already checked: pressing it takes the check back. */
+    undo: string;
   };
   colors: Record<"light" | "dark", Record<Quadrant, string>>;
   boards: Record<Space, Record<Quadrant, FeedQuadrant>>;
@@ -100,6 +111,7 @@ function row(task: Task, t: Translate, locale: string, now: Date): FeedRow {
     text: task.text,
     due: info ? (task.dueDate as string) : null,
     dueText: formatDue(info, t, locale)?.text ?? null,
+    doneLabel: t("item.completeLabel", { text: task.text }),
   };
 }
 
@@ -148,6 +160,7 @@ export function buildFeed(
   return {
     v: FEED_VERSION,
     at: stamp,
+    offset: stamp - now.getTime(),
     lang,
     space,
     labels: {
@@ -159,6 +172,8 @@ export function buildFeed(
       // The history screen's words for the same act, not new ones.
       previous: t("archive.pagePrev"),
       next: t("archive.pageNext"),
+      // The history's word for taking a completion back.
+      undo: t("archive.restore"),
     },
     colors: { light: pick("light"), dark: pick("dark") },
     boards,
