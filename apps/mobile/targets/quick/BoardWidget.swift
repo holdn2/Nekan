@@ -343,6 +343,10 @@ private enum Scale {
     /// The board switch. One step under the scale on purpose: the switch was
     /// made smaller than the app header's, and 11pt read too big inside it.
     static let switchText: CGFloat = 10
+    /// The due pill: 10pt in a 17pt capsule, so the date has air above and
+    /// below it inside a 20pt row. Under the scale for the same reason.
+    static let dueText: CGFloat = 10
+    static let dueHeight: CGFloat = 17
 }
 
 /// How many rows fit, and how far apart they sit so the last one ends at the
@@ -493,11 +497,11 @@ private struct BoardWidgetView: View {
             Spacer(minLength: 4)
             if let due = row.dueText {
                 Text(verbatim: due)
-                    .font(.system(size: Scale.xs))
+                    .font(.system(size: Scale.dueText))
                     .foregroundStyle(paint(feed, isOverdue(row.due) ? "danger" : "muted"))
                     .lineLimit(1)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, 7)
+                    .frame(height: Scale.dueHeight)
                     .overlay(Capsule().strokeBorder(paint(feed, "line"), lineWidth: 0.5))
             }
         }
