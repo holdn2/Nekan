@@ -340,6 +340,9 @@ private enum Scale {
     static let xs: CGFloat = 11        // FONT_SIZE.xs
     static let md: CGFloat = 13        // FONT_SIZE.md
     static let lg: CGFloat = 14        // FONT_SIZE.lg
+    /// The board switch. One step under the scale on purpose: the switch was
+    /// made smaller than the app header's, and 11pt read too big inside it.
+    static let switchText: CGFloat = 10
 }
 
 /// How many rows fit, and how far apart they sit so the last one ends at the
@@ -555,7 +558,7 @@ private struct BoardWidgetView: View {
             ForEach(spaces, id: \.self) { space in
                 Button(intent: ShowBoardIntent(space: space)) {
                     Text(verbatim: feed.labels.spaces[space] ?? space)
-                        .font(.system(size: Scale.xs, weight: .semibold))
+                        .font(.system(size: Scale.switchText, weight: .semibold))
                         .lineLimit(1)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
