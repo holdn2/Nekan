@@ -5,9 +5,10 @@
 //  and this only chooses which slice to draw. Switching board, quadrant and
 //  page are buttons backed by AppIntents: they run here, in the widget's own
 //  process, write the choice back into the same container and let WidgetKit
-//  redraw -- the app is never opened for them. The app opens from one place
-//  only, the button right of the switch, on the same board with that
-//  quadrant's list open (app/board.tsx). Anywhere else does nothing.
+//  redraw -- the app is never opened for them. The app opens from two places
+//  only: the button right of the switch, on the same board with that
+//  quadrant's list open (app/board.tsx), and a task's text, which opens that
+//  task on top of it. Anywhere else does nothing.
 //
 //  The circle beside a task checks it off, also without opening the app. The
 //  widget cannot write to the board -- it only reads a copy -- so a check is a
@@ -463,6 +464,13 @@ private struct BoardWidgetView: View {
         URL(string: "nekan://board?space=\(entry.choice.space)&quad=\(entry.choice.quad)")!
     }
 
+    /// One task, opened on top of the same slice (app/board.tsx `task`).
+    private func taskLink(_ id: String) -> URL {
+        var parts = URLComponents(url: link, resolvingAgainstBaseURL: false)
+        parts?.queryItems?.append(URLQueryItem(name: "task", value: id))
+        return parts?.url ?? link
+    }
+
     /// A palette role in the theme the app is showing. The app's own choice
     /// wins over the phone's, as it does on the app's screens.
     private func paint(_ feed: Feed, _ role: String) -> Color {
@@ -540,11 +548,16 @@ private struct BoardWidgetView: View {
                 .font(.system(size: Scale.xs).monospacedDigit())
                 .foregroundStyle(paint(feed, "faint"))
                 .frame(minWidth: 15, alignment: .trailing)
-            Text(verbatim: row.text)
-                .font(.system(size: Scale.lg, weight: .light))
-                .foregroundStyle(paint(feed, checked ? "muted" : "text"))
-                .strikethrough(checked)
-                .lineLimit(1)
+            // The text, and only the text, opens that task in the app. The rest
+            // of the row stays dead -- a thumb that misses the circle lands on
+            // the date or the space beside it, and that must not open the app.
+            Link(destination: taskLink(row.id)) {
+                Text(verbatim: row.text)
+                    .font(.system(size: Scale.lg, weight: .light))
+                    .foregroundStyle(paint(feed, checked ? "muted" : "text"))
+                    .strikethrough(checked)
+                    .lineLimit(1)
+            }
             Spacer(minLength: 0)
             if let due = row.dueText {
                 Text(verbatim: due)
