@@ -283,14 +283,32 @@ export function setTasks(next: unknown): void {
  */
 let writing: Promise<void> = Promise.resolve();
 export function persist(): Promise<void> {
-  if (!ready) return writing;
+  return persistChecked().then(() => undefined);
+}
+
+/**
+ * persist(), and whether the write reached the disk.
+ *
+ * Most writers do not need to know: a failed save leaves the board in memory
+ * and the next change writes all of it again. A writer that is about to throw
+ * away the only other copy of something does -- the widget's checks, which
+ * are removed from the shared container once the app has them.
+ */
+export function persistChecked(): Promise<boolean> {
+  if (!ready) return writing.then(() => false);
   const snapshot: Stored = { tasks, settings };
+  let saved = false;
   writing = writing.then(() =>
-    save(snapshot).catch((err: unknown) => {
-      console.warn("[nekan] could not save the board", err);
-    }),
+    save(snapshot).then(
+      () => {
+        saved = true;
+      },
+      (err: unknown) => {
+        console.warn("[nekan] could not save the board", err);
+      },
+    ),
   );
-  return writing;
+  return writing.then(() => saved);
 }
 
 /**

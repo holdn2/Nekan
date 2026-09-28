@@ -26,7 +26,7 @@ import {
   allTasks,
   currentSpace,
   now,
-  persist,
+  persistChecked,
   subscribe,
   themeChoice,
 } from "../store/state";
@@ -102,10 +102,12 @@ export async function takeWidgetChecks(): Promise<void> {
       marks && typeof marks === "object" && !Array.isArray(marks)
         ? completeFromWidget(marks as Record<string, unknown>)
         : 0;
-    // The record goes only once the completions are on disk. Removed first,
-    // an app closed in the moment between would lose both: the widget's note
-    // and the completion it stood for.
-    if (done) await persist();
+    // The record goes only once the completions are on disk -- written, not
+    // merely attempted. Removed first, an app closed in between, or a write
+    // that failed, would lose both the widget's note and the completion it
+    // stood for. Saved even when nothing new was completed: on a retry after a
+    // failed write, the completions are already in memory and `done` is 0.
+    if (!(await persistChecked())) return;
     storage.remove(DONE_KEY);
     if (!done) ExtensionStorage.reloadWidget();
   } catch (err) {
