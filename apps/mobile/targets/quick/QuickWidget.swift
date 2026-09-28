@@ -1,11 +1,12 @@
 //
 //  Two doors into the app, on the lock screen and the home screen.
 //
-//  The widget shows no tasks. That is a decision, not a stage: showing them
-//  would mean a shared container, the board written out in a second format,
-//  and a timeline that goes stale between refreshes the system decides on. The
-//  thing that is actually hard about capturing a task is the four taps before
-//  the keyboard appears, and a door removes those without any of it.
+//  This widget shows no tasks, and that is still a decision: the thing that is
+//  actually hard about capturing a task is the four taps before the keyboard
+//  appears, and a door removes those without anything else. Seeing tasks is a
+//  second widget beside it (BoardWidget.swift, since 2026-09-24), which pays for
+//  the shared container, the board written out in a second format, and a
+//  timeline that is only as fresh as the last time the app was open.
 //
 //  The lock screen is the one that matters. A thought worth writing down tends
 //  to arrive with the phone still locked, and the rectangular slot under the
@@ -55,10 +56,11 @@ private struct QuickProvider: TimelineProvider {
 ///
 /// The label is for VoiceOver only. The words come from the shared catalogue
 /// via Localizable.xcstrings -- see tools/build-widget-strings.js -- so the
-/// microphone says the same thing here as it does inside the app.
+/// microphone says the same thing here as it does inside the app, and they are
+/// looked up in the language chosen in the app (`appText`).
 private struct TileDoor: View {
     let symbol: String
-    let label: LocalizedStringKey
+    let label: String
     let url: URL
 
     var body: some View {
@@ -72,7 +74,7 @@ private struct TileDoor: View {
                     in: RoundedRectangle(cornerRadius: 18, style: .continuous)
                 )
         }
-        .accessibilityLabel(label)
+        .accessibilityLabel(Text(verbatim: label))
     }
 }
 
@@ -90,7 +92,7 @@ private struct TileDoor: View {
 /// door had actually been used.
 private struct LockDoor: View {
     let symbol: String
-    let label: LocalizedStringKey
+    let label: String
     let url: URL
 
     var body: some View {
@@ -98,7 +100,7 @@ private struct LockDoor: View {
             VStack(spacing: 3) {
                 Image(systemName: symbol)
                     .font(.system(size: 22, weight: .semibold))
-                Text(label)
+                Text(verbatim: label)
                     .font(.system(size: 13, weight: .semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -116,8 +118,8 @@ struct QuickWidgetView: View {
         switch family {
         case .accessoryRectangular:
             HStack(spacing: 0) {
-                LockDoor(symbol: "mic.fill", label: "widget.speak", url: speakURL)
-                LockDoor(symbol: "keyboard", label: "widget.write", url: writeURL)
+                LockDoor(symbol: "mic.fill", label: appText("widget.speak"), url: speakURL)
+                LockDoor(symbol: "keyboard", label: appText("widget.write"), url: writeURL)
             }
             // iOS 17 asks every family for a container background and draws a
             // "please adopt" placeholder instead of a widget that does not give
@@ -125,15 +127,14 @@ struct QuickWidgetView: View {
             .containerBackground(for: .widget) { Color.clear }
         default:
             HStack(spacing: 12) {
-                TileDoor(symbol: "mic.fill", label: "widget.speak", url: speakURL)
-                TileDoor(symbol: "keyboard", label: "widget.write", url: writeURL)
+                TileDoor(symbol: "mic.fill", label: appText("widget.speak"), url: speakURL)
+                TileDoor(symbol: "keyboard", label: appText("widget.write"), url: writeURL)
             }
             .containerBackground(.fill.tertiary, for: .widget)
         }
     }
 }
 
-@main
 struct QuickWidget: Widget {
     var body: some WidgetConfiguration {
         // `kind` names this widget inside its own extension; it is not a bundle
@@ -148,5 +149,14 @@ struct QuickWidget: Widget {
         // the whole widget to one URL, so either would have to pick which door
         // wins -- and both of them are the point.
         .supportedFamilies([.accessoryRectangular, .systemMedium])
+    }
+}
+
+/// Both widgets. The extension has one entry point, so it lists them.
+@main
+struct NekanWidgets: WidgetBundle {
+    var body: some Widget {
+        QuickWidget()
+        BoardWidget()
     }
 }

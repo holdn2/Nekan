@@ -13,10 +13,11 @@ import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useColors, useThemeName } from "../theme";
-import { init, languageChoice, redraw, setAuth } from "../store/state";
+import { init, isReady, languageChoice, redraw, setAuth } from "../store/state";
 import { initAuth } from "../api/session";
 import { startSync } from "../sync/loop";
 import { applyLanguage } from "../i18n";
+import { startPublishing } from "../widget/publish";
 
 export default function RootLayout() {
   const c = useColors();
@@ -59,6 +60,12 @@ export default function RootLayout() {
       stop?.();
     };
   }, []);
+
+  // The home-screen widget reads the board from a shared container, and this
+  // keeps it fed. It waits for the store rather than for the whole start-up
+  // above -- the board is what it needs, not the session -- and it writes only
+  // once the file is in, so the first frame's empty board never reaches it.
+  useEffect(() => startPublishing(isReady), []);
 
   // "System" has to go on meaning the system, and the two settings did not
   // agree on that. The theme follows a device change by itself -- RN re-renders

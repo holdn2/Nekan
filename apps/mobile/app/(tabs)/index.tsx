@@ -30,7 +30,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
-import { INBOX, isCrowded } from "@nekan/shared/core";
+import { INBOX, QUADS, isCrowded } from "@nekan/shared/core";
 import type { Place, Quadrant, Space, Task } from "@nekan/shared/types";
 import { AddForm } from "../../components/add-form";
 import { TaskList, type CardRects } from "../../components/task-list";
@@ -167,11 +167,24 @@ export default function MatrixScreen() {
   // `reveal` arrives as a search param when the quick-capture screen hands
   // over, and it is a fresh value each time, so a second hand-over to a screen
   // that is still mounted is not mistaken for the first.
-  const { reveal: revealParam } = useLocalSearchParams<{ reveal?: string }>();
+  const {
+    reveal: revealParam,
+    open: openParam,
+    at: openedAt,
+  } = useLocalSearchParams<{ reveal?: string; open?: string; at?: string }>();
   const [reveal, setReveal] = useState(false);
   useEffect(() => {
     if (revealParam) setReveal(true);
   }, [revealParam]);
+
+  // A quadrant to open, handed over from the home-screen widget (app/board.tsx
+  // has already switched the board). Keyed on `at` as well, which is fresh on
+  // every hand-over: the matrix is often still mounted from last time, and the
+  // same quadrant twice would otherwise be the same params and no effect.
+  useEffect(() => {
+    if (openParam && QUADS.includes(openParam as Quadrant))
+      setOpen(openParam as Quadrant);
+  }, [openParam, openedAt]);
 
   const toggle = (q: Quadrant) => {
     // A card is one of the "somewhere else" the keyboard should go away for.

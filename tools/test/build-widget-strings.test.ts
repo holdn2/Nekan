@@ -22,7 +22,16 @@ import {
   catalogueText,
 } from "#tools/build-widget-strings.js";
 
-const SWIFT = path.join(path.dirname(TARGET), "QuickWidget.swift");
+/**
+ * Every Swift file in the target, not one by name. The folder is a
+ * synchronized group -- any .swift dropped beside the others is compiled in --
+ * so a check that names one file would stop seeing keys the day a second one
+ * appeared, which is exactly when a second widget arrived.
+ */
+const SWIFT = fs
+  .readdirSync(path.dirname(TARGET))
+  .filter((name) => name.endsWith(".swift"))
+  .map((name) => path.join(path.dirname(TARGET), name));
 
 test("the committed catalogue is what the generator would write", () => {
   assert.equal(
@@ -47,7 +56,8 @@ test("the Swift asks for exactly the keys that are generated", () => {
   // renders the key itself, so the widget reads "widget.speak" to a user. The
   // other direction is only dead weight, but it is the half that tells you
   // somebody renamed a label on one side.
-  const swift = fs.readFileSync(SWIFT, "utf8");
+  assert.ok(SWIFT.length >= 2, "expected the widget target's Swift files");
+  const swift = SWIFT.map((file) => fs.readFileSync(file, "utf8")).join("\n");
   const used = new Set(
     [...swift.matchAll(/"(widget\.[a-zA-Z.]+)"/g)].map((m) => m[1]),
   );

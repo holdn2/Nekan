@@ -247,19 +247,6 @@ export function TaskRow({ task, index, onPress }: Props) {
         >
           <Text style={[s.num, { color: c.faint }]}>{index + 1}.</Text>
 
-          {inDump ? null : (
-            <GestureDetector gesture={complete}>
-              {/* The icon is small, so the reach is widened -- on the View, not
-                the gesture. A gesture's positive hitSlop does nothing on iOS:
-                a recognizer only sees touches that UIKit's hit test already
-                routed to its view, and only a view can widen that test
-                (RNGestureHandler.mm says so beside shouldReceiveTouch). */}
-              <View hitSlop={8}>
-                <CheckCircleIcon color={c.muted} tickColor={c["on-accent"]} />
-              </View>
-            </GestureDetector>
-          )}
-
           <Text style={[s.text, { color: c.text }]} numberOfLines={2}>
             {task.text}
           </Text>
@@ -278,6 +265,24 @@ export function TaskRow({ task, index, onPress }: Props) {
               {due.text}
             </Text>
           ) : null}
+
+          {inDump ? null : (
+            <GestureDetector gesture={complete}>
+              {/* On the right, under the thumb of the hand holding the phone --
+                most people hold it in the right, and at the left edge the
+                circle was a stretch (2026-09-26). The home-screen widget puts
+                it in the same place.
+
+                The icon is small, so the reach is widened -- on the View, not
+                the gesture. A gesture's positive hitSlop does nothing on iOS:
+                a recognizer only sees touches that UIKit's hit test already
+                routed to its view, and only a view can widen that test
+                (RNGestureHandler.mm says so beside shouldReceiveTouch). */}
+              <View hitSlop={8}>
+                <CheckCircleIcon color={c.muted} tickColor={c["on-accent"]} />
+              </View>
+            </GestureDetector>
+          )}
         </View>
       </GestureDetector>
     </ReanimatedSwipeable>

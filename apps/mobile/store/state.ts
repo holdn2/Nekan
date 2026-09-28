@@ -142,7 +142,43 @@ export function syncState(): SyncState {
 }
 
 export function saveSyncState(next: SyncState): void {
+  if (rewoundTo !== null) {
+    next = { ...next, pushedAt: Math.min(next.pushedAt, rewoundTo) };
+    rewoundTo = null;
+  }
   settings = { ...settings, sync: next };
+  void persist();
+}
+
+/** A rewind not yet seen by a save; see rewindPushed. */
+let rewoundTo: number | null = null;
+
+/**
+ * Make sure a change stamped `at` is sent, even though it is older than the
+ * watermark.
+ *
+ * The push sends only what changed after `pushedAt`, which is right for every
+ * write made in the app -- they are stamped now. A check made in the widget is
+ * stamped when it was tapped, which can be long before the app opened and
+ * before pulls and pushes moved the watermark on; left alone, that completion
+ * would stay on this phone for good. Moving the watermark back re-sends a few
+ * rows, and the merge is last-write-wins, so that costs nothing else.
+ *
+ * A sync already running read the watermark before this and will save it
+ * after: its own save is capped once, here, so it cannot write the old one
+ * back. There is only ever one run at a time (sync/loop.ts `running`).
+ */
+export function rewindPushed(at: number): void {
+  const to = at - 1;
+  // The cap goes on whether or not the stored watermark needs moving: a sync
+  // may have picked its rows before this completion existed, and then save a
+  // watermark later than `at` -- a newer stamp than the stored one is no
+  // protection against that. When no sync was running, the next one pays one
+  // row sent twice.
+  rewoundTo = rewoundTo === null ? to : Math.min(rewoundTo, to);
+  const state = syncState();
+  if (!(at <= state.pushedAt)) return;
+  settings = { ...settings, sync: { ...state, pushedAt: to } };
   void persist();
 }
 
@@ -247,14 +283,32 @@ export function setTasks(next: unknown): void {
  */
 let writing: Promise<void> = Promise.resolve();
 export function persist(): Promise<void> {
-  if (!ready) return writing;
+  return persistChecked().then(() => undefined);
+}
+
+/**
+ * persist(), and whether the write reached the disk.
+ *
+ * Most writers do not need to know: a failed save leaves the board in memory
+ * and the next change writes all of it again. A writer that is about to throw
+ * away the only other copy of something does -- the widget's checks, which
+ * are removed from the shared container once the app has them.
+ */
+export function persistChecked(): Promise<boolean> {
+  if (!ready) return writing.then(() => false);
   const snapshot: Stored = { tasks, settings };
+  let saved = false;
   writing = writing.then(() =>
-    save(snapshot).catch((err: unknown) => {
-      console.warn("[nekan] could not save the board", err);
-    }),
+    save(snapshot).then(
+      () => {
+        saved = true;
+      },
+      (err: unknown) => {
+        console.warn("[nekan] could not save the board", err);
+      },
+    ),
   );
-  return writing;
+  return writing.then(() => saved);
 }
 
 /**
