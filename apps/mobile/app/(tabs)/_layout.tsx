@@ -21,7 +21,8 @@
 import { Tabs } from "expo-router";
 import { AppHeader } from "../../components/header";
 import { t } from "../../i18n";
-import { useColors } from "../../theme";
+import { ArchiveIcon, MatrixIcon, SettingsIcon } from "../../icons";
+import { FS, useColors } from "../../theme";
 
 export default function TabsLayout() {
   const c = useColors();
@@ -31,22 +32,39 @@ export default function TabsLayout() {
         tabBarActiveTintColor: c.accent,
         tabBarInactiveTintColor: c.muted,
         tabBarStyle: { backgroundColor: c.panel, borderTopColor: c.line },
+        // The navigator's 10pt is under the smallest step of the app's scale.
+        tabBarLabelStyle: { fontSize: FS.xs },
       }}
     >
       <Tabs.Screen
         name="index"
-        options={{ title: t("tabs.matrix"), header: () => <AppHeader board /> }}
+        options={{
+          title: t("tabs.matrix"),
+          header: () => <AppHeader board />,
+          tabBarIcon: ({ color, size }) => (
+            <MatrixIcon color={color} size={size} />
+          ),
+        }}
       />
       <Tabs.Screen
         name="archive"
         options={{
           title: t("tabs.archive"),
           header: () => <AppHeader board />,
+          tabBarIcon: ({ color, size }) => (
+            <ArchiveIcon color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen
         name="settings"
-        options={{ title: t("settings.title"), header: () => <AppHeader /> }}
+        options={{
+          title: t("settings.title"),
+          header: () => <AppHeader />,
+          tabBarIcon: ({ color, size }) => (
+            <SettingsIcon color={color} size={size} />
+          ),
+        }}
       />
     </Tabs>
   );

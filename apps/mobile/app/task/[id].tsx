@@ -214,7 +214,7 @@ export default function TaskScreen() {
   return (
     <SafeAreaView style={[s.root, { backgroundColor: c.bg }]} edges={["top"]}>
       <View style={[s.bar, { borderBottomColor: c.line }]}>
-        <Text style={[s.title, { color: c.muted }]} numberOfLines={1}>
+        <Text style={[s.title, { color: c.text }]} numberOfLines={1}>
           {inDump ? t("inbox.title") : t(`quad.${task.quadrant}.action`)}
         </Text>
         {/* Beside the close button, because that is where the eye already is
@@ -475,12 +475,14 @@ const s = StyleSheet.create({
   },
   // Takes the slack, so the status and the close button stay at the right
   // edge rather than being spaced out across the bar.
-  title: { fontSize: FS.md, fontWeight: FW.semibold, flex: 1 },
+  // The same weight as the header's name on the tab screens: this bar
+  // stands in the same place.
+  title: { fontSize: FS.xl, fontWeight: FW.semibold, flex: 1 },
   status: { fontSize: FS.xs },
   body: { padding: SP["4xl"], gap: SP.xl, paddingBottom: SP["7xl"] },
   text: {
     minHeight: 64,
-    borderRadius: R.lg,
+    borderRadius: R.panel,
     borderWidth: StyleSheet.hairlineWidth,
     padding: SP["3xl"],
     fontSize: FS.xl,
@@ -503,12 +505,12 @@ const s = StyleSheet.create({
     borderRadius: R.pill,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  chipText: { fontSize: FS.md },
+  chipText: { fontSize: FS.md, fontWeight: FW.medium },
   dot: { width: 8, height: 8, borderRadius: R.pill },
   note: { fontSize: FS.sm },
   memo: {
     minHeight: 120,
-    borderRadius: R.lg,
+    borderRadius: R.panel,
     borderWidth: StyleSheet.hairlineWidth,
     padding: SP["3xl"],
     fontSize: FS.lg,

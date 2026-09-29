@@ -254,9 +254,11 @@ export function AccountBlock() {
               </Text>
             </Pressable>
           </View>
-          {/* The quietest thing in the block, where the desktop puts it too:
-            findable -- an account you cannot leave is the complaint this
-            answers -- without sitting beside sign-out as an equal choice. */}
+          {/* Small and underlined, where the desktop puts it too: findable --
+            an account you cannot leave is the complaint this answers --
+            without sitting beside sign-out as an equal choice. In the danger
+            colour since 2026-09-29, like every other act that cannot be
+            undone on the phone; grey read as a footnote. */}
           <Pressable
             onPress={leave}
             disabled={busy}
@@ -264,7 +266,7 @@ export function AccountBlock() {
             accessibilityRole="button"
             style={s.leave}
           >
-            <Text style={[s.leaveText, { color: c.muted }]}>
+            <Text style={[s.leaveText, { color: c.danger }]}>
               {t("account.leave")}
             </Text>
           </Pressable>

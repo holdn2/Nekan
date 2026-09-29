@@ -46,14 +46,6 @@ import { useStore } from "../../store/use-store";
 
 type Tab = "history" | "trash";
 
-/** What the label on a row means. q4 is "other" here, as on the desktop. */
-const QUAD_KEY: Record<string, string> = {
-  q1: "archive.quadQ1",
-  q2: "archive.quadQ2",
-  q3: "archive.quadQ3",
-  q4: "archive.quadOther",
-};
-
 /**
  * A day, as something cheap to compare.
  *
@@ -196,16 +188,7 @@ export default function ArchiveScreen() {
         contentContainerStyle={sections.length ? undefined : s.emptyBox}
         stickySectionHeadersEnabled={false}
         renderSectionHeader={({ section }) => (
-          <Text
-            style={[
-              s.day,
-              {
-                color: c.faint,
-                backgroundColor: c.bg,
-                borderBottomColor: c.line,
-              },
-            ]}
-          >
+          <Text style={[s.day, { color: c.muted, backgroundColor: c.bg }]}>
             {section.title}
           </Text>
         )}
@@ -233,10 +216,12 @@ function Row({
   tab: Tab;
   colors: ReturnType<typeof useColors>;
 }) {
-  const quad =
-    task.quadrant === INBOX
-      ? t("archive.quadInbox")
-      : t(QUAD_KEY[task.quadrant] ?? "archive.quadOther");
+  // Where it was, by the name every other screen uses -- the desktop's
+  // "Urgent·Important" labels were English inside a Korean screen, and a
+  // second vocabulary for the same four places. The dot is the quadrant's
+  // colour, as on the matrix; the dump has none, as on the move chips.
+  const inDump = task.quadrant === INBOX;
+  const quad = inDump ? t("inbox.title") : t(`quad.${task.quadrant}.action`);
 
   const purge = () =>
     Alert.alert("", t("archive.confirmPurgeOne"), [
@@ -254,9 +239,19 @@ function Row({
         <Text style={[s.meta, { color: c.faint }]}>
           {timeLabel(stampOf(task, tab))}
         </Text>
-        <Text style={[s.meta, { color: c.faint }]} numberOfLines={1}>
-          {quad}
-        </Text>
+        <View style={s.where}>
+          {inDump ? null : (
+            <View
+              style={[
+                s.dot,
+                { backgroundColor: c[task.quadrant as keyof typeof c] },
+              ]}
+            />
+          )}
+          <Text style={[s.meta, { color: c.faint }]} numberOfLines={1}>
+            {quad}
+          </Text>
+        </View>
       </View>
       <Text style={[s.text, { color: c.text }]}>{task.text}</Text>
       <View style={s.actions}>
@@ -311,19 +306,28 @@ const s = StyleSheet.create({
   },
   bulk: { flexDirection: "row", gap: SP.xl },
   bulkText: { fontSize: FS.sm, fontWeight: FW.semibold },
+  // A section label, as "마감일" and "테마" are elsewhere, rather than a
+  // faint ruled caption.
   day: {
     paddingHorizontal: SP["4xl"],
-    paddingTop: SP.xl,
-    paddingBottom: SP.sm,
-    fontSize: FS.xs,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingTop: SP["3xl"],
+    paddingBottom: SP.xs,
+    fontSize: FS.sm,
+    fontWeight: FW.semibold,
   },
   row: { paddingHorizontal: SP["4xl"], paddingVertical: SP.xl },
   rowHead: { flexDirection: "row", gap: SP.md, marginBottom: SP["2xs"] },
   meta: { fontSize: FS.xs, fontVariant: ["tabular-nums"] },
+  where: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SP.xs,
+    flexShrink: 1,
+  },
+  dot: { width: 6, height: 6, borderRadius: R.pill },
   text: { fontSize: FS.lg, lineHeight: FS.lg * LH.snug, fontWeight: FW.light },
   actions: { flexDirection: "row", gap: SP["4xl"], marginTop: SP.md },
   action: { fontSize: FS.sm, fontWeight: FW.semibold },
   emptyBox: { flexGrow: 1, justifyContent: "center" },
-  empty: { padding: SP["4xl"], fontSize: FS.xs, textAlign: "center" },
+  empty: { padding: SP["4xl"], fontSize: FS.md, textAlign: "center" },
 });

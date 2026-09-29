@@ -206,3 +206,75 @@ export function StopIcon({ color, size = 18 }: IconProps) {
     </Svg>
   );
 }
+
+/*
+ * The tab bar's three. Drawn here because the bar had none: with no icon the
+ * navigator draws its own fallback glyph, the same one on every tab. Lucide's
+ * shapes (the desktop's icon set), on this module's stroke.
+ */
+
+/** The matrix: four quadrants. */
+export function MatrixIcon({ color, size = 24 }: IconProps) {
+  return (
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={STROKE}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Rect x="3" y="3" width="7" height="7" rx="1" />
+      <Rect x="14" y="3" width="7" height="7" rx="1" />
+      <Rect x="14" y="14" width="7" height="7" rx="1" />
+      <Rect x="3" y="14" width="7" height="7" rx="1" />
+    </Svg>
+  );
+}
+
+/** The archive: history and trash, kept. */
+export function ArchiveIcon({ color, size = 24 }: IconProps) {
+  return (
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={STROKE}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Rect x="2" y="3" width="20" height="5" rx="1" />
+      <Path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
+      <Path d="M10 12h4" />
+    </Svg>
+  );
+}
+
+/** Settings: a gear. */
+export function SettingsIcon({ color, size = 24 }: IconProps) {
+  return (
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={STROKE}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+      <Circle cx="12" cy="12" r="3" />
+    </Svg>
+  );
+}

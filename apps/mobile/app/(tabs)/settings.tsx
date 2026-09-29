@@ -180,7 +180,7 @@ export default function SettingsScreen() {
           style={[s.link, { borderColor: c.line, backgroundColor: c.panel }]}
         >
           <Text style={[s.linkText, { color: c.text }]}>{t("tabs.guide")}</Text>
-          <ChevronIcon color={c.faint} size={16} />
+          <ChevronIcon color={c.muted} />
         </Pressable>
       </ScrollView>
     </View>
