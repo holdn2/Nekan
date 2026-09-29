@@ -477,7 +477,7 @@ const s = StyleSheet.create({
     margin: SP["4xl"],
     marginBottom: SP.md,
 
-    borderRadius: R.lg,
+    borderRadius: R.panel,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
@@ -503,7 +503,7 @@ const s = StyleSheet.create({
     paddingHorizontal: SP.xl,
     paddingVertical: SP.lg,
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: R.lg,
+    borderRadius: R.panel,
   },
   unfileTitle: { fontSize: FS.md, fontWeight: FW.semibold },
   // Takes the slack, so the count stays pinned to the right edge.
@@ -517,7 +517,7 @@ const s = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: SP["4xl"],
   },
-  empty: { fontSize: FS.xs, textAlign: "center" },
+  empty: { fontSize: FS.md, textAlign: "center" },
   list: { flex: 1 },
   listInner: { paddingBottom: SP.xl },
   row: {
@@ -538,7 +538,7 @@ const s = StyleSheet.create({
     flexBasis: "47%",
     flexGrow: 1,
     height: 96,
-    borderRadius: R.lg,
+    borderRadius: R.panel,
     borderWidth: StyleSheet.hairlineWidth,
     padding: SP.xl,
     overflow: "hidden",

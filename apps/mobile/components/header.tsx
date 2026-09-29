@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { formatAgo } from "@nekan/shared/core";
 import type { Space } from "@nekan/shared/types";
@@ -22,6 +22,9 @@ import { SyncIcon } from "../icons";
 import { FS, FW, R, SP, useColors } from "../theme";
 import { currentSpace, setSpace } from "../store/state";
 import { useStore } from "../store/use-store";
+
+/** The same mark the home-screen widget draws, so the two read as one app. */
+const MARK = require("../assets/widget-mark.png");
 import { onSyncStatus, syncNow, type SyncStatus } from "../sync/loop";
 
 /** How long the button keeps looking busy after a press. See below. */
@@ -121,7 +124,10 @@ export function AppHeader({ board }: { board?: boolean }) {
             the second is about the first. The board switch goes to the far
             right, where a thumb reaches it. */}
         <View style={s.left}>
-          <Text style={[s.brand, { color: c.text }]}>Nekan</Text>
+          <View style={s.brandRow}>
+            <Image source={MARK} style={s.mark} accessible={false} />
+            <Text style={[s.brand, { color: c.text }]}>Nekan</Text>
+          </View>
           <SyncNow />
         </View>
         {board ? (
@@ -169,7 +175,10 @@ const s = StyleSheet.create({
     alignItems: "center",
     gap: SP.lg,
   },
-  brand: { fontSize: FS.lg, fontWeight: FW.semibold },
+  brandRow: { flexDirection: "row", alignItems: "center", gap: SP.sm },
+  // 20pt, the size the widget draws it at beside a line of the same weight.
+  mark: { width: 20, height: 20 },
+  brand: { fontSize: FS.xl, fontWeight: FW.semibold },
   switch_: {
     flexDirection: "row",
     borderRadius: R.pill,
