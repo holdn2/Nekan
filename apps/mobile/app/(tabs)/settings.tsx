@@ -26,7 +26,7 @@ import { SUPPORTED } from "@nekan/shared/i18n/locales";
 import { applyLanguage, t } from "../../i18n";
 import { exportBoard, type Format } from "../../export";
 import { AccountBlock } from "../../components/account";
-import { FS, FW, R, SP, useColors } from "../../theme";
+import { FS, FW, R, SP, useColors, useThemeName } from "../../theme";
 import {
   languageChoice,
   redraw,
@@ -50,6 +50,15 @@ function Choices<T extends string | null>({
   onPick: (v: T) => void;
 }) {
   const c = useColors();
+  // theme.ts SHADOW.even, "0 0 3px" at 18% / 50%: RN takes the blur as a
+  // radius, so half of it.
+  const knob = {
+    backgroundColor: c.panel,
+    shadowColor: "#000",
+    shadowOpacity: useThemeName() === "dark" ? 0.5 : 0.18,
+    shadowRadius: 1.5,
+    shadowOffset: { width: 0, height: 0 },
+  } as ViewStyle;
   return (
     <View style={s.block}>
       <Text style={[s.label, { color: c.muted }]}>{label}</Text>
@@ -62,13 +71,10 @@ function Choices<T extends string | null>({
               onPress={() => onPick(o.value)}
               accessibilityRole="radio"
               accessibilityState={{ selected: on }}
-              style={[
-                s.option,
-                on ? ({ backgroundColor: c.accent } as ViewStyle) : null,
-              ]}
+              style={[s.option, on ? knob : null]}
             >
               <Text
-                style={[s.optionText, { color: on ? c["on-accent"] : c.muted }]}
+                style={[s.optionText, { color: on ? c.text : c.muted }]}
                 numberOfLines={1}
               >
                 {o.label}
@@ -193,22 +199,24 @@ const s = StyleSheet.create({
   title: { fontSize: FS["3xl"], fontWeight: FW.semibold },
   block: { gap: SP.md },
   label: { fontSize: FS.sm, fontWeight: FW.semibold },
-  // One track with a filled cell, the way the desktop's switch reads. No
-  // sliding pill here: that one is exactly two wide by construction, and this
-  // is three.
+  // The desktop's switch (styles/switch.css): a pill track in panel-2 and the
+  // chosen option as a panel-coloured pill with the "even" shadow, its label in
+  // text colour. It used to be a cell filled with the accent, which read as a
+  // different control from the desktop's (2026-10-01). It does not slide: the
+  // desktop's is exactly two wide by construction, and this is three. Taller
+  // than the desktop's for a thumb.
   group: {
     flexDirection: "row",
-    borderRadius: R.panel,
+    borderRadius: R.pill,
     padding: SP["2xs"],
-    gap: SP["2xs"],
   },
   option: {
     flex: 1,
     alignItems: "center",
     paddingVertical: SP.lg,
-    borderRadius: R.md,
+    borderRadius: R.pill,
   },
-  optionText: { fontSize: FS.md, fontWeight: FW.medium },
+  optionText: { fontSize: FS.sm, fontWeight: FW.medium },
   link: {
     flexDirection: "row",
     alignItems: "center",
