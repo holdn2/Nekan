@@ -30,7 +30,7 @@
  * finished rows on the server only -- with a query, a cache, and a line saying
  * the rest cannot load offline.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Alert,
   type NativeScrollEvent,
@@ -118,9 +118,7 @@ export function ArchiveList({ tab }: { tab: Tab }) {
 
   const all = tab === "history" ? doneTasks() : trashedTasks();
   const rows = search(all, query);
-  // A new search starts from the top of its results.
   const [shown, setShown] = useState(PAGE);
-  useEffect(() => setShown(PAGE), [query]);
   const visible = rows.length > shown ? rows.slice(0, shown) : rows;
   const sections = useMemo(() => group(visible, tab), [visible, tab]);
   const more = () => {
@@ -142,6 +140,15 @@ export function ArchiveList({ tab }: { tab: Tab }) {
       y < TOP_ZONE ? false : dy < -4 ? true : dy > 4 ? false : upward;
     if (next !== upward) setUpward(next);
   };
+  // A new search starts from the top of its results: the count drawn goes
+  // back to one page in the same render, and the list goes back up -- left
+  // where it was, a search typed far down showed the middle of its results.
+  const search_ = (next: string) => {
+    setQuery(next);
+    setShown(PAGE);
+    list.current?.getScrollResponder()?.scrollTo({ y: 0, animated: false });
+  };
+
   const toTop = () => {
     list.current?.getScrollResponder()?.scrollTo({ y: 0, animated: true });
     setUpward(false);
@@ -183,7 +190,7 @@ export function ArchiveList({ tab }: { tab: Tab }) {
             },
           ]}
           value={query}
-          onChangeText={setQuery}
+          onChangeText={search_}
           placeholder={t(`${tab}.search`)}
           placeholderTextColor={c.faint}
           accessibilityLabel={t(`${tab}.search`)}

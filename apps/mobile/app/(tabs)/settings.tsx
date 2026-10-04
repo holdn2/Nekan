@@ -10,7 +10,7 @@
  * system changing its mind, so it is stored as `null` rather than resolved
  * once and written down.
  */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -96,6 +96,7 @@ function Choices<T extends string | null>({
 
 export default function SettingsScreen() {
   const c = useColors();
+  const scroll = useRef<ScrollView>(null);
   useStore();
   // Building the document and writing it takes long enough on a big board to
   // press twice, and two share sheets is a state nothing recovers from well.
@@ -121,6 +122,7 @@ export default function SettingsScreen() {
     <View style={[s.root, { backgroundColor: c.bg }]}>
       {/* The development sign-in fields are at the bottom of this list. */}
       <ScrollView
+        ref={scroll}
         contentContainerStyle={s.body}
         automaticallyAdjustKeyboardInsets
       >
@@ -196,7 +198,11 @@ export default function SettingsScreen() {
           <ChevronIcon color={c.muted} />
         </Pressable>
 
-        <LeaveAccountLink />
+        {/* The deleting and the result are said in the account block at
+            the top; once confirmed, go there to see them. */}
+        <LeaveAccountLink
+          onConfirmed={() => scroll.current?.scrollTo({ y: 0, animated: true })}
+        />
       </ScrollView>
     </View>
   );

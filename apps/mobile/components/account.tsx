@@ -80,7 +80,7 @@ const sentence = (code: string) =>
  * happened -- stays here, where the account is shown. One block is mounted
  * at a time, so one slot is enough.
  */
-let leaveRequest: (() => void) | null = null;
+let leaveRequest: ((confirmed?: () => void) => void) | null = null;
 
 export function AccountBlock() {
   const c = useColors();
@@ -166,7 +166,10 @@ export function AccountBlock() {
     };
   });
 
-  const leave = () => {
+  // `confirmed` runs once the destructive button is pressed, before any
+  // work: the link that asked is at the bottom of settings, and the progress
+  // and the result are said up here, out of its sight on a small screen.
+  const leave = (confirmed?: () => void) => {
     if (busy) return;
     Alert.alert(
       t("account.leave"),
@@ -176,7 +179,8 @@ export function AccountBlock() {
         {
           text: t("account.confirmGo"),
           style: "destructive",
-          onPress: () =>
+          onPress: () => {
+            confirmed?.();
             void run(async () => {
               setProblem(t("account.deleting"));
               const res = await deleteAccount();
@@ -214,7 +218,8 @@ export function AccountBlock() {
                 setProblem(null);
               }
               return { ok: true };
-            }),
+            });
+          },
         },
       ],
     );
@@ -497,13 +502,18 @@ const s = StyleSheet.create({
  * under the account card until 2026-10-04, where it was in view every time.
  * Only while signed in; the flow is the account block's (leaveRequest).
  */
-export function LeaveAccountLink() {
+export function LeaveAccountLink({
+  onConfirmed,
+}: {
+  /** The person said yes: bring the account block into view. */
+  onConfirmed?: () => void;
+}) {
   const c = useColors();
   useStore();
   if (!currentAuth()) return null;
   return (
     <Pressable
-      onPress={() => leaveRequest?.()}
+      onPress={() => leaveRequest?.(onConfirmed)}
       hitSlop={8}
       accessibilityRole="button"
       style={s.leave}
