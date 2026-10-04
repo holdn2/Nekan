@@ -18,8 +18,19 @@
  * The search still reads the whole list. That is not a performance detail but
  * a correctness one -- a task finished in March has to be findable, and it is
  * nowhere near the part of the list a finger has scrolled to.
+ *
+ * What is drawn grows as the finger nears the end, PAGE rows at a time; the
+ * list and the search are both the device's own. Fetching history from the
+ * server instead was asked about (2026-10-04) and not done: every finished
+ * task is already on the phone -- sync keeps all rows -- so a server query
+ * would make the screen depend on a network without making the phone hold
+ * less, and filtering a few thousand titles costs milliseconds. The day that
+ * changes is the day data.json itself grows heavy (every save rewrites it
+ * whole; tens of thousands of rows), and the answer then is to keep old
+ * finished rows on the server only -- with a query, a cache, and a line saying
+ * the rest cannot load offline.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -46,6 +57,9 @@ import {
 import { useStore } from "../store/use-store";
 
 export type Tab = "history" | "trash";
+
+/** Rows drawn at first, and added each time the end comes near. */
+const PAGE = 40;
 
 /**
  * A day, as something cheap to compare.
@@ -96,7 +110,14 @@ export function ArchiveList({ tab }: { tab: Tab }) {
 
   const all = tab === "history" ? doneTasks() : trashedTasks();
   const rows = search(all, query);
-  const sections = useMemo(() => group(rows, tab), [rows, tab]);
+  // A new search starts from the top of its results.
+  const [shown, setShown] = useState(PAGE);
+  useEffect(() => setShown(PAGE), [query]);
+  const visible = rows.length > shown ? rows.slice(0, shown) : rows;
+  const sections = useMemo(() => group(visible, tab), [visible, tab]);
+  const more = () => {
+    if (shown < rows.length) setShown((n) => n + PAGE);
+  };
 
   // Bulk acts on what the tab is showing, never on a fresh filter: the list is
   // already scoped to the board on screen, and re-deriving it would sweep up
@@ -170,6 +191,10 @@ export function ArchiveList({ tab }: { tab: Tab }) {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={sections.length ? undefined : s.emptyBox}
         stickySectionHeadersEnabled={false}
+        onEndReached={more}
+        // Half a screen early, so the next rows are there before the finger
+        // reaches the bottom.
+        onEndReachedThreshold={0.5}
         renderSectionHeader={({ section }) => (
           <Text style={[s.day, { color: c.muted, backgroundColor: c.bg }]}>
             {section.title}
