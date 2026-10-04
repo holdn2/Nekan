@@ -1,9 +1,10 @@
 /**
- * Archive: history and trash under one tab, as two tabs of its own.
+ * History or trash: one list of finished or thrown-away tasks.
  *
- * The outer name is new -- the desktop has no word for "the two together" --
- * but the inner two keep theirs, because the catalogue already fixes them and
- * a screen should not be called one thing on a phone and another on a laptop.
+ * Each is a tab of its own (app/(tabs)/history.tsx, trash.tsx), as on the
+ * desktop. They were once two inner tabs under one "보관함" tab; split on
+ * 2026-10-04 because the two are visited for different reasons and a tab
+ * inside a tab hid the second one.
  *
  * Two things are deliberately not the desktop's:
  *
@@ -30,9 +31,9 @@ import {
 } from "react-native";
 import { INBOX } from "@nekan/shared/core";
 import type { Task } from "@nekan/shared/types";
-import { locale, t } from "../../i18n";
-import { FS, FW, LH, R, SP, useColors } from "../../theme";
-import { doneTasks, search, trashedTasks } from "../../store/selectors";
+import { locale, t } from "../i18n";
+import { FS, FW, LH, R, SP, useColors } from "../theme";
+import { doneTasks, search, trashedTasks } from "../store/selectors";
 import {
   purgeAll,
   purgeTask,
@@ -41,10 +42,10 @@ import {
   trashAll,
   untrashAll,
   untrashTask,
-} from "../../store/mutations";
-import { useStore } from "../../store/use-store";
+} from "../store/mutations";
+import { useStore } from "../store/use-store";
 
-type Tab = "history" | "trash";
+export type Tab = "history" | "trash";
 
 /**
  * A day, as something cheap to compare.
@@ -88,10 +89,9 @@ function group(list: Task[], tab: Tab) {
   return out;
 }
 
-export default function ArchiveScreen() {
+export function ArchiveList({ tab }: { tab: Tab }) {
   const c = useColors();
   useStore();
-  const [tab, setTab] = useState<Tab>("history");
   const [query, setQuery] = useState("");
 
   const all = tab === "history" ? doneTasks() : trashedTasks();
@@ -123,23 +123,6 @@ export default function ArchiveScreen() {
 
   return (
     <View style={[s.root, { backgroundColor: c.bg }]}>
-      <View style={[s.tabs, { borderBottomColor: c.line }]}>
-        {(["history", "trash"] as Tab[]).map((name) => (
-          <Pressable key={name} onPress={() => setTab(name)}>
-            <Text
-              style={[
-                s.tab,
-                name === tab
-                  ? { color: c.text, borderBottomColor: c.accent, ...s.on }
-                  : { color: c.muted },
-              ]}
-            >
-              {t(`tabs.${name}`)}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
       <View style={s.tools}>
         <TextInput
           style={[
@@ -280,14 +263,6 @@ function Row({
 
 const s = StyleSheet.create({
   root: { flex: 1 },
-  tabs: {
-    flexDirection: "row",
-    gap: SP["5xl"],
-    paddingHorizontal: SP["4xl"],
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  tab: { paddingVertical: SP.xl, fontSize: FS.lg, fontWeight: FW.semibold },
-  on: { borderBottomWidth: 2 },
   tools: {
     flexDirection: "row",
     alignItems: "center",
@@ -312,7 +287,7 @@ const s = StyleSheet.create({
     paddingHorizontal: SP["4xl"],
     paddingTop: SP["3xl"],
     paddingBottom: SP.xs,
-    fontSize: FS.sm,
+    fontSize: FS.lg,
     fontWeight: FW.semibold,
   },
   row: { paddingHorizontal: SP["4xl"], paddingVertical: SP.xl },

@@ -328,19 +328,6 @@ export default function TaskScreen() {
                   {t("due.pickDate")}
                 </Text>
               </Pressable>
-              {task.dueDate ? (
-                <Pressable
-                  onPress={() => setDue(task.id, null)}
-                  style={[
-                    s.chip,
-                    { backgroundColor: c.panel, borderColor: c.line },
-                  ]}
-                >
-                  <Text style={[s.chipText, { color: c.muted }]}>
-                    {t("common.clear")}
-                  </Text>
-                </Pressable>
-              ) : null}
             </View>
             {picking ? (
               <DueCalendar
@@ -355,8 +342,40 @@ export default function TaskScreen() {
                 }}
               />
             ) : null}
+            {/* The date that is set, said plainly, and the way to take it off
+                beside it: clearing belongs to the value, not to the row of
+                ways to set one. The pill is the delete button's -- both take
+                something away. */}
             {due ? (
-              <Text style={[s.note, { color: c.muted }]}>{due.text}</Text>
+              <View style={s.dueRow}>
+                <Text
+                  style={[
+                    s.dueValue,
+                    {
+                      color:
+                        dueInfo(task.dueDate, new Date())?.state === "overdue"
+                          ? c.danger
+                          : c.text,
+                    },
+                  ]}
+                >
+                  {due.text}
+                </Text>
+                {due.hint ? (
+                  <Text style={[s.dueHint, { color: c.muted }]}>
+                    {due.hint}
+                  </Text>
+                ) : null}
+                <Pressable
+                  onPress={() => setDue(task.id, null)}
+                  accessibilityRole="button"
+                  style={[s.pill, s.clear, { borderColor: c.danger }]}
+                >
+                  <Text style={[s.pillText, { color: c.danger }]}>
+                    {t("common.clear")}
+                  </Text>
+                </Pressable>
+              </View>
             ) : null}
 
             <Text style={[s.label, { color: c.muted }]}>{t("memo.panel")}</Text>
@@ -396,10 +415,10 @@ export default function TaskScreen() {
             deleteTask(task.id);
             router.back();
           }}
-          style={[s.delete, { borderColor: c.danger }]}
+          style={[s.pill, s.delete, { borderColor: c.danger }]}
           accessibilityRole="button"
         >
-          <Text style={[s.deleteText, { color: c.danger }]}>
+          <Text style={[s.pillText, { color: c.danger }]}>
             {t("common.delete")}
           </Text>
         </Pressable>
@@ -515,13 +534,19 @@ const s = StyleSheet.create({
     padding: SP["3xl"],
     fontSize: FS.lg,
   },
-  delete: {
-    marginTop: SP["5xl"],
-    alignSelf: "flex-start",
+  // The outlined pill of the acts that take something away: delete, and
+  // clearing the due date.
+  pill: {
     paddingHorizontal: SP["4xl"],
     paddingVertical: SP.lg,
     borderRadius: R.pill,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  deleteText: { fontSize: FS.md, fontWeight: FW.semibold },
+  pillText: { fontSize: FS.md, fontWeight: FW.semibold },
+  delete: { marginTop: SP["5xl"], alignSelf: "flex-start" },
+  dueRow: { flexDirection: "row", alignItems: "center", gap: SP.md },
+  dueValue: { fontSize: FS.xl, fontWeight: FW.semibold },
+  dueHint: { fontSize: FS.md },
+  // Pushed to the far side, so the date reads first.
+  clear: { marginLeft: "auto" },
 });

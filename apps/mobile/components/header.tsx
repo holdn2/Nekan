@@ -22,6 +22,7 @@ import { SyncIcon } from "../icons";
 import { FS, FW, R, SP, useColors } from "../theme";
 import { currentSpace, setSpace } from "../store/state";
 import { useStore } from "../store/use-store";
+import { useSlidingKnob } from "./sliding-knob";
 
 /** The same mark the home-screen widget draws, so the two read as one app. */
 const MARK = require("../assets/widget-mark.png");
@@ -116,6 +117,7 @@ export function AppHeader({ board }: { board?: boolean }) {
   const c = useColors();
   useStore();
   const space = currentSpace();
+  const { onOptionLayout, knob } = useSlidingKnob(SPACES.indexOf(space));
 
   return (
     <SafeAreaView edges={["top"]} style={{ backgroundColor: c.bg }}>
@@ -137,14 +139,18 @@ export function AppHeader({ board }: { board?: boolean }) {
               { backgroundColor: c["panel-2"], borderColor: c.line },
             ]}
           >
-            {SPACES.map((sp: Space) => (
-              <Pressable key={sp} onPress={() => setSpace(sp)} hitSlop={4}>
+            {knob([s.knob, { backgroundColor: c.accent }])}
+            {SPACES.map((sp: Space, i: number) => (
+              <Pressable
+                key={sp}
+                onPress={() => setSpace(sp)}
+                onLayout={onOptionLayout(i)}
+                hitSlop={4}
+              >
                 <Text
                   style={[
                     s.switchItem,
-                    sp === space
-                      ? { backgroundColor: c.accent, color: c["on-accent"] }
-                      : { color: c.muted },
+                    { color: sp === space ? c["on-accent"] : c.muted },
                   ]}
                 >
                   {t(`space.${sp}`)}
@@ -189,11 +195,11 @@ const s = StyleSheet.create({
   switchItem: {
     paddingHorizontal: SP.lg,
     paddingVertical: SP.sm,
-    borderRadius: R.pill,
     fontSize: FS.sm,
     fontWeight: FW.semibold,
-    overflow: "hidden",
   },
+  // Inset by the track's padding, so it sits where a filled option did.
+  knob: { top: SP.xs, bottom: SP.xs, borderRadius: R.pill },
   sync: {
     flexShrink: 1,
     flexDirection: "row",

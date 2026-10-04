@@ -1,5 +1,6 @@
 /**
- * The three tabs: matrix, archive, settings.
+ * The four tabs: matrix, history, trash, settings -- the desktop's set, less
+ * its guide (the phone's guide opens from settings).
  *
  * Their names come out of the shared catalogue rather than being typed here,
  * so the phone and the desktop cannot drift into calling the same screen two
@@ -15,13 +16,13 @@
  * in each screen because the sync state has to be readable from all three --
  * it used to live inside settings, which is the tab somebody is least likely
  * to be looking at when they wonder whether their work has left the device.
- * `board` is passed per screen: the switch scopes the matrix and the archive,
+ * `board` is passed per screen: the switch scopes the matrix, history and trash,
  * and scopes nothing in settings.
  */
 import { Tabs } from "expo-router";
 import { AppHeader } from "../../components/header";
 import { t } from "../../i18n";
-import { ArchiveIcon, MatrixIcon, SettingsIcon } from "../../icons";
+import { ClockIcon, MatrixIcon, SettingsIcon, TrashIcon } from "../../icons";
 import { FS, useColors } from "../../theme";
 
 export default function TabsLayout() {
@@ -47,12 +48,22 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="archive"
+        name="history"
         options={{
-          title: t("tabs.archive"),
+          title: t("tabs.history"),
           header: () => <AppHeader board />,
           tabBarIcon: ({ color, size }) => (
-            <ArchiveIcon color={color} size={size} />
+            <ClockIcon color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="trash"
+        options={{
+          title: t("tabs.trash"),
+          header: () => <AppHeader board />,
+          tabBarIcon: ({ color, size }) => (
+            <TrashIcon color={color} size={size} />
           ),
         }}
       />

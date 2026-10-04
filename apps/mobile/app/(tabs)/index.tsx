@@ -546,7 +546,7 @@ const s = StyleSheet.create({
   },
   // A band rather than a fill: at this size a whole card of quadrant colour
   // would out-shout the counts, and the counts are the content.
-  wash: { position: "absolute", left: 0, right: 0, top: 0, height: 4 },
+  wash: { position: "absolute", left: 0, right: 0, top: 0, height: 6 },
   cardTitle: { fontSize: FS.md, fontWeight: FW.semibold, marginTop: SP.xs },
   count: { fontSize: FS["3xl"], fontWeight: FW.semibold },
 });

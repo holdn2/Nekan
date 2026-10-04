@@ -25,7 +25,7 @@ import { ChevronIcon } from "../../icons";
 import { SUPPORTED } from "@nekan/shared/i18n/locales";
 import { applyLanguage, t } from "../../i18n";
 import { exportBoard, type Format } from "../../export";
-import { AccountBlock } from "../../components/account";
+import { AccountBlock, LeaveAccountLink } from "../../components/account";
 import { FS, FW, R, SP, useColors, useThemeName } from "../../theme";
 import {
   languageChoice,
@@ -36,6 +36,7 @@ import {
   type ThemeChoice,
 } from "../../store/state";
 import { useStore } from "../../store/use-store";
+import { useSlidingKnob } from "../../components/sliding-knob";
 
 /** One row of choices. Three is small enough that a list beats a picker. */
 function Choices<T extends string | null>({
@@ -50,28 +51,34 @@ function Choices<T extends string | null>({
   onPick: (v: T) => void;
 }) {
   const c = useColors();
+  const dark = useThemeName() === "dark";
   // theme.ts SHADOW.even, "0 0 3px" at 18% / 50%: RN takes the blur as a
-  // radius, so half of it.
+  // radius, so half of it. The colour is the palette's darkest ink in each
+  // theme (text on light, the ground on dark) rather than a black written
+  // here -- theme.ts is the one home for colours (tools/check-colors.js).
   const knob = {
     backgroundColor: c.panel,
-    shadowColor: "#000",
-    shadowOpacity: useThemeName() === "dark" ? 0.5 : 0.18,
+    shadowColor: dark ? c.bg : c.text,
+    shadowOpacity: dark ? 0.5 : 0.18,
     shadowRadius: 1.5,
     shadowOffset: { width: 0, height: 0 },
   } as ViewStyle;
+  const slide = useSlidingKnob(options.findIndex((o) => o.value === value));
   return (
     <View style={s.block}>
       <Text style={[s.label, { color: c.muted }]}>{label}</Text>
       <View style={[s.group, { backgroundColor: c["panel-2"] }]}>
-        {options.map((o) => {
+        {slide.knob([knob, s.knob])}
+        {options.map((o, i) => {
           const on = o.value === value;
           return (
             <Pressable
               key={o.value ?? "system"}
               onPress={() => onPick(o.value)}
+              onLayout={slide.onOptionLayout(i)}
               accessibilityRole="radio"
               accessibilityState={{ selected: on }}
-              style={[s.option, on ? knob : null]}
+              style={s.option}
             >
               <Text
                 style={[s.optionText, { color: on ? c.text : c.muted }]}
@@ -188,6 +195,8 @@ export default function SettingsScreen() {
           <Text style={[s.linkText, { color: c.text }]}>{t("tabs.guide")}</Text>
           <ChevronIcon color={c.muted} />
         </Pressable>
+
+        <LeaveAccountLink />
       </ScrollView>
     </View>
   );
@@ -202,9 +211,9 @@ const s = StyleSheet.create({
   // The desktop's switch (styles/switch.css): a pill track in panel-2 and the
   // chosen option as a panel-coloured pill with the "even" shadow, its label in
   // text colour. It used to be a cell filled with the accent, which read as a
-  // different control from the desktop's (2026-10-01). It does not slide: the
-  // desktop's is exactly two wide by construction, and this is three. Taller
-  // than the desktop's for a thumb.
+  // different control from the desktop's (2026-10-01). It slides between
+  // options as the desktop's does (components/sliding-knob.tsx). Taller than
+  // the desktop's for a thumb.
   group: {
     flexDirection: "row",
     borderRadius: R.pill,
@@ -217,6 +226,7 @@ const s = StyleSheet.create({
     borderRadius: R.pill,
   },
   optionText: { fontSize: FS.sm, fontWeight: FW.medium },
+  knob: { top: SP["2xs"], bottom: SP["2xs"], borderRadius: R.pill },
   link: {
     flexDirection: "row",
     alignItems: "center",
