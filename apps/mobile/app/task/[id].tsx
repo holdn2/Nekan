@@ -369,9 +369,10 @@ export default function TaskScreen() {
                 <Pressable
                   onPress={() => setDue(task.id, null)}
                   accessibilityRole="button"
-                  style={[s.pill, s.clear, { borderColor: c.danger }]}
+                  hitSlop={8}
+                  style={[s.pillSmall, { borderColor: c.danger }]}
                 >
-                  <Text style={[s.pillText, { color: c.danger }]}>
+                  <Text style={[s.pillSmallText, { color: c.danger }]}>
                     {t("common.clear")}
                   </Text>
                 </Pressable>
@@ -545,8 +546,14 @@ const s = StyleSheet.create({
   pillText: { fontSize: FS.md, fontWeight: FW.semibold },
   delete: { marginTop: SP["5xl"], alignSelf: "flex-start" },
   dueRow: { flexDirection: "row", alignItems: "center", gap: SP.md },
+  // The delete pill's smaller sibling, right beside the date it clears.
+  pillSmall: {
+    paddingHorizontal: SP.lg,
+    paddingVertical: SP.xs,
+    borderRadius: R.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  pillSmallText: { fontSize: FS.sm, fontWeight: FW.semibold },
   dueValue: { fontSize: FS.xl, fontWeight: FW.semibold },
   dueHint: { fontSize: FS.md },
-  // Pushed to the far side, so the date reads first.
-  clear: { marginLeft: "auto" },
 });

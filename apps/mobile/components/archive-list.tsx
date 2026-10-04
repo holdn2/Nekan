@@ -30,9 +30,11 @@
  * finished rows on the server only -- with a query, a cache, and a line saying
  * the rest cannot load offline.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   Pressable,
   SectionList,
   StyleSheet,
@@ -43,7 +45,7 @@ import {
 import { INBOX } from "@nekan/shared/core";
 import type { Task } from "@nekan/shared/types";
 import { locale, t } from "../i18n";
-import { FS, FW, LH, R, SP, useColors } from "../theme";
+import { FS, FW, LH, R, SP, useColors, useThemeName } from "../theme";
 import { doneTasks, search, trashedTasks } from "../store/selectors";
 import {
   purgeAll,
@@ -55,11 +57,16 @@ import {
   untrashTask,
 } from "../store/mutations";
 import { useStore } from "../store/use-store";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { ChevronIcon } from "../icons";
 
 export type Tab = "history" | "trash";
 
 /** Rows drawn at first, and added each time the end comes near. */
 const PAGE = 40;
+
+/** Scrolled less than this, the top is in reach and the button stays away. */
+const TOP_ZONE = 400;
 
 /**
  * A day, as something cheap to compare.
@@ -105,6 +112,7 @@ function group(list: Task[], tab: Tab) {
 
 export function ArchiveList({ tab }: { tab: Tab }) {
   const c = useColors();
+  const dark = useThemeName() === "dark";
   useStore();
   const [query, setQuery] = useState("");
 
@@ -117,6 +125,26 @@ export function ArchiveList({ tab }: { tab: Tab }) {
   const sections = useMemo(() => group(visible, tab), [visible, tab]);
   const more = () => {
     if (shown < rows.length) setShown((n) => n + PAGE);
+  };
+
+  // Back to the top, offered only while the list is being moved up: that is
+  // the moment somebody is heading there, and a button that sat over the rows
+  // all the time would cover the last one's actions.
+  const list = useRef<SectionList<Task>>(null);
+  const lastY = useRef(0);
+  const [upward, setUpward] = useState(false);
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const y = e.nativeEvent.contentOffset.y;
+    const dy = y - lastY.current;
+    lastY.current = y;
+    // Near the top there is nowhere to go; small moves are a resting finger.
+    const next =
+      y < TOP_ZONE ? false : dy < -4 ? true : dy > 4 ? false : upward;
+    if (next !== upward) setUpward(next);
+  };
+  const toTop = () => {
+    list.current?.getScrollResponder()?.scrollTo({ y: 0, animated: true });
+    setUpward(false);
   };
 
   // Bulk acts on what the tab is showing, never on a fresh filter: the list is
@@ -185,6 +213,9 @@ export function ArchiveList({ tab }: { tab: Tab }) {
       </View>
 
       <SectionList
+        ref={list}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         sections={sections}
         keyExtractor={(task) => task.id}
         keyboardDismissMode="on-drag"
@@ -196,9 +227,15 @@ export function ArchiveList({ tab }: { tab: Tab }) {
         // reaches the bottom.
         onEndReachedThreshold={0.5}
         renderSectionHeader={({ section }) => (
-          <Text style={[s.day, { color: c.muted, backgroundColor: c.bg }]}>
-            {section.title}
-          </Text>
+          <View style={{ backgroundColor: c.bg }}>
+            {/* A rule between days, so one day reads as one group. Not above
+                the first. line-strong: plain line is nearly the ground's own
+                colour in the light theme. */}
+            {section === sections[0] ? null : (
+              <View style={[s.rule, { backgroundColor: c["line-strong"] }]} />
+            )}
+            <Text style={[s.day, { color: c.muted }]}>{section.title}</Text>
+          </View>
         )}
         renderItem={({ item }) => <Row task={item} tab={tab} colors={c} />}
         ListEmptyComponent={
@@ -211,6 +248,33 @@ export function ArchiveList({ tab }: { tab: Tab }) {
           </Text>
         }
       />
+
+      {upward ? (
+        <Animated.View
+          entering={FadeIn.duration(150)}
+          exiting={FadeOut.duration(150)}
+          style={s.topWrap}
+        >
+          <Pressable
+            onPress={toTop}
+            accessibilityRole="button"
+            accessibilityLabel={t("archive.toTop")}
+            style={[
+              s.top,
+              {
+                backgroundColor: c.panel,
+                borderColor: c.line,
+                // The darkest ink of each theme; text is near white on dark.
+                shadowColor: dark ? c.bg : c.text,
+              },
+            ]}
+          >
+            <View style={s.up}>
+              <ChevronIcon color={c.text} />
+            </View>
+          </Pressable>
+        </Animated.View>
+      ) : null}
     </View>
   );
 }
@@ -308,6 +372,27 @@ const s = StyleSheet.create({
   bulkText: { fontSize: FS.sm, fontWeight: FW.semibold },
   // A section label, as "마감일" and "테마" are elsewhere, rather than a
   // faint ruled caption.
+  rule: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: SP["4xl"],
+    marginTop: SP.md,
+  },
+  // Fixed over the list's bottom-right corner, clear of the tab bar.
+  topWrap: { position: "absolute", right: SP["4xl"], bottom: SP["4xl"] },
+  top: {
+    width: 44,
+    height: 44,
+    borderRadius: R.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  // The chevron points right; a quarter turn points it up.
+  up: { transform: [{ rotate: "-90deg" }] },
   day: {
     paddingHorizontal: SP["4xl"],
     paddingTop: SP["3xl"],
