@@ -406,7 +406,8 @@
     "pageNext": "Next page",
     "pageLast": "Last page",
     "pageNumber": "Page {{page}}",
-    "confirmPurgeOne": "Delete this task forever? This cannot be undone."
+    "confirmPurgeOne": "Delete this task forever? This cannot be undone.",
+    "toTop": "Back to top"
   },
   "oauth": {
     "done": "Got it. You can close this tab and go back to the app.",

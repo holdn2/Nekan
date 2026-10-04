@@ -176,8 +176,17 @@ const s = StyleSheet.create({
   flip: { transform: [{ scaleX: -1 }] },
   title: { fontSize: FS.md, fontWeight: FW.semibold },
   week: { flexDirection: "row" },
-  cell: { flex: 1, height: 38, alignItems: "center", justifyContent: "center" },
-  day: { borderRadius: R.md, margin: SP["2xs"] },
+  // The margin is on every cell, blanks too. It sat on days alone, so a row
+  // with days stood 4pt taller than the blanks beside it and each day was 4pt
+  // narrower than a blank.
+  cell: {
+    flex: 1,
+    height: 38,
+    margin: SP["2xs"],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  day: { borderRadius: R.md },
   dayName: {
     flex: 1,
     textAlign: "center",

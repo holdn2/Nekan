@@ -477,7 +477,7 @@ const s = StyleSheet.create({
     margin: SP["4xl"],
     marginBottom: SP.md,
 
-    borderRadius: R.lg,
+    borderRadius: R.panel,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
@@ -503,7 +503,7 @@ const s = StyleSheet.create({
     paddingHorizontal: SP.xl,
     paddingVertical: SP.lg,
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: R.lg,
+    borderRadius: R.panel,
   },
   unfileTitle: { fontSize: FS.md, fontWeight: FW.semibold },
   // Takes the slack, so the count stays pinned to the right edge.
@@ -517,7 +517,7 @@ const s = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: SP["4xl"],
   },
-  empty: { fontSize: FS.xs, textAlign: "center" },
+  empty: { fontSize: FS.md, textAlign: "center" },
   list: { flex: 1 },
   listInner: { paddingBottom: SP.xl },
   row: {
@@ -538,7 +538,7 @@ const s = StyleSheet.create({
     flexBasis: "47%",
     flexGrow: 1,
     height: 96,
-    borderRadius: R.lg,
+    borderRadius: R.panel,
     borderWidth: StyleSheet.hairlineWidth,
     padding: SP.xl,
     overflow: "hidden",
@@ -546,7 +546,7 @@ const s = StyleSheet.create({
   },
   // A band rather than a fill: at this size a whole card of quadrant colour
   // would out-shout the counts, and the counts are the content.
-  wash: { position: "absolute", left: 0, right: 0, top: 0, height: 4 },
+  wash: { position: "absolute", left: 0, right: 0, top: 0, height: 6 },
   cardTitle: { fontSize: FS.md, fontWeight: FW.semibold, marginTop: SP.xs },
   count: { fontSize: FS["3xl"], fontWeight: FW.semibold },
 });

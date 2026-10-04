@@ -214,7 +214,7 @@ export default function TaskScreen() {
   return (
     <SafeAreaView style={[s.root, { backgroundColor: c.bg }]} edges={["top"]}>
       <View style={[s.bar, { borderBottomColor: c.line }]}>
-        <Text style={[s.title, { color: c.muted }]} numberOfLines={1}>
+        <Text style={[s.title, { color: c.text }]} numberOfLines={1}>
           {inDump ? t("inbox.title") : t(`quad.${task.quadrant}.action`)}
         </Text>
         {/* Beside the close button, because that is where the eye already is
@@ -328,19 +328,6 @@ export default function TaskScreen() {
                   {t("due.pickDate")}
                 </Text>
               </Pressable>
-              {task.dueDate ? (
-                <Pressable
-                  onPress={() => setDue(task.id, null)}
-                  style={[
-                    s.chip,
-                    { backgroundColor: c.panel, borderColor: c.line },
-                  ]}
-                >
-                  <Text style={[s.chipText, { color: c.muted }]}>
-                    {t("common.clear")}
-                  </Text>
-                </Pressable>
-              ) : null}
             </View>
             {picking ? (
               <DueCalendar
@@ -355,8 +342,41 @@ export default function TaskScreen() {
                 }}
               />
             ) : null}
+            {/* The date that is set, said plainly, and the way to take it off
+                beside it: clearing belongs to the value, not to the row of
+                ways to set one. The pill is the delete button's -- both take
+                something away. */}
             {due ? (
-              <Text style={[s.note, { color: c.muted }]}>{due.text}</Text>
+              <View style={s.dueRow}>
+                <Text
+                  style={[
+                    s.dueValue,
+                    {
+                      color:
+                        dueInfo(task.dueDate, new Date())?.state === "overdue"
+                          ? c.danger
+                          : c.text,
+                    },
+                  ]}
+                >
+                  {due.text}
+                </Text>
+                {due.hint ? (
+                  <Text style={[s.dueHint, { color: c.muted }]}>
+                    {due.hint}
+                  </Text>
+                ) : null}
+                <Pressable
+                  onPress={() => setDue(task.id, null)}
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  style={[s.pillSmall, { borderColor: c.danger }]}
+                >
+                  <Text style={[s.pillSmallText, { color: c.danger }]}>
+                    {t("common.clear")}
+                  </Text>
+                </Pressable>
+              </View>
             ) : null}
 
             <Text style={[s.label, { color: c.muted }]}>{t("memo.panel")}</Text>
@@ -396,10 +416,10 @@ export default function TaskScreen() {
             deleteTask(task.id);
             router.back();
           }}
-          style={[s.delete, { borderColor: c.danger }]}
+          style={[s.pill, s.delete, { borderColor: c.danger }]}
           accessibilityRole="button"
         >
-          <Text style={[s.deleteText, { color: c.danger }]}>
+          <Text style={[s.pillText, { color: c.danger }]}>
             {t("common.delete")}
           </Text>
         </Pressable>
@@ -475,12 +495,14 @@ const s = StyleSheet.create({
   },
   // Takes the slack, so the status and the close button stay at the right
   // edge rather than being spaced out across the bar.
-  title: { fontSize: FS.md, fontWeight: FW.semibold, flex: 1 },
+  // The same weight as the header's name on the tab screens: this bar
+  // stands in the same place.
+  title: { fontSize: FS.xl, fontWeight: FW.semibold, flex: 1 },
   status: { fontSize: FS.xs },
   body: { padding: SP["4xl"], gap: SP.xl, paddingBottom: SP["7xl"] },
   text: {
     minHeight: 64,
-    borderRadius: R.lg,
+    borderRadius: R.panel,
     borderWidth: StyleSheet.hairlineWidth,
     padding: SP["3xl"],
     fontSize: FS.xl,
@@ -503,23 +525,35 @@ const s = StyleSheet.create({
     borderRadius: R.pill,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  chipText: { fontSize: FS.md },
+  chipText: { fontSize: FS.md, fontWeight: FW.medium },
   dot: { width: 8, height: 8, borderRadius: R.pill },
   note: { fontSize: FS.sm },
   memo: {
     minHeight: 120,
-    borderRadius: R.lg,
+    borderRadius: R.panel,
     borderWidth: StyleSheet.hairlineWidth,
     padding: SP["3xl"],
     fontSize: FS.lg,
   },
-  delete: {
-    marginTop: SP["5xl"],
-    alignSelf: "flex-start",
+  // The outlined pill of the acts that take something away: delete, and
+  // clearing the due date.
+  pill: {
     paddingHorizontal: SP["4xl"],
     paddingVertical: SP.lg,
     borderRadius: R.pill,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  deleteText: { fontSize: FS.md, fontWeight: FW.semibold },
+  pillText: { fontSize: FS.md, fontWeight: FW.semibold },
+  delete: { marginTop: SP["5xl"], alignSelf: "flex-start" },
+  dueRow: { flexDirection: "row", alignItems: "center", gap: SP.md },
+  // The delete pill's smaller sibling, right beside the date it clears.
+  pillSmall: {
+    paddingHorizontal: SP.lg,
+    paddingVertical: SP.xs,
+    borderRadius: R.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  pillSmallText: { fontSize: FS.sm, fontWeight: FW.semibold },
+  dueValue: { fontSize: FS.xl, fontWeight: FW.semibold },
+  dueHint: { fontSize: FS.md },
 });

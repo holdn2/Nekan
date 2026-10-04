@@ -10,7 +10,7 @@
  * system changing its mind, so it is stored as `null` rather than resolved
  * once and written down.
  */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -25,8 +25,8 @@ import { ChevronIcon } from "../../icons";
 import { SUPPORTED } from "@nekan/shared/i18n/locales";
 import { applyLanguage, t } from "../../i18n";
 import { exportBoard, type Format } from "../../export";
-import { AccountBlock } from "../../components/account";
-import { FS, FW, R, SP, useColors } from "../../theme";
+import { AccountBlock, LeaveAccountLink } from "../../components/account";
+import { FS, FW, R, SP, useColors, useThemeName } from "../../theme";
 import {
   languageChoice,
   redraw,
@@ -36,6 +36,7 @@ import {
   type ThemeChoice,
 } from "../../store/state";
 import { useStore } from "../../store/use-store";
+import { useSlidingKnob } from "../../components/sliding-knob";
 
 /** One row of choices. Three is small enough that a list beats a picker. */
 function Choices<T extends string | null>({
@@ -50,25 +51,37 @@ function Choices<T extends string | null>({
   onPick: (v: T) => void;
 }) {
   const c = useColors();
+  const dark = useThemeName() === "dark";
+  // theme.ts SHADOW.even, "0 0 3px" at 18% / 50%: RN takes the blur as a
+  // radius, so half of it. The colour is the palette's darkest ink in each
+  // theme (text on light, the ground on dark) rather than a black written
+  // here -- theme.ts is the one home for colours (tools/check-colors.js).
+  const knob = {
+    backgroundColor: c.panel,
+    shadowColor: dark ? c.bg : c.text,
+    shadowOpacity: dark ? 0.5 : 0.18,
+    shadowRadius: 1.5,
+    shadowOffset: { width: 0, height: 0 },
+  } as ViewStyle;
+  const slide = useSlidingKnob(options.findIndex((o) => o.value === value));
   return (
     <View style={s.block}>
       <Text style={[s.label, { color: c.muted }]}>{label}</Text>
       <View style={[s.group, { backgroundColor: c["panel-2"] }]}>
-        {options.map((o) => {
+        {slide.knob([knob, s.knob])}
+        {options.map((o, i) => {
           const on = o.value === value;
           return (
             <Pressable
               key={o.value ?? "system"}
               onPress={() => onPick(o.value)}
+              onLayout={slide.onOptionLayout(i)}
               accessibilityRole="radio"
               accessibilityState={{ selected: on }}
-              style={[
-                s.option,
-                on ? ({ backgroundColor: c.accent } as ViewStyle) : null,
-              ]}
+              style={s.option}
             >
               <Text
-                style={[s.optionText, { color: on ? c["on-accent"] : c.muted }]}
+                style={[s.optionText, { color: on ? c.text : c.muted }]}
                 numberOfLines={1}
               >
                 {o.label}
@@ -83,6 +96,7 @@ function Choices<T extends string | null>({
 
 export default function SettingsScreen() {
   const c = useColors();
+  const scroll = useRef<ScrollView>(null);
   useStore();
   // Building the document and writing it takes long enough on a big board to
   // press twice, and two share sheets is a state nothing recovers from well.
@@ -108,6 +122,7 @@ export default function SettingsScreen() {
     <View style={[s.root, { backgroundColor: c.bg }]}>
       {/* The development sign-in fields are at the bottom of this list. */}
       <ScrollView
+        ref={scroll}
         contentContainerStyle={s.body}
         automaticallyAdjustKeyboardInsets
       >
@@ -180,8 +195,14 @@ export default function SettingsScreen() {
           style={[s.link, { borderColor: c.line, backgroundColor: c.panel }]}
         >
           <Text style={[s.linkText, { color: c.text }]}>{t("tabs.guide")}</Text>
-          <ChevronIcon color={c.faint} size={16} />
+          <ChevronIcon color={c.muted} />
         </Pressable>
+
+        {/* The deleting and the result are said in the account block at
+            the top; once confirmed, go there to see them. */}
+        <LeaveAccountLink
+          onConfirmed={() => scroll.current?.scrollTo({ y: 0, animated: true })}
+        />
       </ScrollView>
     </View>
   );
@@ -193,22 +214,25 @@ const s = StyleSheet.create({
   title: { fontSize: FS["3xl"], fontWeight: FW.semibold },
   block: { gap: SP.md },
   label: { fontSize: FS.sm, fontWeight: FW.semibold },
-  // One track with a filled cell, the way the desktop's switch reads. No
-  // sliding pill here: that one is exactly two wide by construction, and this
-  // is three.
+  // The desktop's switch (styles/switch.css): a pill track in panel-2 and the
+  // chosen option as a panel-coloured pill with the "even" shadow, its label in
+  // text colour. It used to be a cell filled with the accent, which read as a
+  // different control from the desktop's (2026-10-01). It slides between
+  // options as the desktop's does (components/sliding-knob.tsx). Taller than
+  // the desktop's for a thumb.
   group: {
     flexDirection: "row",
-    borderRadius: R.panel,
+    borderRadius: R.pill,
     padding: SP["2xs"],
-    gap: SP["2xs"],
   },
   option: {
     flex: 1,
     alignItems: "center",
     paddingVertical: SP.lg,
-    borderRadius: R.md,
+    borderRadius: R.pill,
   },
-  optionText: { fontSize: FS.md, fontWeight: FW.medium },
+  optionText: { fontSize: FS.sm, fontWeight: FW.medium },
+  knob: { top: SP["2xs"], bottom: SP["2xs"], borderRadius: R.pill },
   link: {
     flexDirection: "row",
     alignItems: "center",

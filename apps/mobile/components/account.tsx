@@ -72,6 +72,16 @@ const ERROR_KEY: Record<string, string> = {
 const sentence = (code: string) =>
   ERROR_KEY[code] ? t(ERROR_KEY[code]) : t("account.signInFailed", { code });
 
+/**
+ * The block's own delete-account flow, for the link that sits elsewhere.
+ *
+ * The link is at the very bottom of settings (LeaveAccountLink) while the
+ * flow -- the confirmation, the busy state, and the message saying what
+ * happened -- stays here, where the account is shown. One block is mounted
+ * at a time, so one slot is enough.
+ */
+let leaveRequest: ((confirmed?: () => void) => void) | null = null;
+
 export function AccountBlock() {
   const c = useColors();
   const theme = useThemeName();
@@ -149,7 +159,17 @@ export function AccountBlock() {
    * dismissed by a stray tap, and it reads to a screen reader before its
    * buttons -- everything the desktop needed an alert dialog for.
    */
-  const leave = () => {
+  useEffect(() => {
+    leaveRequest = leave;
+    return () => {
+      if (leaveRequest === leave) leaveRequest = null;
+    };
+  });
+
+  // `confirmed` runs once the destructive button is pressed, before any
+  // work: the link that asked is at the bottom of settings, and the progress
+  // and the result are said up here, out of its sight on a small screen.
+  const leave = (confirmed?: () => void) => {
     if (busy) return;
     Alert.alert(
       t("account.leave"),
@@ -159,7 +179,8 @@ export function AccountBlock() {
         {
           text: t("account.confirmGo"),
           style: "destructive",
-          onPress: () =>
+          onPress: () => {
+            confirmed?.();
             void run(async () => {
               setProblem(t("account.deleting"));
               const res = await deleteAccount();
@@ -197,7 +218,8 @@ export function AccountBlock() {
                 setProblem(null);
               }
               return { ok: true };
-            }),
+            });
+          },
         },
       ],
     );
@@ -254,20 +276,6 @@ export function AccountBlock() {
               </Text>
             </Pressable>
           </View>
-          {/* The quietest thing in the block, where the desktop puts it too:
-            findable -- an account you cannot leave is the complaint this
-            answers -- without sitting beside sign-out as an equal choice. */}
-          <Pressable
-            onPress={leave}
-            disabled={busy}
-            hitSlop={6}
-            accessibilityRole="button"
-            style={s.leave}
-          >
-            <Text style={[s.leaveText, { color: c.muted }]}>
-              {t("account.leave")}
-            </Text>
-          </Pressable>
         </>
       ) : (
         <>
@@ -405,7 +413,12 @@ export function AccountBlock() {
           next heartbeat would be gone before it was read. */}
       {sync && sync.overwritten > 0 ? (
         <Pressable onPress={clearOverwritten} accessibilityRole="button">
-          <Text style={[s.problem, { color: c.danger }]}>
+          <Text
+            style={[
+              s.notice,
+              { backgroundColor: c["panel-2"], color: c.muted },
+            ]}
+          >
             {t("account.overwritten", { count: sync.overwritten })}
           </Text>
         </Pressable>
@@ -451,7 +464,16 @@ const s = StyleSheet.create({
   email: { fontSize: FS.md, fontWeight: FW.medium },
   state: { fontSize: FS.xs },
   action: { fontSize: FS.sm, fontWeight: FW.semibold },
-  leave: { alignSelf: "flex-start" },
+  // Something to know rather than something that went wrong: not in the
+  // danger colour, which sign-out and 회원탈퇴 use.
+  notice: {
+    fontSize: FS.sm,
+    borderRadius: R.panel,
+    paddingHorizontal: SP.xl,
+    paddingVertical: SP.md,
+    overflow: "hidden",
+  },
+  leave: { alignSelf: "center", marginTop: SP["3xl"] },
   leaveText: { fontSize: FS.sm, textDecorationLine: "underline" },
   dev: { gap: SP.md },
   field: {
@@ -470,3 +492,35 @@ const s = StyleSheet.create({
   },
   problem: { fontSize: FS.sm },
 });
+
+/**
+ * 회원탈퇴, at the very bottom of settings.
+ *
+ * Small and underlined, in the danger colour like every other act that cannot
+ * be undone: findable -- an account you cannot leave is the complaint this
+ * answers -- and out of the way of everything settings is visited for. It sat
+ * under the account card until 2026-10-04, where it was in view every time.
+ * Only while signed in; the flow is the account block's (leaveRequest).
+ */
+export function LeaveAccountLink({
+  onConfirmed,
+}: {
+  /** The person said yes: bring the account block into view. */
+  onConfirmed?: () => void;
+}) {
+  const c = useColors();
+  useStore();
+  if (!currentAuth()) return null;
+  return (
+    <Pressable
+      onPress={() => leaveRequest?.(onConfirmed)}
+      hitSlop={8}
+      accessibilityRole="button"
+      style={s.leave}
+    >
+      <Text style={[s.leaveText, { color: c.danger }]}>
+        {t("account.leave")}
+      </Text>
+    </Pressable>
+  );
+}
