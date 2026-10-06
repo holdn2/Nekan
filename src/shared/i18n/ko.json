@@ -376,10 +376,6 @@
   },
   "archive": {
     "quadInbox": "미분류",
-    "quadQ1": "Urgent·Important",
-    "quadQ2": "Important",
-    "quadQ3": "Urgent",
-    "quadOther": "기타",
     "noResults": "검색 결과가 없습니다.",
     "historyEmpty": "완료한 항목이 아직 없습니다.",
     "trashEmpty": "휴지통이 비어 있습니다.",

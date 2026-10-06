@@ -98,11 +98,14 @@ function Row({
           type="button"
           className={cn(
             "act flex-none rounded-sm border border-line-strong bg-transparent",
-            "px-md py-2xs text-xs whitespace-nowrap text-muted opacity-0",
+            "px-md py-2xs text-xs whitespace-nowrap opacity-0",
             "group-hover:opacity-100 focus-visible:opacity-100",
+            // A deleting button says so in red as soon as it shows -- it only
+            // shows on the row under the pointer, so it is never a column of
+            // red down the list (issue 148).
             action.danger
-              ? "hover:border-danger hover:bg-danger-soft hover:text-danger"
-              : "hover:border-accent hover:bg-accent-soft hover:text-accent",
+              ? "text-danger hover:border-danger hover:bg-danger-soft"
+              : "text-muted hover:border-accent hover:bg-accent-soft hover:text-accent",
           )}
           onClick={action.onClick}
         >

@@ -391,7 +391,7 @@ export function MemoPanel() {
             // carry an inherited line-height over the one asked for below.
             // (Spelling it in this comment would also emit it -- @source reads
             // prose, so a class name written anywhere becomes a real rule.)
-            "rounded-md px-md py-sm font-[inherit] leading-normal",
+            "rounded-panel px-md py-sm font-[inherit] leading-normal",
             // The size, the placeholder tone and the accent focus this used to
             // put back are the port's own now.
             "text-text select-text",

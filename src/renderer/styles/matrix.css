@@ -117,7 +117,9 @@ body.resizing-memo {
   display: block;
   padding: var(--sp-2xl) var(--sp-md);
   color: var(--faint);
-  font-size: var(--fs-xs);
+  /* One size for every empty list -- the history's, and the phone's (issue
+     148). The same size as a task, which the faint colour keeps apart. */
+  font-size: var(--fs-md);
   text-align: center;
 }
 

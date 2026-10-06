@@ -64,10 +64,10 @@ test("the box is the wrapper, and the chip is inside it", async () => {
   // the chip is a descendant rather than a sibling. Sitting beside the field
   // is what made everything to its right move when a date was chosen.
   expect(box.contains(chip)).toBe(true);
-  // 32px tall, 8px corners, the stronger line, and it focuses to the accent
+  // 32px tall, 10px corners, the stronger line, and it focuses to the accent
   // when anything inside it does.
   expect(classes(box)).toContain("h-6xl");
-  expect(classes(box)).toContain("rounded-md");
+  expect(classes(box)).toContain("rounded-panel");
   expect(classes(box)).toContain("border-line-strong");
   expect(classes(box)).toContain("focus-within:border-accent");
   expect(classes(box)).toContain("focus-within:ring-accent-soft");
