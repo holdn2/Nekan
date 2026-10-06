@@ -72,7 +72,6 @@ const QUAD_LABEL: Record<string, () => string> = {
   q2: () => t("quad.q2.action"),
   q3: () => t("quad.q3.action"),
   q4: () => t("quad.q4.action"),
-  inbox: () => t("inbox.title"),
 };
 
 /** Day header, in whatever the interface language says it looks like. */

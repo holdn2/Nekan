@@ -295,10 +295,10 @@ function Row({
   tab: Tab;
   colors: ReturnType<typeof useColors>;
 }) {
-  // Where it was: a dot alone, as on the desktop's history (issue 148). The
-  // colour is the quadrant's, as on the matrix; the dump, which is not one of
-  // the four, is the desktop's outline. The name every other screen uses is
-  // what a screen reader says for it.
+  // Where it was, by the name every other screen uses -- the desktop's
+  // "Urgent·Important" labels were English inside a Korean screen, and a
+  // second vocabulary for the same four places. The dot is the quadrant's
+  // colour, as on the matrix; the dump has none, as on the move chips.
   const inDump = task.quadrant === INBOX;
   const quad = inDump ? t("inbox.title") : t(`quad.${task.quadrant}.action`);
 
@@ -318,15 +318,18 @@ function Row({
         <Text style={[s.meta, { color: c.faint }]}>
           {timeLabel(stampOf(task, tab))}
         </Text>
-        <View style={s.where} accessible accessibilityLabel={quad}>
-          <View
-            style={[
-              s.dot,
-              inDump
-                ? [s.dumpDot, { borderColor: c.muted }]
-                : { backgroundColor: c[task.quadrant as keyof typeof c] },
-            ]}
-          />
+        <View style={s.where}>
+          {inDump ? null : (
+            <View
+              style={[
+                s.dot,
+                { backgroundColor: c[task.quadrant as keyof typeof c] },
+              ]}
+            />
+          )}
+          <Text style={[s.meta, { color: c.faint }]} numberOfLines={1}>
+            {quad}
+          </Text>
         </View>
       </View>
       <Text style={[s.text, { color: c.text }]}>{task.text}</Text>
@@ -414,8 +417,6 @@ const s = StyleSheet.create({
     flexShrink: 1,
   },
   dot: { width: 6, height: 6, borderRadius: R.pill },
-  // The desktop's dump dot (components/dot.tsx): an outline, not a fill.
-  dumpDot: { borderWidth: 1.5 },
   text: { fontSize: FS.lg, lineHeight: FS.lg * LH.snug, fontWeight: FW.light },
   actions: { flexDirection: "row", gap: SP["4xl"], marginTop: SP.md },
   action: { fontSize: FS.sm, fontWeight: FW.semibold },
