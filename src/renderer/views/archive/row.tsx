@@ -9,6 +9,7 @@
  */
 
 import type { Task } from "../../../shared/types.js";
+import { INBOX } from "../../../shared/core.js";
 import { Dot } from "../../components/dot.js";
 import { DueBadge } from "../../components/due-badge.js";
 import { cn } from "../../react/cn.js";
@@ -64,11 +65,20 @@ function Row({
       <RowNumber className={cn("-mr-xs leading-none", task.memo && "mt-xs")}>
         {index + 1}.
       </RowNumber>
-      <Dot
-        place={task.quadrant}
-        title={QUAD_LABEL[task.quadrant]?.() || ""}
-        className={task.memo ? "mt-xs" : undefined}
-      />
+      {/* Where it was, said in words beside the colour, as the phone's
+          history says it (issue 148). It used to be the dot alone with the
+          name in a hover tooltip, which nobody finds without looking for it.
+          The dump is not one of the four, so it has no dot -- as on the
+          phone. */}
+      <span
+        className={cn(
+          "where flex flex-none items-center gap-xs text-xs whitespace-nowrap text-faint",
+          task.memo && "mt-hair",
+        )}
+      >
+        {task.quadrant === INBOX ? null : <Dot place={task.quadrant} />}
+        {QUAD_LABEL[task.quadrant]?.() || ""}
+      </span>
       {/* Title and memo share one column, so the memo lines up under the title
           and stops where the date column starts instead of running alongside
           it. */}
