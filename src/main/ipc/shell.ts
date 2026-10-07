@@ -23,9 +23,12 @@ const RELEASES_URL = "https://github.com/holdn2/Nekan/releases";
  * exist is a fact about the site, not about the language tag, and a missing
  * language should fall back to a page that is really there.
  */
+// The site keeps each page in its own folder (site/privacy/, site/privacy/en/).
+// These read privacy.html and privacy.en.html from the TypeScript move until
+// v1.1.0, which is a 404 -- site/ holds two redirect pages for those builds.
 const PRIVACY_URL = {
-  ko: "https://holdn2.github.io/Nekan/privacy.html",
-  en: "https://holdn2.github.io/Nekan/privacy.en.html",
+  ko: "https://holdn2.github.io/Nekan/privacy/",
+  en: "https://holdn2.github.io/Nekan/privacy/en/",
 };
 
 function registerShellIpc() {
