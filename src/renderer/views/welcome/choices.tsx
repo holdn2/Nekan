@@ -118,9 +118,9 @@ export function WelcomeChoices({
       {/* Not recommended, and its line says who it is for instead of
           repeating what syncing is. Apple and Google can be separate accounts
           (whether a matching email joins them is unmeasured -- issue 134), so
-          the useful thing to say is which one an
-          iPhone already signed into -- picking the other gives an empty list
-          that looks like a sync that did not work.
+          the useful thing to say is which one an iPhone already signed into
+          -- picking the other may give a separate list, which looks like a
+          sync that did not work.
 
           Its logo takes the words' colour, which is `text`, not pure black.
           This is a row among the app's own answers rather than Apple's button,
