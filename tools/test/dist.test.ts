@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 
-import { builderCli, outputDir, parseArgs } from "#tools/dist.js";
+import { builderCli, outputDir, parseArgs, stampPath } from "#tools/dist.js";
 
 /** What package.json configures, read the way the entitlements test reads its file. */
 const configured = () =>
@@ -103,4 +103,16 @@ test("the flags it does take still work, together and apart", () => {
   });
   // The guards, asked before the tests rather than after a full build.
   assert.deepEqual(parseArgs(["--preflight"]), { ...off, preflight: true });
+});
+
+test("the stamp lands inside an absolute NEKAN_DIST, not under the repo", () => {
+  const out = path.join(path.parse(process.cwd()).root, "elsewhere", "dist");
+  assert.equal(stampPath(out), path.join(out, "built-from.txt"));
+});
+
+test("a relative output folder still lands under the repo", () => {
+  assert.equal(
+    stampPath("dist"),
+    path.resolve(process.cwd(), "dist", "built-from.txt"),
+  );
 });

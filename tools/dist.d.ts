@@ -48,6 +48,9 @@ export function parseArgs(argv: string[]): {
 /** The name of the file a publishing build leaves beside its installers. */
 export const STAMP: string;
 
+/** Where the stamp is written: STAMP inside `out`, resolved from the repo root. */
+export function stampPath(out: string): string;
+
 /**
  * Why this build may not be published, as lines to print, or null to go ahead.
  *
