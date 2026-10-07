@@ -84,6 +84,15 @@ function git(...args) {
 const STAMP = "built-from.txt";
 
 /**
+ * Where the stamp goes. resolve, not join: NEKAN_DIST is usually absolute, and
+ * join glued it onto the repo root (D:\_Nekan\C:\Users\...) -- which stopped
+ * the v1.1.0 release after the upload, before the draft was checked.
+ */
+function stampPath(out) {
+  return path.resolve(ROOT, out, STAMP);
+}
+
+/**
  * Refuse to build a release from anywhere the tag will not point at.
  *
  * The mac workflow has said this since it was written -- "The release is built
@@ -228,7 +237,7 @@ function main() {
   if (!publish) return;
   // Written after the build rather than before it, so a build that died leaves
   // no claim about what it produced.
-  fs.writeFileSync(path.join(ROOT, out, STAMP), `${commit}\n`);
+  fs.writeFileSync(stampPath(out), `${commit}\n`);
   console.log(`built from ${commit}`);
   // --awaiting-mac says "the mac half is somebody else's job", which is true of
   // the Windows build and the exact opposite of the mac one. Passing it either
@@ -241,6 +250,13 @@ function main() {
   ]);
 }
 
-module.exports = { outputDir, builderCli, parseArgs, STAMP, releaseBlocker };
+module.exports = {
+  outputDir,
+  builderCli,
+  parseArgs,
+  STAMP,
+  stampPath,
+  releaseBlocker,
+};
 
 if (require.main === module) main();
