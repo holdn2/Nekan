@@ -47,9 +47,16 @@ section.inbox.drop {
 /* The empty-list message, the same way a quadrant does it: a pseudo-element
    reading an attribute, so the words can come from the catalogue. `:empty`
    only matches because the message is an attribute and not a child. */
+/* Only while empty: a flex box lets the message sit in the middle of the
+   list's height, as a quadrant's does (issue 148). Rows keep the block flow. */
+.inbox-list:empty {
+  display: flex;
+}
+
 .inbox-list:empty::after {
   content: attr(data-empty);
   display: block;
+  margin: auto;
   padding: var(--sp-lg) var(--sp-md);
   color: var(--faint);
   /* The size every empty list uses; see matrix.css. */

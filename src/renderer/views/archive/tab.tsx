@@ -303,16 +303,25 @@ function ArchiveTab<T extends Task>({
           stays put. */}
       <div
         ref={scroller}
-        className="history-scroll min-h-[0px] flex-auto overflow-y-auto rounded-panel border border-line bg-panel shadow-default"
+        className="history-scroll flex min-h-[0px] flex-auto flex-col overflow-y-auto rounded-panel border border-line bg-panel shadow-default"
       >
-        <ul className="history-list m-[0px] list-none p-sm">{rows}</ul>
+        <ul
+          className={cn(
+            "history-list m-[0px] list-none p-sm",
+            items.length === 0 && "hidden",
+          )}
+        >
+          {rows}
+        </ul>
         {/* Named, because the class it used to carry was its only handle and
             that class was declared over in guide.css. An id is the same handle
             without a sheet on the other end of it. */}
         <p
           id={`${which}Empty`}
           className={cn(
-            "m-[0px] px-xl py-5xl text-center text-faint",
+            // Auto margins in the scroller's column put the words in the
+            // middle of the panel, as an empty quadrant does (issue 148).
+            "mx-[0px] my-auto px-xl py-xl text-center text-faint",
             items.length > 0 && "hidden",
           )}
         >

@@ -16,6 +16,9 @@ import { cn } from "../../react/cn.js";
 import { MemoLine } from "../../components/memo-line.js";
 import { QUAD_LABEL, timeLabel } from "./paging.js";
 
+/** The names the label column is sized to fit. */
+const PLACES_IN_ORDER = Object.keys(QUAD_LABEL);
+
 import { RowNumber } from "../../components/row.js";
 interface BulkAction<T extends Task> {
   /**
@@ -76,8 +79,31 @@ function Row({
           task.memo && "mt-hair",
         )}
       >
-        {task.quadrant === INBOX ? null : <Dot place={task.quadrant} />}
-        {QUAD_LABEL[task.quadrant]?.() || ""}
+        {/* The dump keeps the dot's slot empty, so its name starts where
+            the others' do. */}
+        {task.quadrant === INBOX ? (
+          <span className="w-md shrink-0" />
+        ) : (
+          <Dot place={task.quadrant} />
+        )}
+        {/* Every place's name stacked in one cell, only this row's visible:
+            the column is as wide as the longest name in the current language
+            on every row, so the titles start in one line (issue 148). A fixed
+            width would be right for one language and wrong for the other. */}
+        <span className="grid">
+          {PLACES_IN_ORDER.map((place) => (
+            <span
+              key={place}
+              aria-hidden={place === task.quadrant ? undefined : true}
+              className={cn(
+                "[grid-area:1/1]",
+                place !== task.quadrant && "invisible",
+              )}
+            >
+              {QUAD_LABEL[place]?.() || ""}
+            </span>
+          ))}
+        </span>
       </span>
       {/* Title and memo share one column, so the memo lines up under the title
           and stops where the date column starts instead of running alongside
@@ -107,15 +133,15 @@ function Row({
           key={action.label}
           type="button"
           className={cn(
-            "act flex-none rounded-sm border border-line-strong bg-transparent",
+            "act flex-none rounded-sm border bg-transparent",
             "px-md py-2xs text-xs whitespace-nowrap opacity-0",
             "group-hover:opacity-100 focus-visible:opacity-100",
             // A deleting button says so in red as soon as it shows -- it only
             // shows on the row under the pointer, so it is never a column of
             // red down the list (issue 148).
             action.danger
-              ? "text-danger hover:border-danger hover:bg-danger-soft"
-              : "text-muted hover:border-accent hover:bg-accent-soft hover:text-accent",
+              ? "border-danger text-danger hover:bg-danger-soft"
+              : "border-line-strong text-muted hover:border-accent hover:bg-accent-soft hover:text-accent",
           )}
           onClick={action.onClick}
         >

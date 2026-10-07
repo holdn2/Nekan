@@ -115,6 +115,10 @@ body.resizing-memo {
 .list:empty::after {
   content: attr(data-empty);
   display: block;
+  /* The list is a flex column that fills the quadrant, so auto margins put the
+     words in the middle of the empty space rather than under the header (issue
+     148). */
+  margin: auto;
   padding: var(--sp-2xl) var(--sp-md);
   color: var(--faint);
   /* One size for every empty list -- the history's, and the phone's (issue
