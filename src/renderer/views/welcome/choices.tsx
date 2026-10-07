@@ -116,8 +116,9 @@ export function WelcomeChoices({
       </Button>
 
       {/* Not recommended, and its line says who it is for instead of
-          repeating what syncing is. Apple and Google are separate accounts
-          unless the email matches, so the useful thing to say is which one an
+          repeating what syncing is. Apple and Google can be separate accounts
+          (whether a matching email joins them is unmeasured -- issue 134), so
+          the useful thing to say is which one an
           iPhone already signed into -- picking the other gives an empty list
           that looks like a sync that did not work.
 
