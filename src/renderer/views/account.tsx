@@ -306,8 +306,11 @@ export function Account() {
       <p
         className={cn(
           "account-msg m-[0px] mt-lg min-h-[1.2em] text-sm",
-          // A reserved line, so a message appearing does not shove the rest of
-          // the panel down. 1.2em is the height of one line of it.
+          // Takes no room while there is nothing to say: it is the last thing
+          // in the card, so a message appearing pushes nothing down, and the
+          // reserved line read as a gap under 회원탈퇴 (issue 148). The element
+          // stays in the tree so the live region is there before it speaks.
+          "empty:mt-[0px] empty:min-h-[0px]",
           message?.isError ? "text-danger" : "text-muted",
         )}
         role="status"

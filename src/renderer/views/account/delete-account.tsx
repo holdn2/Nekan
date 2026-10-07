@@ -126,7 +126,7 @@ export function DeleteAccount({ visible, say }: Props) {
           trigger owns nothing this component can reach. */}
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <Button
-          className="account-leave-btn p-[0px] text-sm text-muted underline underline-offset-[3px] hover:bg-transparent hover:text-danger"
+          className="account-leave-btn p-[0px] text-sm text-danger underline underline-offset-[3px] hover:bg-transparent hover:text-danger"
           variant="ghost"
           size="sm"
           type="button"

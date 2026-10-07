@@ -62,12 +62,18 @@ const dayKey = (ts: number) => {
   return d.getFullYear() * 10000 + d.getMonth() * 100 + d.getDate();
 };
 
-/** What the coloured dot on a row means. */
+/**
+ * Where a row was, written beside its dot: the quadrant's name as its header
+ * and the phone's history say it. It used to be a tooltip of its own, in
+ * English in both languages except the fourth, which was 기타 / Neither
+ * (issue 148).
+ */
 const QUAD_LABEL: Record<string, () => string> = {
-  q1: () => t("archive.quadQ1"),
-  q2: () => t("archive.quadQ2"),
-  q3: () => t("archive.quadQ3"),
-  q4: () => t("archive.quadOther"),
+  q1: () => t("quad.q1.action"),
+  q2: () => t("quad.q2.action"),
+  q3: () => t("quad.q3.action"),
+  q4: () => t("quad.q4.action"),
+  inbox: () => t("inbox.title"),
 };
 
 /** Day header, in whatever the interface language says it looks like. */

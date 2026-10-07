@@ -385,10 +385,6 @@
   },
   "archive": {
     "quadInbox": "Unsorted",
-    "quadQ1": "Urgent·Important",
-    "quadQ2": "Important",
-    "quadQ3": "Urgent",
-    "quadOther": "Neither",
     "noResults": "Nothing matches that search.",
     "historyEmpty": "Nothing completed yet.",
     "trashEmpty": "The trash is empty.",

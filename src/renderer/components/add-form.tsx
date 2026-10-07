@@ -106,7 +106,7 @@ export function AddForm({ place, placeholderKey, withDue, onPaste }: Props) {
       <span
         className={cn(
           "flex h-6xl min-w-[0px] flex-auto items-center gap-sm",
-          "rounded-md border border-line-strong bg-input-bg",
+          "rounded-panel border border-line-strong bg-input-bg",
           "transition-colors focus-within:border-accent focus-within:ring-3",
           "focus-within:ring-accent-soft",
           // Only when there is something in there to need the room.
